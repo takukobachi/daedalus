@@ -96,11 +96,6 @@ daedalus/
 │   ├── tools/                 # Tools and utilities / ツールとユーティリティ
 │   └── libraries/             # Library research / ライブラリ研究
 │
-├── experiments/               # Experimental data / 実験データ
-│   ├── data/                  # Raw experimental data / 実験の生データ
-│   ├── results/               # Processed results / 処理済み結果
-│   └── logs/                  # Experiment logs / 実験ログ
-│
 ├── references/                # Reference materials / 参考資料
 │   ├── papers/                # Academic papers / 学術論文
 │   ├── books/                 # Book references / 参考書籍
@@ -144,16 +139,14 @@ daedalus/
 1. Browse `research/` for investigation notes and findings
 2. Check `hardware/` for hardware analysis and specifications
 3. Explore `software/` for software research and experimental tools
-4. Review `experiments/` for empirical data and trial results
-5. Consult `references/` for academic papers and technical articles
+4. Consult `references/` for academic papers and technical articles
 
 **日本語**: 各ディレクトリには独自のREADMEがあり、具体的な説明が含まれています。迷宮を進んでください：
 
 1. `research/` で調査ノートと発見を閲覧
 2. `hardware/` でハードウェア分析と仕様を確認
 3. `software/` でソフトウェア研究と実験的ツールを探索
-4. `experiments/` で実証データと試行結果を確認
-5. `references/` で学術論文や技術記事を参照
+4. `references/` で学術論文や技術記事を参照
 
 ---
 
