@@ -79,22 +79,16 @@
 
 ## Repository Structure / リポジトリ構造
 
-```
+```tree
 daedalus/
-├── research/                  # Research materials / 研究資料
-│   ├── hardware/              # Hardware research / ハードウェア研究
-│   ├── software/              # Software research / ソフトウェア研究
-│   └── analysis/              # Systematic analysis results / 体系的分析結果
-│
-├── hardware/                  # Hardware investigation / ハードウェア調査
+├── hardware/                  # Hardware analysis / ハードウェア分析
 │   ├── designs/               # Circuit diagrams, PCB layouts / 回路図、基板設計
 │   ├── specifications/        # Hardware specifications / ハードウェア仕様書
 │   └── datasheets/            # Component datasheets / 部品データシート
 │
-├── software/                  # Software investigation / ソフトウェア調査
-│   ├── prototypes/            # Experimental prototypes / 実験的プロトタイプ
-│   ├── tools/                 # Tools and utilities / ツールとユーティリティ
-│   └── libraries/             # Library research / ライブラリ研究
+├── software/                  # Software analysis / ソフトウェア分析
+│   ├── architecture/          # Architecture designs / アーキテクチャ設計
+│   └── specifications/        # Specifications (API, system, etc.) / 仕様書（API、システムなど）
 │
 ├── references/                # Reference materials / 参考資料
 │   ├── papers/                # Academic papers / 学術論文
@@ -136,17 +130,17 @@ daedalus/
 
 **English**: Each directory contains its own README with specific instructions. Navigate through the labyrinth:
 
-1. Browse `research/` for investigation notes and findings
-2. Check `hardware/` for hardware analysis and specifications
-3. Explore `software/` for software research and experimental tools
-4. Consult `references/` for academic papers and technical articles
+1. Check `hardware/` for hardware designs and specifications
+2. Explore `software/` for architecture and specifications
+3. Consult `references/` for academic papers and technical articles
+4. Use `tools/` for utility scripts and automation
 
 **日本語**: 各ディレクトリには独自のREADMEがあり、具体的な説明が含まれています。迷宮を進んでください：
 
-1. `research/` で調査ノートと発見を閲覧
-2. `hardware/` でハードウェア分析と仕様を確認
-3. `software/` でソフトウェア研究と実験的ツールを探索
-4. `references/` で学術論文や技術記事を参照
+1. `hardware/` でハードウェア設計と仕様を確認
+2. `software/` でアーキテクチャと仕様を探索
+3. `references/` で学術論文や技術記事を参照
+4. `tools/` でユーティリティスクリプトと自動化ツールを使用
 
 ---
 
