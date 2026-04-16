@@ -8,27 +8,26 @@
       "Bash(python3:*)",
       "Bash(pip:*)",
       "Bash(ls:*)",
-      "Bash(cat:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(touch:*)",
       "WebSearch",
       "WebFetch"
     ],
     "deny": [
-      "Bash(rm -rf:*)",
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(chown:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
       "Read(./.env)",
       "Read(./.env.*)"
     ]
   },
-  "extraKnownMarketplaces": {
-    "claude-code-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-code"
-      }
-    }
-  },
   "enabledPlugins": {
-    "commit-commands@claude-code-plugins": true
+    "commit-commands@claude-plugins-official": true,
+    "hookify@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "session-report@claude-plugins-official": true
   }
 }
