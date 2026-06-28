@@ -5,10 +5,10 @@
 ## ドキュメント
 
 - [`in-vehicle-networks.md`](in-vehicle-networks.md) — 車載ネットワークと ECU (in-vehicle networks & ECU)
+- [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 機能安全 (functional safety, ISO 26262)
 
 ## 今後のトピック
 
 - パワートレイン制御 (powertrain control) — エンジン/モータ、トランスミッション
-- 機能安全 (functional safety) — ISO 26262, ASIL
 - 先進運転支援 (ADAS) — センサ融合 (sensor fusion)、SoC
 - 車載ソフト基盤 (software platform) — AUTOSAR, SOME/IP
