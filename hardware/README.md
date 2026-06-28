@@ -8,10 +8,7 @@
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
 - `automotive/` — 自動車（車載ネットワーク, ECU …）
 
-## 調査ロードマップ
+## 今後のテーマ候補
 
-今後調査すべきトピックは [`research-roadmap.md`](research-roadmap.md) に優先順位と根拠つきで一元管理している。主な拡張方向:
-
-- 既存領域の深掘り — 動的実行機構 (パイプライン, 分岐予測)、キャッシュコヒーレンス、バス/相互接続 (PCIe, AXI, CXL)
-- 横断トピック — ハードウェアセキュリティ (TEE, side channel)、信頼性・故障モデル (ECC, 冗長設計)
-- 新規ドメイン — 航空機 (aircraft, avionics)、電力・発電 (power generation)
+- 航空機 (aircraft) — 飛行制御 (flight control)、推進 (propulsion)、航空電子工学 (avionics)
+- 電力・発電 (power generation) — 発電方式、送配電 (transmission & distribution)、電力変換 (power conversion)
