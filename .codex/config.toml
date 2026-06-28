@@ -1,0 +1,39 @@
+# Project-scoped Codex configuration for Daedalus.
+# Loaded only when this repository is trusted by Codex.
+
+# Keep local work editable while requiring approval for commands that need to
+# escape the sandbox, access the network, or touch protected paths.
+approval_policy = "on-request"
+default_permissions = "daedalus_workspace"
+
+# Keep search safer by default. Codex can still request live access when needed.
+web_search = "cached"
+
+# Codex reads AGENTS.md first. CLAUDE.md is only a fallback when a directory does
+# not provide AGENTS.md or AGENTS.override.md.
+project_doc_max_bytes = 65536
+project_doc_fallback_filenames = ["CLAUDE.md"]
+
+[shell_environment_policy]
+inherit = "core"
+ignore_default_excludes = false
+exclude = ["*KEY*", "*SECRET*", "*TOKEN*", "*PASSWORD*", "AWS_*", "AZURE_*", "GITHUB_TOKEN"]
+
+[permissions.daedalus_workspace]
+description = "Workspace editing for Daedalus with local secrets denied and network disabled."
+extends = ":workspace"
+
+[permissions.daedalus_workspace.filesystem]
+glob_scan_max_depth = 3
+
+[permissions.daedalus_workspace.filesystem.":workspace_roots"]
+"." = "write"
+".env" = "deny"
+".env.*" = "deny"
+"**/.env" = "deny"
+"**/.env.*" = "deny"
+".claude/settings.local.json" = "deny"
+".codex/auth.json" = "deny"
+
+[permissions.daedalus_workspace.network]
+enabled = false

@@ -1,0 +1,73 @@
+# Project-local Codex execpolicy rules.
+# These apply when Codex needs to run commands outside the sandbox.
+
+prefix_rule(
+    pattern = ["rm"],
+    decision = "prompt",
+    justification = "Deletion should be explicitly approved in this documentation repository.",
+    match = ["rm old-file.md", "rm -rf generated"],
+)
+
+prefix_rule(
+    pattern = [["chmod", "chown"]],
+    decision = "prompt",
+    justification = "Ownership and permission changes are uncommon for this repository.",
+    match = ["chmod 755 tools/script.py", "chown user file"],
+)
+
+prefix_rule(
+    pattern = [["curl", "wget"]],
+    decision = "prompt",
+    justification = "Network fetches should be intentional and source-aware.",
+    match = ["curl https://example.com", "wget https://example.com/file.pdf"],
+)
+
+prefix_rule(
+    pattern = [["bash", "sh", "zsh"]],
+    decision = "prompt",
+    justification = "Shell wrappers can hide compound commands, redirection, or variable expansion.",
+    match = ["bash -lc printenv", "zsh -c ls"],
+)
+
+prefix_rule(
+    pattern = [["python", "python3", "node", "ruby", "perl"]],
+    decision = "prompt",
+    justification = "General-purpose interpreters can read files, environment variables, or network resources outside the sandbox.",
+    match = ["python3 script.py", "node tools/check.js"],
+)
+
+prefix_rule(
+    pattern = [["ssh", "scp", "sftp", "rsync"]],
+    decision = "prompt",
+    justification = "Remote access and file transfer commands should be explicitly approved.",
+    match = ["ssh host", "rsync -av docs/ host:/tmp/docs/"],
+)
+
+prefix_rule(
+    pattern = [["env", "printenv"]],
+    decision = "prompt",
+    justification = "Environment dumps can expose credentials or local tokens.",
+    match = ["env", "printenv PATH"],
+)
+
+prefix_rule(
+    pattern = ["security"],
+    decision = "prompt",
+    justification = "macOS keychain access must be explicitly approved.",
+    match = ["security find-generic-password -s service"],
+)
+
+prefix_rule(
+    pattern = ["gh", "auth"],
+    decision = "prompt",
+    justification = "GitHub authentication commands can expose or mutate local credentials.",
+    match = ["gh auth status", "gh auth token"],
+)
+
+prefix_rule(
+    pattern = ["git", ["commit", "push"]],
+    decision = "prompt",
+    justification = "Publishing repository state should remain an explicit user decision.",
+    match = ["git commit -m docs", "git push"],
+    not_match = ["git status", "git diff"],
+)
