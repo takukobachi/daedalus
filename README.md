@@ -36,9 +36,8 @@ Systematic investigation and analysis of complex systems.
 ```tree
 daedalus/
 ├── hardware/                  # Hardware analysis / ハードウェア分析
-│   ├── designs/               # Circuit diagrams, PCB layouts / 回路図、基板設計
-│   ├── specifications/        # Hardware specifications / ハードウェア仕様書
-│   └── datasheets/            # Component datasheets / 部品データシート
+│   ├── cpu-architecture/      # CPU internals / CPU内部
+│   └── hw-sw-interface/       # Hardware/software boundary / HW・SW境界
 │
 ├── software/                  # Software analysis / ソフトウェア分析
 │   ├── architecture/          # Architecture designs / アーキテクチャ設計
