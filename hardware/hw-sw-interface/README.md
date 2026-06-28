@@ -4,5 +4,9 @@
 
 ## ドキュメント
 
+- [`boot-initialization.md`](boot-initialization.md) — ブート・初期化シーケンス (boot & initialization)
 - [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) — デバイスとの対話: MMIO・DMA・割り込み (device I/O)
+- [`bus-interconnect.md`](bus-interconnect.md) — バスと相互接続: PCIe・AMBA/AXI・CXL (bus & interconnect)
 - [`abi-syscalls.md`](abi-syscalls.md) — ABI・呼び出し規約・システムコール (ABI & syscalls)
+- [`clock-power-reset.md`](clock-power-reset.md) — クロック・電源・リセット管理 (clock, power & reset management)
+- [`storage-nvm-interface.md`](storage-nvm-interface.md) — ストレージ・不揮発メモリインタフェース (storage & non-volatile memory interface)
