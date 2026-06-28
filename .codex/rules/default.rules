@@ -23,6 +23,27 @@ prefix_rule(
 )
 
 prefix_rule(
+    pattern = [["bash", "sh", "zsh"]],
+    decision = "prompt",
+    justification = "Shell wrappers can hide compound commands, redirection, or variable expansion.",
+    match = ["bash -lc printenv", "zsh -c ls"],
+)
+
+prefix_rule(
+    pattern = [["python", "python3", "node", "ruby", "perl"]],
+    decision = "prompt",
+    justification = "General-purpose interpreters can read files, environment variables, or network resources outside the sandbox.",
+    match = ["python3 script.py", "node tools/check.js"],
+)
+
+prefix_rule(
+    pattern = [["ssh", "scp", "sftp", "rsync"]],
+    decision = "prompt",
+    justification = "Remote access and file transfer commands should be explicitly approved.",
+    match = ["ssh host", "rsync -av docs/ host:/tmp/docs/"],
+)
+
+prefix_rule(
     pattern = [["env", "printenv"]],
     decision = "prompt",
     justification = "Environment dumps can expose credentials or local tokens.",
@@ -34,6 +55,13 @@ prefix_rule(
     decision = "prompt",
     justification = "macOS keychain access must be explicitly approved.",
     match = ["security find-generic-password -s service"],
+)
+
+prefix_rule(
+    pattern = ["gh", "auth"],
+    decision = "prompt",
+    justification = "GitHub authentication commands can expose or mutate local credentials.",
+    match = ["gh auth status", "gh auth token"],
 )
 
 prefix_rule(
