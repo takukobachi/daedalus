@@ -1,21 +1,63 @@
-# Daedalus - Claude Guidelines
+# Daedalus — Claude Guidelines
 
-Technical analysis repository. See README.md for project overview and philosophy.
+Technical analysis repository (documentation only; no application source code).
+See `README.md` for the project overview and philosophy.
 
----
-
-## Language Policy
-
-- All major documents: Japanese
-- Technical terms: keep the English original alongside the Japanese (e.g. `命令セット (ISA)`) on first use
-- Code comments: English preferred
-- File names: English only, lowercase with hyphens
+These guidelines are operational instructions for Claude and are kept in English
+for precision. The documents Claude *produces*, however, follow the Language
+Policy below.
 
 ---
 
-## Documentation Templates
+## 1. Repository Structure & Conventions
 
-### Analysis Documents - Required Sections
+Top-level layout:
+
+```tree
+daedalus/
+├── hardware/      # Hardware analysis (CPU, HW/SW interface, automotive, ...)
+├── software/      # Software analysis (architecture, specifications, ...)
+├── references/    # Reference materials (papers, books, articles)
+└── tools/         # Utilities and scripts
+```
+
+Conventions:
+
+- **Per-directory README**: every top-level directory and every major
+  subdirectory contains a `README.md` that states its scope and indexes the
+  documents inside it. When adding a new document, update the nearest README's
+  index. When creating a new subdirectory, add its `README.md` in the same change.
+- **Create subdirectories on demand**: e.g. `references/papers/`,
+  `references/books/`, `references/articles/` are created when the first item of
+  that kind is added — do not leave empty placeholder directories.
+
+### File Naming
+
+| Type | Format | Example |
+|------|--------|---------|
+| Documents | `{category}-{description}.md` | `isa-riscv-intro.md` |
+| Diagrams | `{type}-{description}.{ext}` | `diagram-system-architecture.svg` |
+| Scripts | `{purpose}_{description}.{ext}` | `analyze_protocol.py` |
+
+File names: English only, lowercase with hyphens.
+
+---
+
+## 2. Language Policy
+
+- **Major documents**: Japanese.
+- **Technical terms**: keep the English original alongside the Japanese on first
+  use, e.g. `命令セット (ISA)`.
+- **Code comments**: English preferred.
+- **File names**: English only (see above).
+
+---
+
+## 3. Document Templates
+
+Section titles are bilingual (`English / 日本語`) to match existing documents.
+
+### Analysis Documents — Required Sections
 
 1. Overview / 概要
 2. Methodology / 方法論
@@ -25,7 +67,7 @@ Technical analysis repository. See README.md for project overview and philosophy
 6. Security Considerations / セキュリティ考察
 7. Conclusions / 結論
 
-### Design Documents - Required Sections
+### Design Documents — Required Sections
 
 1. Purpose / 目的
 2. Requirements / 要件
@@ -36,36 +78,22 @@ Technical analysis repository. See README.md for project overview and philosophy
 
 ### Hardware Specs Must Include
 
-Component ID, electrical characteristics, physical dimensions, timing diagrams, operating conditions, reference datasheets.
+Component ID, electrical characteristics, physical dimensions, timing diagrams,
+operating conditions, reference datasheets.
 
 ### Software Specs Must Include
 
-System requirements, API definitions, protocol specs, data structures/schemas, error handling, performance requirements, version compatibility.
+System requirements, API definitions, protocol specs, data structures/schemas,
+error handling, performance requirements, version compatibility.
 
 ---
 
-## File Naming
+## 4. Writing Standards
 
-| Type | Format | Example |
-|------|--------|---------|
-| Documents | `{category}-{description}.md` | `api-specification.md` |
-| Diagrams | `{type}-{description}.{ext}` | `diagram-system-architecture.png` |
-| Scripts | `{purpose}_{description}.{ext}` | `analyze_protocol.py` |
+### Code in Documents
 
----
-
-## Diagrams
-
-- Use Mermaid, PlantUML, or draw.io
-- Include architecture, sequence, and state diagrams where applicable
-- Consistent notation (UML, C4), legend if custom
-- Provide source + rendered versions (SVG or high-res PNG)
-
----
-
-## Code in Documents
-
-Always include: language spec, context explanation, source location, line numbers.
+When quoting code from an analyzed system, always include the language spec, a
+context explanation, and the source location with line numbers:
 
 ```
 **File**: `src/network/protocol.c` (lines 145-160)
@@ -74,9 +102,23 @@ Always include: language spec, context explanation, source location, line number
 
 Pseudocode: language-agnostic, include complexity analysis, document assumptions.
 
----
+### Diagrams
 
-## Script Header
+- **Mermaid inline** is the default — it is version-controllable and renders on
+  GitHub. Use it for architecture, sequence, and state diagrams.
+- Use PlantUML or draw.io only when Mermaid cannot express the diagram; in that
+  case commit both the source and a rendered version (SVG preferred, or high-res
+  PNG).
+- Use consistent notation (UML, C4). Include a legend for any custom notation.
+
+### Citations
+
+- Papers: `Author, A. (Year). Title. *Journal*, vol(issue), pages. DOI`
+- Web: `[Title](URL) — Accessed: YYYY-MM-DD`
+- Store source material under `references/papers/`, `references/books/`, or
+  `references/articles/` (creating the subdirectory as needed).
+
+### Script Header
 
 ```python
 """
@@ -91,36 +133,52 @@ Date: {YYYY-MM-DD}
 
 ---
 
-## Citations
+## 5. Research Workflow
 
-- Papers: `Author, A. (Year). Title. *Journal*, vol(issue), pages. DOI`
-- Web: `[Title](URL) - Accessed: YYYY-MM-DD`
-- Store in `references/papers/`, `references/books/`, `references/articles/`
+- Use the `deep-research` skill for multi-source, fact-checked investigation that
+  produces a cited report; weave its findings into the relevant document and
+  record sources per the Citations standard.
+- Evidence is required for every claim — link to the source, file/line, or
+  datasheet that supports it.
 
 ---
 
-## Commit Message Format
+## 6. Quality Rules
+
+**Analysis depth** — default to Level 3:
+
+- **Level 1 (Surface)**: overview, main components, basic data/control flow.
+- **Level 2 (Functional)**: detailed behavior, key protocols, common edge cases.
+- **Level 3 (Complete, default)**: full system understanding — all protocols,
+  edge cases, failure modes, security, and optimization.
+
+Other rules:
+
+- No placeholder text (TODO, TBD); all required sections complete before delivery.
+- No sensitive information (API keys, tokens, passwords) — redact as `█████████`.
+- Every claim is backed by evidence.
+
+---
+
+## 7. Git Conventions
+
+Commit message format:
 
 ```
 <type>(<scope>): <subject>
 ```
 
-Types: `docs`, `analysis`, `spec`, `tools`, `refactor`, `fix`
+Types: `docs`, `analysis`, `spec`, `tools`, `refactor`, `fix`, `chore`.
+
+Changes are merged via pull requests. Since this is a documentation/analysis
+repository (not implementation), PRs do not require a test plan.
 
 ---
 
-## Quality Rules
+## 8. Security & Ethics
 
-- Default analysis depth: Level 3 (complete system understanding, all protocols, edge cases, security, optimization)
-- No placeholder text (TODO, TBD)
-- No sensitive information (API keys, tokens, passwords) - redact as `█████████`
-- Evidence required for all claims
-- All sections complete before delivery
+**Permitted**: public system analysis, interoperability reverse engineering,
+defensive security research, educational documentation, protocol documentation.
 
----
-
-## Security & Ethics
-
-Permitted: public system analysis, interoperability RE, defensive security research, educational docs, protocol documentation.
-
-Prohibited: copy protection circumvention for piracy, malicious tools, proprietary code sharing, undisclosed exploits, unauthorized analysis.
+**Prohibited**: copy-protection circumvention for piracy, malicious tools,
+proprietary code sharing, undisclosed exploits, unauthorized analysis.
