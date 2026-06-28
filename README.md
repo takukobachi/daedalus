@@ -37,7 +37,8 @@ Systematic investigation and analysis of complex systems.
 daedalus/
 ├── hardware/                  # Hardware analysis / ハードウェア分析
 │   ├── cpu-architecture/      # CPU internals / CPU内部
-│   └── hw-sw-interface/       # Hardware/software boundary / HW・SW境界
+│   ├── hw-sw-interface/       # Hardware/software boundary / HW・SW境界
+│   └── automotive/            # Automotive systems / 自動車システム
 │
 ├── software/                  # Software analysis / ソフトウェア分析
 │   ├── architecture/          # Architecture designs / アーキテクチャ設計
