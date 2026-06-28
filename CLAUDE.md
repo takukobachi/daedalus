@@ -6,10 +6,9 @@ Technical analysis repository. See README.md for project overview and philosophy
 
 ## Language Policy
 
-- All major documents: bilingual (English + Japanese)
-- Format: `**English**: ... / **日本語**: ...`
+- All major documents: Japanese
+- Technical terms: keep the English original alongside the Japanese (e.g. `命令セット (ISA)`) on first use
 - Code comments: English preferred
-- Technical terms: English original + Japanese translation in parentheses on first use
 - File names: English only, lowercase with hyphens
 
 ---

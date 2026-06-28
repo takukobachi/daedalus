@@ -1,9 +1,8 @@
-# Hardware
+# ハードウェア (Hardware)
 
-ハードウェア設計、仕様書、データシートを管理します。
+ソフトウェアに繋がる層を中心に、テーマ別に整理したハードウェア分析。
 
-## Structure
+## 構成
 
-- `designs/` - 回路図、基板設計、CADファイル
-- `specifications/` - ハードウェア仕様書
-- `datasheets/` - 使用する部品のデータシート
+- `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序 …）
+- `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
