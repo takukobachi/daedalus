@@ -5,12 +5,12 @@
 ## ドキュメント
 
 - [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — キャッシュとメモリ階層 (cache & memory hierarchy)
+- [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md) — パイプライン・スーパースカラ・アウトオブオーダ実行 (pipeline, superscalar & out-of-order execution)
 - [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — メモリ順序とアトミック (memory ordering & atomics)
+- [`cache-coherence.md`](cache-coherence.md) — マルチコア・キャッシュコヒーレンス (multicore cache coherence)
 - [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — 仮想記憶・MMU・TLB (virtual memory)
+- [`interrupts-exceptions-traps.md`](interrupts-exceptions-traps.md) — 割り込み・例外・トラップ (interrupts, exceptions & traps)
 - [`isa-riscv-intro.md`](isa-riscv-intro.md) — 命令セットアーキテクチャ入門 (ISA primer, RISC-V)
+- [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 分岐予測と投機実行 (branch prediction & speculative execution)
+- [`simd-vector.md`](simd-vector.md) — SIMD・ベクトル演算 (SIMD / vector processing)
 
-## 今後のトピック
-
-- パイプラインと分岐予測 (pipeline & branch prediction)
-- 割り込みと例外 (interrupts & exceptions)
-- SIMD・ベクトル演算 (SIMD / vector)
