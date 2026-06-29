@@ -79,6 +79,27 @@ graph LR
 | スレッド `start` / `join` | happens-before | ライフサイクル境界 |
 | Java `volatile` 書き / 読み | synchronizes-with | DCL の安全公開 |
 
+### 進行保証の階層 (Progress Guarantees)
+
+「正しさ」とは別に、並行アルゴリズムには**進行保証 (progress guarantee)** という独立した軸がある。これは「あるスレッドが他スレッドの**遅延・停止・プリエンプト**にどこまで耐えて前進できるか」を問う。Herlihy & Shavit の定式化に従い、強い順に階層を成す。
+
+```
+   強い ◀────────────────────────────────────────────▶ 弱い
+   ┌────────────┐  ┌────────────┐  ┌──────────────┐  ┌──────────┐
+   │ wait-free  │ ⊃│ lock-free  │ ⊃│obstruction-  │ ⊃│ blocking │
+   │ 全スレッド  │  │ 全体として  │  │   free       │  │ 誰かが止  │
+   │ 有界ステップ │  │ 誰かが前進  │  │ 単独実行なら  │  │ まると全  │
+   │ で完了      │  │ (飢餓あり)  │  │ 完了         │  │ 停止しうる│
+   └────────────┘  └────────────┘  └──────────────┘  └──────────┘
+```
+
+- **wait-free**: *任意の*スレッドが、他スレッドの挙動に関わらず**有界回数 (bounded steps)** の操作で必ず完了する。飢餓 (starvation) すら起きない最強保証。実装は高コストで、ヘルプ機構 (helping) を伴うことが多い。
+- **lock-free**: システム**全体として**は常にいずれかのスレッドが有限ステップで前進する。ただし特定のスレッドは CAS リトライに負け続けて飢餓しうる。Treiber stack や Michael-Scott queue がこの階層。
+- **obstruction-free**: あるスレッドが**単独で**走れる（他が一時停止する）なら有限ステップで完了する。複数同時実行ではライブロック (livelock) しうるため、補助としてバックオフを併用する。
+- **blocking**: ロックを使う構造。保持者がプリエンプト/停止すると待ち手は前進不能。mutex も spinlock も**この階層**である（spinlock は保持者プリエンプトで全員空回り＝lock-free *ではない*）。
+
+実用上の含意: lock-free 以上は「あるスレッドの停止が他を巻き込まない」ため、リアルタイム性・耐障害性が要る箇所で価値を持つ。一方、wait-free の有界性は割り込みハンドラやシグナルセーフな経路で意味を持つが、コードは著しく複雑化する。多くの実務コードは blocking で十分で、lock-free 化は競合計測の後にのみ正当化される。
+
 ## 技術詳細 (Technical Details)
 
 ### 1. データ競合の定義と未定義動作
@@ -127,6 +148,64 @@ while (!ready.load(std::memory_order_acquire))  // (3) これ以降を前へ動�
 assert(data == 42);                             // (2) sw (3) により必ず成立
 ```
 
+#### スタンドアロンのフェンス (std::atomic_thread_fence)
+
+`memory_order` はアトミック**操作**に順序を付けるが、`std::atomic_thread_fence` は操作に紐付かない**独立したバリア (standalone fence)** を置く。`relaxed` アトミックと組み合わせ、順序付けを操作から分離できる。これは `memory-ordering-atomics.md` の「取得バリア／解放バリア」をソフト層へ写したものである。
+
+```cpp
+// 例示 (illustrative)。fence + relaxed で release/acquire と等価なエッジを張る。
+data = 42;                                          // (1) 通常書き込み
+std::atomic_thread_fence(std::memory_order_release); // release フェンス
+ready.store(true, std::memory_order_relaxed);        // (2) relaxed で十分
+// --- 別スレッド ---
+while (!ready.load(std::memory_order_relaxed)) ;     // (3) relaxed
+std::atomic_thread_fence(std::memory_order_acquire); // acquire フェンス
+assert(data == 42);                                  // 必ず成立
+```
+
+- **release フェンス**は「フェンスより前の全メモリ操作」を、フェンス後の任意の**ストア**より前に固定する（後方移動の禁止）。
+- **acquire フェンス**は「フェンスより後の全メモリ操作」を、フェンス前の任意の**ロード**より後に固定する（前方移動の禁止）。
+- ハードへの落ち方: release/acquire フェンスは ARM/POWER で `dmb ish` 等の**バリア命令**に翻訳される。x86 (TSO) では Store→Store / Load→Load が既に保たれるため acquire/release フェンスは**ノーオペ（コンパイラバリアのみ）**で済み、唯一 `seq_cst` フェンスだけが `mfence`（または `lock` 接頭辞付きダミー RMW）を要する。この非対称が `memory-ordering-atomics.md` の TSO/weak 差の直接の帰結である。
+
+操作付き順序指定とフェンスは概ね等価だが、ループ内の複数 relaxed 操作を1つのフェンスで囲える点でフェンスが有利な場合がある（バリア命令の発行回数を減らせる）。
+
+#### seq_cst のコストと store-load バリア
+
+`seq_cst` が他の順序より高いのは、acquire/release が**片方向**しか縛らないのに対し、`seq_cst` ストアは後続ロードに対する**store-load バリア**を要求するからである。`memory-ordering-atomics.md` で見たとおり、TSO ですら唯一許す並べ替えが Store→Load であり、これを潰すには store buffer をドレインする `mfence` 級の全バリアが要る。これは最もコストの高いバリアである。
+
+```
+   store buffer が Store→Load 並べ替えを生む機構:
+   ┌──────────┐
+   │ x.store  │──▶ [store buffer] ──(遅延)──▶ キャッシュ/他コア
+   │ y.load   │──────────────────────────────▶ 先にロードが完了しうる
+   └──────────┘   ↑ seq_cst はここに mfence を挿し、buffer を空にしてからロード
+```
+
+この差が顕在化する古典が **Dekker / Peterson 型**の相互排除パターンである。各スレッドが「自分のフラグを立ててから相手のフラグを読む」が、`relaxed`（あるいは acquire/release だけ）では Store→Load 並べ替えにより**両者が相手のフラグを false と観測**し、同時にクリティカルセクションへ入りうる。
+
+```cpp
+// 例示 (illustrative)。Dekker の核。relaxed/acq-rel では壊れる。
+// スレッド0                         スレッド1
+flag0.store(true,  RELAXED);        flag1.store(true,  RELAXED);
+if (flag1.load(RELAXED) == false)   if (flag0.load(RELAXED) == false)
+    enter_critical();                   enter_critical();   // 両方入りうる！
+```
+
+ここで store と後続 load の両方を `seq_cst` にするか、両者の間に `seq_cst` フェンス（store-load バリア）を挟むと、全 `seq_cst` 操作に対する**単一全順序**が保証され、少なくとも一方は相手の `true` を観測する。「acquire/release では足りず seq_cst が要る数少ない正当な場面」がこの対称的な store-load 依存パターンであり、`seq_cst` のコストはこの全順序の代償である。
+
+#### memory_order_consume と依存順序 (dependency ordering)
+
+`consume` は acquire より弱い特殊な順序で、**データ依存 (data dependency)** を通じてのみ順序を伝播させることを狙った。ポインタを `consume` ロードすると、そのポインタを**通じて**辿った読み込みだけが順序付けられ、依存のない読み込みは縛らない。狙いは ARM/POWER でバリア命令を**省ける**こと——これらの ISA はアドレス依存 (address dependency) をハード自身が保つため、追加バリア無しで依存先の可視性が得られる。
+
+```
+   release側            consume側
+   p->x = 42;           r = head.load(consume);   // r に依存ロード
+   head.store(p,rel);   use(r->x);  // r 経由 → 順序保証(バリア不要)
+                        use(global); // r 非依存 → 順序保証なし
+```
+
+しかし `consume` は**ほぼ全コンパイラが実装を放棄し、`acquire` に格上げ**している。理由は、ソースコードの「依存関係」をコンパイラの最適化（共通部分式除去、値の具体化による依存の消去、`if (r==known) use(known->x)` への変換など）を跨いで正確に追跡するのが極めて困難だからである。C++17 では「`consume` の使用を当面推奨しない」と注記され、N4321 等で依存順序の再定義が議論され続けている。実務的指針は単純で、**`consume` は使わず `acquire` を使う**——RCU の高速読み手のように依存順序が真に効く特殊系を除き、得られる利得は実装上の格上げで消える。
+
 ### 3. Java Memory Model (JMM) と volatile/final
 
 JMM は JSR-133 で再定義され、C++11 と同じく happens-before を基盤に置くが、用語と保証が異なる。
@@ -146,6 +225,32 @@ class Holder {
     }
 }
 ```
+
+#### double-checked locking の壊れ方と volatile による修正
+
+DCL は「初回だけロックして生成し、以降はロック無しで読む」遅延初期化の定番だが、JSR-133 以前の Java では壊れていた。本質は `memory-ordering-atomics.md` の §3 と同じく、**オブジェクト構築とポインタ公開の並べ替え**である。
+
+```java
+// 例示 (illustrative)。volatile を欠いた壊れる DCL。
+class Broken {
+    private Singleton inst;                      // volatile が無い → 壊れる
+    Singleton get() {
+        if (inst == null) {                      // ① ロック無しチェック
+            synchronized (this) {
+                if (inst == null)                // ② ロック内で再チェック
+                    inst = new Singleton();      // ③ 構築と公開が並べ替えられうる
+            }
+        }
+        return inst;                             // ④ 非 null だが未初期化を観測しうる
+    }
+}
+```
+
+`inst = new Singleton()` は概念上「メモリ確保 → コンストラクタ実行 → `inst` へ代入」だが、JIT/CPU は**確保 → `inst` 代入 → コンストラクタ実行**へ並べ替えてよい。別スレッドが①の `inst == null` を「非 null」と観測した瞬間、コンストラクタはまだ走っておらず、**半構築のオブジェクト**を掴む。修正は `inst` を `volatile` にすること——③の代入が release となり、構築完了が代入より後ろへ漏れず、④の読み（acquire）が完全構築を保証する。あるいは `static` ホルダクラス（クラス初期化ロックに委ねる）や `final` フィールドで安全公開する。
+
+#### piggybacking（半同期イディオム）
+
+JMM では、`volatile` 書き→読みが張る synchronizes-with エッジは、その書き手の**それ以前の非 volatile 書き込みすべて**を読み手に可視化する。これを利用し、1つの `volatile` フラグに「便乗 (piggyback)」させて多数の通常フィールドを安全公開するのが piggybacking である。`AtomicInteger` のような並行ユーティリティの内部や、`ConcurrentHashMap` のサイズフィールド更新でこの効果が活用される。注意点は、可視化されるのは**release より前に完了した書き込みのみ**であり、フラグ書き込み後の更新には保証が及ばないこと。便乗の方向（どの書きがどの読みに見えるか）を happens-before で必ず確認する。
 
 ### 4. アトミック変数と CAS、ハードウェアとの接続
 
@@ -218,6 +323,90 @@ push(node):
     while not head.CAS(old, node, release)   // 競合で失敗したらリトライ
 ```
 
+#### Treiber stack と ABA の発生箇所
+
+上の push が **Treiber stack**（CAS ベース lock-free スタックの古典）である。問題は `pop` 側に出る。
+
+```
+// Treiber pop (illustrative)。ABA はここに潜む。
+pop():
+    do:
+        old = head.load(acquire)
+        if old == null: return EMPTY
+        next = old.next            // ★ ここで old を別スレッドが pop→free→再 push しうる
+    while not head.CAS(old, next, acq_rel)   // old==head でも head の意味が変わっている
+    return old
+```
+
+`old` を読んでから CAS するまでの間に、別スレッドが `old` を pop し、解放・再利用して**同じアドレスを A として再 push**すると、CAS は `head == old` を見て成功するが、`next` は既に陳腐化しており、リストが破壊される（ABA 問題そのもの）。これが lock-free 構造の本質的難所であり、`memory-ordering-atomics.md` §3 の ABA を構造の具体に落としたものである。対策はタグ付きポインタ（version counter を CAS に同梱し、A→B→A でもタグが変わる）、ハザードポインタ、エポックベース回収、RCU のいずれか。
+
+#### Michael-Scott queue
+
+並行キューの標準実装が **Michael-Scott queue**（lock-free な FIFO、`java.util.concurrent.ConcurrentLinkedQueue` の基礎）。`head`/`tail` の2ポインタを持ち、ダミーノード (sentinel) を先頭に置くことで空・非空の場合分けを統一する。enqueue は「`tail.next` を CAS で繋ぐ」と「`tail` を CAS で前進」の2段で、後者は他スレッドが**ヘルプ (helping)** して前進させられる（tail が途中の不整合状態を観測したら誰でも修正できる）。ABA は dequeue で `head` を CAS する箇所に現れ、Treiber と同じくノード再利用管理を要する。
+
+#### RCU (Read-Copy-Update) の機構深掘り
+
+RCU は「読み多寡 (read-mostly)」で圧倒的な性能を出す。核心は**読み手をほぼ無コスト**にし、回収コストを書き手側へ寄せることである。
+
+```
+   読み手 (read-side critical section)        書き手 (update)
+   rcu_read_lock();    // ほぼ無コスト         new = copy(old);
+   p = rcu_dereference(ptr);  // 依存ロード      modify(new);
+   use(p->field);                              rcu_assign_pointer(ptr, new); // 公開
+   rcu_read_unlock();  // ほぼ無コスト          synchronize_rcu();  // grace period 待ち
+                                               free(old);          // 全読み手通過後に回収
+   ───────────────────────────────────────────────────────────────
+   grace period: 「この時点で走っていた全読み手が
+                  critical section を抜けるまで」の猶予期間
+   quiescent state: 各CPUがRCU保護下の参照を持たない瞬間
+                    (例: ユーザ空間復帰・コンテキストスイッチ・idle)
+```
+
+- **read-side critical section**: `rcu_read_lock()`/`unlock()` は非プリエンプティブ RCU ではプリエンプト無効化程度、実装によっては**何もしない（コンパイラバリアのみ）**。アトミックも CAS もライン書き込みも無く、`cache-coherence.md` のコヒーレンストラフィックが**発生しない**——これが「読みが無コスト」の正体であり、共有カウンタやロックが必ず起こすホットライン往復を完全に回避する。
+- **grace period と quiescent state**: 書き手は旧版を即座に解放できない（読み手が `ptr` を掴んでいるかもしれない）。各 CPU が「RCU 保護下の参照を持たない瞬間」=**quiescent state** を一度ずつ通過すれば、公開以前に始まった全読み手は終了したと判定でき、これを待つのが **grace period**。読み手はバリアすら不要になる。
+- **rcu_assign_pointer / rcu_dereference**: 前者は release 相当、後者は consume 相当（依存先の可視性を保証）。RCU は `consume` の依存順序が真に価値を持つ数少ない実例である。
+
+#### ハザードポインタ (hazard pointer) の回収機構
+
+ハザードポインタは「いつ free してよいか」を明示的に解く。各スレッドは**現在アクセス中のポインタ**をグローバルに公開する固定数のスロットを持つ。
+
+```
+   各スレッド: hazard[tid] = p;  // 公開してから p を使う(間に再確認)
+   回収側 retire(node):
+     retired_list.push(node)            // 即 free せず退避
+     if retired_list.size > threshold:  // バッチで償却
+        H = 全スレッドの hazard スロットを走査して集合化
+        for n in retired_list:
+           if n not in H: free(n)       // どのスレッドも参照していないものだけ解放
+           else:          残す
+```
+
+ポイントは、公開→再確認の順序が `seq_cst`（または store-load フェンス）を要すること——公開ストアと「ポインタがまだ有効か」の再ロードが Store→Load 並べ替えされると、回収側が「未公開」と誤判定して使用中ノードを free しうる。回収は閾値超過時に**バッチ**で行い、ハザード集合走査の O(スレッド数 × retire 数) コストを償却する。RCU が「時間（grace period）」で安全性を判定するのに対し、ハザードポインタは「明示公開された参照集合」で判定する点が対照的である。
+
+#### false sharing 緩和の実装
+
+§6 で触れたとおり、ホットなアトミックが同一64Bラインに同居すると `cache-coherence.md` の cache line ping-pong を起こす。緩和の実装は2系統。
+
+```cpp
+// 例示 (illustrative)。alignas/パディングでライン分離。
+struct alignas(64) PaddedCounter {
+    std::atomic<long> value;
+    char pad[64 - sizeof(std::atomic<long>)];   // 後続フィールドを別ラインへ追い出す
+};
+PaddedCounter counters[NUM_THREADS];            // 各要素が独立ラインを占有
+```
+
+- **alignas / パディング**: ホットなフィールドを `alignas(64)`（C++17 では `std::hardware_destructive_interference_size`）でライン境界に揃え、末尾パディングで隣接データの相乗りを防ぐ。
+- **per-CPU / per-thread データ**: そもそも共有しない。各スレッドが自分のカウンタを更新し、読み出し時のみ合算する（sloppy counter / シャーディング）。これは `cache-coherence.md` の「同一ラインに触るコア数を減らす」結論の最も素直な適用であり、書き込みのコヒーレンストラフィックを原理的にゼロにする。
+
+#### トランザクショナルメモリ (Transactional Memory)
+
+ロックの代わりに、一連のメモリ操作を**アトミックなトランザクション**として実行し、競合が無ければコミット、あれば**アボート (abort) して巻き戻す**抽象。楽観的並行制御 (optimistic concurrency) の一形態。
+
+- **HTM (Hardware TM)**: x86 の **TSX** (RTM: `xbegin`/`xend`/`xabort`) が代表。トランザクション中の読み書きを CPU が追跡し、コヒーレンスの**無効化を競合検出に流用**する——他コアが read-set/write-set のラインに触れば即アボート。追跡はキャッシュ単位なので、**write-set/read-set がキャッシュ容量や連想度を超えるとアボート**する。アボート要因は他に、割り込み・システムコール・`cpuid` 等の不可逆命令・ページフォルト。HTM は best-effort であり、**成功を保証しないため必ずソフトのフォールバック経路（ロック）を併設**する（lock elision）。TSX は過去にサイドチャネル (TAA) 脆弱性が報告され、多くの環境で無効化された経緯もある。
+- **STM (Software TM)**: 純ソフトでログ・バージョン管理を行う。HTM の容量制限が無く可搬だが、読み書きごとのメタデータ操作でオーバヘッドが大きい。
+- **限界**: いずれもアボートの再試行コストと、I/O・システムコールなど**巻き戻せない副作用**をトランザクション内に置けない制約がある。HTM は容量・割り込みで確率的にアボートし、STM は定数倍が重い。万能のロック代替にはならず、競合が低く区間が短い場合に効く。
+
 ### 7. 非同期ランタイム (async runtime)
 
 スレッドあたり数十万の接続を捌くには、OS スレッドより軽い並行単位が要る。async runtime はこれをユーザ空間で提供する。
@@ -234,7 +423,29 @@ push(node):
    自分は LIFO 末端、泥棒は反対端 → 競合点を分離
 ```
 
-OS カーネルのスレッドスケジューリング（プリエンプティブ・タイムスライス・優先度）との対比は `../operating-systems/process-thread-scheduling.md`を参照。要点だけ先取りすると、**async runtime は協調的 (cooperative)** ——タスクが `await` で自発的に譲らない限り切り替わらない——のに対し、**OS スケジューラはプリエンプティブ**で、CPU バウンドな処理が event loop を専有するとランタイム全体が固まる（`await` の無い重い計算は別スレッドへ逃がす）。
+#### executor / reactor と waker による poll 駆動
+
+多くのランタイム（Rust の Tokio が典型）は **executor**（タスクを実行・スケジュールする層）と **reactor**（I/O 準備完了を監視する層）に分離される。Future はスタックレスな**状態機械**にコンパイルされ、executor がそれを `poll()` する。`poll` は「完了したら値、まだなら `Pending`」を返す協調的契約である。
+
+```
+   executor                    reactor (epoll/io_uring)
+   ┌──────────┐                ┌────────────────────┐
+   │ poll(F)  │──Pending──────▶│ F の waker を I/O に  │
+   │          │                │ 登録 (fd→waker)     │
+   │ (他タスク)│                │                    │
+   │   ...    │◀──wake()───────│ I/O 準備完了→waker   │
+   │ poll(F)再 │  (再キューへ)   │ 呼び出し            │
+   └──────────┘                └────────────────────┘
+```
+
+- **waker / Future polling**: `Pending` を返すとき、Future は自分を後で起こすための **waker**（再スケジュールのコールバック）を reactor に預ける。busy-poll しない——準備完了通知が来て初めて waker が呼ばれ、タスクが実行キューへ戻る。これにより「待っている間 CPU を使わない」が成立する。
+- **io_uring / epoll への接続**: reactor は `epoll`（レベル/エッジトリガの**準備完了通知**モデル）か、より新しい **io_uring**（投入キュー (SQ) と完了キュー (CQ) を共有メモリリングで結ぶ**完了通知 (completion-based)** モデル）の上に立つ。io_uring は I/O 完了そのものを非同期化し、システムコール回数を削減する点で `epoll`+ノンブロッキング read の二段を一段に畳む。reactor は CQ を取り出して対応する waker を呼ぶ。両者ともランタイム内部のキューはマルチプロデューサ・マルチコンシューマで、本書 §6 の lock-free 構造とライン分離（false sharing 回避）がそのまま効く。
+
+#### 協調スケジューリングの限界と CPU バウンド
+
+`../operating-systems/process-thread-scheduling.md` の OS カーネルスケジューリング（プリエンプティブ・タイムスライス・優先度）との対比が要点である。**async runtime は協調的 (cooperative)** ——タスクが `await`/`poll` の `Pending` で自発的に譲らない限り切り替わらない——のに対し、**OS スケジューラはプリエンプティブ**で、タイマ割り込みで強制的に切り替える。
+
+この差が **CPU バウンド (CPU-bound)** な処理で牙を剥く。`await` 点を一切持たない重い計算（暗号演算、大きなソート、画像処理）がワーカスレッド上で走ると、その間 `poll` が返らず、同一ワーカに割り当てられた他タスクは**永久に進めない**——event loop が固まる。対策は、(a) 重い計算を `spawn_blocking`／専用スレッドプールへ逃がす、(b) 計算を分割して定期的に `yield` で譲る、(c) ワーカ数を CPU コア数に合わせて CPU バウンドと I/O バウンドのプールを分ける。これは「協調スケジューリングは**信頼できるタスク**を前提とする」という構造的限界の現れであり、悪意ある／バグのあるタスク1つが全体を DoS しうる点でセキュリティ上の含意も持つ（後述）。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -250,7 +461,16 @@ OS カーネルのスレッドスケジューリング（プリエンプティ�
 
 - **検出手段**: 競合は確率的でテストをすり抜ける。**ThreadSanitizer (TSan)** による動的検出、Java の `volatile`/`final` 契約や C++ の `memory_order` に基づく静的推論、形式検証 (model checking) の併用が現実解。「動いた」は証明ではない。
 
-教訓: 共有可変状態は、アトミック化・ロック・不変化 (immutability) のいずれかで必ず律する。律していない共有は UB であり、UB はセキュリティ境界を素通りする。
+### reordering が招く脆弱性 (Reordering-induced Vulnerabilities)
+
+並べ替えは性能の最適化だが、契約を満たさないコードでは**攻撃可能な観測窓**を開ける。
+
+- **初期化前公開 (publish-before-init)**: §3 の DCL の壊れ方は、単なるバグでなく脆弱性である。構築とポインタ公開が並べ替わると、別スレッドが**半構築のオブジェクト**——未初期化の仮想テーブルポインタ、ゼロ埋めされていない認可フラグ、ダングリングなコールバック——を有効ポインタ越しに観測する。攻撃者が公開タイミングを誘導できれば、未初期化フィールドを通じた型混同や制御フロー奪取に繋がりうる。修正は公開を release（C++）/`volatile` 書き（Java）にして、構築完了を公開より前に固定すること。
+- **メモリモデル誤用による use-after-free**: lock-free 構造で回収を誤る（ハザードポインタの公開と再確認の間に store-load 並べ替えを許す、grace period を待たずに free する、ABA をタグで防がない）と、読み手が参照中のノードが解放・再利用され、**UAF と型混同が同時に**起きる。これは §6 の ABA・回収機構の失敗の直接の帰結であり、`memory_order` の選択ミス1つが exploitable な UAF を生む。
+- **コンパイラ最適化による検査の消去**: データ競合は UB なので、コンパイラは「競合しない」前提で**境界チェックやヌルチェックを消去**しうる。並行に書き換わる値で検査した後に使うコードは、検査が最適化で蒸発し、攻撃者が制御する値が無検査で使われる。double-fetch（前述）はこの一般形である。
+- **協調スケジューリングの DoS**: §7 のとおり、async ランタイムは協調的なため、`await` を持たない CPU バウンドタスク1つがワーカを専有し、同居タスク群を飢餓させる。攻撃者が「重い入力」でこの状態を誘発できれば可用性を破壊できる。信頼境界を跨ぐ入力を処理するタスクは、計算量上限・タイムアウト・専用プール隔離で律する。
+
+教訓: 共有可変状態は、アトミック化・ロック・不変化 (immutability) のいずれかで必ず律する。律していない共有は UB であり、UB はセキュリティ境界を素通りする。`memory_order` の選択は性能チューニングではなく**正しさとセキュリティの契約**であり、緩めるたびに happens-before が閉じることを再確認する。
 
 ## 結論 (Conclusions)
 
@@ -277,4 +497,12 @@ OS カーネルのスレッドスケジューリング（プリエンプティ�
 - Michael, M. M. (2004). Hazard Pointers: Safe Memory Reclamation for Lock-Free Objects. *IEEE TPDS*, 15(6), 491-504. DOI: 10.1109/TPDS.2004.8
 - McKenney, P. E., & Slingwine, J. D. (1998). Read-Copy Update: Using Execution History to Solve Concurrency Problems. *PDCS '98*.
 - Franke, H., Russell, R., & Kirkwood, M. (2002). Fuss, Futexes and Furwocks: Fast Userlevel Locking in Linux. *Ottawa Linux Symposium*, 479-495.
+- Herlihy, M., & Shavit, N. (2011). On the Nature of Progress. *OPODIS '11*, 313-328. DOI: 10.1007/978-3-642-25873-2_22
+- Herlihy, M., & Shavit, N. (2012). *The Art of Multiprocessor Programming* (Revised). Morgan Kaufmann. (進行保証の階層・lock-free/wait-free)
+- Treiber, R. K. (1986). Systems Programming: Coping with Parallelism. *IBM Research Report* RJ 5118.
+- Michael, M. M., & Scott, M. L. (1996). Simple, Fast, and Practical Non-Blocking and Blocking Concurrent Queue Algorithms. *PODC '96*, 267-275. DOI: 10.1145/248052.248106
+- McKenney, P. E., et al. (2013). User-Level Implementations of Read-Copy Update. *IEEE TPDS*, 23(2), 375-382. DOI: 10.1109/TPDS.2011.159
+- ISO/IEC 14882:2017 (C++17), §32 Atomic operations — `memory_order_consume` の使用に関する注記。
+- N4321: Towards Implementation and Use of `memory_order_consume` (2014). WG21.
 - [The Rustonomicon — Atomics](https://doc.rust-lang.org/nomicon/atomics.html) — Accessed: 2026-06-29
+- [Tokio Documentation — Runtime / Async in depth](https://tokio.rs/tokio/tutorial) — Accessed: 2026-06-29

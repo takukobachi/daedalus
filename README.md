@@ -27,6 +27,5 @@ Daedalusは、複雑なソフトウェアとハードウェアシステムの探
 daedalus/
 ├── hardware/      # ハードウェア分析
 ├── software/      # ソフトウェア分析
-├── references/    # 参考資料
-└── tools/         # ユーティリティ
+└── references/    # 参考資料
 ```
