@@ -98,7 +98,9 @@ Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]:
 | 乾燥質量 | — | ~2,080 kg | ~1,630 kg | <1,525 kg[^techtimes-raptor3] |
 | 搭載機 | Falcon 9 / Heavy | Starship 初期 | Starship V2 | Starship V3 / Super Heavy |
 
-> Raptor 2 の 300 bar は当時のあらゆる量産エンジンを超える主燃焼室圧で、RD-180（267 bar）を上回った[^ea-raptor]。Raptor 3 はさらに 350 bar へ。チャンバ圧の上昇は、同じノズルでより多くの推進剤を燃やし、推力と効率を同時に押し上げる。
+> Raptor 2 の 300 bar は当時のあらゆる量産エンジンを超える主燃焼室圧で、RD-180（267 bar）を上回った[^ceas]。Raptor 3 はさらに 350 bar へ。チャンバ圧の上昇は、同じノズルでより多くの推進剤を燃やし、推力と効率を同時に押し上げる。
+>
+> **注（Raptor 3 推力の幅）**: Raptor 3 の海面推力は、SpaceX 公表・報道で **250〜330 tf** の幅で語られている——2024年8月の SpaceX 公表は 280 tf[^spacex-raptor3]、公式 Starship V3 更新ページは 250 tf 級、V3 統合後の報道では 330 tf 級とされる[^v3]。これは開発の進行と機体統合に伴う更新の途上にあるためで、本表の 280 tf は「実証された代表値」として扱い、一意に確定した最終値ではない点に留意する。燃焼室圧（350 bar）や Isp（~350 s）はより安定して引用される。
 
 ### Merlin と Falcon 9 のクラスタ (Clustering & Engine-Out)
 
@@ -176,6 +178,8 @@ Merlin と Raptor は、同じ SpaceX の中で対照的な設計判断を体現
 [^merlin]: [SpaceX Merlin — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Merlin)（公式値を集約）— Isp 282 s(SL)/311 s(vac)、ガスジェネレータ、9基クラスタ・最大2基喪失耐性。一次値は[^f9official]を優先。Accessed: 2026-06-30.
 
 [^raptor-wiki]: [SpaceX Raptor — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) — フルフロー二段燃焼サイクル、酸素過剰／燃料過剰の2プリバーナ構成（一次資料への索引として使用）。Accessed: 2026-06-30.
+
+[^v3]: [SpaceX — Starship V3（公式アップデート）](https://www.spacex.com/updates/starship-v3) ／ 報道: [Scientific American — Watch SpaceX launch Starship V3](https://www.scientificamerican.com/article/watch-spacex-launch-starship-v3-the-tallest-and-most-powerful-rocket-yet/)。 — Raptor 3 推力の公表値の幅（海面 250〜330 tf）と V3 機体諸元。Accessed: 2026-06-30.
 
 **二次資料 (Secondary — 技術解説・報道)**
 
