@@ -7,6 +7,7 @@
 ### 基礎 (Fundamentals)
 
 - [`aircraft-engineering-fundamentals.md`](aircraft-engineering-fundamentals.md) — 航空機の基礎工学 (aircraft engineering fundamentals)：4つの力、空力（揚力/抗力）、推進（ジェット/プロペラ）、構造・材料、安定と制御、性能
+- [`orbital-mechanics.md`](orbital-mechanics.md) — 軌道力学の基礎 (orbital mechanics)：二体問題、ヴィス・ヴィヴァ式、Δv 収支、ホーマン遷移、面変更、打ち上げ損失、多段化（SpaceX 編の物理的土台）
 
 ### SpaceX
 
@@ -16,6 +17,5 @@
 
 ## 今後のトピック
 
-- 軌道力学 (orbital mechanics) — ツィオルコフスキー式、Δv 収支、ホーマン遷移
 - アビオニクス/GNC (avionics & guidance) — 冗長計算機、フォールトトレランス、誘導制御
 - 再突入と熱防護 (re-entry & TPS) — 空力加熱、耐熱タイル
