@@ -117,6 +117,26 @@ Pseudocode: language-agnostic, include complexity analysis, document assumptions
 - Store source material under `references/papers/`, `references/books/`, or
   `references/articles/` (creating the subdirectory as needed).
 
+### Source Hierarchy & Conflicts
+
+Prefer primary, verifiable sources, and reconcile disagreements honestly rather
+than picking a single number.
+
+- **Priority (high → low)**:
+  1. **Primary / peer-reviewed** — official datasheets & specifications, standards
+     bodies (ISO, SAE, IEEE, RFC, …), peer-reviewed papers, first-party measurements.
+  2. **Reputable secondary** — specialist press, expert technical explainers.
+  3. **Tertiary** — wikis, forums, blogs. Use only to *discover* sources; cite the
+     primary source they point to, not the wiki/blog itself.
+- **Official ≠ neutral**: first-party material is authoritative for a vendor's own
+  facts but is also marketing. Distinguish *target / spec* figures from
+  *demonstrated / as-built* ones, and label which a number is.
+- **Independent verification can outrank authority**: a third-party measurement or
+  teardown may be stronger evidence than a vendor's claim.
+- **On conflict**: take the higher tier. When same-tier sources disagree, or a
+  fast-moving figure is in flux, do not assert one value — give the range, the
+  access date, and the target-vs-demonstrated distinction.
+
 ### Script Header
 
 ```python
@@ -139,6 +159,13 @@ Date: {YYYY-MM-DD}
   record sources per the Citations standard.
 - Evidence is required for every claim — link to the source, file/line, or
   datasheet that supports it.
+- Match the source to the claim: enduring principles → textbooks / peer-reviewed /
+  standards; product-specific figures → first-party official cross-checked with an
+  independent source; time-sensitive status → dated reporting framed "as of
+  <date>".
+- Triangulate load-bearing quantitative claims across at least two independent
+  sources, ideally crossing tiers; if they cannot be reconciled, report the
+  uncertainty per **Source Hierarchy & Conflicts**.
 
 ---
 

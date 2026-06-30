@@ -88,6 +88,33 @@ Store source material under `references/papers/`, `references/books/`, or
 For web or time-sensitive research, verify current facts before writing final
 claims.
 
+### Source Priority and Conflicts
+
+Prefer primary, verifiable sources, and reconcile disagreements honestly instead
+of choosing a single number.
+
+- Priority, highest to lowest:
+  1. Primary or peer-reviewed: official datasheets and specifications, standards
+     bodies (ISO, SAE, IEEE, RFC, and similar), peer-reviewed papers, and
+     first-party measurements.
+  2. Reputable secondary: specialist press and expert technical explainers.
+  3. Tertiary: wikis, forums, and blogs. Use these only to find sources; cite the
+     primary source they reference, not the wiki or blog itself.
+- Official material is authoritative for a vendor's own facts but is also
+  marketing. Separate target or specification figures from demonstrated or
+  as-built figures, and say which one a number is.
+- An independent measurement or teardown can be stronger evidence than a
+  first-party claim.
+- When sources conflict, take the higher tier. When same-tier sources disagree, or
+  a figure is still changing, do not assert one value: give the range, the access
+  date, and the target-versus-demonstrated distinction.
+
+Match the source to the kind of claim: enduring principles to textbooks,
+peer-reviewed work, or standards; product-specific figures to first-party sources
+cross-checked against an independent one; time-sensitive status to dated reporting
+framed as "as of <date>". Triangulate load-bearing quantitative claims across at
+least two independent sources, ideally from different tiers.
+
 ## Diagrams
 
 - Prefer Mermaid inline diagrams for architecture, sequence, and state diagrams.
