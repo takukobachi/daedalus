@@ -119,5 +119,7 @@
 
 ### 次の接続先 (Related Topics)
 
+- `automotive-ethernet-tsn.md` — CAN の外側：車載 Ethernet・TSN・FlexRay・LIN・SOME/IP（本書の対）。
+- `functional-safety-iso26262.md` — 無認証・分離とゲートウェイが支える安全設計。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ECU 内部のデバイス制御（MMIO/DMA/割り込み）。
 - `../cpu-architecture/` — ゾーン型 HPC が要求する計算・並行性・仮想化の基礎。
