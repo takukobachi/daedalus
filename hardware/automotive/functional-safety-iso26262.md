@@ -116,5 +116,6 @@ S・E・C の組み合わせから **ASIL (Automotive Safety Integrity Level)** 
 ### 次の接続先 (Related Topics)
 
 - `in-vehicle-networks.md` — CAN の無認証問題と SecOC、安全への影響。
+- `cybersecurity-iso21434.md` — TARA↔HARA、安全と保安の統合（ISO 21434 × 26262）。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ウォッチドッグ・診断・MPU による隔離の実装基盤。
 - `../cpu-architecture/virtual-memory-mmu.md` — FFI を支えるメモリ保護 (MMU/MPU)。

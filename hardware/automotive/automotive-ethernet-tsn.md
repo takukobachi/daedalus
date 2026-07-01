@@ -132,6 +132,7 @@ CAN の通信は「信号を周期的にブロードキャストする」信号�
 ### 次の接続先 (Related Topics)
 
 - `in-vehicle-networks.md` — CAN の非破壊調停・無認証問題。本書はその対（CAN の外側）。
+- `cybersecurity-iso21434.md` — MACsec・gPTP 同期の保護、IT 化した攻撃面への対策。
 - `functional-safety-iso26262.md` — 決定論・冗長 (TSN の TAS/FRER) が支える安全設計。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — MAC/DMA によるパケット送受信の実装基盤。
 - `../cpu-architecture/` — ゾーン型 HPC が要求する計算・並行性・仮想化。
