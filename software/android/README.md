@@ -10,10 +10,12 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
 - `platform-architecture.md` — プラットフォームアーキテクチャ：Zygote と COW 分岐、
   Binder IPC（ケイパビリティ・呼び出し元保証）、ART（AOT/JIT ハイブリッド・並行コピー GC）、
   lmkd と「プロセス＝キャッシュ」、HAL/Treble/APEX、Verified Boot、多層サンドボックス
+- `binder-internals.md` — Binder 深掘り：ドライバのオブジェクトモデル (node/ref) と
+  ハンドル翻訳、1コピー転送と mmap バッファ、トランザクションスタックと再入、oneway の
+  順序・背圧、参照カウントと linkToDeath、3ドメイン (binder/hwbinder/vndbinder)、Bad Binder
 
 ## 今後のテーマ候補
 
-- Binder 深掘り (Binder internals) — ドライバ実装、スレッドプール、トランザクション詳細
 - ART ランタイム深掘り (ART internals) — DEX 形式、コンパイラ IR、GC の実装詳細
 - グラフィックスパイプライン (graphics) — SurfaceFlinger, BufferQueue, Vulkan, フレームペーシング
 - Android Automotive OS — 車載への展開（`../../hardware/automotive/` との合流点）

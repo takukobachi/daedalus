@@ -18,10 +18,11 @@
   トランザクション, 分離レベル）。`hardware/hw-sw-interface/storage-nvm-interface.md` の上位層。
 - `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
   Verified Boot）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
+- `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
+  `distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
 
 ## 今後のテーマ候補
 
-- ネットワーキングとプロトコル (networking) — TCP/IP, TLS, HTTP/2/3・QUIC
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
 - コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
