@@ -15,7 +15,10 @@
 - [`spacex-reusability.md`](spacex-reusability.md) — 再使用性の工学 (reusability)：Falcon 9 の着陸シーケンス、ホバスラング、グリッドフィン、RTLS/ASDS、再使用の経済性
 - [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md) — Starship / Super Heavy：完全再使用、ステンレス鋼、33基クラスタ、Mechazilla 空中キャッチ、飛行試験史
 
+### アビオニクス (Avionics)
+
+- [`avionics-gnc.md`](avionics-gnc.md) — アビオニクスと GNC (avionics & GNC)：GNC ループ（航法/誘導/制御）、冗長計算機とフォールトトレランス（Shuttle・777・A320・Falcon 9）、Byzantine 障害、凸最適化着陸誘導、航空宇宙バス (1553/AFDX)、Apollo AGC
+
 ## 今後のトピック
 
-- アビオニクス/GNC (avionics & guidance) — 冗長計算機、フォールトトレランス、誘導制御
 - 再突入と熱防護 (re-entry & TPS) — 空力加熱、耐熱タイル

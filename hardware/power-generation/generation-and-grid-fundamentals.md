@@ -167,6 +167,26 @@ graph LR
 - **グリッドフォーミング (grid-forming)** インバータは自ら電圧源として振る舞い、同期機を模擬して周波数・電圧の基準を提供する。慣性の能動的合成（**synthetic / virtual inertia**）もここに含まれる。
 - 重要な転換点は、**慣性という物理現象が、制御アルゴリズムとソフトウェア設定の対象に置き換わる**ことである。これは本リポジトリが繰り返し扱う「物理量がソフトウェアの制御点に集約される」構造の、系統スケールでの例といえる。
 
+### 実事例: インバータ主体系統の停電に学ぶ (Case Studies)
+
+インバータ大量導入下の系統で実際に何が壊れるかは、2つの大停電が具体的に示している。共通する教訓は「**故障モードが機械の物理から、制御ソフトの設定値と協調へ移った**」ことである。
+
+#### 南オーストラリア・ブラックシステム (2016-09-28)
+
+- 暴風で送電線が連続的に故障 → 電圧擾乱が短時間に繰り返し発生。
+- 複数の風力発電所で、**フォールトライドスルー (fault ride-through) の保護設定**——「一定回数以上の電圧擾乱で出力を抑制する」というソフトウェアパラメータ——が作動し、合計約 456 MW が数秒で脱落した。
+- 供給不足分が州間連系線 (Heywood) に集中して過負荷保護でトリップ → 系統分離。低慣性の州内系統では RoCoF が急峻すぎ、負荷遮断 (UFLS) が間に合わず全系崩壊 (black system) に至った。
+- 教訓: 系統を落としたのは風車の機械でも嵐そのものでもなく、**インバータ制御ファームウェアの設定値**だった。運用者 (AEMO) はこの設定の存在を事前に把握していなかった——分散した制御ソフトのパラメータが系統規模の単一障害点になりうる（AEMO 最終報告書に基づく。設定は事後に変更され、同種擾乱への耐性が確認されている）。
+
+#### イベリア半島大停電 (2025-04-28)
+
+- スペイン・ポルトガル全域が停電し、復旧に 12〜16 時間を要した欧州最大級の事象。発生時、系統はインバータ電源（太陽光中心）の比率が高い状態だった。
+- ENTSO-E 専門家パネルの最終報告 (2026-03) は、**振動現象（0.2 Hz の地域間振動・0.63 Hz の局所振動）への対応と、無効電力・電圧制御の不備**を軸とする複合要因を挙げた: 電圧上昇の制御に失敗 → **過電圧で発電機が連鎖的に解列** → 秒オーダで崩壊し欧州大陸系統から分離。
+- 注目すべきは報告の結論である: **「慣性が著しく高くても、この事象の進行では同期喪失は避けられなかった」**——直後に広く言われた「慣性不足が原因」という見立てを、最終報告は否定した。根本原因は慣性でも地域間振動でもなく、**電圧・無効電力制御の設計と協調の不足**に置かれている。
+- 教訓: インバータ主体系統の課題を「慣性」に単純化してはならない。同期機が物理的副産物として供給していたのは慣性だけでなく**電圧支持（無効電力）**でもあり（前節の「系統の強さ」）、後者の計画的な代替こそが決定的だった。
+
+2つの事例はいずれも、系統の信頼性が「回転質量の物理」から「**多数の分散したパワーエレクトロニクス制御の設定・協調・検証**」へ移りつつあることを示す。これは車載や航空宇宙が辿った「機械の故障からソフトウェア起因の系統故障へ」という重心移動（[`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) の systematic failure）の、系統スケール版である。
+
 ### 物理からソフトウェアへ：制御点の集約 (Convergence onto Control Software)
 
 発電・系統の制御点は最終的に制御システムの設定値・指令に落ちる。代表的な階層は以下の通り。
@@ -210,3 +230,5 @@ graph LR
 - [IEEE/NERC — Frequency Response and Frequency Bias Setting (NERC Standard BAL-003)](https://www.nerc.com/pa/Stand/Pages/BAL-003-Frequency-Response-and-Frequency-Bias-Setting.aspx) — Accessed: 2026-06-29
 - [ENTSO-E — Inertia and Rate of Change of Frequency (RoCoF)](https://www.entsoe.eu/) — Accessed: 2026-06-29
 - [U.S.–Canada Power System Outage Task Force (2004). Final Report on the August 14, 2003 Blackout](https://www.energy.gov/oe/articles/blackout-2003-final-report-august-14-2003-blackout-united-states-and-canada-causes-and) — Accessed: 2026-06-29
+- AEMO (2017). *Black System South Australia 28 September 2016 — Final Integrated Report*. Australian Energy Market Operator. — 風力のライドスルー設定・系統分離・RoCoF の事象分析（aemo.com.au で公開）。
+- [ENTSO-E (2026). Expert Panel Final Report on the 28 April 2025 Iberian Blackout](https://www.entsoe.eu/publications/blackout/28-april-2025-iberian-blackout/) — Accessed: 2026-07-02。電圧・無効電力制御を軸とする複合要因の公式調査。慣性は根本原因でないと結論。

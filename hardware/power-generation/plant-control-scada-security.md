@@ -105,6 +105,19 @@ IEC 61850 は変電所自動化を標準化し、機器を**論理ノード (Log
 - **監視制御 (SCADA)**: ポーリング周期は秒オーダ。広域のテレメトリを集約する。
 - この階層により、**速い決定的制御は下位（フィールド近く）で閉じ**、上位の不確定な通信に依存しない。下位が自律的に安全を保てる設計が原則である。
 
+### 広域監視と時刻同期 — PMU / シンクロフェーザ (WAMS)
+
+SCADA のポーリング（秒オーダ・タイムスタンプは粗い）では、系統の**動的な現象**——地域間振動、外乱直後の位相角の開き——は見えない。これを可視化するのが **PMU (Phasor Measurement Unit, IEEE/IEC 60255-118-1)** である:
+
+- 各変電所の PMU が電圧・電流の**フェーザ（振幅と位相角）**を毎秒 30〜60 サンプルで測定し、**GPS 同期のタイムスタンプ**を付けて中央 (PDC: Phasor Data Concentrator) へ送る。
+- 地理的に何百 km 離れた測定点の**位相角を直接比較できる**のは、全点がマイクロ秒精度で同じ時刻を共有しているからである。これにより系統の「動揺」がリアルタイムで見える（**WAMS: Wide Area Monitoring System**）。2025 年のイベリア半島大停電の調査で 0.2 Hz の地域間振動を跡付けたのはこの計測層である（[`generation-and-grid-fundamentals.md`](generation-and-grid-fundamentals.md) の事例参照）。
+
+ここで生まれる新しい依存が**時刻同期そのもの**である:
+
+- 変電所の時刻源は GNSS (GPS) 受信機が主で、局内配布は IRIG-B や **PTP (IEEE 1588, power profile)** による。
+- **GNSS は微弱な無認証電波**であり、妨害 (jamming) や偽装 (spoofing) で PMU のタイムスタンプ＝位相角測定が汚染されうる。位相角の誤りは監視・保護・状態推定への誤入力になる。
+- 対策: 複数時刻源（GNSS 複数系・地上配信・原子時計ホールドオーバ）、受信機側の異常検知、そして「時刻を単一障害点にしない」設計。時刻同期は決定性通信 (GOOSE/SV) の前提でもあるため、**時刻が OT の攻撃面の一部**になったことは変電所設計の構造的変化である。
+
 ### 安全計装系 (SIS) と多重防護
 
 ```
@@ -164,3 +177,5 @@ IEC 61850 は変電所自動化を標準化し、機器を**論理ノード (Log
 - [E-ISAC & SANS (2016). Analysis of the Cyber Attack on the Ukrainian Power Grid (TLP: White)](https://www.nerc.com/pa/CI/ESISAC/Documents/E-ISAC_SANS_Ukraine_DUC_18Mar2016.pdf) — Accessed: 2026-06-29
 - [Dragos (2017). CRASHOVERRIDE: Analysis of the Threat to Electric Grid Operations](https://www.dragos.com/resources/) — Accessed: 2026-06-29
 - [MITRE ATT&CK for ICS](https://attack.mitre.org/matrices/ics/) — Accessed: 2026-06-29
+- IEEE/IEC 60255-118-1:2018, *Measuring relays and protection equipment — Part 118-1: Synchrophasor for power systems — Measurements*（旧 IEEE C37.118.1）. — PMU 測定の規範。
+- IEEE 1588 (PTP) Power Profile (IEEE C37.238). — 変電所内時刻同期の規範。

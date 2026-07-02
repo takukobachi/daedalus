@@ -213,3 +213,15 @@ OoO エンジンは分岐の結果を待たず、予測した経路を**投機�
 - [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — メモリ遅延がパイプライン／OoO を止める背景。ILP の最大の制約要因。
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 制御ハザードと投機実行の深掘り（分岐予測器・Spectre 系攻撃面）。
 - [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — OoO・ストアバッファがメモリ順序に与える影響と並行制御。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 論文・教科書)**
+
+- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — パイプライン (Appendix C)・ILP とアウトオブオーダ実行 (Ch. 3) の標準教科書。
+- Tomasulo, R. M. (1967). An Efficient Algorithm for Exploiting Multiple Arithmetic Units. *IBM Journal of Research and Development*, 11(1), 25–33. DOI: 10.1147/rd.111.0025 — 動的スケジューリング（リザベーションステーション・リネーミングの原型）の原典。
+- Smith, J. E., & Sohi, G. S. (1995). The Microarchitecture of Superscalar Processors. *Proceedings of the IEEE*, 83(12), 1609–1624. DOI: 10.1109/5.476078 — スーパースカラ構成要素の古典的整理。
+
+**二次資料 (Secondary)**
+
+- Fog, A. *The Microarchitecture of Intel, AMD and VIA CPUs*. — [agner.org/optimize](https://www.agner.org/optimize/microarchitecture.pdf) — Accessed: 2026-07-02。実 CPU のパイプライン幅・ポート構成・実測レイテンシ。

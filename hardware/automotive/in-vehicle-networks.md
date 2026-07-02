@@ -64,6 +64,7 @@
 
 - **アドレスがない**: フレームは宛先ではなく**内容を表す ID** を持ち、全ノードへブロードキャストされる。各 ECU は受信フィルタで必要な ID だけ拾う。
 - **ID = 優先度**: ID の数値が小さいほど高優先度。
+- **拡張フォーマット (CAN 2.0B)**: 29bit ID 版もあり、商用車の J1939 はこの 29bit に PGN（パラメータグループ番号）と送信元アドレスを埋め込む。
 
 ### 調停 (Arbitration) — CAN の核心
 
@@ -77,9 +78,31 @@
 
 - **差動信号 (differential signaling)**: CAN_H / CAN_L の電位差で 0/1 を表現。同相ノイズに強く、車載の過酷な電磁環境に適する。
 - **多重の誤り検出**: CRC、ビットスタッフィング、フレームチェック、ACK、ビットモニタリング。検出時はエラーフレームで全ノードに通知し再送。
-- **エラー閉じ込め (fault confinement)**: エラーカウンタで故障ノードを Error-Active → Passive → **Bus-Off** と段階的に隔離し、1つの故障がバス全体を巻き込まないようにする。
+- **エラー閉じ込め (fault confinement)**: 各ノードが送信エラーカウンタ (TEC) と受信エラーカウンタ (REC) を持ち、故障ノードを段階的に隔離する。
+
+  | 状態 | 条件 | 振る舞い |
+  |---|---|---|
+  | **Error-Active** | TEC, REC < 128 | 通常動作。エラー検出時はアクティブエラーフラグ（ドミナント）で全ノードに通知 |
+  | **Error-Passive** | TEC または REC ≥ 128 | エラーフラグはリセッシブ（他を邪魔しない）。連続送信に待機時間が課される |
+  | **Bus-Off** | TEC > 255 | 送信禁止。バスから切り離される |
+
+  Bus-Off からの復帰には「11連続リセッシブビットを128回」観測する必要がある（≒バスが十分アイドルであることの確認）。**自己申告制の隔離**であり、故障したノード自身が正しくカウントすることを前提とする点は覚えておく価値がある（悪意あるノードには効かない——セキュリティ考察参照）。
 
 ## 技術詳細 (Technical Details)
+
+### CAN FD と CAN XL — 帯域不足への応答
+
+クラシック CAN の 1 Mbps / 8 バイトは、ソフト更新 (OTA) や高機能 ECU 間通信には足りない。互換性を保ちながら拡張したのが CAN FD、Ethernet との間を埋めるのが CAN XL である。
+
+| | クラシック CAN | **CAN FD** (ISO 11898-1) | **CAN XL** (CiA 610) |
+|---|---|---|---|
+| ペイロード | 0–8 B | 0–64 B | 1–2048 B |
+| データ部速度 | ≤ 1 Mbps | 2–8 Mbps (典型) | ~10–20 Mbps (SIC XL) |
+| CRC | 15 bit | 17/21 bit（長ペイロード対応） | 32 bit |
+| 特記 | — | リモートフレーム廃止 | Ethernet フレームのトンネリング可 |
+
+- **CAN FD の核心は BRS (Bit Rate Switch)**: 調停フェーズは全ノード参加のため従来速度のまま、**調停が決着した後のデータフェーズだけ高速化**する。調停の仕組み（伝搬遅延がビット時間に収まる必要）を壊さずに帯域を稼ぐ、制約からの逆算設計。
+- 移行の現実: FD 非対応ノードは FD フレームをエラーとして扱うため、**バス単位での移行**が必要。ゾーン化 (`automotive-ethernet-tsn.md`) と並行して進む。
 
 ### ネットワークアーキテクチャの進化
 
@@ -90,17 +113,40 @@
 ### 上位プロトコルとソフト基盤
 
 - **CAN は L1/L2 のみ**を定義する。実用では上位プロトコルが乗る: 車載診断の **UDS (ISO 14229)** / **OBD-II**、組込み制御の **CANopen**、商用車の **J1939**。
+- **ISO-TP (ISO 15765-2)**: 8バイト超のデータ（診断応答、ファーム転送）を CAN に載せるためのセグメント化・フロー制御層。First Frame → Flow Control → Consecutive Frames の順で、受信側が送信ペース (STmin, block size) を指定する。
+- **UDS の代表サービス**（診断・書き換えの実体。攻撃面としても重要）:
+
+  | SID | サービス | 用途 |
+  |---|---|---|
+  | `0x10` | DiagnosticSessionControl | 診断セッション切替（拡張・プログラミング） |
+  | `0x27` | SecurityAccess | シード・キー方式のアンロック（実装が弱いと突破される） |
+  | `0x22` / `0x2E` | ReadData / WriteDataByIdentifier | パラメータ読み書き |
+  | `0x19` / `0x14` | ReadDTC / ClearDTC | 故障コードの読み出し・消去 |
+  | `0x31` | RoutineControl | 自己診断・キャリブレーション等の起動 |
+  | `0x34`–`0x37` | RequestDownload〜TransferExit | ECU リプログラミング（ファーム書き換え） |
+
+  近年は Ethernet 上の **DoIP (ISO 13400)** でも同じ UDS を運ぶ（`automotive-ethernet-tsn.md`）。
 - **AUTOSAR**: ECU ソフトの標準アーキテクチャ。通信スタック・OS・基本ソフト (BSW) を抽象化し、アプリを SWC として分離。Adaptive AUTOSAR は Ethernet/SOME-IP と高性能 SoC を前提とする。
 
 ### 物理的制約（ソフトで閉じない部分）
 
-- **ビットタイミング**: 全ノードが同じビットレートと同期パラメータ（同期セグメント、サンプル点）を共有する必要がある。設定ミスは即通信不能。
+- **ビットタイミング**: 1ビットは時間量子 (time quantum) 単位で SYNC_SEG / PROP_SEG / PHASE_SEG1 / PHASE_SEG2 に分割され、PHASE_SEG1 と 2 の境界が**サンプル点**（典型 75–87.5%）になる。全ノードがビットレートとこれらのパラメータを共有し、エッジ検出時に SJW (synchronization jump width) の範囲で再同期する。設定ミスは即通信不能。
 - **終端抵抗 (termination)**: CAN バス両端に 120Ω を入れて反射を抑える。欠落・過多はエラーの原因。
-- **バス長 vs 速度**: 信号伝搬遅延のため、高ビットレートほどバスを短くする必要がある（調停がビット時間内に全ノードへ伝わる必要があるため）。
+- **バス長 vs 速度**: 調停が成立するには、信号がバス全体を往復して1ビット時間内に収まる必要がある。ゆえに高ビットレートほどバスを短くする（CiA の目安値）:
+
+  | ビットレート | 最大バス長の目安 |
+  |---|---|
+  | 1 Mbps | ~40 m |
+  | 500 kbps | ~100 m |
+  | 250 kbps | ~250 m |
+  | 125 kbps | ~500 m |
+
+  乗用車の制御系で 500 kbps が長く定番だったのは、この物理制約と車体サイズの均衡点だからである。
 
 ## セキュリティ考察 (Security Considerations)
 
-- **認証の欠如が最大の弱点**: CAN は設計上、送信者を認証しない。バスに物理アクセスできれば任意 ECU になりすまし、ブレーキやステアリングへ偽メッセージを注入しうる（公開された車両遠隔操作研究が示した通り）。
+- **認証の欠如が最大の弱点**: CAN は設計上、送信者を認証しない。バスに物理アクセスできれば任意 ECU になりすまし、ブレーキやステアリングへ偽メッセージを注入しうる。Koscher らの実車解析 (2010) と Miller & Valasek の Jeep 遠隔操作 (2015) が、この弱点が物理アクセスなしでも（テレマティクス経由で）現実の攻撃になることを実証した（参考文献参照）。
+- **エラー処理の悪用**: 上記の fault confinement は自己申告制のため、悪意あるノードが意図的にエラーを誘発して**正規 ECU を Bus-Off に追い込む** DoS（bus-off attack）が成立する。プロトコル層では防げず、IDS・物理層監視で検出する。
 - **攻撃面の拡大**: インフォテインメント、テレマティクス (telematics)、Wi-Fi/Bluetooth、OBD-II ポートが外部入口となり、そこからゲートウェイ越しに制御系バスへ到達する経路がリスク。
 - **対策**:
   - **ネットワーク分離・ゲートウェイ**: 制御系バスと外部接続系を分離し、ゲートウェイでフィルタ・レート制限。
@@ -124,3 +170,17 @@
 - `functional-safety-iso26262.md` — 無認証・分離とゲートウェイが支える安全設計。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ECU 内部のデバイス制御（MMIO/DMA/割り込み）。
 - `../cpu-architecture/` — ゾーン型 HPC が要求する計算・並行性・仮想化の基礎。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 標準・仕様・査読論文)**
+
+- ISO 11898-1:2024, *Road vehicles — Controller area network (CAN) — Part 1: Data link layer and physical coding sublayer*. — [ISO 11898-1:2024](https://www.iso.org/standard/86384.html) — Accessed: 2026-07-02。フレーム構造・調停・エラー処理・CAN FD の規範。
+- Robert Bosch GmbH (1991). *CAN Specification Version 2.0*. — クラシック CAN（11/29bit ID）の原典仕様。
+- ISO 14229-1, *Road vehicles — Unified diagnostic services (UDS)* ／ ISO 15765-2 (ISO-TP) ／ ISO 13400 (DoIP)。診断・転送層の規範。
+- Koscher, K. et al. (2010). Experimental Security Analysis of a Modern Automobile. *IEEE Symposium on Security and Privacy*, pp. 447–462. DOI: 10.1109/SP.2010.34 — [PDF](http://www.autosec.org/pubs/cars-oakland2010.pdf) — Accessed: 2026-07-02。
+- Miller, C., & Valasek, C. (2015). *Remote Exploitation of an Unaltered Passenger Vehicle*. — [PDF](http://illmatics.com/Remote%20Car%20Hacking.pdf) — Accessed: 2026-07-02。Jeep 遠隔操作研究の一次報告。
+
+**二次資料 (Secondary)**
+
+- CAN in Automation (CiA), *CAN knowledge pages*. — [can-cia.org](https://www.can-cia.org/can-knowledge) — Accessed: 2026-07-02。ビットタイミング、バス長の目安、CAN FD/XL の解説。標準化団体による技術解説。

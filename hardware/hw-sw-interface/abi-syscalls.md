@@ -158,3 +158,11 @@ Linux カーネルは「ユーザ空間を壊さない」を原則とし、sysca
 - `../cpu-architecture/isa-riscv-intro.md` — レジスタと命令、特権レベルの基礎。
 - `../cpu-architecture/virtual-memory-mmu.md` — KPTI と越境コスト、メモリ保護。
 - `mmio-dma-interrupts.md` — もう一つの境界（CPU とデバイス）との対比。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・公式ドキュメント)**
+
+- *System V Application Binary Interface — AMD64 Architecture Processor Supplement* (x86-64 psABI). — [gitlab.com/x86-psABIs/x86-64-ABI](https://gitlab.com/x86-psABIs/x86-64-ABI) — Accessed: 2026-07-02。x86-64 の呼び出し規約・スタックフレーム・データレイアウトの規範。
+- *RISC-V ELF psABI Specification*. — [riscv-non-isa/riscv-elf-psabi-doc](https://github.com/riscv-non-isa/riscv-elf-psabi-doc) — Accessed: 2026-07-02。RISC-V の呼び出し規約の規範。
+- Linux man-pages, *syscall(2)* — アーキテクチャ別のシステムコール呼び出し規約（レジスタ対応表）。 — [man7.org](https://man7.org/linux/man-pages/man2/syscall.2.html) — Accessed: 2026-07-02。

@@ -177,3 +177,16 @@ intrinsics は制御を握れる反面、**ISA ごとに書き直し**（SSE/AVX
 
 - `cache-memory-hierarchy.md` — SIMD の実効性能を律速する帯域・局所性・データ配置 (AoS/SoA)・アライメント。
 - `memory-ordering-atomics.md` — ベクタロード／ストアと non-temporal store のメモリ順序、引き裂きと並行性。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・論文)**
+
+- Flynn, M. J. (1966). Very High-Speed Computing Systems. *Proceedings of the IEEE*, 54(12), 1901–1909. DOI: 10.1109/PROC.1966.5273 — SIMD 分類 (Flynn's taxonomy) の原典。
+- Intel. *Intel Intrinsics Guide*. — [intel.com intrinsics guide](https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html) — Accessed: 2026-07-02。SSE/AVX/AVX-512 intrinsics の一次リファレンス。
+- *RISC-V "V" Vector Extension Specification*. — [riscv/riscv-v-spec](https://github.com/riscv/riscv-v-spec) — Accessed: 2026-07-02。ベクタ長非依存設計の規範。
+- Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487) — NEON / SVE・SVE2 の規範。 — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-07-02。
+
+**二次資料 (Secondary)**
+
+- Intel. *Intel 64 and IA-32 Architectures Optimization Reference Manual*. — ベクトル化・アライメント・AVX-512 の周波数挙動を含むチューニング指針（intel.com で配布）。

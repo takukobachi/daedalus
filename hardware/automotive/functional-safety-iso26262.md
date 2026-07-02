@@ -66,9 +66,33 @@ S・E・C の組み合わせから **ASIL (Automotive Safety Integrity Level)** 
 
 要点: **ASIL が高いほど、要求される手法・冗長・検証の厳格さが上がる**。リスクに応じて開発リソースを配分する仕組み。
 
+#### ASIL 決定の仕組み
+
+ISO 26262-3 の決定表は、実質的に **S・E・C の段階の合計**で読める:
+
+- **S3 + E4 + C3（合計 10）のときだけ ASIL D**。
+- どれか1軸が1段下がるごとに、ASIL も1段下がる（合計 9 → C、8 → B、7 → A、6 以下 → QM）。
+- S0（無傷）・E0（起こりえない）・C0（一般に回避可能）のいずれかなら ASIL 対象外。
+
+| 例 | S | E | C | ASIL |
+|---|---|---|---|---|
+| 高速走行中の意図しない全制動 | S3（致命的） | E4（高速走行は日常） | C3（運転者は回避不能） | **D** |
+| 駐車支援中の誤操舵（低速） | S1 | E3 | C2 | QM〜A 程度 |
+| 夜間のみ使うランプの不点灯 | S2 | E2 | C2 | QM〜A 程度 |
+
+この構造ゆえ、**「その危険事象が起こる運転状況をどう定義するか」（E の見積り）が ASIL を大きく左右する**。HARA が安全設計の最上流であり、ここでの判断ミスは下流全体を誤らせる。
+
 ### ASIL 分解 (ASIL Decomposition)
 
-高 ASIL の要求を、独立した複数の要素に分割して各々の ASIL を下げる手法。例: ASIL D を、十分に独立した2系統の ASIL B(D) に分解。**独立性 (independence) と冗長 (redundancy)** が前提で、共通原因故障 (common cause failure) があると成立しない。
+高 ASIL の要求を、独立した複数の要素に分割して各々の ASIL を下げる手法。ISO 26262-9 が許す分解スキームは決まっている:
+
+| 元の ASIL | 許される分解（いずれか） |
+|---|---|
+| **D** | C(D) + A(D) ／ B(D) + B(D) ／ D(D) + QM(D) |
+| **C** | B(C) + A(C) ／ C(C) + QM(C) |
+| **B** | A(B) + A(B) ／ B(B) + QM(B) |
+
+括弧内は元の ASIL を示す（例: `B(D)` = ASIL D 由来の要求を担う ASIL B 要素）。**独立性 (independence) と冗長 (redundancy)** が前提で、電源・クロック・筐体・開発チームの共有などによる共通原因故障 (common cause failure) があると成立しない。独立性の主張には共通原因分析 (dependent failure analysis) の裏づけが要る。
 
 ## 技術詳細 (Technical Details)
 
@@ -76,7 +100,15 @@ S・E・C の組み合わせから **ASIL (Automotive Safety Integrity Level)** 
 
 確率的に起きる物理故障。指標と機構:
 
-- **指標**: FIT (Failure In Time, 10⁹時間あたり故障数)、SPFM (単一点故障メトリック)、LFM (潜在故障メトリック)、PMHF (確率的ハードウェアメトリック)。ASIL D は最も厳しい数値目標を要求。
+- **指標**: FIT (Failure In Time, 10⁹時間あたり故障数)、SPFM (単一点故障メトリック)、LFM (潜在故障メトリック)、PMHF (確率的ハードウェアメトリック)。ISO 26262-5 が ASIL ごとの数値目標を定める:
+
+  | 指標 | 意味 | ASIL B | ASIL C | ASIL D |
+  |---|---|---|---|---|
+  | **SPFM** | 単一点故障が安全目標を侵す割合の低さ | ≥ 90% | ≥ 97% | ≥ 99% |
+  | **LFM** | 潜在（多重点）故障の検出・防御率 | ≥ 60% | ≥ 80% | ≥ 90% |
+  | **PMHF** | 安全目標侵害の時間あたり確率 | < 10⁻⁷/h | < 10⁻⁷/h | < 10⁻⁸/h |
+
+  ASIL D の PMHF < 10⁻⁸/h は **10 FIT** に相当する。部品単体の故障率がこれを上回る以上、**目標は素子の高信頼化だけでは達成できず、診断網羅率（検出して安全状態へ逃がす能力）で稼ぐ**——これが冗長・診断機構がハード設計に必ず入る定量的な理由である。
 - **冗長化 (redundancy)**: 二重化・多数決 (TMR, Triple Modular Redundancy)、ロックステップコア (lockstep core, 2コアが同じ計算をし不一致を検出)。
 - **診断 (diagnostics)**: ウォッチドッグ (watchdog timer)、ECC メモリ、CRC、BIST (Built-In Self Test)、センサの妥当性チェック。診断網羅率 (diagnostic coverage) が SPFM/LFM を左右する。
 - **フェイルセーフ / フェイルオペレーショナル**:
@@ -91,6 +123,25 @@ S・E・C の組み合わせから **ASIL (Automotive Safety Integrity Level)** 
 - **検証手法**: 要求トレーサビリティ、レビュー、静的解析、単体/統合テスト、構造網羅率 (MC/DC など ASIL に応じた基準)、フォーマル検証。
 - **フリーダム・フロム・インターフェアレンス (FFI, Freedom From Interference)**: 異 ASIL の機能が同一 ECU/SoC に同居するとき、低 ASIL の不具合が高 ASIL を侵さないよう、メモリ保護 (`virtual-memory-mmu.md` の MMU/MPU)・時間分割 (time partitioning)・通信分離で隔離する。混載 (mixed criticality) の要。
 - **ツール認定 (tool qualification)**: コンパイラ等のツール自体の信頼性も評価対象。
+
+### 実例: E-Gas 3レベル監視コンセプト (3-Level Monitoring Concept)
+
+電子スロットル制御のために業界ワーキンググループ (EGAS Workgroup) が標準化した監視アーキテクチャで、「診断＋独立監視＋独立遮断経路」を1つの MCU 周りに構成する定石として、スロットル以外（モータ制御、ブレーキ等）にも広く転用されている。
+
+```
+  Level 1: 機能         — トルク要求の演算・アクチュエータ制御（本来の仕事）
+  Level 2: 機能監視     — 同一 MCU 内の独立ソフトが L1 の出力を妥当性検査
+                          (plausibility check)。メモリ・実行時間を L1 から隔離 (FFI)
+  Level 3: 制御器監視   — 外部の監視 IC が MCU 自体を質問-応答 (challenge-response)
+                          ウォッチドッグで監視。MCU が正しく答えられなければ、
+                          MCU を経由しない独立経路でアクチュエータを遮断
+```
+
+要点は **Level 3 が「監視対象と同じ計算機を信用しない」**こと。L1/L2 は MCU 自身の故障（暴走、クロック異常）と運命を共にするため、最後の砦は外部ハードウェアに置く。単純なウォッチドッグ（`../hw-sw-interface/mmio-dma-interrupts.md`）との違いは、質問-応答により「タイマを蹴るコードだけが生きている」状態を検出できる点にある。
+
+### SEooC — 文脈から切り離した安全要素 (Safety Element out of Context)
+
+MCU・OS・ミドルウェアのような汎用部品は、最終的にどの車両のどの機能に載るか分からないまま開発される。ISO 26262 はこれを **SEooC** として扱い、**「想定する使われ方 (assumptions of use)」を明文化した上で開発し、統合側がその想定と実際の一致を検証する**枠組みを与える。半導体ベンダが「ASIL D ready」と称する MCU（ロックステップコア・ECC・BIST 内蔵）は SEooC の典型で、想定条件（例: 外部ウォッチドッグの併用、安全マニュアルに従った初期化）を満たして初めて ASIL D システムの部品になれる。
 
 ### 関連標準
 
@@ -119,3 +170,14 @@ S・E・C の組み合わせから **ASIL (Automotive Safety Integrity Level)** 
 - `cybersecurity-iso21434.md` — TARA↔HARA、安全と保安の統合（ISO 21434 × 26262）。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ウォッチドッグ・診断・MPU による隔離の実装基盤。
 - `../cpu-architecture/virtual-memory-mmu.md` — FFI を支えるメモリ保護 (MMU/MPU)。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 標準・業界仕様)**
+
+- ISO 26262:2018 (series), *Road vehicles — Functional safety*. — [ISO 26262-1:2018](https://www.iso.org/standard/68383.html) — Accessed: 2026-07-02。ASIL 決定表は Part 3、ハードウェアメトリクス (SPFM/LFM/PMHF) は Part 5、ASIL 分解は Part 9。
+- ISO 21448:2022, *Road vehicles — Safety of the intended functionality (SOTIF)*. — [ISO 21448:2022](https://www.iso.org/standard/77490.html) — Accessed: 2026-07-02。
+- EGAS Workgroup (2015). *Standardized E-Gas Monitoring Concept for Gasoline and Diesel Engine Control Units*, Version 6.0. — 3レベル監視コンセプトの原典（ワーキンググループ配布文書）。
+- UNECE Regulation No. 155 (CSMS) / No. 156 (SUMS), WP.29. — [UNECE R155](https://unece.org/transport/documents/2021/03/standards/un-regulation-no-155-cyber-security-and-cyber-security) — Accessed: 2026-07-02。
+
+**注**: ISO 規格本文は有償のため、本書の記述は規格の公開概要と、業界で広く共有されている枠組み（V字、S/E/C→ASIL、メトリクス目標値）に基づく。数値目標を設計判断に使う際は必ず規格本文を参照のこと。

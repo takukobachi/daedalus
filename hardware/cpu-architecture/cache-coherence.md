@@ -208,3 +208,15 @@ struct DirectoryEntry {
 - `memory-ordering-atomics.md` — コヒーレンスの上に立つメモリ順序とアトミック操作。コヒーレンスは単一アドレスの収束のみを保証し、複数アドレス間の可視順はメモリモデルが規定する。
 - `cache-memory-hierarchy.md` — キャッシュライン構造と false sharing の概観。本ドキュメントの機構レベルの深掘りの前提。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — DMA のキャッシュ整合問題。コヒーレンスの輪の外にあるデバイスを、手動 flush/invalidate か coherent DMA でどう扱うか。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 論文・教科書)**
+
+- Sorin, D. J., Hill, M. D., & Wood, D. A. (2020). *A Primer on Memory Consistency and Cache Coherence* (2nd ed.). Morgan & Claypool. DOI: 10.2200/S00962ED2V01Y201910CAC049 — スヌープ/ディレクトリ型・MESI 系プロトコルの標準的整理。
+- Papamarcos, M. S., & Patel, J. H. (1984). A Low-Overhead Coherence Solution for Multiprocessors with Private Cache Memories. *ISCA '84*, 348–354. DOI: 10.1145/800015.808204 — MESI (Illinois) プロトコルの原典。
+- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 5 (Thread-Level Parallelism)。
+
+**二次資料 (Secondary)**
+
+- Drepper, U. (2007). *What Every Programmer Should Know About Memory*. — [PDF](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf) — Accessed: 2026-07-02。false sharing とコヒーレンストラフィックのソフトウェア視点の解説。
