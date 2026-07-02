@@ -16,6 +16,8 @@
   `memory-ordering-atomics.md` の上位層。
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
   トランザクション, 分離レベル）。`hardware/hw-sw-interface/storage-nvm-interface.md` の上位層。
+- `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
+  Verified Boot）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
 
 ## 今後のテーマ候補
