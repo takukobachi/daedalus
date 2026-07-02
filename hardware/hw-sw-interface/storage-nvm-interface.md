@@ -233,3 +233,11 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 - `bus-interconnect.md` — NVMe が載る PCIe と、CXL の物理層。
 - `../cpu-architecture/cache-memory-hierarchy.md` — ストレージ階層の最下層としての位置づけ（速度・容量・コストの桁感）。
 - `../cpu-architecture/virtual-memory-mmu.md` — `mmap`/page cache と、PMEM の DAX 直接アクセス。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・論文)**
+
+- NVM Express, Inc. *NVM Express Base Specification*. — [nvmexpress.org/specifications](https://nvmexpress.org/specifications/) — Accessed: 2026-07-02。送信/完了キュー・コマンドセットの規範。
+- ONFI Workgroup. *Open NAND Flash Interface Specification*. — [onfi.org](https://onfi.org/) — Accessed: 2026-07-02。NAND デバイスインタフェースの規範。
+- Agrawal, N. et al. (2008). Design Tradeoffs for SSD Performance. *USENIX Annual Technical Conference*. — [PDF](https://www.usenix.org/legacy/event/usenix08/tech/full_papers/agrawal/agrawal.pdf) — Accessed: 2026-07-02。FTL・書き込み増幅・並列性のトレードオフを扱う代表的論文。

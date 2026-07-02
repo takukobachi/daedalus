@@ -220,3 +220,12 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 - `../hw-sw-interface/mmio-dma-interrupts.md` — デバイス側の割り込み発行機構 (MMIO/MSI、APIC/GIC、上半分/下半分)。本ドキュメントの「CPU に届いた後」の手前を扱う。
 - `../hw-sw-interface/abi-syscalls.md` — トラップとしてのシステムコールのレジスタ規約と越境コスト。
 - `virtual-memory-mmu.md` — ページフォルト例外を契機とするデマンドページング・CoW・KPTI。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・論文)**
+
+- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 6 “Interrupt and Exception Handling”. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+- Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487) — 例外レベル (EL0–EL3) とベクタテーブルの規範。 — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-07-02。
+- *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture* — trap/mcause/mtvec の規範。 — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。
+- Smith, J. E., & Pleszkun, A. R. (1988). Implementing Precise Interrupts in Pipelined Processors. *IEEE Transactions on Computers*, 37(5), 562–573. DOI: 10.1109/12.4607 — 精密例外の古典。

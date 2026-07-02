@@ -231,3 +231,11 @@ CXL は PCIe の物理層・電気仕様を共有しつつ、上に3つのサブ
 - `mmio-dma-interrupts.md` — 本ドキュメントのバス上を実際に流れる MMIO・DMA・MSI の中身。
 - `../cpu-architecture/cache-coherence.md` — CXL が `cxl.cache`/`cxl.mem` で拡張する、コヒーレンシ領域そのもの。
 - `../cpu-architecture/cache-memory-hierarchy.md` — バースト／ラインフィルとコヒーレンシ状態 (MESI) の背景。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様)**
+
+- PCI-SIG. *PCI Express Base Specification*. — [pcisig.com/specifications](https://pcisig.com/specifications) — Accessed: 2026-07-02。レーン・世代・トランザクション/データリンク/物理層の規範。
+- Arm. *AMBA AXI Protocol Specification* (IHI 0022). — [developer.arm.com](https://developer.arm.com/documentation/ihi0022/latest) — Accessed: 2026-07-02。AXI チャネルとハンドシェイクの規範。
+- CXL Consortium. *Compute Express Link Specification*. — [computeexpresslink.org](https://computeexpresslink.org/cxl-specification/) — Accessed: 2026-07-02。CXL.io/.cache/.mem の規範。

@@ -225,3 +225,15 @@ ACPI が定義する2系統の状態。混同しやすいが直交する。
 - `mmio-dma-interrupts.md` — 電源・クロック制御も MMIO/PMIC レジスタ経由で行われる（レジスタ制御の同型例）。
 - `../cpu-architecture/pipeline-superscalar-ooo.md` — 周波数と実効性能（IPC）の関係。サーマルスロットリングが性能上限を決める文脈。
 - `../cpu-architecture/cache-memory-hierarchy.md` — 性能機構がサイドチャネルになる構図の対照例。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・教科書)**
+
+- UEFI Forum. *ACPI Specification* — P-state / C-state / S-state の規範。 — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。
+- Arm. *Power State Coordination Interface (PSCI)* (DEN 0022). — [developer.arm.com](https://developer.arm.com/documentation/den0022/latest) — Accessed: 2026-07-02。マルチコアの電源状態遷移をファームウェアに委譲する標準インタフェース。
+- Weste, N. H. E., & Harris, D. M. (2011). *CMOS VLSI Design* (4th ed.). Addison-Wesley. — 動的/静的消費電力の物理と低電力設計の標準教科書。
+
+**二次資料 (Secondary)**
+
+- Cummings, C. E. (2008). *Clock Domain Crossing (CDC) Design & Verification Techniques Using SystemVerilog*. SNUG Boston. — [PDF](http://www.sunburst-design.com/papers/CummingsSNUG2008Boston_CDC.pdf) — Accessed: 2026-07-02。CDC・シンクロナイザ設計の定番解説。

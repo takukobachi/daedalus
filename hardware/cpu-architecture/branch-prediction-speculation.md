@@ -235,3 +235,16 @@ if (x < array1_size) {                 // ① この分岐を「成立」と誤�
 
 - `pipeline-superscalar-ooo.md` — 制御ハザードと投機実行の母体（パイプライン・アウトオブオーダ実行）。
 - `cache-memory-hierarchy.md` — 投機の痕跡を読み出すサイドチャネルの観測経路（キャッシュ・Flush+Reload / Prime+Probe）。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 論文・教科書)**
+
+- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — 分岐予測・投機実行・ROB の標準教科書 (Ch. 3)。
+- McFarling, S. (1993). *Combining Branch Predictors*. DEC WRL Technical Note TN-36. — [PDF](https://www.hpl.hp.com/techreports/Compaq-DEC/WRL-TN-36.pdf) — Accessed: 2026-07-02。gshare とトーナメント予測器の原典。
+- Kocher, P. et al. (2019). Spectre Attacks: Exploiting Speculative Execution. *IEEE Symposium on Security and Privacy*. — [spectreattack.com/spectre.pdf](https://spectreattack.com/spectre.pdf) — Accessed: 2026-07-02。Spectre v1/v2 の一次論文。
+- Lipp, M. et al. (2018). Meltdown: Reading Kernel Memory from User Space. *USENIX Security Symposium*. — [meltdownattack.com/meltdown.pdf](https://meltdownattack.com/meltdown.pdf) — Accessed: 2026-07-02。
+
+**二次資料 (Secondary)**
+
+- Fog, A. *The Microarchitecture of Intel, AMD and VIA CPUs*. — [agner.org/optimize](https://www.agner.org/optimize/microarchitecture.pdf) — Accessed: 2026-07-02。実装ごとの予測器構成・ミスペナルティの実測整理。

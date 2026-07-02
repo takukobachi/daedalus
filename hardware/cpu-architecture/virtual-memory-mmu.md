@@ -249,3 +249,15 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
 - `branch-prediction-speculation.md` — 投機実行がページ権限境界を越えて副作用を残す Meltdown/Spectre の前提機構。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — DMA と IOMMU（デバイス用のアドレス変換・保護）、および TLB シュートダウンに使う割込み (IPI)。
 - `../../software/operating-systems/process-thread-scheduling.md` — ページフォルト処理・置換・スワップの OS 側（今後の仮想記憶ドキュメントの隣接領域）。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・論文)**
+
+- Denning, P. J. (1970). Virtual Memory. *ACM Computing Surveys*, 2(3), 153–189. DOI: 10.1145/356571.356573 — 仮想記憶の古典的整理。
+- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 4 “Paging”. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。多段ページテーブル・PTE ビット・TLB 無効化の規範。
+- *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture* — Sv39/Sv48 と satp の規範。 — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。
+
+**二次資料 (Secondary)**
+
+- Arpaci-Dusseau, R. H., & Arpaci-Dusseau, A. C. *Operating Systems: Three Easy Pieces* — 仮想記憶章。 — [OSTEP](https://pages.cs.wisc.edu/~remzi/OSTEP/) — Accessed: 2026-07-02。OS 側（フォルト処理・置換）の無償公開教科書。

@@ -85,6 +85,34 @@ RISC-V は単一の巨大 ISA ではなく、**基本整数命令セット + 任
 - **B 型**: 条件分岐 `beq rs1, rs2, label`
 - **U/J 型**: 上位即値/ジャンプ `lui`, `jal`
 
+ビットレベルで見ると（R 型）:
+
+```
+ 31        25 24   20 19   15 14    12 11    7 6       0
+┌────────────┬───────┬───────┬────────┬───────┬─────────┐
+│   funct7   │  rs2  │  rs1  │ funct3 │  rd   │ opcode  │
+└────────────┴───────┴───────┴────────┴───────┴─────────┘
+add x1, x2, x3  =  0000000 00011 00010 000 00001 0110011  =  0x003100B3
+```
+
+設計上の要点は、**全形式でレジスタフィールド (rs1/rs2/rd) が同じビット位置にある**こと。デコーダは命令種別の判定を待たずにレジスタファイルの読み出しを始められる。固定長・固定フィールドは「デコードの単純さ＝パイプラインの速さ」への投資である（x86 の可変長デコードが要する複雑さとの対比）。
+
+### 擬似命令 (Pseudo-instructions)
+
+アセンブリに現れる「命令」の一部は、実命令への糖衣である。逆アセンブル読解時の対応表:
+
+| 擬似命令 | 実体 | 意味 |
+|---|---|---|
+| `nop` | `addi x0, x0, 0` | 何もしない（x0 への書込は捨てられる） |
+| `mv rd, rs` | `addi rd, rs, 0` | レジスタコピー |
+| `li rd, imm` | `lui` + `addi` 等に展開 | 即値ロード |
+| `j label` | `jal x0, label` | 無条件ジャンプ（戻り先を捨てる） |
+| `ret` | `jalr x0, 0(ra)` | 関数からの復帰 |
+| `call label` | `auipc ra` + `jalr ra` | 遠距離の関数呼び出し |
+| `beqz rs, label` | `beq rs, x0, label` | ゼロ比較分岐 |
+
+`x0`（常に0）の存在が効いている——コピーも nop もゼロ比較も、**専用命令を追加せず既存命令+x0 で表現**できる。ISA を小さく保つ設計判断の好例。
+
 ### アセンブリを読む — C からの対応
 
 ```c
@@ -105,6 +133,37 @@ add:
 - ロード/ストアが現れない＝メモリに触れていない（全てレジスタ内）。
 - `ret` は擬似命令で実体は `jalr`。
 
+一段複雑な例——配列の合計:
+
+```c
+// 例示コード (illustrative)
+long sum(const long *a, long n) {
+    long s = 0;
+    for (long i = 0; i < n; i++) s += a[i];
+    return s;
+}
+```
+
+```asm
+sum:
+    li    a5, 0          # s = 0
+    beqz  a1, .done      # n == 0 なら早期リターン
+.loop:
+    ld    a4, 0(a0)      # a4 = *a      ← メモリアクセスはこの1命令だけ
+    addi  a0, a0, 8      # a++ （long = 8バイトなので +8）
+    addi  a1, a1, -1     # n--
+    add   a5, a5, a4     # s += a4
+    bnez  a1, .loop      # ループ継続
+.done:
+    mv    a0, a5         # 戻り値を a0 へ
+    ret
+```
+
+この5命令のループから読めること:
+- 要素あたりロードは1回・逐次アクセス → プリフェッチが効く形（`cache-memory-hierarchy.md`）。
+- 律速はロードのレイテンシと分岐（`bnez` はほぼ常に taken → 予測しやすい。`branch-prediction-speculation.md`）。
+- ポインタインクリメント (`addi a0, a0, 8`) に「型のサイズ」が焼き込まれている——C のポインタ演算の実体。
+
 ループや配列アクセスを見ると、`ld`/`sd` の回数・アドレス計算がそのまま `cache-memory-hierarchy.md` のメモリ負荷に対応する。**アセンブリは性能の一次資料**であり、`godbolt`（Compiler Explorer）で C/C++/Rust の出力を即確認できる。
 
 ### 特権レベル (Privilege Levels)
@@ -115,6 +174,19 @@ RISC-V は3モードを定義する:
 - **U (User)**: アプリケーション。
 
 モード遷移（システムコール・例外・割り込み）が `../hw-sw-interface/abi-syscalls.md` のユーザ/カーネル境界を形作る。
+
+### CSR — 制御・状態レジスタ (Control and Status Registers)
+
+特権アーキテクチャの実体は、汎用レジスタとは別の **CSR** 群にある。`csrrw`/`csrrs`/`csrrc`（Zicsr 拡張）で読み書きし、モードごとにアクセス可否が決まる。
+
+| CSR | 役割 |
+|---|---|
+| `mstatus` | グローバル状態（割り込み許可、前モードの記録） |
+| `mtvec` / `stvec` | トラップハンドラの入口アドレス（`interrupts-exceptions-traps.md` のベクタ） |
+| `mepc` / `mcause` | トラップ発生時の PC と原因コード |
+| `satp` | ページテーブルのルート（S モード。`virtual-memory-mmu.md` のアドレス変換の起点） |
+
+「OS がハードウェアを制御する」と言うとき、その具体的な操作対象はほぼ CSR である。ISA 仕様の Volume II（特権アーキテクチャ）が丸ごとこの層に充てられている。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -135,3 +207,16 @@ RISC-V は3モードを定義する:
 - `../hw-sw-interface/abi-syscalls.md` — レジスタ規約・呼び出し規約・特権境界の詳細。
 - `memory-ordering-atomics.md` — RISC-V の弱順序メモリモデル (RVWMO) と `A` 拡張。
 - `virtual-memory-mmu.md` — S モードが司るアドレス変換。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・教科書)**
+
+- *The RISC-V Instruction Set Manual, Volume I: Unprivileged ISA / Volume II: Privileged Architecture*. RISC-V International. — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。命令形式・拡張・CSR・特権レベルの規範。
+- *RISC-V ELF psABI Specification*. — [riscv-non-isa/riscv-elf-psabi-doc](https://github.com/riscv-non-isa/riscv-elf-psabi-doc) — Accessed: 2026-07-02。レジスタの ABI 名と呼び出し規約の規範。
+- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — RISC 設計思想と ISA/マイクロアーキテクチャ分離の標準教科書（付録 A: ISA 原理）。
+
+**二次資料 (Secondary)**
+
+- Patterson, D., & Waterman, A. (2017). *The RISC-V Reader: An Open Architecture Atlas*. — [riscvbook.com](http://riscvbook.com/) — Accessed: 2026-07-02。設計判断の背景を仕様策定者自身が解説。
+- Compiler Explorer. — [godbolt.org](https://godbolt.org/) — Accessed: 2026-07-02。本文のコンパイル出力の検証手段。

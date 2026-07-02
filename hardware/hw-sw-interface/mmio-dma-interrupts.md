@@ -66,6 +66,7 @@ DMA コントローラ (DMAC) がCPUを介さずにデバイスと主記憶間�
 - **流れ**: デバイスが割り込み信号 → 割り込みコントローラ (APIC / GIC) が CPU に通知 → CPU が現在の実行を中断し**割り込みハンドラ (ISR)** へジャンプ → 処理後に元へ復帰。
 - **MSI / MSI-X (Message Signaled Interrupts)**: 専用の割り込み線の代わりに、特殊な MMIO 書き込みで割り込みを通知する方式。線の本数制限を超えて多数のベクタを使え、PCIe で標準。
 - **上半分/下半分 (top half / bottom half)**: ISR は最小限（割り込み禁止状態で短時間）に留め、重い処理は後回し（Linux の softirq/tasklet/threaded IRQ）。ハンドラ内でブロックや重い処理をすると、他割り込みを取りこぼしレイテンシが悪化するため。
+- **割り込みの分散 (IRQ affinity)**: マルチコアでは、どの割り込みをどのコアに届けるかを設定できる。MSI-X の複数ベクタをキューごとに別コアへ振る（NIC の RSS: 受信フローをハッシュで複数キューに分散）ことで、割り込み処理とその後のデータ処理を同じコアに揃え、キャッシュ局所性とスケーラビリティを確保する。
 - **割り込み嵐 (interrupt storm)**: 高スループット時に割り込みが多すぎてCPUが処理に埋もれる。対策が**割り込み合体 (interrupt coalescing)** や、高負荷時にポーリングへ切り替える **NAPI**（Linux ネットワーク）。
 
 ## 技術詳細 (Technical Details)
@@ -85,6 +86,33 @@ DMA コントローラ (DMAC) がCPUを介さずにデバイスと主記憶間�
 ```
 
 この1本に MMIO・DMA・割り込みが必ず登場する。3機構を別々でなく「協調する1つの流れ」として理解するのが要点。
+
+### ディスクリプタリングと scatter-gather — 高速デバイスの定石
+
+NIC や NVMe のような高速デバイスでは、I/O ごとに MMIO でパラメータを書き込む方式では追いつかない。定石は**主記憶上のディスクリプタリング (descriptor ring)**:
+
+```
+ 主記憶上のリングバッファ（ドライバとデバイスが共有）
+   ┌──────┬──────┬──────┬──────┬──────┐
+   │desc 0│desc 1│desc 2│desc 3│ ...  │   各 desc = バッファアドレス+長さ+フラグ
+   └──────┴──────┴──────┴──────┴──────┘
+      ▲ head（デバイスが消費）    ▲ tail（ドライバが追加）
+```
+
+1. ドライバはディスクリプタを**メモリに**書き、MMIO は**テールポインタの更新（ドアベル, doorbell）1回だけ**。
+2. デバイスは自ら DMA でディスクリプタを読み、データを転送し、完了ステータスもメモリに DMA で書き戻す。
+3. 割り込みは複数完了をまとめて1回（合体と相性が良い）。
+
+つまり**制御情報そのものを DMA に載せ、遅い MMIO を細い通知路に限定する**設計である。`storage-nvm-interface.md` の NVMe 送信/完了キューはこの形の直接の実例。
+
+- **scatter-gather**: 1つの転送を複数の（アドレス, 長さ）エントリで表す。OS の仮想記憶はページ単位でしか物理連続性を保証しないため（`../cpu-architecture/virtual-memory-mmu.md`）、大きなバッファを物理的に非連続なまま転送するには必須の機能。
+
+### MMIO のコスト非対称 — posted write と read の遅さ
+
+PCIe では MMIO **書き込みは posted**（完了応答を待たずに発行）だが、**読み出しは non-posted**（デバイスまでの往復完了を待つ）。結果:
+
+- MMIO read は数百 ns〜µs 級になりえて、通常のメモリアクセスより桁違いに遅い。高速パスから read を排除し、**状態はデバイスに DMA でメモリへ書かせて、CPU はメモリを読む**（上のリング構造はこれも達成している）。
+- posted write は「発行した＝届いた」ではない。**書き込みの到達を保証したい箇所では同じデバイスのレジスタを read back する**のがドライバの古典的イディオム（PCIe の順序規則により、read 完了は先行 write の到達を含意する）。
 
 ### MMIO アクセスの注意（例示）
 
@@ -123,4 +151,17 @@ writel(START,    base + REG_CTRL);   // 最後に開始（順序が機能上必�
 
 - `../cpu-architecture/memory-ordering-atomics.md` — MMIO の順序保証の基礎。
 - `../cpu-architecture/cache-memory-hierarchy.md` — DMA のキャッシュ整合問題の背景。
+- `storage-nvm-interface.md` — ディスクリプタリングの実例 (NVMe キュー)。
 - `../automotive/in-vehicle-networks.md` — 実デバイス通信の応用例（車載バスと ECU）。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・公式ドキュメント)**
+
+- PCI-SIG. *PCI Express Base Specification*. — [pcisig.com/specifications](https://pcisig.com/specifications) — Accessed: 2026-07-02。posted/non-posted トランザクション、順序規則、MSI/MSI-X の規範。
+- Linux Kernel Documentation, *Dynamic DMA mapping using the generic device* (DMA API). — [kernel.org DMA API](https://www.kernel.org/doc/html/latest/core-api/dma-api.html) — Accessed: 2026-07-02。coherent/streaming マッピングと同期操作の一次ドキュメント。
+- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A（APIC・割り込み処理）. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+
+**二次資料 (Secondary)**
+
+- Corbet, J., Rubini, A., & Kroah-Hartman, G. (2005). *Linux Device Drivers* (3rd ed.). O'Reilly. — [lwn.net/Kernel/LDD3](https://lwn.net/Kernel/LDD3/) — Accessed: 2026-07-02。MMIO アクセサ・DMA・割り込みハンドラのドライバ実装イディオム。

@@ -199,3 +199,15 @@ PID 1 が立つ瞬間が、`abi-syscalls.md` のユーザ空間到達点であ�
 - `abi-syscalls.md` — PID 1 起動後、ユーザ空間がカーネルへ到達する経路（syscall 規約）。
 - `../cpu-architecture/virtual-memory-mmu.md` — ブートローダによる MMU 有効化と保護/ロングモードへの移行。
 - `../cpu-architecture/interrupts-exceptions-traps.md` — リセットベクタと例外ベクタ表の設定。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 仕様・公式ドキュメント)**
+
+- UEFI Forum. *UEFI Specification* / *ACPI Specification*. — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。ファームウェアインタフェースとハードウェア記述 (ACPI) の規範。
+- *Devicetree Specification*. — [devicetree.org](https://www.devicetree.org/specifications/) — Accessed: 2026-07-02。組込み/Arm 系のハードウェア記述の規範。
+- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A — リセット直後の CPU 状態と MP 初期化 (INIT-SIPI) の規範。 — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+
+**二次資料 (Secondary)**
+
+- coreboot project. *coreboot documentation*. — [doc.coreboot.org](https://doc.coreboot.org/) — Accessed: 2026-07-02。オープン実装から見た実際のブート段構成（romstage/ramstage、DRAM トレーニング）。

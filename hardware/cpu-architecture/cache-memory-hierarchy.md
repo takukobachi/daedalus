@@ -167,3 +167,15 @@ struct CountersPadded {
 
 - `memory-ordering-atomics.md` — コヒーレンシの上に成り立つメモリ順序と並行制御。
 - `../hw-sw-interface/` — DMA とキャッシュ整合 (cache coherence) の境界問題。
+
+## 参考文献 (References)
+
+**一次資料 (Primary — 教科書・論文)**
+
+- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — メモリ階層・キャッシュ構成 (Ch. 2, Appendix B) の標準教科書。
+- Yarom, Y., & Falkner, K. (2014). FLUSH+RELOAD: A High Resolution, Low Noise, L3 Cache Side-Channel Attack. *USENIX Security Symposium*. — [PDF](https://eprint.iacr.org/2013/448.pdf) — Accessed: 2026-07-02。キャッシュサイドチャネルの代表的一次論文。
+
+**二次資料 (Secondary)**
+
+- Drepper, U. (2007). *What Every Programmer Should Know About Memory*. — [PDF](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf) — Accessed: 2026-07-02。階層・局所性・測定のソフトウェア視点の定番解説。
+- Intel. *Intel 64 and IA-32 Architectures Optimization Reference Manual*. — データ配置・プリフェッチの実装別チューニング指針（intel.com で配布）。
