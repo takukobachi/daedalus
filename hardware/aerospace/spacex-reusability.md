@@ -92,7 +92,19 @@
 2. 早すぎれば空中で停止して再上昇（燃料切れで墜落）、遅すぎれば減速しきれず激突。
 3. 許容誤差が極めて小さい**ワンショットのリアルタイム最適制御**問題となり、車載・航空の制御より過酷な「やり直しのきかない」性質を持つ。
 
-この問題は**凸最適化に基づく誘導 (convex-optimization guidance)**（燃料最適な降下軌道をオンボードで解く手法）として定式化され、SpaceX の着陸制御の理論的背景になっている。
+この問題は**凸最適化に基づく誘導 (convex-optimization guidance)**（燃料最適な降下軌道をオンボードで解く手法）として定式化され、SpaceX の着陸制御の理論的背景になっている[^blackmore-bridge]。
+
+#### なぜ「凸」であることが本質か
+
+燃料最適な動力降下 (powered descent) は最適制御問題だが、**エンジン推力に下限がある**（深く絞っても最小推力より下げられない；点火中の推力集合が「穴あき」になる）ため、そのままでは**非凸**——一般には大域最適の保証も、決まった時間内に解ける保証もない。突破口が **無損失凸化 (lossless convexification)**: 制約を緩和した凸問題（二次錐計画, SOCP）の最適解が、元の非凸問題の最適解と一致することを**証明**できる、という結果である[^acikmese]。
+
+凸であることの実務的な意味は3つ:
+
+1. **大域最適が保証される** — 局所解に落ちて「もっと良い着陸軌道があった」ということが起きない。
+2. **収束が有界時間で保証される** — 内点法は決められた反復回数で所定精度に達する。「解けないかもしれない最適化」は飛行ソフトに載せられないが、これは載せられる。
+3. **再計画できる** — 高速に解けるため、航法の状態推定が更新されるたびに残り軌道を解き直す（モデル予測制御的な運用）。突風や推力誤差は「軌道への固執」ではなく「毎周期の再最適化」で吸収される。
+
+ホバスラングの「やり直しがきかない」性質は、この「必ず・時間内に・最適解が出る」数学的保証によって初めて計算機に委ねられる。誘導・航法・制御の全体像と冗長計算機（Falcon 9 は民生 x86 の3系統多数決）は `avionics-gnc.md` で扱う。
 
 ### Block 5 — 再使用のための再設計
 
@@ -147,6 +159,10 @@ Falcon 9 の再使用は、**ロケット第1段の帰還を制御工学の問�
 [^mdpi]: [*Cost Effectiveness of Reusable Launch Vehicles Depending on the Payload Capacity* — Aerospace (MDPI), 12(5):364, 2025](https://www.mdpi.com/2226-4310/12/5/364) — 査読誌。Falcon 9（18.5 t級）を参照機に、ペイロード規模と打ち上げ頻度が再使用の費用対効果を決めることを定量分析。Accessed: 2026-06-30.
 
 [^boosters]: [List of Falcon 9 first-stage boosters — Wikipedia](https://en.wikipedia.org/wiki/List_of_Falcon_9_first-stage_boosters) — B1067 の35回飛行・回収など、機体別の飛行履歴（一次の打ち上げ記録への索引）。Accessed: 2026-06-30.
+
+[^acikmese]: Açıkmeşe, B., & Ploen, S. R. (2007). Convex Programming Approach to Powered Descent Guidance for Mars Landing. *Journal of Guidance, Control, and Dynamics*, 30(5), 1353–1366. DOI: 10.2514/1.27553 — 無損失凸化（推力下限付き降下問題の SOCP への等価変換）の原典。
+
+[^blackmore-bridge]: Blackmore, L. (2016). [Autonomous Precision Landing of Space Rockets — *The Bridge* (NAE), 46(4), 15–20](http://www.larsblackmore.com/nae_bridge_2016.pdf) — Falcon 9 着陸誘導の設計者自身による解説。精密着陸の課題と凸最適化誘導の位置づけ。Accessed: 2026-07-02.
 
 **報道・業界分析 (Reporting & Industry analysis)**
 
