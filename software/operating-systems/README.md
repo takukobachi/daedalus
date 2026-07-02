@@ -8,11 +8,11 @@
 
 - `process-thread-scheduling.md` — プロセス・スレッドと CPU スケジューリング
   (context switch, preemption, CFS/EEVDF, リアルタイム, マルチコア負荷分散)
+- `virtual-memory-paging.md` — OS の仮想記憶とページング：VMA と demand paging、COW、
+  ページキャッシュと writeback、LRU 近似 (active/inactive, MGLRU)、swap、overcommit と OOM killer、THP
 
 ## 今後のテーマ候補
 
-- 仮想記憶とページング (virtual memory & paging) — page cache, demand paging, swap
-  （`hardware/cpu-architecture/virtual-memory-mmu.md` の上位層）
 - システムコール境界 (kernel/userspace boundary) — `hardware/hw-sw-interface/abi-syscalls.md` の続き
 - ファイルシステム (filesystems) — VFS, journaling, ext4/xfs
 - I/O スタック (I/O stack) — block 層, io_uring, ページキャッシュ writeback

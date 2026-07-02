@@ -9,11 +9,11 @@
 
 - `storage-engines.md` — ストレージエンジンの心臓部（B+tree vs LSM-tree、
   WAL、バッファプール、ページレイアウト、圧縮・コンパクション）
+- `transactions-isolation.md` — トランザクションと分離レベル：異常カタログ (dirty read〜write skew)、
+  ANSI 定義の批判、2PL/MVCC/SI/SSI、実 DB の挙動差 (PostgreSQL/MySQL/Oracle)、Hermitage 検証
 
 ## 今後のテーマ候補
 
-- トランザクションと分離レベル (transactions & isolation) — ACID, MVCC,
-  snapshot isolation, 2PL, serializability（`../concurrency/` と `../distributed-systems/` の交点）
 - クエリ実行 (query execution) — プランナ, join アルゴリズム, ベクトル化実行
 - インデックス設計 (indexing) — 複合インデックス, カバリング, 全文・空間索引
 - 分散データベース (distributed databases) — sharding, 分散トランザクション,
