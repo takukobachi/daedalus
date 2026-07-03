@@ -19,6 +19,10 @@ iOS プラットフォーム内部の分析。XNU カーネル (Mach + BSD) の�
   Data Protection 4 クラスと Keychain、コード署名の強制 (AMFI・トラストキャッシュ・
   CoreTrust・エンタイトルメント)、サンドボックスと TCC、緩和の積層 (PAC → PPL →
   SPTM/TXM → MIE)、Android との対応表
+- `app-lifecycle-runningboard.md` — アプリライフサイクルと RunningBoard：UIScene、
+  統治側デーモンの分業 (SpringBoard/FrontBoard/RunningBoard/dasd)、実行権の
+  assertion モデル、凍結とバックグラウンド委譲 (nsurlsessiond/BGTaskScheduler)、
+  状態復元、ウォッチドッグ。`../android/app-components-lifecycle.md` と対で読む
 
 ## 今後のテーマ候補
 
