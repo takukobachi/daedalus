@@ -10,6 +10,9 @@
   (context switch, preemption, CFS/EEVDF, リアルタイム, マルチコア負荷分散)
 - `virtual-memory-paging.md` — OS の仮想記憶とページング：VMA と demand paging、COW、
   ページキャッシュと writeback、LRU 近似 (active/inactive, MGLRU)、swap、overcommit と OOM killer、THP
+- `power-management.md` — 電力管理：cpuidle と眠りの深さの賭け、schedutil/EAS、
+  サスペンドと wakeup source、無線 RRC テールとプッシュの経済、Android (Doze/バケット/
+  WorkManager) と iOS (凍結/DAS) の統治層比較。`../android/`・`../ios/` を束ねる横串
 
 ## 今後のテーマ候補
 
