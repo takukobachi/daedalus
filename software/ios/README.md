@@ -23,9 +23,12 @@ iOS プラットフォーム内部の分析。XNU カーネル (Mach + BSD) の�
   統治側デーモンの分業 (SpringBoard/FrontBoard/RunningBoard/dasd)、実行権の
   assertion モデル、凍結とバックグラウンド委譲 (nsurlsessiond/BGTaskScheduler)、
   状態復元、ウォッチドッグ。`../android/app-components-lifecycle.md` と対で読む
+- `core-animation-render-server.md` — Core Animation とレンダーサーバ：三つの木
+  (モデル/プレゼンテーション/レンダー)、CATransaction の原子コミット、サーバサイド
+  アニメーション、IOSurface、CADisplayLink と ProMotion、commit/render hitch。
+  `../android/graphics-pipeline.md` と対で読む
 
 ## 今後のテーマ候補
 
-- Core Animation / レンダーサーバ — 描画パイプライン（`../android/graphics-pipeline.md` の対比対象）
 - Swift 並行性 (Swift Concurrency) — actor・structured concurrency とランタイム実装
 - WebKit / JavaScriptCore — 唯一の JIT 特権とそのサンドボックス構造
