@@ -20,9 +20,12 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
 - `graphics-pipeline.md` — グラフィックスパイプライン：Choreographer と VSYNC 位相、
   RenderThread/HWUI、gralloc・BufferQueue・フェンス（ゼロコピーと背圧）、
   SurfaceFlinger と HWC 合成、BLAST、可変リフレッシュレートとフレームペーシング
+- `security-model.md` — セキュリティモデル深掘り：権限検査の三層 (UID/SELinux ×
+  フレームワーク × ハードウェア)、権限モデルの意味論と confused deputy、アプリ署名
+  v1〜v4 と鍵ローテーション、scoped storage と FBE (CE/DE)、Keystore・鍵アテステーション・
+  Play Integrity、エクスプロイト緩和 (CFI/MTE/Rust)
 
 ## 今後のテーマ候補
 
 - Android Automotive OS — 車載への展開（`../../hardware/automotive/` との合流点）
-- アプリセキュリティモデル深掘り — 権限、scoped storage、Play Integrity
 - メディアスタック — Codec2、MediaSession、Stagefright 以後のプロセス分割の詳細

@@ -17,7 +17,7 @@
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
   トランザクション, 分離レベル）。`hardware/hw-sw-interface/storage-nvm-interface.md` の上位層。
 - `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
-  Verified Boot, グラフィックス）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
+  グラフィックス, セキュリティモデル）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）。`android/` と同じ制約への対照的な解として相互対比する。
 - `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
