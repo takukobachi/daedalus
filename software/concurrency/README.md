@@ -8,10 +8,11 @@
 
 - `memory-models-and-synchronization.md` — 言語メモリモデル (C/C++11, Java JMM)、
   happens-before、アトミック/CAS、ロックと futex、lock-free 入門、非同期ランタイム
+- `lock-free-data-structures.md` — lock-free データ構造とメモリ回収：Treiber stack、
+  Michael–Scott queue、ABA 問題、hazard pointer / epoch / RCU、wait-free、競合とコヒーレンスの実コスト
 
 ## 今後のテーマ候補
 
-- lock-free / wait-free データ構造 — ABA, hazard pointer, RCU の詳細
 - 非同期ランタイムの実装 (async runtime internals) — event loop, work-stealing
 - 構造化並行性 (structured concurrency) とキャンセル伝播
 - アクターモデル (actor model) とメッセージパッシング
