@@ -14,6 +14,11 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
 - `binder-internals.md` — Binder 深掘り：ドライバのオブジェクトモデル (node/ref) と
   ハンドル翻訳、1コピー転送と mmap バッファ、トランザクションスタックと再入、oneway の
   順序・背圧、参照カウントと linkToDeath、3ドメイン (binder/hwbinder/vndbinder)、Bad Binder
+- `app-components-lifecycle.md` — コンポーネントモデルとライフサイクル：Activity を
+  「Binder で遠隔操縦される状態機械・システムが起動できる入り口・タスクの単位・
+  プロセス死の契約書」として読む。ClientTransaction、二重台帳 (ATMS/ActivityThread)、
+  状態の三層と TransactionTooLargeException、ANR、タスク偽装と BAL。
+  `binder-internals.md` の機構が体感的現象に変換される応用編
 - `art-runtime-internals.md` — ART 深掘り：DEX 形式と nterp、dex2oat と Optimizing
   コンパイラ、プロファイル誘導コンパイルの資材循環 (JIT → .prof → 背景 AOT → Cloud
   Profiles)、boot image と COW 共有、GC の系譜（並行コピー → userfaultfd マークコンパクト）、JNI

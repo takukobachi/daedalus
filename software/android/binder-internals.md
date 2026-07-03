@@ -146,6 +146,7 @@ Binder を深掘りする価値は、それが単なる「速い IPC」ではな
 ### 次の接続先 (Related Topics)
 
 - [`platform-architecture.md`](platform-architecture.md) — Binder が支える全体像（Zygote・lmkd・Treble・サンドボックス）。
+- [`app-components-lifecycle.md`](app-components-lifecycle.md) — 本書の機構の最大の利用者。oneway 順序・1MB 制限・linkToDeath がライフサイクル・ANR・TransactionTooLargeException として現象化する応用編。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — 優先度継承・スレッドプールの一般論。
 - [`../concurrency/lock-free-data-structures.md`](../concurrency/lock-free-data-structures.md) — カーネル内寿命管理バグ（UAF）が昇格になる構造の一般論。
 - [`../../hardware/hw-sw-interface/abi-syscalls.md`](../../hardware/hw-sw-interface/abi-syscalls.md) — その下の syscall 境界。Binder は ioctl 一本の上に築かれた第二の特権境界。
