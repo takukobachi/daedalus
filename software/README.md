@@ -28,3 +28,12 @@
 
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
 - コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
+- 仮想化とコンテナ (virtualization & containers) — VT-x/EPT・IOMMU, KVM/QEMU,
+  namespaces/cgroups, gVisor/Firecracker。`hardware/hw-sw-interface/` と
+  `operating-systems/` の間に挟まるもう一つの特権層
+- ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
+  パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
+- ML システム (ML systems) — GPU 実行モデル (CUDA/SIMT), 推論ランタイム,
+  KV cache とサービング。hardware 側の GPU・アクセラレータ分析と対になる層
+- 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
+  WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
