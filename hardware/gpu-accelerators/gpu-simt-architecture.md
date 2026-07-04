@@ -211,7 +211,7 @@ GPU は「多数のテナントで共有される高価な資源」になった�
 - `../cpu-architecture/pipeline-superscalar-ooo.md` — GPU が「捨てた」側の機構。レイテンシ指向設計の中身。
 - `../cpu-architecture/memory-ordering-atomics.md` — メモリモデルの基礎。GPU のスコープ付きアトミックはこの弱順序モデルの拡張。
 - `../hw-sw-interface/bus-interconnect.md` — PCIe の世代・帯域、IOMMU、CXL。ホスト-デバイス断崖の経路側の詳細。
-- `../../software/ml-systems/`（予定） — 本ドキュメントの上に立つ ML システム分析。Roofline 上の位置づけ（学習/プリフィル vs デコード）がそのまま最適化戦略を決める。
+- `../../software/ml-systems/ml-inference-systems.md` — 本ドキュメントの上に立つ ML 推論システム分析。Roofline 上の位置づけ（プリフィル vs デコード）がそのまま最適化戦略を決める。
 
 ## 参考文献 (References)
 
