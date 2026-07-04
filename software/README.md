@@ -23,8 +23,29 @@
 - `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
   `distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
+- `virtualization/` — 仮想化とコンテナ（VT-x/EPT, KVM/QEMU, virtio, namespaces/cgroups,
+  gVisor/Firecracker）。`hardware/hw-sw-interface/` と `operating-systems/` の間に挟まる
+  もう一つの特権層。
+- `ml-systems/` — ML システム（GPU 実行モデル, KV cache, 連続バッチング, 量子化,
+  サービング）。`hardware/gpu-accelerators/` の真上の層で、同ディレクトリと対で読む。
+- `ebpf/` — eBPF（検証器, JIT, マップ, XDP/tracing/LSM フック）。カーネルを
+  再コンパイルせずに拡張する「カーネル内の安全な実行基盤」。`operating-systems/` と
+  `networking/`・セキュリティ応用をつなぐ。
+- `toolchain/` — ツールチェーン（ELF, リンカ, 動的リンク, ローダ, ASLR）。
+  コンパイル後の成果物がプロセスになるまでを扱う層で、
+  `hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側。
 
 ## 今後のテーマ候補
 
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
 - コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
+- ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
+  パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
+- 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
+  WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
+- メッセージングとストリーム処理 (messaging & stream processing) — 分散ログ,
+  exactly-once セマンティクス, バックプレッシャ。`distributed-systems/`・`databases/` の応用層
+- 検索と情報検索 (search & IR) — 転置インデックス, ランキング (BM25),
+  近似最近傍探索 (ANN)。`databases/` と `ml-systems/`（ベクトル検索）の合流点
+- Git 内部 (Git internals) — content-addressed storage, Merkle DAG, packfile と delta 圧縮。
+  小さく閉じた題材で、分散システムの複製・整合性の具体例にもなる
