@@ -28,6 +28,12 @@
   もう一つの特権層。
 - `ml-systems/` — ML システム（GPU 実行モデル, KV cache, 連続バッチング, 量子化,
   サービング）。`hardware/gpu-accelerators/` の真上の層で、同ディレクトリと対で読む。
+- `ebpf/` — eBPF（検証器, JIT, マップ, XDP/tracing/LSM フック）。カーネルを
+  再コンパイルせずに拡張する「カーネル内の安全な実行基盤」。`operating-systems/` と
+  `networking/`・セキュリティ応用をつなぐ。
+- `toolchain/` — ツールチェーン（ELF, リンカ, 動的リンク, ローダ, ASLR）。
+  コンパイル後の成果物がプロセスになるまでを扱う層で、
+  `hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側。
 
 ## 今後のテーマ候補
 
@@ -37,10 +43,6 @@
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
   WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
-- リンカとローダ (linkers & loaders) — ELF, 静的/動的リンク, PLT/GOT, ASLR, LTO。
-  `hardware/hw-sw-interface/abi-syscalls.md` と「コンパイラとランタイム」の間を埋める層
-- eBPF — 検証器 (verifier), JIT, 適用面（観測可能性・ネットワーク・セキュリティ）。
-  `networking/` 候補の XDP を「カーネル内実行基盤」として一般化する
 - メッセージングとストリーム処理 (messaging & stream processing) — 分散ログ,
   exactly-once セマンティクス, バックプレッシャ。`distributed-systems/`・`databases/` の応用層
 - 検索と情報検索 (search & IR) — 転置インデックス, ランキング (BM25),

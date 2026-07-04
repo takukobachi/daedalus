@@ -14,6 +14,8 @@
 - `hardware-security/` — ハードウェアセキュリティ（サイドチャネル, 一時的実行攻撃,
   Rowhammer, TEE, secure boot …）。`cpu-architecture/` の投機実行・キャッシュ機構と
   ソフトウェア側セキュリティの橋渡し
+- `timekeeping/` — 時刻同期とクロック（発振器, 原子時計, GNSS 時刻, NTP/PTP …）。
+  `software/distributed-systems/` の論理時計に対する「物理時計側」の土台
 
 ## 今後のテーマ候補
 
@@ -24,8 +26,6 @@
   `software/networking/` の物理層側の土台
 - ロボティクス (robotics) — アクチュエータ、制御ループ、キネマティクス。
   `automotive/`・`aerospace/` の制御工学の一般化
-- 時刻同期とクロック (timekeeping & clocks) — 水晶発振器、原子時計、GNSS 時刻配信、
-  NTP/PTP。`software/distributed-systems/` の論理時計に対する「物理時計側」の土台
 - データセンターインフラ (datacenter infrastructure) — 給電 (UPS/PDU)、冷却
   (空冷 → 液冷)、Clos トポロジ。`power-generation/` と計算機システムの合流点
 - ストレージデバイス物理 (storage device physics) — NAND フラッシュの物理、FTL、
