@@ -37,3 +37,13 @@
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
   WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
+- リンカとローダ (linkers & loaders) — ELF, 静的/動的リンク, PLT/GOT, ASLR, LTO。
+  `hardware/hw-sw-interface/abi-syscalls.md` と「コンパイラとランタイム」の間を埋める層
+- eBPF — 検証器 (verifier), JIT, 適用面（観測可能性・ネットワーク・セキュリティ）。
+  `networking/` 候補の XDP を「カーネル内実行基盤」として一般化する
+- メッセージングとストリーム処理 (messaging & stream processing) — 分散ログ,
+  exactly-once セマンティクス, バックプレッシャ。`distributed-systems/`・`databases/` の応用層
+- 検索と情報検索 (search & IR) — 転置インデックス, ランキング (BM25),
+  近似最近傍探索 (ANN)。`databases/` と `ml-systems/`（ベクトル検索）の合流点
+- Git 内部 (Git internals) — content-addressed storage, Merkle DAG, packfile と delta 圧縮。
+  小さく閉じた題材で、分散システムの複製・整合性の具体例にもなる
