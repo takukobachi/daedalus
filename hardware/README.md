@@ -9,16 +9,15 @@
 - `automotive/` — 自動車（車載ネットワーク, ECU …）
 - `power-generation/` — 電力・発電（発電方式, 電力系統, 系統制御 …）
 - `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX …）
+- `gpu-accelerators/` — GPU・アクセラレータ（SIMT, メモリ階層/HBM, Tensor Core …）。
+  `cpu-architecture/` の対照編で、`software/ml-systems/` と対で読む
+- `hardware-security/` — ハードウェアセキュリティ（サイドチャネル, 一時的実行攻撃,
+  Rowhammer, TEE, secure boot …）。`cpu-architecture/` の投機実行・キャッシュ機構と
+  ソフトウェア側セキュリティの橋渡し
 
 ## 今後のテーマ候補
 
 - 再突入と熱防護 (re-entry & TPS) — 空力加熱、耐熱タイル、アブレーション
-- GPU・アクセラレータ (GPU & accelerators) — SIMT 実行モデル、メモリ階層 (HBM)、
-  インターコネクト (NVLink)、NPU/TPU。`cpu-architecture/` の対照編で、
-  software 側の ML システム分析と対になる
-- ハードウェアセキュリティ (hardware security) — サイドチャネル
-  (Spectre/Meltdown, Rowhammer)、TEE (TrustZone, SGX, Secure Enclave)、TPM、
-  物理攻撃。`cpu-architecture/` の投機実行と software 側セキュリティの橋渡し
 - 半導体製造 (semiconductor manufacturing) — リソグラフィ (EUV)、プロセスノード、
   チップレットと先端パッケージング、歩留まり。すべての章の物理的前提
 - 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS。`aerospace/` の航法と

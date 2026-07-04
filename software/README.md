@@ -23,17 +23,17 @@
 - `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
   `distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
+- `virtualization/` — 仮想化とコンテナ（VT-x/EPT, KVM/QEMU, virtio, namespaces/cgroups,
+  gVisor/Firecracker）。`hardware/hw-sw-interface/` と `operating-systems/` の間に挟まる
+  もう一つの特権層。
+- `ml-systems/` — ML システム（GPU 実行モデル, KV cache, 連続バッチング, 量子化,
+  サービング）。`hardware/gpu-accelerators/` の真上の層で、同ディレクトリと対で読む。
 
 ## 今後のテーマ候補
 
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
 - コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
-- 仮想化とコンテナ (virtualization & containers) — VT-x/EPT・IOMMU, KVM/QEMU,
-  namespaces/cgroups, gVisor/Firecracker。`hardware/hw-sw-interface/` と
-  `operating-systems/` の間に挟まるもう一つの特権層
 - ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
-- ML システム (ML systems) — GPU 実行モデル (CUDA/SIMT), 推論ランタイム,
-  KV cache とサービング。hardware 側の GPU・アクセラレータ分析と対になる層
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
   WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
