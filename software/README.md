@@ -20,8 +20,8 @@
   グラフィックス, セキュリティモデル）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）。`android/` と同じ制約への対照的な解として相互対比する。
-- `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
-  `distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
+- `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC, カーネルネットワーク
+  スタック）。`distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
 - `virtualization/` — 仮想化とコンテナ（VT-x/EPT, KVM/QEMU, virtio, namespaces/cgroups,
   gVisor/Firecracker）。`hardware/hw-sw-interface/` と `operating-systems/` の間に挟まる

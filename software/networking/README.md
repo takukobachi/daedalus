@@ -14,10 +14,12 @@
 - `http-quic-evolution.md` — HTTP/1.1 → 2 → QUIC/HTTP3：多重化と HoL の局在化、
   HPACK/QPACK、QUIC の設計 (ストリーム、コネクション ID、トランスポート暗号化、0-RTT と
   リプレイ、アンプ制限)、硬直化への構造的応答
+- `kernel-network-stack.md` — カーネルネットワークスタック：NIC リングと NAPI (割り込みの
+  経済)、sk_buff、GRO/GSO とパケット単価、RSS/RPS/RFS、qdisc/BQL、XDP・AF_XDP・DPDK の
+  バイパス系譜。上 2 本のプロトコルを運ぶ機械側
 
 ## 今後のテーマ候補
 
 - TLS 1.3 深掘り (TLS internals) — ハンドシェイク、鍵スケジュール、PKI と証明書検証
 - IP ルーティングと BGP (routing) — 経路制御、BGP の信頼モデル、RPKI
 - DNS — 再帰解決、キャッシュ、DNSSEC/DoH/DoT
-- カーネルネットワークスタック (kernel networking) — sk_buff, NAPI, XDP/eBPF
