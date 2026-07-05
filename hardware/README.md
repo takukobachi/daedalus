@@ -19,6 +19,9 @@
   ソフトウェア側セキュリティの橋渡し
 - `timekeeping/` — 時刻同期とクロック（発振器, 原子時計, GNSS 時刻, NTP/PTP …）。
   `software/distributed-systems/` の論理時計に対する「物理時計側」の土台
+- `storage-devices/` — ストレージデバイス物理（NAND フラッシュ, FTL, 書込増幅 …）。
+  `hw-sw-interface/storage-nvm-interface.md` の下の層で、`cpu-architecture/` の
+  DRAM 分析と対になる永続側の媒体物理
 
 ## 今後のテーマ候補
 
@@ -32,9 +35,6 @@
   `automotive/`・`aerospace/` の制御工学の一般化
 - データセンターインフラ (datacenter infrastructure) — 給電 (UPS/PDU)、冷却
   (空冷 → 液冷)、Clos トポロジ。`power-generation/` と計算機システムの合流点
-- ストレージデバイス物理 (storage device physics) — NAND フラッシュの物理、FTL、
-  書込増幅、emerging memory。`hw-sw-interface/storage-nvm-interface.md` の下の層
-  (DRAM 側は `cpu-architecture/dram-memory-controllers.md` でカバー済み)
 - FPGA・再構成可能計算 (FPGA & reconfigurable computing) — LUT とルーティング、
   HLS、SmartNIC/DPU。`gpu-accelerators/` が描く専用化スペクトラムの続き
 - 量子コンピューティング (quantum computing) — 量子ビットの物理、誤り訂正、

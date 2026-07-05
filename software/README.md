@@ -34,11 +34,13 @@
 - `toolchain/` — ツールチェーン（ELF, リンカ, 動的リンク, ローダ, ASLR）。
   コンパイル後の成果物がプロセスになるまでを扱う層で、
   `hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側。
+- `compilers-runtimes/` — コンパイラとランタイム（階層型 JIT, 投機と deopt, GC）。
+  `toolchain/` (AOT 側) の対になる「実行しながら翻訳する」側で、
+  `android/`・`ios/` のランタイム分析の一般論。
 
 ## 今後のテーマ候補
 
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
-- コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
 - ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,

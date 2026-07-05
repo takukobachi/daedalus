@@ -17,9 +17,13 @@
 - `kernel-network-stack.md` — カーネルネットワークスタック：NIC リングと NAPI (割り込みの
   経済)、sk_buff、GRO/GSO とパケット単価、RSS/RPS/RFS、qdisc/BQL、XDP・AF_XDP・DPDK の
   バイパス系譜。上 2 本のプロトコルを運ぶ機械側
+- `tls-internals.md` — TLS 1.3：削除による安全化 (RSA 鍵交換・CBC の廃止)、1-RTT
+  ハンドシェイク、HKDF 鍵スケジュール、PKI と Certificate Transparency、0-RTT と
+  ダウングレード防御、耐量子ハイブリッドへの移行
+- `dns-resolution.md` — DNS：委任とキャッシュ (TTL 付き結果整合性)、解決の実経路
+  (スタブ〜権威)、毒入れと DNSSEC、DoT/DoH と集中化のトレードオフ、障害の構造
+  (依存の環・ネガティブキャッシュ)
 
 ## 今後のテーマ候補
 
-- TLS 1.3 深掘り (TLS internals) — ハンドシェイク、鍵スケジュール、PKI と証明書検証
 - IP ルーティングと BGP (routing) — 経路制御、BGP の信頼モデル、RPKI
-- DNS — 再帰解決、キャッシュ、DNSSEC/DoH/DoT
