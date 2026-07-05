@@ -6,6 +6,9 @@
 
 - `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序, 仮想記憶 …）
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
+- `peripherals-connectivity/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
+  サブシステム, USB, Bluetooth …）。`hw-sw-interface/` の一段上でSoCと外界をつなぐ層。
+  `software/android/`・`software/ios/` の入力・オーディオスタックと対で読む
 - `automotive/` — 自動車（車載ネットワーク, ECU …）
 - `power-generation/` — 電力・発電（発電方式, 電力系統, 系統制御 …）
 - `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX …）
@@ -22,7 +25,8 @@
 - 再突入と熱防護 (re-entry & TPS) — 空力加熱、耐熱タイル、アブレーション
 - 半導体製造 (semiconductor manufacturing) — リソグラフィ (EUV)、プロセスノード、
   チップレットと先端パッケージング、歩留まり。すべての章の物理的前提
-- 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS。`aerospace/` の航法と
+- 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS など広域側。近距離 (Bluetooth)
+  は `peripherals-connectivity/` でカバー済み。`aerospace/` の航法と
   `software/networking/` の物理層側の土台
 - ロボティクス (robotics) — アクチュエータ、制御ループ、キネマティクス。
   `automotive/`・`aerospace/` の制御工学の一般化
