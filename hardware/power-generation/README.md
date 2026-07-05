@@ -8,6 +8,9 @@
 
 - [`generation-and-grid-fundamentals.md`](generation-and-grid-fundamentals.md) — 発電と電力系統の基礎 (power generation & grid fundamentals)
 - [`plant-control-scada-security.md`](plant-control-scada-security.md) — 発電所・系統の制御システムとセキュリティ (plant control: SCADA/DCS/IEC 61850 & security)
+- [`electricity-markets-dispatch.md`](electricity-markets-dispatch.md) — 電力市場と経済的ディスパッチ (electricity markets & economic dispatch)。周波数制御の階層が市場商品（需給調整市場・スポット・容量市場）へ写像される構造
+- [`battery-energy-storage.md`](battery-energy-storage.md) — 系統用蓄電システム (battery energy storage, BESS)。セル〜PCS〜EMS の階層、LFP への収斂、レベニュースタッキング、Hornsdale / Moss Landing 事例
+- [`hvdc-interconnection.md`](hvdc-interconnection.md) — 直流送電と地域間連系 (HVDC & interconnection)。LCC/VSC、日本の周波数変換設備 (FC)・北本連系、市場分断との接続
 
 ## 今後のトピック
 
@@ -15,10 +18,7 @@
 
 ### 事業・市場との接点 (grid economics & operation)
 
-- 電力市場と経済的ディスパッチ (electricity markets & economic dispatch) — メリットオーダー、卸電力市場 (JEPX)、需給調整市場・容量市場、ユニットコミットメント。既存文書の周波数制御階層（一次〜三次調整）が市場商品へ写像される構造
 - 送配電網 (transmission & distribution) — 変電所、潮流計算、N-1 基準、系統混雑とノンファーム型接続、託送
-- 蓄電システム (battery energy storage, BESS) — セル〜PCS〜EMS の構成、揚水との比較、アービトラージ＋調整力のレベニュースタッキング（[`../automotive/ev/`](../automotive/ev/) の電池分析と接続）
-- 直流送電と地域間連系 (HVDC & interconnection) — LCC/VSC 変換所、海底ケーブル、日本の 50/60 Hz 周波数変換設備
 
 ### 既存ロードマップの深掘り
 
