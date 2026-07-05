@@ -13,4 +13,5 @@
 - [`isa-riscv-intro.md`](isa-riscv-intro.md) — 命令セットアーキテクチャ入門 (ISA primer, RISC-V)
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 分岐予測と投機実行 (branch prediction & speculative execution)
 - [`simd-vector.md`](simd-vector.md) — SIMD・ベクトル演算 (SIMD / vector processing)
+- [`dram-memory-controllers.md`](dram-memory-controllers.md) — DRAM とメモリコントローラ (DRAM & memory controllers)
 

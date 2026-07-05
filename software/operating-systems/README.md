@@ -13,9 +13,13 @@
 - `power-management.md` — 電力管理：cpuidle と眠りの深さの賭け、schedutil/EAS、
   サスペンドと wakeup source、無線 RRC テールとプッシュの経済、Android (Doze/バケット/
   WorkManager) と iOS (凍結/DAS) の統治層比較。`../android/`・`../ios/` を束ねる横串
+- `filesystems.md` — ファイルシステム：VFS と名前解決 (dcache/RCU-walk)、オンディスク構造
+  (inode/extent)、クラッシュ一貫性の系譜 (fsck → ジャーナリング → CoW)、ext4/jbd2 の
+  モード、btrfs/ZFS、fsync の契約と fsyncgate
+- `block-io-stack.md` — ブロック I/O スタック：bio と blk-mq (単一キューの破綻と再設計)、
+  I/O スケジューラの現在地、io_uring (リング・SQPOLL・完了型 I/O)、O_DIRECT、
+  レイテンシの観測 (biolatency, PSI)
 
 ## 今後のテーマ候補
 
 - システムコール境界 (kernel/userspace boundary) — `hardware/hw-sw-interface/abi-syscalls.md` の続き
-- ファイルシステム (filesystems) — VFS, journaling, ext4/xfs
-- I/O スタック (I/O stack) — block 層, io_uring, ページキャッシュ writeback

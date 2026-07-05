@@ -20,8 +20,8 @@
   グラフィックス, セキュリティモデル）。`operating-systems/` の機構を実プロダクトの制約下で読む応用層。
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）。`android/` と同じ制約への対照的な解として相互対比する。
-- `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC）。
-  `distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
+- `networking/` — ネットワーキング（TCP・輻輳制御, HTTP/2/3・QUIC, カーネルネットワーク
+  スタック）。`distributed-systems/` の故障モデルの発生源であり、NIC (`hardware/hw-sw-interface/`) の上位層。
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。
 - `virtualization/` — 仮想化とコンテナ（VT-x/EPT, KVM/QEMU, virtio, namespaces/cgroups,
   gVisor/Firecracker）。`hardware/hw-sw-interface/` と `operating-systems/` の間に挟まる
@@ -34,11 +34,13 @@
 - `toolchain/` — ツールチェーン（ELF, リンカ, 動的リンク, ローダ, ASLR）。
   コンパイル後の成果物がプロセスになるまでを扱う層で、
   `hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側。
+- `compilers-runtimes/` — コンパイラとランタイム（階層型 JIT, 投機と deopt, GC）。
+  `toolchain/` (AOT 側) の対になる「実行しながら翻訳する」側で、
+  `android/`・`ios/` のランタイム分析の一般論。
 
 ## 今後のテーマ候補
 
 - セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）
-- コンパイラとランタイム (compilers & runtimes) — IR, 最適化, GC, JIT
 - ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
