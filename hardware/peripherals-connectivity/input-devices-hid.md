@@ -154,6 +154,7 @@ USB の HID は**インタラプト転送 (interrupt transfer)** を使い、ホ
 
 ### 次の接続先 (Related Topics)
 
+- `usb-architecture.md` — インタラプト転送・bInterval・列挙という有線伝送路の土台。
 - `bluetooth-pairing-protocol.md` — 無線コントローラーの伝送路 (HID over GATT) とリンク暗号化。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ホスト側で USB/BT コントローラーが割り込み・DMA で動く土台。
 - `../../software/operating-systems/process-thread-scheduling.md` — 入力イベントがゲームスレッドに届くまでのスケジューリング遅延。

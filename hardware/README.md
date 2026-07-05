@@ -7,7 +7,7 @@
 - `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序, 仮想記憶 …）
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
 - `peripherals-connectivity/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
-  サブシステム, Bluetooth …）。`hw-sw-interface/` の一段上でSoCと外界をつなぐ層。
+  サブシステム, USB, Bluetooth …）。`hw-sw-interface/` の一段上でSoCと外界をつなぐ層。
   `software/android/`・`software/ios/` の入力・オーディオスタックと対で読む
 - `automotive/` — 自動車（車載ネットワーク, ECU …）
 - `power-generation/` — 電力・発電（発電方式, 電力系統, 系統制御 …）

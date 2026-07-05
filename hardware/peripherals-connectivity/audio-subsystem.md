@@ -144,6 +144,7 @@ SD    ─[MSB]..[LSB]─[MSB]..[LSB]─  シリアルデータ (LRCLKエッジ�
 
 ### 次の接続先 (Related Topics)
 
+- `usb-architecture.md` — USBオーディオの伝送路（アイソクロナス転送とクロックフィードバック）。
 - `bluetooth-pairing-protocol.md` — この経路が無線化されたとき（A2DP/LE Audio）に何が変わるか。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — DMA リング・割り込み合体の一般論。
 - `../hw-sw-interface/clock-power-reset.md` — クロック生成 (PLL) と分配の土台。

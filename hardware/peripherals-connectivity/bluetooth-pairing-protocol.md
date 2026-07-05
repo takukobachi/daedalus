@@ -154,6 +154,7 @@ sequenceDiagram
 
 - `input-devices-hid.md` — HOGP で運ばれる HID レポートの中身。
 - `audio-subsystem.md` — 無線区間の手前、端末内のオーディオ経路。
+- `usb-architecture.md` — HCI トランスポートとしての USB、および「挿したら信頼」との信頼モデル対比。
 - `../hardware-security/side-channels-tee-secure-boot.md` — ボンディング鍵の保管とハードウェア信頼基盤。
 - `../../software/networking/tcp-transport-congestion.md` — 再送・輻輳という同型の問題の有線ネットワーク版。
 - `../timekeeping/clocks-time-synchronization.md` — ホッピング同期・Isochronous Channel の土台となる時刻同期。
