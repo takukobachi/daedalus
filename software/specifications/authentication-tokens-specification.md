@@ -1,71 +1,45 @@
-# Authentication Token Specification: JWT and OAuth 2.0
-# 認証トークン仕様書: JWT と OAuth 2.0
+# 認証トークン仕様書 (Authentication Token Specification) — JWT・OAuth 2.0・OIDC
 
-**Version**: 1.0
-**Last Updated**: 2025-11-30
+**Version**: 2.0
+**Last Updated**: 2026-07-06
 **Author**: Claude @ Daedalus
 
 ---
 
-## Table of Contents / 目次
+## 概要 (Overview)
 
-1. [Overview / 概要](#overview--概要)
-2. [JWT (JSON Web Token)](#jwt-json-web-token)
-3. [OAuth 2.0](#oauth-20)
-4. [OpenID Connect (OIDC)](#openid-connect-oidc)
-5. [JWT vs OAuth: Comparison / 比較](#jwt-vs-oauth-comparison--比較)
-6. [Security Considerations / セキュリティ考察](#security-considerations--セキュリティ考察)
-7. [Best Practices / ベストプラクティス](#best-practices--ベストプラクティス)
-8. [References / 参考文献](#references--参考文献)
+本ドキュメントは、JWT (JSON Web Token)、OAuth 2.0、および OpenID Connect (OIDC) を中心とした、現代の認証 (authentication)・認可 (authorization) メカニズムの技術仕様を分析する。これらの技術は、Web アプリケーションおよび API におけるアイデンティティ管理の基盤を構成する。
 
----
+3 つの関係を先に一言でまとめると、**JWT はトークンの「形式」、OAuth 2.0 はアクセス委任の「プロトコル」、OIDC は OAuth 2.0 の上に認証を載せた「アイデンティティ層」**である。本書では各仕様のデータ構造・プロトコルフロー・エラー処理・バージョン互換性を扱い、セキュリティ考察とベストプラクティスで締める。
 
-## Overview / 概要
+### 主要用語 (Key Terminology)
 
-**English**:
-This document provides a comprehensive technical analysis of modern authentication and authorization mechanisms, focusing on JWT (JSON Web Token) and OAuth 2.0. These technologies form the foundation of secure identity management in web applications and APIs.
-
-**日本語**:
-本ドキュメントは、JWT（JSON Web Token）およびOAuth 2.0を中心とした、現代の認証・認可メカニズムに関する包括的な技術分析を提供します。これらの技術は、Webアプリケーションおよび API におけるセキュアなアイデンティティ管理の基盤を構成しています。
-
-### Key Terminology / 主要用語
-
-| English | 日本語 | Description |
-|---------|--------|-------------|
-| Authentication | 認証 | Verifying the identity of a user or system |
-| Authorization | 認可 | Granting permission to access resources |
-| Token | トークン | A piece of data representing authentication/authorization state |
-| Claim | クレーム | A statement about an entity (typically the user) |
-| Scope | スコープ | The extent of access granted by a token |
+| 用語 | 英語 | 説明 |
+|------|------|------|
+| 認証 | Authentication | ユーザーやシステムの身元を検証すること |
+| 認可 | Authorization | リソースへのアクセス権限を付与すること |
+| トークン | Token | 認証・認可の状態を表現するデータ |
+| クレーム | Claim | エンティティ（通常はユーザー）に関する記述 |
+| スコープ | Scope | トークンが許可するアクセスの範囲 |
 
 ---
 
 ## JWT (JSON Web Token)
 
-### Overview / 概要
+JWT は、二者間で転送されるクレームを表現するための、コンパクトで URL セーフなトークン形式である ([RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519))。JSON 形式の情報（クレーム）を自己完結的に含み、デジタル署名によって完全性 (integrity) を保証する。
 
-**English**:
-JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties. Defined in [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), JWTs are self-contained tokens that carry information (claims) in a JSON format, digitally signed to ensure integrity.
+### 構造 (Structure)
 
-**日本語**:
-JSON Web Token（JWT）は、二者間で転送されるクレームを表現するための、コンパクトでURLセーフな手段です。[RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519)で定義されており、JWTはJSON形式で情報（クレーム）を含む自己完結型トークンで、完全性を保証するためにデジタル署名されています。
-
-### Structure / 構造
-
-A JWT consists of three parts separated by periods (`.`):
+JWT はピリオド (`.`) で区切られた 3 部分から構成される。
 
 ```
 xxxxx.yyyyy.zzzzz
 [Header].[Payload].[Signature]
 ```
 
-#### 1. Header / ヘッダー
+#### 1. ヘッダー (Header)
 
-**English**:
-The header typically consists of two parts: the type of token (JWT) and the signing algorithm being used.
-
-**日本語**:
-ヘッダーは通常、トークンのタイプ（JWT）と使用される署名アルゴリズムの2つの部分で構成されます。
+トークンのタイプ (JWT) と署名アルゴリズムを指定する。
 
 ```json
 {
@@ -74,27 +48,21 @@ The header typically consists of two parts: the type of token (JWT) and the sign
 }
 ```
 
-#### 2. Payload / ペイロード
+#### 2. ペイロード (Payload)
 
-**English**:
-The payload contains the claims. Claims are statements about an entity (typically, the user) and additional data.
+クレームを格納する。RFC 7519 が定義する登録済みクレーム (registered claims) は以下の通り。
 
-**日本語**:
-ペイロードにはクレームが含まれます。クレームは、エンティティ（通常はユーザー）に関する記述と追加データです。
+| クレーム | 名称 | 説明 |
+|----------|------|------|
+| `iss` | Issuer | トークン発行者 |
+| `sub` | Subject | トークンの対象者 |
+| `aud` | Audience | 想定される受信者 |
+| `exp` | Expiration Time | 有効期限（UNIX タイムスタンプ） |
+| `nbf` | Not Before | この時刻より前は無効 |
+| `iat` | Issued At | トークン発行時刻 |
+| `jti` | JWT ID | 一意識別子（リプレイ検出などに利用） |
 
-##### Registered Claims / 登録済みクレーム
-
-| Claim | Name | Description / 説明 |
-|-------|------|-------------------|
-| `iss` | Issuer | Token issuer / トークン発行者 |
-| `sub` | Subject | Subject of the token / トークンの対象者 |
-| `aud` | Audience | Intended recipient / 想定される受信者 |
-| `exp` | Expiration Time | Expiration timestamp / 有効期限（タイムスタンプ） |
-| `nbf` | Not Before | Token not valid before this time / この時刻より前は無効 |
-| `iat` | Issued At | Token issue timestamp / トークン発行時刻 |
-| `jti` | JWT ID | Unique identifier / 一意識別子 |
-
-##### Example Payload / ペイロード例
+ペイロード例:
 
 ```json
 {
@@ -106,13 +74,9 @@ The payload contains the claims. Claims are statements about an entity (typicall
 }
 ```
 
-#### 3. Signature / 署名
+#### 3. 署名 (Signature)
 
-**English**:
-The signature is created by taking the encoded header, encoded payload, a secret key, and the algorithm specified in the header.
-
-**日本語**:
-署名は、エンコードされたヘッダー、エンコードされたペイロード、秘密鍵、およびヘッダーで指定されたアルゴリズムを使用して作成されます。
+エンコード済みヘッダー・エンコード済みペイロード・鍵から、ヘッダーで指定されたアルゴリズムで生成する。
 
 ```
 HMACSHA256(
@@ -122,154 +86,128 @@ HMACSHA256(
 )
 ```
 
-### Supported Algorithms / サポートされるアルゴリズム
+なお、ヘッダーとペイロードは Base64URL エンコードされているだけで**暗号化はされていない**。署名が保証するのは完全性であり、機密性 (confidentiality) ではない。秘匿が必要なら JWE (JSON Web Encryption) か、そもそもペイロードに機密情報を入れない設計が必要である。
 
-| Algorithm | Type | Description / 説明 |
-|-----------|------|-------------------|
-| **HS256** | Symmetric | HMAC with SHA-256 (shared secret) |
-| **HS384** | Symmetric | HMAC with SHA-384 |
-| **HS512** | Symmetric | HMAC with SHA-512 |
-| **RS256** | Asymmetric | RSA signature with SHA-256 |
-| **RS384** | Asymmetric | RSA signature with SHA-384 |
-| **RS512** | Asymmetric | RSA signature with SHA-512 |
-| **ES256** | Asymmetric | ECDSA with P-256 and SHA-256 |
-| **ES384** | Asymmetric | ECDSA with P-384 and SHA-384 |
-| **ES512** | Asymmetric | ECDSA with P-521 and SHA-512 |
-| **none** | None | Unsecured JWT (DANGEROUS) |
+### サポートされるアルゴリズム (Supported Algorithms)
 
-### JWT Flow Diagram / JWT フロー図
+署名アルゴリズムは JWA ([RFC 7518](https://datatracker.ietf.org/doc/html/rfc7518)) で定義される。
+
+| アルゴリズム | 種別 | 説明 |
+|--------------|------|------|
+| HS256 / HS384 / HS512 | 対称鍵 (symmetric) | HMAC + SHA-256/384/512（共有シークレット） |
+| RS256 / RS384 / RS512 | 非対称鍵 (asymmetric) | RSA 署名 + SHA-256/384/512 |
+| ES256 / ES384 / ES512 | 非対称鍵 | ECDSA（P-256/P-384/P-521） + SHA-256/384/512 |
+| `none` | なし | 署名なし JWT（**危険** — 本番では必ず拒否する） |
+
+対称鍵 (HS*) は発行者と検証者が同一シークレットを共有するためマイクロサービス間で鍵配布の問題を生む。検証者が多数いる構成では、公開鍵で検証できる非対称鍵 (RS*/ES*) を選ぶ。
+
+### 認証フロー (Authentication Flow)
 
 ```mermaid
 sequenceDiagram
-    participant Client as Client / クライアント
-    participant Auth as Auth Server / 認証サーバー
-    participant API as Resource Server / リソースサーバー
+    participant Client as クライアント
+    participant Auth as 認証サーバー
+    participant API as リソースサーバー
 
-    Client->>Auth: 1. Login (credentials)
-    Auth->>Auth: 2. Validate credentials
-    Auth->>Client: 3. Return JWT
-    Client->>API: 4. Request + JWT (Authorization: Bearer)
-    API->>API: 5. Verify JWT signature
-    API->>Client: 6. Return protected resource
+    Client->>Auth: 1. ログイン (credentials)
+    Auth->>Auth: 2. 資格情報を検証
+    Auth->>Client: 3. JWT を返却
+    Client->>API: 4. リクエスト + JWT (Authorization: Bearer)
+    API->>API: 5. JWT 署名を検証
+    API->>Client: 6. 保護されたリソースを返却
 ```
 
-### Characteristics / 特徴
+### 特徴 (Characteristics)
 
-| Characteristic | Description (EN) | 説明 (JP) |
-|----------------|------------------|-----------|
-| **Stateless** | No server-side session storage required | サーバー側のセッションストレージ不要 |
-| **Self-contained** | Contains all necessary information | 必要な情報をすべて含む |
-| **Compact** | Small size, suitable for URLs | 小さいサイズ、URLに適している |
-| **Verifiable** | Signature ensures integrity | 署名が完全性を保証 |
+| 特徴 | 説明 |
+|------|------|
+| ステートレス (stateless) | サーバー側のセッションストレージが不要 |
+| 自己完結 (self-contained) | 検証に必要な情報をトークン自身が含む |
+| コンパクト | サイズが小さく、HTTP ヘッダーや URL に載せやすい |
+| 検証可能 | 署名により改竄を検出できる |
+
+裏返せば、自己完結ゆえに**発行後の失効 (revocation) が難しい**のが JWT の構造的弱点である（[比較](#jwt-と-oauth-20-の比較-comparison)参照）。
 
 ---
 
 ## OAuth 2.0
 
-### Overview / 概要
+OAuth 2.0 は、サードパーティアプリケーションが HTTP サービスへの**限定的なアクセス**を取得することを可能にする認可フレームワークである ([RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749))。ユーザーのパスワードをアプリケーションに渡すことなく、スコープを絞ったアクセスを委任できる点が本質である。
 
-**English**:
-OAuth 2.0 is an authorization framework defined in [RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749) that enables third-party applications to obtain limited access to HTTP services. It focuses on client developer simplicity while providing specific authorization flows for various application types.
+### 役割 (Roles)
 
-**日本語**:
-OAuth 2.0は、[RFC 6749](https://datatracker.ietf.org/doc/html/rfc6749)で定義された認可フレームワークで、サードパーティアプリケーションがHTTPサービスへの限定的なアクセスを取得することを可能にします。クライアント開発者の簡便性に重点を置きながら、様々なアプリケーションタイプに対応した認可フローを提供します。
+```mermaid
+graph LR
+    RO["リソースオーナー<br/>(Resource Owner)<br/>エンドユーザー"]
+    C["クライアント<br/>(Client)<br/>アプリケーション"]
+    AS["認可サーバー<br/>(Authorization Server)"]
+    RS["リソースサーバー<br/>(Resource Server)"]
 
-### Roles / 役割
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     OAuth 2.0 Roles                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────────┐         ┌──────────────────┐             │
-│  │  Resource Owner  │         │      Client      │             │
-│  │  リソースオーナー   │         │   クライアント    │             │
-│  │  (End User)      │         │  (Application)   │             │
-│  └────────┬─────────┘         └────────┬─────────┘             │
-│           │                            │                        │
-│           │ Authorizes                 │ Requests               │
-│           ▼                            ▼                        │
-│  ┌──────────────────┐         ┌──────────────────┐             │
-│  │ Authorization    │◄────────│  Resource        │             │
-│  │ Server           │         │  Server          │             │
-│  │ 認可サーバー       │         │  リソースサーバー  │             │
-│  └──────────────────┘         └──────────────────┘             │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+    RO -- "1. アクセスを認可" --> AS
+    C -- "2. トークンを要求" --> AS
+    AS -- "3. トークンを発行" --> C
+    C -- "4. トークンを提示" --> RS
 ```
 
-| Role | English | 日本語 |
-|------|---------|--------|
-| **Resource Owner** | Entity capable of granting access | アクセスを許可できるエンティティ（通常はエンドユーザー） |
-| **Client** | Application requesting access | アクセスを要求するアプリケーション |
-| **Authorization Server** | Issues tokens after authentication | 認証後にトークンを発行するサーバー |
-| **Resource Server** | Hosts protected resources | 保護されたリソースをホストするサーバー |
+| 役割 | 説明 |
+|------|------|
+| リソースオーナー (Resource Owner) | アクセスを許可できるエンティティ（通常はエンドユーザー） |
+| クライアント (Client) | アクセスを要求するアプリケーション |
+| 認可サーバー (Authorization Server) | 認証後にトークンを発行するサーバー |
+| リソースサーバー (Resource Server) | 保護されたリソースをホストするサーバー |
 
-### Grant Types / 認可タイプ
+### 認可タイプ (Grant Types)
 
-#### 1. Authorization Code Grant / 認可コードグラント
+#### 1. 認可コードグラント (Authorization Code Grant)
 
-**English**:
-The most secure flow, recommended for server-side applications. Uses a temporary authorization code exchanged for tokens.
-
-**日本語**:
-最も安全なフローで、サーバーサイドアプリケーションに推奨されます。一時的な認可コードをトークンと交換します。
+最も安全なフローで、一時的な認可コード (authorization code) をトークンと交換する。トークンがブラウザを経由しない点が要である。
 
 ```mermaid
 sequenceDiagram
-    participant User as User / ユーザー
-    participant Client as Client App
-    participant Auth as Authorization Server
-    participant Resource as Resource Server
+    participant User as ユーザー
+    participant Client as クライアントアプリ
+    participant Auth as 認可サーバー
+    participant Resource as リソースサーバー
 
-    User->>Client: 1. Access application
-    Client->>Auth: 2. Redirect to authorization endpoint
-    Auth->>User: 3. Login & consent prompt
-    User->>Auth: 4. Grant permission
-    Auth->>Client: 5. Redirect with authorization code
-    Client->>Auth: 6. Exchange code for tokens
-    Auth->>Client: 7. Return access token (+ refresh token)
-    Client->>Resource: 8. Request with access token
-    Resource->>Client: 9. Return protected resource
+    User->>Client: 1. アプリケーションにアクセス
+    Client->>Auth: 2. 認可エンドポイントへリダイレクト
+    Auth->>User: 3. ログイン・同意画面
+    User->>Auth: 4. 許可
+    Auth->>Client: 5. 認可コード付きでリダイレクト
+    Client->>Auth: 6. コードをトークンと交換
+    Auth->>Client: 7. アクセストークン (+ リフレッシュトークン)
+    Client->>Resource: 8. アクセストークンでリクエスト
+    Resource->>Client: 9. 保護されたリソースを返却
 ```
 
-#### 2. Authorization Code with PKCE / 認可コード + PKCE
+#### 2. 認可コード + PKCE (Authorization Code with PKCE)
 
-**English**:
-An enhanced version of Authorization Code flow with Proof Key for Code Exchange (PKCE). **Now recommended for ALL clients** including confidential clients.
+PKCE (Proof Key for Code Exchange, [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636)) は認可コードフローの拡張で、認可コードの横取り (interception) を防ぐ。現在は公開クライアントに限らず**すべてのクライアントに推奨**されており、OAuth 2.1 ドラフトでは必須化される方向である。
 
-**日本語**:
-Proof Key for Code Exchange（PKCE）を使用した認可コードフローの拡張版。**現在はすべてのクライアント**（機密クライアントを含む）に推奨されています。
+手順:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    PKCE Flow                                     │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  1. Generate code_verifier (random string)                      │
-│     code_verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r..."         │
-│                                                                  │
-│  2. Generate code_challenge                                      │
-│     code_challenge = BASE64URL(SHA256(code_verifier))           │
-│                                                                  │
-│  3. Send code_challenge with authorization request              │
-│     /authorize?...&code_challenge=E9Melhoa...&code_challenge_method=S256
-│                                                                  │
-│  4. Exchange code with code_verifier                            │
-│     /token?...&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r...  │
-│                                                                  │
-│  5. Server verifies: SHA256(code_verifier) == code_challenge    │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+# 1. Generate a random code_verifier
+code_verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r..."
+
+# 2. Derive the code_challenge
+code_challenge = BASE64URL(SHA256(code_verifier))
+
+# 3. Send code_challenge with the authorization request
+GET /authorize?...&code_challenge=E9Melhoa...&code_challenge_method=S256
+
+# 4. Exchange the code together with the original code_verifier
+POST /token
+  ...&code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r...
+
+# 5. Server verifies: SHA256(code_verifier) == code_challenge
 ```
 
-#### 3. Client Credentials Grant / クライアントクレデンシャルグラント
+認可コードを盗んでも `code_verifier` を知らなければトークンに交換できない、という一回性の証明である。
 
-**English**:
-Used for machine-to-machine (M2M) communication where no user is involved.
+#### 3. クライアントクレデンシャルグラント (Client Credentials Grant)
 
-**日本語**:
-ユーザーが関与しないマシン間（M2M）通信に使用されます。
+ユーザーが関与しないマシン間 (M2M) 通信に使用する。
 
 ```
 POST /token HTTP/1.1
@@ -282,169 +220,137 @@ grant_type=client_credentials
 &scope=read:data
 ```
 
-#### 4. Implicit Grant (DEPRECATED) / インプリシットグラント（非推奨）
+#### 4. インプリシットグラント (Implicit Grant) — 非推奨
 
-**English**:
-⚠️ **DEPRECATED in OAuth 2.1**. Was designed for browser-based apps but exposes tokens in URLs. Use Authorization Code with PKCE instead.
+ブラウザベースアプリ向けに設計されたが、トークンが URL フラグメントに露出する。OAuth 2.0 Security BCP ([RFC 9700](https://datatracker.ietf.org/doc/html/rfc9700)) で非推奨とされ、OAuth 2.1 ドラフトでは**削除**される。認可コード + PKCE を使用すること。
 
-**日本語**:
-⚠️ **OAuth 2.1で非推奨**。ブラウザベースのアプリ向けに設計されましたが、URLでトークンが露出します。代わりに認可コード + PKCEを使用してください。
+#### 5. リソースオーナーパスワードクレデンシャル (Resource Owner Password Credentials) — 非推奨
 
-#### 5. Resource Owner Password Credentials (DEPRECATED) / リソースオーナーパスワードクレデンシャル（非推奨）
+ユーザーの資格情報そのものをクライアントに渡すフローで、OAuth が本来解決したかった問題への逆行である。同じく RFC 9700 で非推奨、OAuth 2.1 ドラフトで削除される。レガシーシステムの移行期間に限る。
 
-**English**:
-⚠️ **DEPRECATED in OAuth 2.1**. Requires sharing user credentials with the client. Only for legacy systems with high trust.
+### トークンタイプ (Token Types)
 
-**日本語**:
-⚠️ **OAuth 2.1で非推奨**。ユーザー認証情報をクライアントと共有する必要があります。高い信頼性を持つレガシーシステムでのみ使用。
+| トークン | 目的 | 有効期間 |
+|----------|------|----------|
+| アクセストークン (access token) | 保護されたリソースへのアクセス | 短命（分〜時間単位） |
+| リフレッシュトークン (refresh token) | 新しいアクセストークンの取得 | 長命（日〜月単位） |
 
-### Token Types / トークンタイプ
+アクセストークンを短命にして漏洩時の被害を限定し、長いセッションはリフレッシュトークン（+ ローテーション）で維持するのが基本形である。失効は失効エンドポイント ([RFC 7009](https://datatracker.ietf.org/doc/html/rfc7009)) で行う。
 
-| Token Type | Purpose (EN) | 目的 (JP) | Lifetime |
-|------------|--------------|-----------|----------|
-| **Access Token** | Access protected resources | 保護されたリソースへのアクセス | Short (minutes to hours) |
-| **Refresh Token** | Obtain new access tokens | 新しいアクセストークンの取得 | Long (days to months) |
+### エラー処理 (Error Handling)
+
+トークンエンドポイントのエラーは HTTP 400（`invalid_client` は 401）で、JSON ボディの `error` フィールドにより通知される (RFC 6749 §5.2)。
+
+| `error` 値 | 意味 |
+|------------|------|
+| `invalid_request` | パラメータの不足・不正 |
+| `invalid_client` | クライアント認証の失敗 |
+| `invalid_grant` | 認可コード・リフレッシュトークンが無効/期限切れ |
+| `unauthorized_client` | このグラントタイプの使用が許可されていない |
+| `unsupported_grant_type` | サーバーが対応しないグラントタイプ |
+| `invalid_scope` | 要求スコープが無効・範囲超過 |
+
+リソースサーバー側のエラーは Bearer トークン仕様 ([RFC 6750](https://datatracker.ietf.org/doc/html/rfc6750)) の `WWW-Authenticate` ヘッダーで返す。
+
+| `error` 値 | HTTP ステータス | 意味 |
+|------------|-----------------|------|
+| `invalid_request` | 400 | リクエスト形式の不正 |
+| `invalid_token` | 401 | トークンが無効・期限切れ → クライアントは再取得を試みる |
+| `insufficient_scope` | 403 | トークンのスコープ不足 |
+
+クライアント実装は `invalid_token` (401) を「リフレッシュ → リトライ」の契機として扱い、`insufficient_scope` (403) はリトライしても無駄である、という区別が要点になる。
 
 ---
 
 ## OpenID Connect (OIDC)
 
-### Overview / 概要
+OpenID Connect は OAuth 2.0 の上に構築された**アイデンティティ層**である ([OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html))。ID トークン (ID Token) を導入することで、認可のフレームワークである OAuth に「ユーザーが誰であるか」の認証機能を追加する。
 
-**English**:
-OpenID Connect (OIDC) is an identity layer built on top of OAuth 2.0. It adds authentication capabilities to OAuth's authorization framework by introducing the ID Token.
-
-**日本語**:
-OpenID Connect（OIDC）は、OAuth 2.0の上に構築されたアイデンティティレイヤーです。IDトークンを導入することで、OAuthの認可フレームワークに認証機能を追加します。
-
-### Relationship with OAuth 2.0 / OAuth 2.0との関係
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                                                                  │
-│                    ┌─────────────────────┐                      │
-│                    │   OpenID Connect    │                      │
-│                    │   (Authentication)  │                      │
-│                    │   認証               │                      │
-│                    └──────────┬──────────┘                      │
-│                               │                                  │
-│                    ┌──────────▼──────────┐                      │
-│                    │     OAuth 2.0       │                      │
-│                    │   (Authorization)   │                      │
-│                    │   認可               │                      │
-│                    └──────────┬──────────┘                      │
-│                               │                                  │
-│                    ┌──────────▼──────────┐                      │
-│                    │       HTTP          │                      │
-│                    └─────────────────────┘                      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    OIDC["OpenID Connect<br/>認証 (Authentication)"]
+    OAuth["OAuth 2.0<br/>認可 (Authorization)"]
+    HTTP["HTTP"]
+    OIDC --> OAuth --> HTTP
 ```
 
-### ID Token / IDトークン
+OAuth 2.0 のアクセストークンだけで「ログイン」を実装すると、トークンの発行先・発行契機を検証できず脆弱になる。OIDC はこの穴を、検証可能なクレームを持つ ID トークンで塞いだものと理解できる。
 
-**English**:
-The ID Token is a JWT that contains claims about the authentication event and the authenticated user.
+### ID トークン (ID Token)
 
-**日本語**:
-IDトークンは、認証イベントと認証されたユーザーに関するクレームを含むJWTです。
+ID トークンは、認証イベントと認証されたユーザーに関するクレームを含む **JWT** である。ここで 3 仕様が合流する: OIDC のプロトコル (OAuth 2.0 ベース) が JWT 形式のトークンを運ぶ。
 
-#### ID Token Claims / IDトークンのクレーム
+| クレーム | 必須性 | 説明 |
+|----------|--------|------|
+| `iss` | 必須 | 発行者識別子 |
+| `sub` | 必須 | サブジェクト識別子（発行者内で一意なユーザー ID） |
+| `aud` | 必須 | オーディエンス（クライアント ID） |
+| `exp` | 必須 | 有効期限 |
+| `iat` | 必須 | 発行時刻 |
+| `auth_time` | 条件付き | 認証が実際に行われた時刻 |
+| `nonce` | 条件付き | セッション関連付け文字列（リプレイ防止） |
+| `acr` | 任意 | 認証コンテキストクラス |
+| `amr` | 任意 | 認証方法（パスワード、OTP 等） |
+| `azp` | 任意 | 認可された当事者 |
 
-| Claim | Required | Description (EN) | 説明 (JP) |
-|-------|----------|------------------|-----------|
-| `iss` | Yes | Issuer identifier | 発行者識別子 |
-| `sub` | Yes | Subject identifier | サブジェクト識別子 |
-| `aud` | Yes | Audience | オーディエンス |
-| `exp` | Yes | Expiration time | 有効期限 |
-| `iat` | Yes | Issued at time | 発行時刻 |
-| `auth_time` | Conditional | Authentication time | 認証時刻 |
-| `nonce` | Conditional | String to associate session | セッション関連付け文字列 |
-| `acr` | Optional | Authentication context class | 認証コンテキストクラス |
-| `amr` | Optional | Authentication methods | 認証方法 |
-| `azp` | Optional | Authorized party | 認可された当事者 |
+### OIDC スコープ (Scopes)
 
-### OIDC Scopes / OIDCスコープ
-
-| Scope | Claims Returned | 返されるクレーム |
-|-------|-----------------|-----------------|
-| `openid` | `sub` | サブジェクト識別子 |
-| `profile` | `name`, `family_name`, `given_name`, `nickname`, `picture`, etc. | プロフィール情報 |
-| `email` | `email`, `email_verified` | メールアドレス |
-| `address` | `address` | 住所 |
-| `phone` | `phone_number`, `phone_number_verified` | 電話番号 |
+| スコープ | 返されるクレーム |
+|----------|------------------|
+| `openid` | `sub`（OIDC リクエストであることの宣言。必須） |
+| `profile` | `name`, `family_name`, `given_name`, `nickname`, `picture` など |
+| `email` | `email`, `email_verified` |
+| `address` | `address` |
+| `phone` | `phone_number`, `phone_number_verified` |
 
 ---
 
-## JWT vs OAuth: Comparison / 比較
+## JWT と OAuth 2.0 の比較 (Comparison)
 
-### Fundamental Difference / 根本的な違い
+### 根本的な違い (Fundamental Difference)
 
-| Aspect | JWT | OAuth 2.0 |
-|--------|-----|-----------|
-| **Type / タイプ** | Token Format / トークン形式 | Authorization Protocol / 認可プロトコル |
-| **Purpose / 目的** | Encode and transmit claims / クレームのエンコードと送信 | Delegate access / アクセスの委任 |
-| **Statefulness** | Stateless / ステートレス | Stateful (requires auth server) / ステートフル |
-| **Revocation / 失効** | Difficult (no built-in mechanism) / 困難 | Built-in revocation endpoint / 組み込みの失効エンドポイント |
+そもそも比較の土俵が違う——JWT は**トークン形式**、OAuth 2.0 は**認可プロトコル**である。「JWT vs OAuth」という問いの多くは「OAuth のアクセストークンとして JWT を使うか、不透明 (opaque) トークンを使うか」という問いに還元される。
 
-### When to Use / 使い分け
+| 観点 | JWT | OAuth 2.0 |
+|------|-----|-----------|
+| 種別 | トークン形式 | 認可プロトコル |
+| 目的 | クレームのエンコードと転送 | アクセスの委任 |
+| 状態管理 | ステートレス | 認可サーバーが状態を持つ |
+| 失効 | 困難（組み込み機構なし。有効期限切れを待つか失効リストが必要） | 失効エンドポイントあり (RFC 7009) |
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Decision Matrix / 選択マトリクス              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Use JWT when / JWTを使用する場合:                               │
-│  ├─ Stateless authentication needed / ステートレス認証が必要     │
-│  ├─ Microservices architecture / マイクロサービスアーキテクチャ   │
-│  ├─ API authentication / API認証                                │
-│  └─ Server-to-server communication / サーバー間通信              │
-│                                                                  │
-│  Use OAuth when / OAuthを使用する場合:                           │
-│  ├─ Third-party access delegation / サードパーティアクセス委任    │
-│  ├─ Social login (Google, Facebook, etc.) / ソーシャルログイン   │
-│  ├─ User consent for data access / データアクセスのユーザー同意   │
-│  └─ API access for external apps / 外部アプリのAPIアクセス       │
-│                                                                  │
-│  Use Both Together / 両方を組み合わせる場合:                      │
-│  ├─ OAuth issues JWT as access token                            │
-│  ├─ OIDC ID tokens are JWTs                                     │
-│  └─ Complex enterprise authentication                            │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+### 使い分け (When to Use)
+
+- **JWT（形式として）を使う場面**: ステートレス認証、マイクロサービス間の API 認証、サーバー間通信。検証側が発行側に問い合わせずに済むことが利点。
+- **OAuth 2.0 を使う場面**: サードパーティへのアクセス委任、ソーシャルログイン、データアクセスへのユーザー同意、外部アプリへの API 開放。
+- **組み合わせる場面（実際には最も多い）**: OAuth の認可サーバーがアクセストークンを JWT 形式で発行する。OIDC の ID トークンは仕様上 JWT である。エンタープライズ認証基盤はほぼこの複合形をとる。
+
+### バージョン互換性 (Version Compatibility)
+
+- **OAuth 2.0 → 2.1**: OAuth 2.1 は 2026 年時点でドラフト ([draft-ietf-oauth-v2-1](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1)) だが、方向性は確定している——RFC 6749/6750 と Security BCP (RFC 9700) の統合であり、新機能の追加ではなく**危険な選択肢の削除**である。主な変更: (1) 認可コードフローでの PKCE 必須化、(2) インプリシット・パスワードグラントの削除、(3) URL クエリ文字列でのベアラートークン送信の禁止、(4) リフレッシュトークンの送信者制約または一回限り使用。既存の 2.0 実装は、これらのプラクティスへ先行して移行しておけば 2.1 と互換になる。
+- **JWT**: RFC 7519 自体は安定しているが、運用指針は JWT BCP ([RFC 8725](https://datatracker.ietf.org/doc/html/rfc8725)) で更新されており、`alg` 検証の厳格化など本書のベストプラクティス節の内容が標準化されている。
+- **OIDC**: OpenID Connect Core 1.0 は errata 更新のみで後方互換が維持されている。
 
 ---
 
-## Security Considerations / セキュリティ考察
+## セキュリティ考察 (Security Considerations)
 
-### JWT Vulnerabilities / JWT脆弱性
+### JWT の脆弱性 (JWT Vulnerabilities)
 
-#### 1. Algorithm Confusion Attack / アルゴリズム混同攻撃
+#### 1. アルゴリズム混同攻撃 (Algorithm Confusion Attack)
 
-**English**:
-Attackers exploit libraries that accept the `alg` header without validation, switching from RS256 to HS256 and using the public key as the HMAC secret.
-
-**日本語**:
-攻撃者は、`alg`ヘッダーを検証せずに受け入れるライブラリを悪用し、RS256からHS256に切り替え、公開鍵をHMACシークレットとして使用します。
+`alg` ヘッダーを検証せずに受け入れるライブラリを悪用する。RS256 のトークンを HS256 に書き換え、**公開鍵を HMAC のシークレットとして**署名すると、検証側が公開鍵を HMAC 鍵として使ってしまい検証が通る。
 
 ```
-# Attack scenario / 攻撃シナリオ
-Original (RS256): Signed with private key, verified with public key
-Attack (HS256):   Attacker signs with public key (now used as HMAC secret)
+# Attack scenario
+Original (RS256): signed with private key, verified with public key
+Attack   (HS256): attacker signs with the public key (now used as HMAC secret)
 ```
 
-**Mitigation / 対策**:
-- Always whitelist allowed algorithms / 許可されたアルゴリズムを常にホワイトリスト化
-- Never trust the `alg` header from the token / トークンの`alg`ヘッダーを信頼しない
+**対策**: 許可するアルゴリズムをサーバー側で固定（ホワイトリスト化）し、トークンの `alg` ヘッダーを信頼しない。鍵とアルゴリズムを対で管理する。
 
-#### 2. None Algorithm Attack / noneアルゴリズム攻撃
+#### 2. none アルゴリズム攻撃 (None Algorithm Attack)
 
-**English**:
-Some libraries accept `alg: none` which means no signature verification.
-
-**日本語**:
-一部のライブラリは`alg: none`を受け入れ、署名検証が行われません。
+`alg: none` は「署名なし JWT」を意味し、これを受け入れるライブラリでは署名検証が丸ごとスキップされる。
 
 ```json
 {
@@ -453,182 +359,75 @@ Some libraries accept `alg: none` which means no signature verification.
 }
 ```
 
-**Mitigation / 対策**:
-- Reject tokens with `alg: none` in production / 本番環境では`alg: none`のトークンを拒否
-- Explicitly configure accepted algorithms / 受け入れるアルゴリズムを明示的に設定
+**対策**: 本番環境では `alg: none` を必ず拒否し、受け入れるアルゴリズムを明示的に設定する。
 
-#### 3. Key ID (kid) Injection / キーID (kid) インジェクション
+#### 3. キー ID (`kid`) インジェクション
 
-**English**:
-The `kid` parameter can be exploited for SQL injection or path traversal attacks.
+ヘッダーの `kid` パラメータを鍵の検索にそのまま使う実装では、SQL インジェクションやパストラバーサルに悪用されうる。
 
-**日本語**:
-`kid`パラメータは、SQLインジェクションやパストラバーサル攻撃に悪用される可能性があります。
+**対策**: `kid` 値をサニタイズ・検証し、ファイルパスではなく UUID 等の不透明な識別子を使う。
 
-**Mitigation / 対策**:
-- Sanitize and validate `kid` values / `kid`値をサニタイズして検証
-- Use UUIDs instead of file paths / ファイルパスの代わりにUUIDを使用
+#### 4. トークン窃取 (Token Theft)
 
-#### 4. Token Theft / トークン窃取
+安全でない方法（XSS に読める場所）で保存された JWT は窃取される。
 
-**English**:
-JWTs stored insecurely can be stolen via XSS attacks.
+**対策**: HttpOnly Cookie への保存、短い有効期限、トークン更新メカニズムの実装。
 
-**日本語**:
-安全でない方法で保存されたJWTは、XSS攻撃によって窃取される可能性があります。
+### OAuth 2.0 のセキュリティ脅威 (Security Threats)
 
-**Mitigation / 対策**:
-- Store tokens in HttpOnly cookies / HttpOnly Cookieにトークンを保存
-- Use short expiration times / 短い有効期限を使用
-- Implement token refresh mechanisms / トークン更新メカニズムを実装
+| 脅威 | 説明 | 対策 |
+|------|------|------|
+| CSRF | 認可レスポンスのクロスサイトリクエストフォージェリ | `state` パラメータ |
+| 認可コード横取り | リダイレクト経路でのコード窃取 | PKCE |
+| オープンリダイレクタ | 悪意のあるリダイレクト URI への誘導 | リダイレクト URI の完全一致検証 |
+| トークン漏洩 | ログ・URL でのトークン露出 | トークン交換は POST で行い、URL に載せない |
 
-### OAuth 2.0 Security Threats / OAuth 2.0のセキュリティ脅威
-
-| Threat / 脅威 | Description (EN) | 説明 (JP) | Mitigation / 対策 |
-|---------------|------------------|-----------|-------------------|
-| **CSRF** | Cross-site request forgery | クロスサイトリクエストフォージェリ | Use `state` parameter |
-| **Code Interception** | Authorization code stolen | 認可コードの窃取 | Use PKCE |
-| **Open Redirector** | Malicious redirect URI | 悪意のあるリダイレクトURI | Strict URI validation |
-| **Token Leakage** | Tokens exposed in logs/URLs | ログ/URLでのトークン露出 | Use POST for token exchange |
+これらの脅威と対策の体系的な整理は OAuth 2.0 Security BCP ([RFC 9700](https://datatracker.ietf.org/doc/html/rfc9700)) にまとまっている。
 
 ---
 
-## Best Practices / ベストプラクティス
+## ベストプラクティス (Best Practices)
 
-### JWT Best Practices / JWTのベストプラクティス
+### JWT セキュリティチェックリスト
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                 JWT Security Checklist                           │
-│                 JWTセキュリティチェックリスト                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Algorithm Security / アルゴリズムセキュリティ                    │
-│  □ Whitelist allowed algorithms / アルゴリズムをホワイトリスト化  │
-│  □ Use RS256 or ES256 for public clients / 公開クライアントには  │
-│    RS256またはES256を使用                                        │
-│  □ Reject "none" algorithm / "none"アルゴリズムを拒否            │
-│                                                                  │
-│  Token Lifetime / トークンの有効期間                              │
-│  □ Short expiration (15min-1hr) / 短い有効期限（15分〜1時間）     │
-│  □ Use refresh tokens for long sessions / 長いセッションには      │
-│    リフレッシュトークンを使用                                     │
-│  □ Implement token rotation / トークンローテーションを実装        │
-│                                                                  │
-│  Claim Validation / クレーム検証                                  │
-│  □ Verify iss (issuer) / iss（発行者）を検証                     │
-│  □ Verify aud (audience) / aud（オーディエンス）を検証            │
-│  □ Check exp (expiration) / exp（有効期限）を確認                 │
-│  □ Validate nbf (not before) / nbf（有効開始時刻）を検証          │
-│                                                                  │
-│  Storage / ストレージ                                             │
-│  □ Use HttpOnly cookies / HttpOnly Cookieを使用                  │
-│  □ Set Secure flag (HTTPS only) / Secureフラグを設定              │
-│  □ Set SameSite attribute / SameSite属性を設定                   │
-│  □ Never store in localStorage for sensitive apps /              │
-│    機密性の高いアプリではlocalStorageに保存しない                  │
-│                                                                  │
-│  Key Management / 鍵管理                                          │
-│  □ Use strong keys (min 256 bits) / 強力な鍵を使用（最小256ビット）│
-│  □ Rotate keys regularly / 定期的に鍵をローテーション              │
-│  □ Use secrets manager / シークレットマネージャーを使用           │
-│  □ Separate keys per environment / 環境ごとに鍵を分離             │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **アルゴリズム**: 許可するアルゴリズムをホワイトリスト化する。検証者が複数いる構成では RS256 または ES256（非対称鍵）を使う。`none` を拒否する。
+- **有効期間**: アクセストークンは短命にする（15 分〜1 時間）。長いセッションにはリフレッシュトークンを使い、ローテーションを実装する。
+- **クレーム検証**: 受信側で `iss`（発行者）の一致、`aud`（自分宛てであること）、`exp`・`nbf`（有効期間内であること）を必ず検証する。
+- **ストレージ**: HttpOnly Cookie を使用し、`Secure` フラグ（HTTPS のみ）と `SameSite` 属性を設定する。機密性の高いアプリでは localStorage に保存しない（XSS で読み取られる）。
+- **鍵管理**: 強力な鍵（最小 256 ビット）を使い、定期的にローテーションする。シークレットマネージャーで管理し、環境ごとに鍵を分離する。
 
-### OAuth 2.0 Best Practices / OAuth 2.0のベストプラクティス
+### OAuth 2.0 セキュリティチェックリスト
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                OAuth 2.0 Security Checklist                      │
-│                OAuth 2.0セキュリティチェックリスト                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  Flow Selection / フロー選択                                      │
-│  □ Use Authorization Code + PKCE for all clients /               │
-│    すべてのクライアントで認可コード + PKCEを使用                   │
-│  □ Avoid Implicit flow / インプリシットフローを避ける             │
-│  □ Avoid Password grant / パスワードグラントを避ける              │
-│                                                                  │
-│  PKCE Configuration / PKCE設定                                    │
-│  □ Use S256 challenge method / S256チャレンジメソッドを使用       │
-│  □ Generate cryptographically random code_verifier /             │
-│    暗号的にランダムなcode_verifierを生成                          │
-│                                                                  │
-│  Redirect URI / リダイレクトURI                                   │
-│  □ Exact match validation / 完全一致検証                         │
-│  □ No wildcards in production / 本番環境ではワイルドカードなし    │
-│  □ HTTPS required / HTTPS必須                                    │
-│                                                                  │
-│  Token Security / トークンセキュリティ                            │
-│  □ Use short-lived access tokens / 短命のアクセストークンを使用   │
-│  □ Implement refresh token rotation / リフレッシュトークン        │
-│    ローテーションを実装                                           │
-│  □ Bind tokens to client (DPoP/mTLS) / トークンをクライアントに   │
-│    バインド                                                       │
-│                                                                  │
-│  State Management / 状態管理                                      │
-│  □ Use state parameter for CSRF protection /                     │
-│    CSRF保護にstateパラメータを使用                                │
-│  □ Use nonce for replay protection /                             │
-│    リプレイ保護にnonceを使用                                      │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
+- **フロー選択**: すべてのクライアントで認可コード + PKCE を使う。インプリシットフロー・パスワードグラントを使わない。
+- **PKCE 設定**: チャレンジメソッドは `S256` を使う（`plain` は不可）。`code_verifier` は暗号論的に安全な乱数で生成する。
+- **リダイレクト URI**: 完全一致で検証する（ワイルドカード禁止）。HTTPS を必須にする。
+- **トークンセキュリティ**: 短命のアクセストークンとリフレッシュトークンローテーションを使う。可能なら DPoP / mTLS でトークンをクライアントにバインドする（送信者制約）。
+- **状態管理**: CSRF 保護に `state` パラメータを、リプレイ保護に `nonce`（OIDC）を使う。
 
-### Implementation Recommendations / 実装推奨事項
+### 推奨ライブラリ (Recommended Libraries)
 
-#### Recommended Libraries / 推奨ライブラリ
+トークン処理は自作せず、実績のあるライブラリを使うこと。
 
-| Language | JWT Library | OAuth/OIDC Library |
-|----------|-------------|-------------------|
-| **Node.js** | `jsonwebtoken`, `jose` | `passport`, `openid-client` |
-| **Python** | `PyJWT`, `python-jose` | `Authlib`, `oauthlib` |
-| **Java** | `jjwt`, `nimbus-jose-jwt` | `Spring Security OAuth` |
-| **Go** | `golang-jwt/jwt` | `golang.org/x/oauth2` |
-| **Rust** | `jsonwebtoken` | `oauth2` |
+| 言語 | JWT | OAuth/OIDC |
+|------|-----|------------|
+| Node.js | `jsonwebtoken`, `jose` | `passport`, `openid-client` |
+| Python | `PyJWT`, `python-jose` | `Authlib`, `oauthlib` |
+| Java | `jjwt`, `nimbus-jose-jwt` | Spring Security OAuth |
+| Go | `golang-jwt/jwt` | `golang.org/x/oauth2` |
+| Rust | `jsonwebtoken` | `oauth2` |
 
 ---
 
-## References / 参考文献
+## 付録 A: トークン例 (Appendix A: Token Examples)
 
-### Standards and RFCs / 標準とRFC
-
-| Document | Title | URL |
-|----------|-------|-----|
-| RFC 7519 | JSON Web Token (JWT) | [datatracker.ietf.org/doc/html/rfc7519](https://datatracker.ietf.org/doc/html/rfc7519) |
-| RFC 6749 | The OAuth 2.0 Authorization Framework | [datatracker.ietf.org/doc/html/rfc6749](https://datatracker.ietf.org/doc/html/rfc6749) |
-| RFC 7636 | PKCE for OAuth Public Clients | [datatracker.ietf.org/doc/html/rfc7636](https://datatracker.ietf.org/doc/html/rfc7636) |
-| RFC 8725 | JWT Best Current Practices | [datatracker.ietf.org/doc/html/rfc8725](https://datatracker.ietf.org/doc/html/rfc8725) |
-| RFC 7518 | JSON Web Algorithms (JWA) | [datatracker.ietf.org/doc/html/rfc7518](https://datatracker.ietf.org/doc/html/rfc7518) |
-| OIDC Core | OpenID Connect Core 1.0 | [openid.net/specs/openid-connect-core-1_0.html](https://openid.net/specs/openid-connect-core-1_0.html) |
-
-### Security Resources / セキュリティリソース
-
-- [OWASP OAuth 2.0 Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OAuth2_Cheat_Sheet.html)
-- [OWASP JWT Cheat Sheet for Java](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
-- [Curity JWT Best Practices](https://curity.io/resources/learn/jwt-best-practices/)
-- [Auth0 JWT Documentation](https://auth0.com/docs/secure/tokens/json-web-tokens)
-- [PortSwigger JWT Attacks](https://portswigger.net/web-security/jwt)
-
-### Additional Reading / 追加資料
-
-- [OAuth 2.0 Security Best Current Practice (Draft)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics)
-- [OAuth 2.1 Draft Specification](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1)
-- [Stytch: A Developer's Guide to RFC 7519](https://stytch.com/blog/rfc-7519-jwt-part-1/)
-
----
-
-## Appendix A: Token Examples / 付録A: トークン例
-
-### JWT Example / JWT例
+### JWT の例
 
 ```
 eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA
 ```
 
-**Decoded Header / デコードされたヘッダー**:
+デコードされたヘッダー:
+
 ```json
 {
   "alg": "RS256",
@@ -636,7 +435,8 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 }
 ```
 
-**Decoded Payload / デコードされたペイロード**:
+デコードされたペイロード:
+
 ```json
 {
   "sub": "1234567890",
@@ -646,7 +446,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 }
 ```
 
-### OAuth 2.0 Token Response Example / OAuth 2.0トークンレスポンス例
+### OAuth 2.0 トークンレスポンスの例
 
 ```json
 {
@@ -660,27 +460,38 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 
 ---
 
-## Appendix B: Security Incident Response / 付録B: セキュリティインシデント対応
+## 付録 B: セキュリティインシデント対応 (Appendix B: Security Incident Response)
 
-### Token Compromise Response / トークン漏洩時の対応
+トークン漏洩時の対応手順:
 
-**English**:
-1. Immediately revoke the compromised token (if using OAuth)
-2. Rotate signing keys if private key compromised
-3. Force re-authentication for affected users
-4. Review access logs for unauthorized access
-5. Implement additional monitoring
-
-**日本語**:
-1. 漏洩したトークンを直ちに失効させる（OAuthの場合）
-2. 秘密鍵が漏洩した場合は署名鍵をローテーション
-3. 影響を受けたユーザーに再認証を強制
-4. アクセスログで不正アクセスを確認
-5. 追加の監視を実装
+1. 漏洩したトークンを直ちに失効させる（OAuth の場合は失効エンドポイント）
+2. 署名用秘密鍵が漏洩した場合は署名鍵をローテーションする（JWT は鍵の失効 = 全トークンの失効になる点に注意）
+3. 影響を受けたユーザーに再認証を強制する
+4. アクセスログで不正アクセスの有無を確認する
+5. 追加の監視を実装する
 
 ---
 
-**Document End / ドキュメント終了**
+## 参考文献 (References)
 
-*Navigate the labyrinth of authentication with wisdom and precision.*
-*知恵と精度を持って、認証の迷宮を進め。*
+**一次資料 (Primary — RFC・標準)**
+
+- Jones, M., Bradley, J., & Sakimura, N. (2015). JSON Web Token (JWT). *RFC 7519*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc7519) — Accessed: 2026-07-06
+- Hardt, D. (2012). The OAuth 2.0 Authorization Framework. *RFC 6749*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc6749) — Accessed: 2026-07-06
+- Jones, M., & Hardt, D. (2012). The OAuth 2.0 Authorization Framework: Bearer Token Usage. *RFC 6750*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc6750) — Accessed: 2026-07-06
+- Lodderstedt, T., Dronia, S., & Scurtescu, M. (2013). OAuth 2.0 Token Revocation. *RFC 7009*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc7009) — Accessed: 2026-07-06
+- Jones, M. (2015). JSON Web Algorithms (JWA). *RFC 7518*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc7518) — Accessed: 2026-07-06
+- Sakimura, N., Bradley, J., & Agarwal, N. (2015). Proof Key for Code Exchange by OAuth Public Clients. *RFC 7636*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc7636) — Accessed: 2026-07-06
+- Sheffer, Y., Hardt, D., & Jones, M. (2020). JSON Web Token Best Current Practices. *RFC 8725*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc8725) — Accessed: 2026-07-06
+- Lodderstedt, T., Bradley, J., Labunets, A., & Fett, D. (2025). Best Current Practice for OAuth 2.0 Security. *RFC 9700*. — [datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc9700) — Accessed: 2026-07-06
+- Sakimura, N., Bradley, J., Jones, M., de Medeiros, B., & Mortimore, C. (2014). [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html). OpenID Foundation. — Accessed: 2026-07-06
+- [The OAuth 2.1 Authorization Framework (draft-ietf-oauth-v2-1)](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1) — Accessed: 2026-07-06（ドラフト。版数・内容は更新されうる）
+
+**二次資料 (Secondary — 解説・セキュリティリソース)**
+
+- [OWASP OAuth 2.0 Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OAuth2_Cheat_Sheet.html) — Accessed: 2026-07-06
+- [OWASP JWT Cheat Sheet for Java](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html) — Accessed: 2026-07-06
+- [Curity: JWT Security Best Practices](https://curity.io/resources/learn/jwt-best-practices/) — Accessed: 2026-07-06
+- [Auth0: JSON Web Tokens](https://auth0.com/docs/secure/tokens/json-web-tokens) — Accessed: 2026-07-06
+- [PortSwigger: JWT Attacks](https://portswigger.net/web-security/jwt) — Accessed: 2026-07-06
+- [Stytch: A Developer's Guide to RFC 7519](https://stytch.com/blog/rfc-7519-jwt-part-1/) — Accessed: 2026-07-06
