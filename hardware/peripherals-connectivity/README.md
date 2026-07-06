@@ -11,3 +11,14 @@ SoC と外界をつなぐ周辺デバイスの中身と、その接続技術。`
 
 読む順は上から。入力 (HID) と音声 (USB Audio / A2DP・LE Audio) は、有線の背骨 (USB) と
 無線の背骨 (Bluetooth) の2本の伝送路の上で合流する構成になっている。
+
+## 今後のテーマ候補
+
+- ディスプレイパイプライン (display pipeline) — パネルの物理、MIPI DSI / DisplayPort /
+  HDMI、SoC のディスプレイエンジン。入力・音声に対する「出力（表示）」の欠を埋め、
+  `software/android/graphics-pipeline.md`・`software/ios/core-animation-render-server.md`
+  のハードウェア側の対になる
+- カメラとイメージセンサ (camera & image sensors) — CMOS センサの物理、MIPI CSI、
+  ISP パイプライン。モバイルプラットフォーム分析の撮像側の土台
+- Wi-Fi (802.11) — 無線のもう一本の背骨。PHY/MAC、CSMA/CA、Wi-Fi 6/7。近距離
+  (Bluetooth, 本ディレクトリ) と広域 (5G/GNSS, トップレベル候補「無線通信」) の間を埋める

@@ -2,7 +2,7 @@
 
 「いま何時か」を装置間・大陸間で一致させる技術の分析。時刻同期は「物理時計側」の土台であり、`../../software/distributed-systems/` が扱う論理時計・一貫性モデルの議論と対をなす層である。`../hw-sw-interface/clock-power-reset.md` が扱うチップ内のクロック生成・分配を、発振器の物理から GNSS・ネットワーク時刻プロトコルを経て分散システムの API に至るスケールへ拡張する。ここでの「時計の不確かさの桁」の理解が、分散データベースや TSN の設計判断を読み解く鍵になる。
 
-## 構成
+## ドキュメント
 
 - [`clocks-time-synchronization.md`](clocks-time-synchronization.md) — 時刻同期とクロック (timekeeping & clock synchronization)：水晶発振器とアラン偏差、原子時計、TAI/UTC/うるう秒、GNSS 時刻配信、NTP/PTP/White Rabbit、TrueTime と分散システムへの橋渡し
 

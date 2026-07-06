@@ -2,7 +2,7 @@
 
 ハードウェアセキュリティは、`cpu-architecture/` の投機実行・キャッシュ機構と、software 側のセキュリティ分析（iOS/Android のプラットフォーム防御）とを橋渡しする層である。ここで一貫して問うのは「性能最適化がそのまま情報チャネルになる」という構造、すなわち命令セット (ISA) が保証しないマイクロアーキテクチャ状態 (microarchitectural state) の副作用が、いかにして信頼境界 (trust boundary) を貫通するかである。同時に、その漏洩を封じ込めるための隔離機構（TEE, Secure Boot, 信頼の起点）を、攻撃と防御の対で整理する。
 
-## 構成
+## ドキュメント
 
 - [`side-channels-tee-secure-boot.md`](side-channels-tee-secure-boot.md) — サイドチャネル・TEE・信頼の起点 (side channels, TEE & root of trust)
 

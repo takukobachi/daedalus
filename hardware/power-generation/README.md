@@ -1,4 +1,4 @@
-# Power Generation
+# 電力・発電 (Power Generation)
 
 電力・発電を題材としたハードウェア分析。一次エネルギーから電気への変換チェーンと、それを支える電力系統 (power system) を扱い、物理プラントが最終的に制御システム (SCADA/DCS) というソフトウェアに集約される接点までを追う。
 
@@ -12,7 +12,7 @@
 - [`battery-energy-storage.md`](battery-energy-storage.md) — 系統用蓄電システム (battery energy storage, BESS)。セル〜PCS〜EMS の階層、LFP への収斂、レベニュースタッキング、Hornsdale / Moss Landing 事例
 - [`hvdc-interconnection.md`](hvdc-interconnection.md) — 直流送電と地域間連系 (HVDC & interconnection)。LCC/VSC、日本の周波数変換設備 (FC)・北本連系、市場分断との接続
 
-## 今後のトピック
+## 今後のテーマ候補
 
 物理（発電・系統）から事業（市場・運用）までを一つの連続したシステムとして扱う。特に「周波数制御の階層が市場商品として値付けされる」接点を軸に、電力事業側へ展開する。
 
