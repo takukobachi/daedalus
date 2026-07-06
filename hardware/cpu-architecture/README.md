@@ -15,3 +15,13 @@
 - [`simd-vector.md`](simd-vector.md) — SIMD・ベクトル演算 (SIMD / vector processing)
 - [`dram-memory-controllers.md`](dram-memory-controllers.md) — DRAM とメモリコントローラ (DRAM & memory controllers)
 
+## 今後のテーマ候補
+
+- ヘテロジニアスマルチコア (heterogeneous multicore) — big.LITTLE / P・E コア、
+  非対称コア間の共有キャッシュとマイグレーション、OS スケジューラとの接点
+- 性能計測と PMU (performance monitoring) — ハードウェア性能カウンタ、`perf` が読む
+  マイクロアーキテクチャ事象、トップダウン解析 (top-down microarchitecture analysis)
+- NUMA とマルチソケット (NUMA & multi-socket) — UPI / Infinity Fabric、メモリ
+  アフィニティ、[`cache-coherence.md`](cache-coherence.md)・
+  [`dram-memory-controllers.md`](dram-memory-controllers.md) のスケールアップ側の続き
+

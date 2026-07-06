@@ -1,4 +1,4 @@
-# Automotive
+# 自動車 (Automotive)
 
 自動車を題材としたハードウェア分析。電子制御 (ECU) と車載ネットワーク (in-vehicle network) を中心に、組込みソフトウェアと物理システムの接点を扱う。電動化 (electrification) まで対象を広げ、EV と物理・ソフトの統合を扱う。
 
@@ -6,6 +6,7 @@
 
 - [`in-vehicle-networks.md`](in-vehicle-networks.md) — 車載ネットワークと ECU (in-vehicle networks & ECU)：CAN を軸に調停・堅牢性・無認証問題
 - [`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) — 車載 Ethernet と TSN (Automotive Ethernet & TSN)：SPE・TSN・FlexRay・LIN・CAN FD/XL・SOME/IP
+- [`ee-architecture.md`](ee-architecture.md) — E/E アーキテクチャ総論 (E/E architecture)：分散 → ドメイン → ゾーン＋セントラルの変遷、配線ハーネスの物理、eFuse 配電、mixed-criticality、SDV/OTA
 - [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 機能安全 (functional safety, ISO 26262)
 - [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) — 自動車サイバーセキュリティ (automotive cybersecurity)：ISO/SAE 21434・UN R155/R156・HSM・SecOC・セキュア OTA
 
@@ -13,13 +14,9 @@
 
 - [`ev/`](ev/) — 電気自動車 (electric vehicles)：EV パワートレインの基礎工学と **テスラ**（バッテリ/4680・パワートレイン・E/E アーキ・製造）
 
-## 今後のトピック (Roadmap)
+## 今後のテーマ候補
 
-現状のカバレッジ（CAN・車載 Ethernet/TSN・機能安全・EV）を踏まえ、優先度順に調査対象を整理する。
-
-### 優先度 高 (コアの穴を埋める)
-
-- **E/E アーキテクチャ総論** — Distributed → Domain → Zonal → Central Compute の変遷、ゾーンコントローラ、SDV、配線ハーネス削減の物理（テスラ固有記述の一般化）。
+現状のカバレッジ（CAN・車載 Ethernet/TSN・E/E アーキテクチャ・機能安全・EV）を踏まえ、優先度順に調査対象を整理する。
 
 ### 優先度 中 (物理システムを厚くする)
 
