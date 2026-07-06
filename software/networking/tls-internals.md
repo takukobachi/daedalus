@@ -135,7 +135,7 @@ sequenceDiagram
 - [`kernel-network-stack.md`](kernel-network-stack.md) — kTLS オフロード。レコード相の暗号がカーネル/NIC に降りる経路。
 - [`dns-resolution.md`](dns-resolution.md) — 接続の前段。DoT/DoH は DNS を TLS の中に入れる動きであり、SNI と並ぶ「最後の平文」問題を共有する。
 - [`../../hardware/hardware-security/side-channels-tee-secure-boot.md`](../../hardware/hardware-security/side-channels-tee-secure-boot.md) — 鍵を守る側の土台 (TEE, secure boot)。タイミングサイドチャネルの一般論。
-- [`../specifications/authentication/authentication-tokens-specification.md`](../specifications/authentication/authentication-tokens-specification.md) — TLS の上に載る認証トークンの層。
+- [`../specifications/authentication-tokens-specification.md`](../specifications/authentication-tokens-specification.md) — TLS の上に載る認証トークンの層。
 
 ## 参考文献 (References)
 
