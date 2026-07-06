@@ -13,8 +13,9 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
   `cpu-architecture/` の対照編で、`software/ml-systems/` と対で読む
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
 - `peripherals-connectivity/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
-  サブシステム, USB, Bluetooth …）。`hw-sw-interface/` の一段上でSoCと外界をつなぐ層。
-  `software/android/`・`software/ios/` の入力・オーディオスタックと対で読む
+  サブシステム, ディスプレイ, USB, Bluetooth …）。`hw-sw-interface/` の一段上でSoCと
+  外界をつなぐ層。`software/android/`・`software/ios/` の入力・オーディオ・表示
+  スタックと対で読む
 - `storage-devices/` — ストレージデバイス物理（NAND フラッシュ, FTL, 書込増幅 …）。
   `hw-sw-interface/storage-nvm-interface.md` の下の層で、`cpu-architecture/` の
   DRAM 分析と対になる永続側の媒体物理
