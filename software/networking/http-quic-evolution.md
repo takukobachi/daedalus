@@ -124,7 +124,7 @@ HTTP の 30 年は、「**Web ページ 1 枚のために数十〜数百のリ�
 ### 次の接続先 (Related Topics)
 
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — 本書の前提。TCP の構造的限界と輻輳制御（QUIC にもそのまま載る）。
-- [`../specifications/authentication/authentication-tokens-specification.md`](../specifications/authentication/authentication-tokens-specification.md) — この輸送路の上で運ばれる認証。0-RTT の冪等性制約はトークン設計にも波及する。
+- [`../specifications/authentication-tokens-specification.md`](../specifications/authentication-tokens-specification.md) — この輸送路の上で運ばれる認証。0-RTT の冪等性制約はトークン設計にも波及する。
 - [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — RPC の下回り。接続移行・多重化はサービス間通信 (gRPC 等) の挙動を変える。
 - [`../android/platform-architecture.md`](../android/platform-architecture.md) — モバイルこそ connection migration の主戦場（Wi-Fi⇄セルラー切替）。
 

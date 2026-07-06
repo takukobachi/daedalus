@@ -139,7 +139,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — cgroup/cpuset・優先度。top-app/background 分離の基盤。
 - [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) — Verified Boot が挿入されるブート段の一般構造。
 - [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — HSM・セキュアブート・多層防御の車載版。Android Automotive OS で両者は合流する。
-- [`../specifications/authentication/authentication-tokens-specification.md`](../specifications/authentication/authentication-tokens-specification.md) — アプリ層の認証。Keystore はそのトークン・鍵の置き場になる。
+- [`../specifications/authentication-tokens-specification.md`](../specifications/authentication-tokens-specification.md) — アプリ層の認証。Keystore はそのトークン・鍵の置き場になる。
 
 ## 参考文献 (References)
 
