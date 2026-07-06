@@ -60,13 +60,17 @@
 - `specifications/` — 実システム・プロトコルの仕様分析（決済, 認証 …）。一般原理では
   なく、特定のプロダクト・標準仕様を一次資料から再構成する層
 
+### 横断領域 (Cross-cutting)
+
+- `security/` — ソフトウェアセキュリティ（メモリ安全性, exploit 緩和の系譜, サンドボックス,
+  応用暗号 …）。`hardware/hardware-security/` のソフトウェア側の対であり、
+  各領域の「セキュリティ考察」セクションを束ねる横串
+
 ## 今後のテーマ候補
 
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
 README のロードマップに置き、ここには重複させない。
 
-- セキュリティ (security) — 適用暗号, メモリ安全性, サンドボックス（namespace, seccomp, WASM）。
-  `hardware/hardware-security/` のソフトウェア側の対
 - ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
   パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
