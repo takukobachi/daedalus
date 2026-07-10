@@ -36,23 +36,41 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 ## 今後のテーマ候補
 
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
-README のロードマップに置き、ここには重複させない。
+README のロードマップに置き、ここには重複させない。優先度は「既存ドキュメントとの
+相互参照が何本張れるか（スタックの穴を埋めるか）」を基準に付けている。
+
+### 優先度 高 (既存の層に直結し、穴を埋める)
 
 - 半導体製造 (semiconductor manufacturing) — リソグラフィ (EUV)、プロセスノード、
   チップレットと先端パッケージング、歩留まり。すべての章の物理的前提
+- NIC とスイッチ (NIC & switch hardware) — DMA リングとディスクリプタ、
+  チェックサム/TSO などのオフロード、スイッチ ASIC とバッファリング。
+  `software/networking/`（特に kernel-network-stack）の物理側の対。
+  ネットワークスタックの分析がソフト側だけ揃っている非対称を解消する
+- 高速シリアルリンクとシグナルインテグリティ (SerDes & signal integrity) —
+  イコライゼーション、PAM4、アイダイアグラム、PLL/CDR、伝送線路と反射。
+  PCIe (`hw-sw-interface/bus-interconnect.md`)・USB・Ethernet・ディスプレイリンク
+  (`peripherals-connectivity/`) が論理層で共有している「物理層の共通土台」
+
+### 優先度 中 (新しいドメインを開く)
+
+- データセンターインフラ (datacenter infrastructure) — 給電 (UPS/PDU)、冷却
+  (空冷 → 液冷)、Clos トポロジ。`power-generation/` と計算機システムの合流点。
+  AI 学習クラスタの電力・冷却制約という時事的な軸も持つ
 - 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS など広域側。近距離 (Bluetooth)
   は `peripherals-connectivity/` でカバー済み。`aerospace/` の航法と
   `software/networking/` の物理層側の土台
 - ロボティクス (robotics) — アクチュエータ、制御ループ、キネマティクス。
   `automotive/`・`aerospace/` の制御工学の一般化
-- NIC とスイッチ (NIC & switch hardware) — DMA リングとディスクリプタ、
-  チェックサム/TSO などのオフロード、スイッチ ASIC とバッファリング。
-  `software/networking/`（特に kernel-network-stack）の物理側の対
-- データセンターインフラ (datacenter infrastructure) — 給電 (UPS/PDU)、冷却
-  (空冷 → 液冷)、Clos トポロジ。`power-generation/` と計算機システムの合流点
 - FPGA・再構成可能計算 (FPGA & reconfigurable computing) — LUT とルーティング、
   HLS、SmartNIC/DPU。`gpu-accelerators/` が描く専用化スペクトラムの続き
+
+### 優先度 低 (将来の拡張)
+
 - 量子コンピューティング (quantum computing) — 量子ビットの物理、誤り訂正、
   極低温制御エレクトロニクス
 - 鉄道信号と制御 (railway signaling) — 閉塞、ATC/ETCS/CBTC、フェールセーフ設計。
   `automotive/` の機能安全と対比する第三の輸送ドメイン
+- 医療機器 (medical devices) — IEC 62304/60601、規制下のソフトウェアライフサイクル、
+  ペースメーカ・輸液ポンプの安全設計。automotive (ISO 26262)・railway に続く
+  安全規格ドメインの第三例
