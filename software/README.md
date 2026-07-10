@@ -46,12 +46,16 @@
 ### プラットフォーム分析 (Platform Analysis)
 
 上記の一般機構が、実プロダクトの制約（バッテリー・メモリ・相互不信のアプリ群）の下で
-どう再設計されるかを読む応用層。両者は同じ制約への対照的な解として相互対比する。
+どう再設計されるかを読む応用層。各プラットフォームは同じ問題系への対照的な解として
+相互対比する。
 
 - `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
   グラフィックス, セキュリティモデル）
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）
+- `browsers/` — ブラウザ内部（マルチプロセスとサイト分離, サンドボックス, Mojo,
+  レンダリングパイプライン, V8）。署名もインストールもない任意コード実行という
+  最も敵対的な制約下の第三のプラットフォーム
 
 ### 応用システム・仕様 (Applied Systems & Specifications)
 
@@ -74,10 +78,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 高 (既存の層に直結し、穴を埋める)
 
-- ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
-  パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析。
-  `compilers-runtimes/`（JIT）・`security/`（サイト分離・サンドボックス）・
-  `networking/`（HTTP/QUIC）の既存分析がそのまま部品になる
 - 可観測性と性能工学 (observability & performance engineering) — ハードウェア性能
   カウンタ (PMU) と `perf`、ftrace/eBPF ベースのトレーシング、continuous profiling、
   分散トレーシング (OpenTelemetry)、メトリクスと USE/RED。`security/` に続く第二の

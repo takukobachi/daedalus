@@ -8,6 +8,9 @@
 
 CPU の内部から SoC の外界までを、ソフトウェアに接続する層の順に積み上げる。
 
+- `semiconductor-manufacturing/` — 半導体製造（リソグラフィ/EUV, プロセスノード,
+  チップレット・先端パッケージング, 歩留まり）。すべての計算機システム分析の
+  物理的前提となる最下層
 - `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序, 仮想記憶 …）
 - `gpu-accelerators/` — GPU・アクセラレータ（SIMT, メモリ階層/HBM, Tensor Core …）。
   `cpu-architecture/` の対照編で、`software/ml-systems/` と対で読む
@@ -41,8 +44,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 高 (既存の層に直結し、穴を埋める)
 
-- 半導体製造 (semiconductor manufacturing) — リソグラフィ (EUV)、プロセスノード、
-  チップレットと先端パッケージング、歩留まり。すべての章の物理的前提
 - NIC とスイッチ (NIC & switch hardware) — DMA リングとディスクリプタ、
   チェックサム/TSO などのオフロード、スイッチ ASIC とバッファリング。
   `software/networking/`（特に kernel-network-stack）の物理側の対。
