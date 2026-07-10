@@ -46,12 +46,16 @@
 ### プラットフォーム分析 (Platform Analysis)
 
 上記の一般機構が、実プロダクトの制約（バッテリー・メモリ・相互不信のアプリ群）の下で
-どう再設計されるかを読む応用層。両者は同じ制約への対照的な解として相互対比する。
+どう再設計されるかを読む応用層。各プラットフォームは同じ問題系への対照的な解として
+相互対比する。
 
 - `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
   グラフィックス, セキュリティモデル）
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）
+- `browsers/` — ブラウザ内部（マルチプロセスとサイト分離, サンドボックス, Mojo,
+  レンダリングパイプライン, V8）。署名もインストールもない任意コード実行という
+  最も敵対的な制約下の第三のプラットフォーム
 
 ### 応用システム・仕様 (Applied Systems & Specifications)
 
@@ -69,15 +73,30 @@
 ## 今後のテーマ候補
 
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
-README のロードマップに置き、ここには重複させない。
+README のロードマップに置き、ここには重複させない。優先度は「既存ドキュメントとの
+相互参照が何本張れるか（スタックの穴を埋めるか）」を基準に付けている。
 
-- ブラウザ内部 (browser internals) — プロセスモデルとサンドボックス, レンダリング
-  パイプライン, V8/JavaScriptCore。`android/`・`ios/` に続く第三のプラットフォーム分析
+### 優先度 高 (既存の層に直結し、穴を埋める)
+
+- 可観測性と性能工学 (observability & performance engineering) — ハードウェア性能
+  カウンタ (PMU) と `perf`、ftrace/eBPF ベースのトレーシング、continuous profiling、
+  分散トレーシング (OpenTelemetry)、メトリクスと USE/RED。`security/` に続く第二の
+  横串で、`ebpf/` の応用面と `hardware/cpu-architecture/` の PMU 候補を束ねる
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
-  WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点
+  WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点であり、
+  hardware/software 両スタックを束ねる橋
+
+### 優先度 中 (応用層を広げる)
+
 - メッセージングとストリーム処理 (messaging & stream processing) — 分散ログ,
   exactly-once セマンティクス, バックプレッシャ。`distributed-systems/`・`databases/` の応用層
+- オブジェクトストレージ (object storage) — S3 型設計、イレイジャーコーディング、
+  メタデータ層とデータ層の分離、CRUSH 型配置。`distributed-systems/`・`databases/`・
+  `hardware/storage-devices/` の合流点
 - 検索と情報検索 (search & IR) — 転置インデックス, ランキング (BM25),
   近似最近傍探索 (ANN)。`databases/` と `ml-systems/`（ベクトル検索）の合流点
+
+### 優先度 低 (小さく閉じた題材)
+
 - Git 内部 (Git internals) — content-addressed storage, Merkle DAG, packfile と delta 圧縮。
   小さく閉じた題材で、分散システムの複製・整合性の具体例にもなる
