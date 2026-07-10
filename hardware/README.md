@@ -19,6 +19,9 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
   サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi …）。`hw-sw-interface/` の
   一段上でSoCと外界をつなぐ層。`software/android/`・`software/ios/` の入力・オーディオ・
   表示スタックと対で読む
+- `network-hardware/` — ネットワークハードウェア（NIC, ディスクリプタリング,
+  オフロード, RDMA/RoCE, スイッチ ASIC, SmartNIC/DPU …）。
+  `software/networking/`（特に kernel-network-stack）の物理側の対
 - `storage-devices/` — ストレージデバイス物理（NAND フラッシュ, FTL, 書込増幅 …）。
   `hw-sw-interface/storage-nvm-interface.md` の下の層で、`cpu-architecture/` の
   DRAM 分析と対になる永続側の媒体物理
@@ -44,10 +47,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 高 (既存の層に直結し、穴を埋める)
 
-- NIC とスイッチ (NIC & switch hardware) — DMA リングとディスクリプタ、
-  チェックサム/TSO などのオフロード、スイッチ ASIC とバッファリング。
-  `software/networking/`（特に kernel-network-stack）の物理側の対。
-  ネットワークスタックの分析がソフト側だけ揃っている非対称を解消する
 - 高速シリアルリンクとシグナルインテグリティ (SerDes & signal integrity) —
   イコライゼーション、PAM4、アイダイアグラム、PLL/CDR、伝送線路と反射。
   PCIe (`hw-sw-interface/bus-interconnect.md`)・USB・Ethernet・ディスプレイリンク

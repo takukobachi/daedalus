@@ -69,6 +69,9 @@
 - `security/` — ソフトウェアセキュリティ（メモリ安全性, exploit 緩和の系譜, サンドボックス,
   応用暗号 …）。`hardware/hardware-security/` のソフトウェア側の対であり、
   各領域の「セキュリティ考察」セクションを束ねる横串
+- `observability/` — 可観測性と性能工学（PMU/トップダウン解析, カーネルトレーシング,
+  eBPF 集計, 分散トレーシング, メトリクス, SLO, 測定方法論）。`security/` に続く
+  第二の横串で、各領域の「観測の入口」表を束ねて一般化する
 
 ## 今後のテーマ候補
 
@@ -78,10 +81,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 高 (既存の層に直結し、穴を埋める)
 
-- 可観測性と性能工学 (observability & performance engineering) — ハードウェア性能
-  カウンタ (PMU) と `perf`、ftrace/eBPF ベースのトレーシング、continuous profiling、
-  分散トレーシング (OpenTelemetry)、メトリクスと USE/RED。`security/` に続く第二の
-  横串で、`ebpf/` の応用面と `hardware/cpu-architecture/` の PMU 候補を束ねる
 - 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
   WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点であり、
   hardware/software 両スタックを束ねる橋
