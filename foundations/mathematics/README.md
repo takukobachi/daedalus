@@ -4,16 +4,19 @@
 「Daedalus内の応用」セクションで既存の分析ドキュメントへリンクする
 （`foundations/README.md` の規約）。
 
+## 構成 (Structure)
+
+- `linear-algebra/` — 線形代数(ベクトル空間、線形写像、行列積の計算構造 …)。
+  SIMD (`../../hardware/cpu-architecture/simd-vector.md`)、
+  GPU・Tensor Core (`../../hardware/gpu-accelerators/`)、
+  機械学習システム (`../../software/ml-systems/`) の計算の実体
+
 ## 今後のテーマ候補
 
 優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
 
 ### 優先度 高 (既存分析に直結)
 
-- 線形代数 (linear algebra) — ベクトル空間、行列、固有値、行列分解。
-  SIMD (`../../hardware/cpu-architecture/simd-vector.md`)、
-  GPU・Tensor Core (`../../hardware/gpu-accelerators/`)、
-  機械学習システム (`../../software/ml-systems/`) の計算の実体
 - 確率・統計 (probability & statistics) — 確率分布、期待値、推定、マルコフ連鎖。
   分岐予測 (`../../hardware/cpu-architecture/branch-prediction-speculation.md`)、
   製造歩留まり (`../../hardware/semiconductor-manufacturing/`)、
