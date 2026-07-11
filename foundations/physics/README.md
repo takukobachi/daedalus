@@ -4,17 +4,21 @@
 「Daedalus内の応用」セクションで既存の分析ドキュメントへリンクする
 （`foundations/README.md` の規約）。
 
+## 構成 (Structure)
+
+- `electromagnetism/` — 電磁気学(電荷・電場・電位、静磁気、電磁誘導、
+  マクスウェル方程式、回路理論、伝送線路 …)。
+  バス・インターコネクト (`../../hardware/hw-sw-interface/bus-interconnect.md`)、
+  無線 (`../../hardware/peripherals-connectivity/`)、
+  電力系統 (`../../hardware/power-generation/`) の土台。hardware README が
+  優先度高に挙げる SerDes・シグナルインテグリティの前提でもある
+
 ## 今後のテーマ候補
 
 優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
 
 ### 優先度 高 (既存分析に直結)
 
-- 電磁気学 (electromagnetism) — マクスウェル方程式、回路理論、伝送線路、電磁波。
-  バス・インターコネクト (`../../hardware/hw-sw-interface/bus-interconnect.md`)、
-  無線 (`../../hardware/peripherals-connectivity/`)、
-  電力系統 (`../../hardware/power-generation/`) の土台。hardware README が
-  優先度高に挙げる SerDes・シグナルインテグリティの前提でもある
 - 量子力学・固体物理 (quantum mechanics & solid-state physics) — バンド理論、
   半導体接合、トランジスタの動作原理。半導体製造
   (`../../hardware/semiconductor-manufacturing/`)、NAND フラッシュ
