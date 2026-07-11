@@ -76,6 +76,17 @@ Section titles are bilingual (`English / 日本語`) to match existing documents
 5. Trade-offs / トレードオフ
 6. Implementation Notes / 実装ノート
 
+### Foundations Documents — Required Sections
+
+For documents under `foundations/` (mathematics, physics, and other theory):
+
+1. Overview / 概要
+2. Prerequisites / 前提知識 — assumed background and prerequisite documents in the series
+3. Main Content / 本論 — definitions, theorems, and intuition, built up from the basics
+4. Engineering Connections / 工学への接続 — why the theory matters for engineered systems
+5. Applications within Daedalus / Daedalus内の応用 — relative links to the analysis documents this theory supports
+6. References / 参考文献 — textbooks and papers per the Citations standard
+
 ### Hardware Specs Must Include
 
 Component ID, electrical characteristics, physical dimensions, timing diagrams,
