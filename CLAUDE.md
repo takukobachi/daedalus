@@ -17,6 +17,7 @@ Top-level layout:
 daedalus/
 ├── hardware/      # Hardware analysis (CPU, HW/SW interface, automotive, ...)
 ├── software/      # Software analysis (architecture, specifications, ...)
+├── foundations/   # Foundational theory (mathematics, physics, ...) behind the analyses
 └── references/    # Reference materials (papers, books, articles)
 ```
 

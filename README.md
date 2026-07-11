@@ -27,5 +27,6 @@ Daedalusは、複雑なソフトウェアとハードウェアシステムの探
 daedalus/
 ├── hardware/      # ハードウェア分析
 ├── software/      # ソフトウェア分析
+├── foundations/   # 基礎理論（数学・物理 — 分析を支える理論的土台）
 └── references/    # 参考資料
 ```
