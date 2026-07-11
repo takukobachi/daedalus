@@ -9,13 +9,15 @@
 1. [`charge-field-potential.md`](charge-field-potential.md) —
    電荷とクーロンの法則、電場とガウスの法則、電位、導体と静電遮蔽、
    キャパシタンス。DRAM・NAND・CMOS 動的電力の物理的土台。シリーズの起点
+2. [`current-magnetostatics.md`](current-magnetostatics.md) —
+   電流と電荷保存、オームの法則の微視的描像(ドルーデモデル)、ジュール熱、
+   ローレンツ力、アンペールの法則。配線抵抗・IR ドロップ・
+   エレクトロマイグレーション・モーターの物理
 
 ## ロードマップ (Roadmap)
 
 番号は推奨する読み書きの順序(依存順)。
 
-2. 電流と静磁気 (current & magnetostatics) — オームの法則の物理、
-   ビオ・サバールの法則、アンペールの法則。抵抗・配線・エレクトロマイグレーション
 3. 電磁誘導とインダクタンス (electromagnetic induction & inductance) —
    ファラデーの法則、自己/相互インダクタンス。モーター・発電機・電源回路・
    寄生インダクタンスの土台
