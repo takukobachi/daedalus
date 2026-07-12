@@ -25,10 +25,10 @@
    フェーザとインピーダンス、共振と Q 値・PDN の反共振。
    デカップリング・電源分配網 (PDN) の解析手段
 
-## ロードマップ (Roadmap)
+6. [`transmission-lines-signal-integrity.md`](transmission-lines-signal-integrity.md) —
+   電信方程式と分布定数、特性インピーダンス、反射と終端、表皮効果・
+   誘電損失と符号間干渉 (ISI)、差動伝送とイコライゼーション (SerDes)。
+   高速シリアルリンク (PCIe/USB/Ethernet) の物理層の共通土台。シリーズ最終回
 
-番号は推奨する読み書きの順序(依存順)。
-
-6. 伝送線路とシグナルインテグリティ (transmission lines & signal integrity) —
-   分布定数、特性インピーダンス、反射・終端。高速シリアルリンク
-   (PCIe/USB/Ethernet) の物理層の共通土台
+当初計画した6本のシリーズはこれで完結。以降のテーマ(アンテナ工学の深掘り、
+導波路・光学など)は必要が生じた時点でロードマップを再開する。
