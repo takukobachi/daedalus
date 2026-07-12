@@ -14,12 +14,13 @@
 3. [`svd-low-rank.md`](svd-low-rank.md) —
    特異値分解(任意の行列の「回転・伸縮・回転」分解)、Eckart–Young の定理と
    低ランク近似、条件数、PCA。圧縮・次元削減・LoRA の土台
+4. [`matrix-factorizations-numerical.md`](matrix-factorizations-numerical.md) —
+   LU / Cholesky / QR 分解、最小二乗法、浮動小数点 (IEEE 754) と後退誤差解析。
+   「計算できた」と「信用できる」を分ける数値線形代数の入口
 
 ## ロードマップ (Roadmap)
 
 番号は推奨する読み書きの順序(依存順)。
 
-4. 行列分解と数値線形代数 (LU / QR / Cholesky) — 連立一次方程式・最小二乗法の
-   実用解法。浮動小数点誤差と条件数 (condition number)
 5. テンソルと多線形代数 (tensors & multilinear algebra) — 行列の多次元一般化。
    機械学習フレームワークのデータモデルと Tensor Core の演算単位
