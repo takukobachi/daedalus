@@ -17,13 +17,14 @@
    ファラデーの法則とレンツの法則、発電機と逆起電力・回生ブレーキ、
    自己/相互インダクタンスと変圧器、渦電流。寄生インダクタンス・
    di/dt ノイズ・電力変換の物理
+4. [`maxwell-equations-em-waves.md`](maxwell-equations-em-waves.md) —
+   変位電流、マクスウェル方程式への統合、電磁波の導出 (c = 1/√(μ₀ε₀))、
+   偏波・スペクトル、ポインティングベクトルとアンテナ。無線通信と光の言語
 
 ## ロードマップ (Roadmap)
 
 番号は推奨する読み書きの順序(依存順)。
 
-4. マクスウェル方程式と電磁波 (Maxwell's equations & electromagnetic waves) —
-   4本の方程式への統合、波動方程式、偏波・スペクトル。無線通信と光の言語
 5. 回路理論 (circuit theory) — 集中定数近似、RLC、インピーダンス、過渡応答。
    デカップリング・電源分配網 (PDN) の解析手段
 6. 伝送線路とシグナルインテグリティ (transmission lines & signal integrity) —

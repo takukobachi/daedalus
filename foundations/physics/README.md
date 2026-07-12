@@ -12,18 +12,15 @@
   無線 (`../../hardware/peripherals-connectivity/`)、
   電力系統 (`../../hardware/power-generation/`) の土台。hardware README が
   優先度高に挙げる SerDes・シグナルインテグリティの前提でもある
+- `quantum-solid-state/` — 量子力学・固体物理(バンド理論、半導体、
+  ドーピング、pn 接合、MOSFET …)。半導体製造
+  (`../../hardware/semiconductor-manufacturing/`)、NAND フラッシュ
+  (`../../hardware/storage-devices/`)、原子時計
+  (`../../hardware/timekeeping/`) の物理的実体
 
 ## 今後のテーマ候補
 
 優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
-
-### 優先度 高 (既存分析に直結)
-
-- 量子力学・固体物理 (quantum mechanics & solid-state physics) — バンド理論、
-  半導体接合、トランジスタの動作原理。半導体製造
-  (`../../hardware/semiconductor-manufacturing/`)、NAND フラッシュ
-  (`../../hardware/storage-devices/`)、原子時計
-  (`../../hardware/timekeeping/`) の物理的実体
 
 ### 優先度 中
 
