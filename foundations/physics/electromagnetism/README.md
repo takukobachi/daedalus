@@ -20,13 +20,15 @@
 4. [`maxwell-equations-em-waves.md`](maxwell-equations-em-waves.md) —
    変位電流、マクスウェル方程式への統合、電磁波の導出 (c = 1/√(μ₀ε₀))、
    偏波・スペクトル、ポインティングベクトルとアンテナ。無線通信と光の言語
+5. [`circuit-theory.md`](circuit-theory.md) —
+   集中定数近似とその適用限界、キルヒホッフの法則の由来と破れ、テブナン等価、
+   フェーザとインピーダンス、共振と Q 値・PDN の反共振。
+   デカップリング・電源分配網 (PDN) の解析手段
 
 ## ロードマップ (Roadmap)
 
 番号は推奨する読み書きの順序(依存順)。
 
-5. 回路理論 (circuit theory) — 集中定数近似、RLC、インピーダンス、過渡応答。
-   デカップリング・電源分配網 (PDN) の解析手段
 6. 伝送線路とシグナルインテグリティ (transmission lines & signal integrity) —
    分布定数、特性インピーダンス、反射・終端。高速シリアルリンク
    (PCIe/USB/Ethernet) の物理層の共通土台
