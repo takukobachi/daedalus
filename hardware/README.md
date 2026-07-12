@@ -38,6 +38,10 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 - `automotive/` — 自動車（車載ネットワーク, ECU, E/E アーキテクチャ, 機能安全, EV …）
 - `power-generation/` — 電力・発電（発電方式, 電力系統, 系統制御 …）
 - `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX …）
+- `robotics/` — ロボティクス（アクチュエータ, キネマティクス・動力学, 制御, 状態推定・SLAM,
+  移動と操作 …）。
+  `automotive/`・`aerospace/` に散在する制御工学の一般化であり、`foundations/` の
+  線形代数・微分方程式の主要な応用先
 
 ## 今後のテーマ候補
 
@@ -60,8 +64,6 @@ README のロードマップに置き、ここには重複させない。優先�
 - 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS など広域側。近距離 (Bluetooth)
   は `peripherals-connectivity/` でカバー済み。`aerospace/` の航法と
   `software/networking/` の物理層側の土台
-- ロボティクス (robotics) — アクチュエータ、制御ループ、キネマティクス。
-  `automotive/`・`aerospace/` の制御工学の一般化
 - FPGA・再構成可能計算 (FPGA & reconfigurable computing) — LUT とルーティング、
   HLS、SmartNIC/DPU。`gpu-accelerators/` が描く専用化スペクトラムの続き
 
