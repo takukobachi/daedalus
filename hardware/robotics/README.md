@@ -27,17 +27,18 @@
   計算トルク法、状態空間制御 (LQR)、モデル予測制御 (MPC)、インピーダンス制御、
   リアルタイム制約と産業用フィールドバス (EtherCAT)
 
+### 知覚と運動 (Perception & Motion)
+
+- [`perception-state-estimation.md`](perception-state-estimation.md) — 知覚と状態推定：
+  ベイズフィルタ、カルマンフィルタと非線形拡張 (EKF/UKF/パーティクルフィルタ)、
+  センサフュージョンの定石、SLAM (因子グラフ・ループ閉じ込み)、脚式の接触支援推定
+- [`locomotion-manipulation.md`](locomotion-manipulation.md) — 移動と操作：非ホロノミック拘束、
+  ZMP と線形倒立振子・予見制御、捕捉点と動歩行、運動計画 (RRT/PRM・軌道最適化)、
+  把持 (摩擦錐・フォースクロージャ)、ハイブリッド位置/力制御
+
 ## 今後のテーマ候補
 
 優先度は hardware/software 両スタックとの相互参照の張りやすさを基準に付けている。
-
-### 優先度 高
-
-- 知覚と状態推定 (perception & state estimation) — センサフュージョン、カルマンフィルタ
-  (KF/EKF/UKF)、SLAM。`../../foundations/mathematics/probability-statistics/` の推定理論の
-  直接の応用で、`../peripherals-connectivity/camera-image-sensors.md` の上位層
-- 移動と操作 (locomotion & manipulation) — 脚式移動 (ZMP・動歩行・全身制御)、
-  軌道計画 (RRT・最適化ベース)、把持。`kinematics-dynamics.md`・`control-systems.md` の応用編
 
 ### 優先度 中
 
