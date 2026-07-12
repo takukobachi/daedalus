@@ -36,16 +36,18 @@
   ZMP と線形倒立振子・予見制御、捕捉点と動歩行、運動計画 (RRT/PRM・軌道最適化)、
   把持 (摩擦錐・フォースクロージャ)、ハイブリッド位置/力制御
 
+### 事例分析とソフトウェア基盤 (Case Studies & Software Stack)
+
+- [`humanoid-robots-analysis.md`](humanoid-robots-analysis.md) — ヒューマノイド事例分析
+  (2026-07 時点)：Tesla Optimus・Figure・Unitree・Boston Dynamics の設計比較
+  （アクチュエータ戦略、手と腱駆動、二系統 VLA、生産体制）。目標値と実証値を峻別
+- [`robot-software-stack.md`](robot-software-stack.md) — ロボットソフトウェアスタック：
+  ROS 2 / DDS（QoS・ディスカバリ）、リアルタイム性の境界と ros2_control、
+  Nav2 / MoveIt、シミュレーションと sim-to-real、SROS2
+
 ## 今後のテーマ候補
 
-優先度は hardware/software 両スタックとの相互参照の張りやすさを基準に付けている。
-
-### 優先度 中
-
-- ヒューマノイド事例分析 (humanoid robots) — Tesla Optimus・Figure・Unitree の
-  アーキテクチャ比較（アクチュエータ構成、計算機構成、学習ベース制御・VLA）。
-  `../automotive/ev/` の Tesla 分析と同じ一次資料からの事例再構成パターンで、
-  `../../software/ml-systems/` と接続する
-- ロボットソフトウェアスタック (robot software stack) — ROS 2 / DDS、リアルタイム
-  ミドルウェア、シミュレーション (Isaac, MuJoCo)。software 側の RTOS 文書の開設後に
-  着手するのが書きやすい
+当初計画した7本のシリーズはこれで完結。以降のテーマ（車輪型 AMR の各論、
+ソフトロボティクス、移動型ヒューマノイドの安全規格の動向、ROS 2 実時間性の実測分析
+など）は必要が生じた時点でロードマップを再開する。なお `humanoid-robots-analysis.md` は
+時事性が高く、製品状況が大きく動いた時点での改訂を想定する。
