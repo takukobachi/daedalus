@@ -11,11 +11,14 @@
 - `ml-inference-systems.md` — ML 推論システム：CUDA 実行モデル (streams / CUDA Graphs)、
   prefill/decode の二相構造、KV cache と PagedAttention、連続バッチング (Orca)、
   FlashAttention、量子化、投機的デコーディング、推論ランタイム比較 (vLLM / TensorRT-LLM ほか)
+- `ml-training-systems.md` — ML 学習システム：モデル状態 16 バイト/パラメータの会計、
+  ZeRO/FSDP（複製をやめ分割する）、3D 並列とインターコネクト階層への配置、
+  パイプラインスケジュール (GPipe/1F1B) とバブル、混合精度と損失スケーリング、
+  activation recomputation、チェックポイントと故障運用 (goodput)。
+  `../../hardware/gpu-accelerators/interconnects-scaleout-training.md` と対で読む
 
 ## 今後のテーマ候補
 
-- 学習系システム (training systems) — data / tensor / pipeline parallelism, ZeRO,
-  collective communication (NCCL)。推論とは逆に「帯域と同期」が支配する世界
 - ML コンパイラ (ML compilers) — XLA / TVM / Triton, グラフ最適化とカーネル自動生成。
   本ドキュメントのカーネル融合 (kernel fusion) 議論の体系化
 - 量子化とスパース化の深掘り (quantization & sparsity) — PTQ/QAT, 構造化スパース性,
