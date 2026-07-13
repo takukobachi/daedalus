@@ -90,7 +90,9 @@ Z₀ は**エネルギーを散逸しない**——抵抗と同じ単位を持�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | PCIe 等の高速シリアル物理層の全体 (§1–5)。hardware README が挙げる SerDes の前提を本回が供給 |
+| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | 本回の §5 を工学として展開する領域。符号化・PAM4・イコライゼーション・CDR・FEC |
+| [`hardware/serdes-signal-integrity/signal-integrity-engineering.md`](../../../hardware/serdes-signal-integrity/signal-integrity-engineering.md) | 「測定という設計行為」の本体。ジッタ分解・S パラメータ予算・COM・TDR/VNA (§3 の実測) |
+| [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | PCIe 等の高速シリアル物理層の全体 (§1–5) |
 | [`hardware/peripherals-connectivity/usb-architecture.md`](../../../hardware/peripherals-connectivity/usb-architecture.md) | 差動ペア、終端、ケーブル損失とイコライゼーション (§3–5) |
 | [`hardware/cpu-architecture/dram-memory-controllers.md`](../../../hardware/cpu-architecture/dram-memory-controllers.md) | DDR 配線則 (等長・ODT・fly-by) の伝送線路的由来 (工学への接続 §2)、信号トレーニング |
 | [`hardware/automotive/in-vehicle-networks.md`](../../../hardware/automotive/in-vehicle-networks.md) | CAN の終端抵抗 (§3)、車載 Ethernet の差動物理層 (§5) |

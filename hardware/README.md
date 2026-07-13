@@ -14,6 +14,10 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 - `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序, 仮想記憶 …）
 - `gpu-accelerators/` — GPU・アクセラレータ（SIMT, メモリ階層/HBM, Tensor Core …）。
   `cpu-architecture/` の対照編で、`software/ml-systems/` と対で読む
+- `serdes-signal-integrity/` — 高速シリアルリンクと SI（SerDes, PAM4, イコライゼーション,
+  ジッタ, S パラメータ, COM …）。PCIe (`hw-sw-interface/`)・USB/ディスプレイ
+  (`peripherals-connectivity/`)・Ethernet (`network-hardware/`) が論理層で共有する
+  物理層の共通土台。理論は `foundations/physics/electromagnetism/` の伝送線路編が供給
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
 - `peripherals-connectivity/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
   サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi …）。`hw-sw-interface/` の
@@ -48,13 +52,6 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
 README のロードマップに置き、ここには重複させない。優先度は「既存ドキュメントとの
 相互参照が何本張れるか（スタックの穴を埋めるか）」を基準に付けている。
-
-### 優先度 高 (既存の層に直結し、穴を埋める)
-
-- 高速シリアルリンクとシグナルインテグリティ (SerDes & signal integrity) —
-  イコライゼーション、PAM4、アイダイアグラム、PLL/CDR、伝送線路と反射。
-  PCIe (`hw-sw-interface/bus-interconnect.md`)・USB・Ethernet・ディスプレイリンク
-  (`peripherals-connectivity/`) が論理層で共有している「物理層の共通土台」
 
 ### 優先度 中 (新しいドメインを開く)
 
