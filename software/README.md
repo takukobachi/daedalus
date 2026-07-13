@@ -18,6 +18,10 @@
   もう一つの特権層
 - `operating-systems/` — OS 内部（スケジューリング, 仮想記憶, syscall, FS, I/O）。
   `hardware/hw-sw-interface/` の真上の層
+- `embedded-rtos/` — 組み込み・リアルタイム OS（RM/EDF と応答時間解析, WCET, 優先度逆転,
+  RTOS カーネル設計, PREEMPT_RT, AUTOSAR）。「平均を速くする」`operating-systems/` に
+  対して「最悪を保証する」側の実行基盤。`hardware/automotive/`（ECU）・
+  `hardware/robotics/`（制御計算機）と software 側を束ねる橋
 - `ebpf/` — eBPF（検証器, JIT, マップ, XDP/tracing/LSM フック）。カーネルを
   再コンパイルせずに拡張する「カーネル内の安全な実行基盤」。`operating-systems/` と
   `networking/`・セキュリティ応用をつなぐ
@@ -78,12 +82,6 @@
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
 README のロードマップに置き、ここには重複させない。優先度は「既存ドキュメントとの
 相互参照が何本張れるか（スタックの穴を埋めるか）」を基準に付けている。
-
-### 優先度 高 (既存の層に直結し、穴を埋める)
-
-- 組み込み・リアルタイム OS (embedded & RTOS) — 決定論的スケジューリング,
-  WCET, AUTOSAR。`hardware/automotive/` の ECU 側との合流点であり、
-  hardware/software 両スタックを束ねる橋
 
 ### 優先度 中 (応用層を広げる)
 

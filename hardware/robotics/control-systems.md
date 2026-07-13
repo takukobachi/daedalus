@@ -113,7 +113,7 @@ s.t. x_{k+1} = A·x_k + B·u_k          （予測モデル）
 
 - **制約の明示的扱い**が PID/LQR に対する質的優位。飽和を「起きてから対処する」のではなく、最適化が飽和を見越した解を返す。
 - 脚式ロボットでは、床反力を決定変数に含む凸 QP として定式化した MPC（数十〜数百 Hz）と、より高周波の全身制御 (whole-body control, WBC) を階層化する構成が確立している[^dicarlo-mpc]。ここでも「外側 MPC・内側 WBC」というカスケード原理が再帰的に現れる。
-- 計算コストが本質的制約であり、ソルバ（QP の内点法・ADMM）の実行時間分布——最悪実行時間 (WCET)——がリアルタイム保証の対象になる。この論点は software 側の RTOS 文書（ロードマップ）と直結する。
+- 計算コストが本質的制約であり、ソルバ（QP の内点法・ADMM）の実行時間分布——最悪実行時間 (WCET)——がリアルタイム保証の対象になる。この論点は [`../../software/embedded-rtos/realtime-fundamentals.md`](../../software/embedded-rtos/realtime-fundamentals.md) の WCET 解析と直結する。
 
 ### 5. 力制御とインピーダンス制御 (Force & Impedance Control)
 
