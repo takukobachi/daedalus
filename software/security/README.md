@@ -21,22 +21,31 @@ TLS——は、それぞれの文脈で断片的に現れる。本領域はそ�
   CHERI という軍拡競争、AddressSanitizer とファジングの検出系、Rust の所有権・
   マネージドランタイム (GC) による根絶と CISA/ONCD の政策転換・Android の Rust 実測、
   iOS/Android への積層。攻撃と防御を必ず対で扱う防御的分析
+- `fuzzing-program-analysis.md` — ファジングとプログラム解析（見つける層）。
+  カバレッジ誘導ファジングの進化的ループ (AFL) とサニタイザの内部機構
+  (ASan/UBSan/TSan)、シンボリック実行と concolic、静的解析と抽象解釈
+  （WCET 解析と同根）、Rice の定理が強いる健全性/完全性の取引、
+  OSS-Fuzz が示した「検出はインフラ」という運用論
+- `sandbox-architectures.md` — サンドボックス設計比較（閉じ込める層）。
+  「隔離境界をどこに引くか」の一軸で WASM (SFI) / seccomp + namespaces /
+  gVisor / microVM を TCB・攻撃面・脱出の意味・コストの4軸比較、
+  Chrome の積層とサイト分離（Spectre 後の境界設計）、検証器ベース隔離
+  (eBPF/WASM) の賭け
+- `software-supply-chain-security.md` — サプライチェーンセキュリティ（出所を検証する層）。
+  パイプライン上の攻撃分類（xz・SolarWinds・依存関係かく乱）、lockfile・
+  再現可能ビルド・SLSA 来歴・Sigstore・SBOM を「答えられる問い」で対応づけ、
+  理論的な底として Trusting Trust と多様二重コンパイル
+
+読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
+(`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
+→ 出所を検証する (`software-supply-chain-security.md`)。四層で「単一の失敗で
+崩れない防御」を構成する。
 
 ## 今後のテーマ候補
 
-- サンドボックス設計比較 (sandbox architectures) — seccomp / namespaces / WASM /
-  gVisor を「隔離境界をどこに引くか」で比較。`../ebpf/`（seccomp-BPF・検証器）と
-  `../virtualization/`（namespaces/cgroups・gVisor・WASM サンドボックス）の
-  セキュリティ議論を束ね直す横串
 - 応用暗号工学 (applied cryptographic engineering) — 鍵交換・AEAD・署名・
   前方秘匿性・PKI の実装上の落とし穴（サイドチャネル・nonce 再利用・実装脆弱性）。
   `../networking/tls-internals.md` の TLS 各論を暗号プリミティブの一般論へ引き上げる
-- サプライチェーンセキュリティ (software supply chain security) — 依存関係の注入・
-  reproducible builds・SBOM・署名検証・SLSA。`../toolchain/`（xz/liblzma 事件と
-  ロード時実行点）を「コード内の欠陥」ではなく「コードの出所」の問題として展開する
-- ファジングとプログラム解析 (fuzzing & program analysis) — カバレッジ誘導ファジング・
-  シンボリック実行・静的解析・サニタイザの内部機構。本領域の検出系を深掘りし、
-  `../compilers-runtimes/` のコンパイラ解析基盤と接続する
 - ウェブ・アプリケーションセキュリティ (web & application security) — 同一生成元
-  ポリシー・XSS/CSRF・サイト分離・権限モデル。ブラウザ内部（`../` の今後の候補）と
+  ポリシー・XSS/CSRF・サイト分離・権限モデル。`../browsers/` と
   `../networking/` の HTTP 各論の合流点
