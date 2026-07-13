@@ -135,7 +135,7 @@ J_reflected = N² · J_m
 | 経路・タスク計画 | 10〜100 Hz | 汎用 PC (Linux + GPU) | ソフトリアルタイム |
 | 知覚・学習推論 | 10〜60 Hz | GPU / アクセラレータ | ソフトリアルタイム |
 
-- 周期とジッタの要求が層ごとに1桁ずつ違うため、**単一の計算機では成立せず**、役割の異なる計算機をフィールドバスで結合する分散構成が必然になる。この構成は車載 E/E アーキテクチャ（[`../automotive/ee-architecture.md`](../automotive/ee-architecture.md)）のドメイン統合と同型の問題であり、リアルタイム OS 側の議論は software 側の RTOS 文書（ロードマップ）で扱う。
+- 周期とジッタの要求が層ごとに1桁ずつ違うため、**単一の計算機では成立せず**、役割の異なる計算機をフィールドバスで結合する分散構成が必然になる。この構成は車載 E/E アーキテクチャ（[`../automotive/ee-architecture.md`](../automotive/ee-architecture.md)）のドメイン統合と同型の問題であり、リアルタイム OS 側の議論は [`../../software/embedded-rtos/`](../../software/embedded-rtos/) で扱う。
 - 学習ベース制御（強化学習ポリシー）は多くの場合 50〜1000 Hz で推論され、GPU 推論基盤の設計は [`../../software/ml-systems/ml-inference-systems.md`](../../software/ml-systems/ml-inference-systems.md) と地続きである。
 
 ### 5. 電源と熱 (Power & Thermal)
