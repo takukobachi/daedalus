@@ -5,13 +5,18 @@
 ## ドキュメント
 
 - [`gpu-simt-architecture.md`](gpu-simt-architecture.md) — GPU アーキテクチャと SIMT 実行モデル (GPU architecture & SIMT execution)
+- [`tpu-systolic-arrays.md`](tpu-systolic-arrays.md) — TPU とシストリックアレイ (TPU & systolic arrays)：
+  演算 vs データ移動のエネルギー算術、重み定常データフロー、TPUv1 の決定性、
+  データフロー分類 (Eyeriss)、GPU との収斂（Tensor Core ⇔ 汎用化する TPU）、
+  BF16/FP8 という数値形式の共設計
+- [`interconnects-scaleout-training.md`](interconnects-scaleout-training.md) — インターコネクトと
+  スケールアウト学習 (interconnects & scale-out training)：スケールアップ (NVLink/NVSwitch) と
+  スケールアウト (InfiniBand/RoCEv2) の2階層、リング/木 all-reduce の算術、GPUDirect RDMA、
+  SHARP (スイッチ内リダクション)、レール最適化、万台規模の故障と可用性。
+  `../network-hardware/` と `../../software/ml-systems/ml-training-systems.md` の中間層
 
 ## 今後のテーマ候補
 
-- TPU とシストリックアレイ (TPU & systolic arrays) — 重み定常 (weight-stationary) データフロー、
-  GEMM 専用化の極点、GPU との設計比較の深掘り
 - GPU 仮想化とマルチテナント (GPU virtualization) — MIG, SR-IOV, vGPU、時分割 vs 空間分割、
-  クラウド GPU の隔離境界
-- インターコネクトとスケールアウト学習 (interconnect & scale-out training) — NVLink/NVSwitch、
-  InfiniBand/RoCE、集合通信 (all-reduce) のハードウェア支援。`../hw-sw-interface/bus-interconnect.md` と
-  `../../software/distributed-systems/` の交点
+  クラウド GPU の隔離境界。`../../software/security/sandbox-architectures.md` の
+  隔離境界の議論のアクセラレータ版

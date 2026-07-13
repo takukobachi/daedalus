@@ -11,9 +11,10 @@ NIC (network interface card) とスイッチ ASIC の内部分析。`../../softw
 - 光インターコネクト (optical interconnect) — 光トランシーバ (SFP/OSFP)、DWDM、
   co-packaged optics、リニアドライブ光学。SerDes の先にある「銅の限界」の突破口で、
   AI クラスタの帯域スケーリングの物理的本体
-- InfiniBand と collective オフロード (InfiniBand & in-network computing) — サブネット
-  マネージャ、アダプティブルーティング、SHARP (スイッチ内 all-reduce)。
-  `../gpu-accelerators/` のスケールアウト学習候補のネットワーク側
+- InfiniBand ファブリックの各論 (InfiniBand internals) — サブネットマネージャ、
+  アダプティブルーティング・輻輳制御の詳細。SHARP と AI クラスタの全体像は
+  [`../gpu-accelerators/interconnects-scaleout-training.md`](../gpu-accelerators/interconnects-scaleout-training.md)
+  で扱ったため、残るのはファブリック運用の深掘り
 - ストレージネットワーク (NVMe-oF) — NVMe over Fabrics (RDMA/TCP)、分離型ストレージ。
   `../hw-sw-interface/storage-nvm-interface.md` と RDMA の合流点
 - ルーティングハードウェア (router hardware) — コアルータの深いバッファ、
