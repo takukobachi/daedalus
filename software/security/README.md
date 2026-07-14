@@ -46,6 +46,7 @@ TLS——は、それぞれの文脈で断片的に現れる。本領域はそ�
 - 応用暗号工学 (applied cryptographic engineering) — 鍵交換・AEAD・署名・
   前方秘匿性・PKI の実装上の落とし穴（サイドチャネル・nonce 再利用・実装脆弱性）。
   `../networking/tls-internals.md` の TLS 各論を暗号プリミティブの一般論へ引き上げる
-- ウェブ・アプリケーションセキュリティ (web & application security) — 同一生成元
-  ポリシー・XSS/CSRF・サイト分離・権限モデル。`../browsers/` と
-  `../networking/` の HTTP 各論の合流点
+
+なお、ウェブ・アプリケーションセキュリティ（同一生成元ポリシー・XSS/CSRF・
+COOP/COEP・権限モデル）は [`../browsers/web-security-model.md`](../browsers/web-security-model.md)
+がプラットフォーム文脈ごと扱う。
