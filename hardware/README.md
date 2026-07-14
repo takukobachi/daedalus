@@ -41,6 +41,9 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 
 - `automotive/` — 自動車（車載ネットワーク, ECU, E/E アーキテクチャ, 機能安全, EV …）
 - `power-generation/` — 電力・発電（発電方式, 電力系統, 系統制御 …）
+- `datacenter-infrastructure/` — データセンターインフラ（給電チェーン, UPS, 冷却・液冷,
+  Clos トポロジ, PUE/WUE …）。`power-generation/` と計算機システムの合流点で、
+  AI クラスタ (`gpu-accelerators/`) の電力・冷却制約の物理的実体
 - `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX …）
 - `robotics/` — ロボティクス（アクチュエータ, キネマティクス・動力学, 制御, 状態推定・SLAM,
   移動と操作 …）。
@@ -55,9 +58,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 中 (新しいドメインを開く)
 
-- データセンターインフラ (datacenter infrastructure) — 給電 (UPS/PDU)、冷却
-  (空冷 → 液冷)、Clos トポロジ。`power-generation/` と計算機システムの合流点。
-  AI 学習クラスタの電力・冷却制約という時事的な軸も持つ
 - 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS など広域側。近距離 (Bluetooth)
   は `peripherals-connectivity/` でカバー済み。`aerospace/` の航法と
   `software/networking/` の物理層側の土台

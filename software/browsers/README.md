@@ -10,13 +10,18 @@
   レンダリングパイプライン (LayoutNG・コンポジタ・Viz) と VSYNC 締切、V8 の 4 ティア
   JIT (Ignition→Sparkplug→Maglev→TurboFan)・Orinoco GC・V8 sandbox、攻撃連鎖と
   メモリ安全対策の積層
+- `v8-internals.md` — V8 の内部：「動的言語の実行時の規則性への投機」という一つの
+  体系として、hidden class (map) と遷移木、インラインキャッシュとフィードバックベクタ、
+  4 ティアの資金配分、deopt（設計された撤退）、Orinoco GC の並行化、ポインタ圧縮、
+  Torque と V8 sandbox。`../compilers-runtimes/` の一般論の実装各論
+- `web-security-model.md` — ウェブセキュリティモデル：origin という主体、
+  「読みは禁止・送りは自由」という既定と CSRF/XS-Leaks、XSS と CSP/Trusted Types、
+  SameSite 既定化の教訓、CORS = 緩和のプロトコル、Spectre が書かせたヘッダ群
+  (COOP/COEP/CORP)、Permissions Policy とケーパビリティへの収斂。
+  `../security/` 横串のウェブ応用層
 
 ## 今後のテーマ候補
 
-- V8 深掘り (V8 internals) — hidden class 遷移の実装、Maglev/TurboFan の IR、
-  ポインタ圧縮、Torque。`../compilers-runtimes/` の一般論の実装各論
-- ウェブセキュリティモデル (web security model) — 同一生成元ポリシーの意味論、
-  XSS/CSRF、COOP/COEP/CORP、Permissions Policy。`../security/` のウェブ応用層
 - ネットワーキングと読み込み (loading & networking) — リソーススケジューリング、
   プリロード/プリコネクト、HTTP キャッシュ、Service Worker。`../networking/` との接点
 - 拡張機能アーキテクチャ (extensions) — Manifest V3、権限モデル、コンテンツ
