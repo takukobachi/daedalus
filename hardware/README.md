@@ -26,6 +26,11 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 - `network-hardware/` — ネットワークハードウェア（NIC, ディスクリプタリング,
   オフロード, RDMA/RoCE, スイッチ ASIC, SmartNIC/DPU …）。
   `software/networking/`（特に kernel-network-stack）の物理側の対
+- `wireless-rf/` — 無線通信・RF（リンクバジェット, シャノン容量, 変調/QAM, OFDM,
+  MIMO, RF チェーン …）。広域・高速側の無線 PHY の共通理論で、Wi-Fi/Bluetooth
+  (`peripherals-connectivity/`) の下の層。有線の `serdes-signal-integrity/` と
+  「同じ敵 (ISI・ノイズ) と戦う無線側」として対で読む。理論は
+  `foundations/physics/electromagnetism/` の電磁波編が供給
 - `storage-devices/` — ストレージデバイス物理（NAND フラッシュ, FTL, 書込増幅 …）。
   `hw-sw-interface/storage-nvm-interface.md` の下の層で、`cpu-architecture/` の
   DRAM 分析と対になる永続側の媒体物理
@@ -58,9 +63,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 中 (新しいドメインを開く)
 
-- 無線通信 (wireless & RF) — 変調・OFDM、5G NR、GNSS など広域側。近距離 (Bluetooth)
-  は `peripherals-connectivity/` でカバー済み。`aerospace/` の航法と
-  `software/networking/` の物理層側の土台
 - FPGA・再構成可能計算 (FPGA & reconfigurable computing) — LUT とルーティング、
   HLS、SmartNIC/DPU。`gpu-accelerators/` が描く専用化スペクトラムの続き
 

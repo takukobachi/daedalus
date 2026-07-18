@@ -46,6 +46,9 @@
   `cache-coherence.md` の coherence/consistency 議論のスケールアップ
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
   トランザクション, 分離レベル）。`hardware/hw-sw-interface/storage-nvm-interface.md` の上位層
+- `messaging-streaming/` — メッセージングとストリーム処理（分散ログ, 複製と耐久性,
+  配信セマンティクス/exactly-once, ウィンドウとチェックポイント, バックプレッシャ）。
+  `distributed-systems/`・`databases/` の機構をシステム間のデータフローへ応用する層
 
 ### プラットフォーム分析 (Platform Analysis)
 
@@ -85,8 +88,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 中 (応用層を広げる)
 
-- メッセージングとストリーム処理 (messaging & stream processing) — 分散ログ,
-  exactly-once セマンティクス, バックプレッシャ。`distributed-systems/`・`databases/` の応用層
 - オブジェクトストレージ (object storage) — S3 型設計、イレイジャーコーディング、
   メタデータ層とデータ層の分離、CRUSH 型配置。`distributed-systems/`・`databases/`・
   `hardware/storage-devices/` の合流点
