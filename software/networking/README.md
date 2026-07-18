@@ -23,7 +23,20 @@
 - `dns-resolution.md` — DNS：委任とキャッシュ (TTL 付き結果整合性)、解決の実経路
   (スタブ〜権威)、毒入れと DNSSEC、DoT/DoH と集中化のトレードオフ、障害の構造
   (依存の環・ネガティブキャッシュ)
+- `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、IGP (リンクステート)
+  vs EGP (パスベクトル)、BGP のポリシー機構と Gao–Rexford 安定条件、経路ハイジャックと
+  RPKI、エニーキャスト、クラウド接続 (専用線接続と経路制御) の読み方
+- `virtual-networks-overlay.md` — 仮想ネットワークとオーバーレイ：マルチテナントの
+  問題設定、VXLAN/Geneve カプセル化、マッピング分配の制御平面 (EVPN・中央ディレクトリ)、
+  OVS と SmartNIC オフロード、セキュリティグループ = 分散ステートフル FW、NAT と
+  インターネット境界。クラウド VPC の実装原理
+- `load-balancing-architecture.md` — ロードバランシング：DNS/ECMP/L4/L7 の積層、
+  コンシステントハッシュと Maglev/Ananta 系譜、L7 終端と HTTP/2 の罠、ヘルスチェックと
+  カスケード障害、クラウド LB (NLB/ALB 型) と弾力性の制御ループ
 
 ## 今後のテーマ候補
 
-- IP ルーティングと BGP (routing) — 経路制御、BGP の信頼モデル、RPKI
+- CDN・エッジ配信 (CDN & edge delivery) — キャッシュ階層、エニーキャスト配信、
+  オリジンシールド。`dns-resolution.md`・`load-balancing-architecture.md` の応用層
+- サービスメッシュ (service mesh) — サイドカー/Envoy、mTLS の自動化、L7 ポリシー、
+  eBPF 系メッシュ。`../ebpf/`・`tls-internals.md` との合流点
