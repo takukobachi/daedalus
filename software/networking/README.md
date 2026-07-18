@@ -33,10 +33,15 @@
 - `load-balancing-architecture.md` — ロードバランシング：DNS/ECMP/L4/L7 の積層、
   コンシステントハッシュと Maglev/Ananta 系譜、L7 終端と HTTP/2 の罠、ヘルスチェックと
   カスケード障害、クラウド LB (NLB/ALB 型) と弾力性の制御ループ
+- `cdn-edge-delivery.md` — CDN・エッジ配信：光速という遅延の床、リクエストルーティング
+  (DNS vs エニーキャスト)、キャッシュ階層とオリジンシールド、無効化 vs バージョン付き URL、
+  エッジでのプロトコル終端、エッジ計算 (isolate 型)。CloudFront 型クラウド CDN の読み方
+- `service-mesh.md` — サービスメッシュ：ライブラリからサイドカー (Envoy/xDS) へ、
+  mTLS 自動化とワークロードアイデンティティ (SPIFFE)、L7 トラフィック制御とリトライ予算、
+  サイドカー税と eBPF 系メッシュ (Cilium)。L3/4 (セキュリティグループ) から L7 への
+  ポリシーの移動
 
 ## 今後のテーマ候補
 
-- CDN・エッジ配信 (CDN & edge delivery) — キャッシュ階層、エニーキャスト配信、
-  オリジンシールド。`dns-resolution.md`・`load-balancing-architecture.md` の応用層
-- サービスメッシュ (service mesh) — サイドカー/Envoy、mTLS の自動化、L7 ポリシー、
-  eBPF 系メッシュ。`../ebpf/`・`tls-internals.md` との合流点
+- 帯域内テレメトリとネットワーク検証 (network verification) — INT、経路の形式検証。
+  運用の観測・保証側の深掘り
