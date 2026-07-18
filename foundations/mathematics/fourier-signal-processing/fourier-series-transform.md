@@ -1,0 +1,123 @@
+# フーリエ級数と変換 (Fourier Series and Transform)
+
+## 概要 (Overview)
+
+フーリエ解析・信号処理シリーズの第1回。フーリエ解析の主張は一文に集約できる——**あらゆる信号は正弦波の重ね合わせであり、システムの応答は正弦波ごとに独立に計算してよい**。時間領域では複雑に見える波形も、周波数領域では「どの周波数成分がどれだけ含まれるか」というスペクトル (spectrum) の表として整理され、線形時不変システム——フィルタ、伝送線路、アンプ——の作用は各成分への掛け算に退化する。「帯域幅 (bandwidth)」「フィルタリング」「エッジは高周波の塊」という工学の日常語は、すべてこの視点変換の上に立っている。
+
+積み上げる順序は: (1) フーリエ級数——周期信号を直交基底へ射影する、(2) フーリエ変換——周期を無限大に飛ばして非周期信号へ拡張する、(3) 主要な変換対と時間・周波数の双対性——「時間で短いものは周波数で広い」という不確定性の構造、(4) 畳み込みと畳み込み定理——LTI システム論の中心定理、(5) デルタ関数と周波数領域の直観——「エッジ = 高周波」を定量化する。電磁気学シリーズ第6回で予告なしに使った「デジタル信号のエッジは高周波成分の集合体」という言明に、本回が数学的裏付けを与える。
+
+## 前提知識 (Prerequisites)
+
+- [`../calculus-analysis/limits-derivatives-integrals.md`](../calculus-analysis/limits-derivatives-integrals.md) —
+  積分、収束、オイラーの公式 `e^{iθ} = cos θ + i sin θ` の初出 (§5)
+- [`../calculus-analysis/ordinary-differential-equations.md`](../calculus-analysis/ordinary-differential-equations.md) —
+  複素指数関数が微分方程式の固有関数であること。周波数応答の出自
+- [`../linear-algebra/vectors-matrices-linear-maps.md`](../linear-algebra/vectors-matrices-linear-maps.md) —
+  内積・直交基底・射影。フーリエ級数は「関数空間での直交射影」である
+
+## 本論 (Main Content)
+
+### 1. フーリエ級数 — 直交基底への射影 (Fourier series as projection onto an orthogonal basis)
+
+周期 T の信号 f(t) は、基本周波数 ω₀ = 2π/T の整数倍(**高調波 (harmonics)**)の正弦波の和で表せる:
+
+```text
+f(t) = Σₙ cₙ e^{inω₀t}     (n = …, −1, 0, 1, …)
+cₙ = (1/T) ∫₀ᵀ f(t) e^{−inω₀t} dt
+```
+
+この式が成り立つ根拠は**直交性 (orthogonality)** である。関数の内積を `⟨f, g⟩ = ∫₀ᵀ f g* dt` と定めると、異なる高調波どうしの内積は厳密に 0 になる——`e^{inω₀t}` の族は関数空間の**直交基底**であり、係数 cₙ の式は線形代数の直交射影の公式 `⟨f, eₙ⟩/⟨eₙ, eₙ⟩` そのものである (Oppenheim & Willsky 1996, Ch. 3)。「係数を求める」とは「その周波数成分だけを内積で抜き出す」ことであり、他の成分は直交性によって積分の中で自動的に消える。
+
+代表例が**方形波 (square wave)** で、その係数は奇数次高調波のみ、振幅は 1/n で減衰する:
+
+```text
+方形波 = (4/π)[sin ω₀t + (1/3)sin 3ω₀t + (1/5)sin 5ω₀t + ⋯]
+```
+
+1/n 減衰は「遅い」——有限項で打ち切ると角が丸まり、不連続点近傍ではギブス現象 (Gibbs phenomenon) の約 9% のオーバーシュートが残る。**理想の方形波は無限の帯域幅を要求する**という工学的に重大な事実がここで確定する: どんな実在のチャネルも有限帯域だから、実在の「デジタル信号」は必ず角の丸まった近似方形波である。
+
+### 2. フーリエ変換 — 非周期信号とスペクトル (Fourier transform: aperiodic signals and the spectrum)
+
+周期 T → ∞ の極限を取ると、離散的だった高調波の間隔 ω₀ = 2π/T が 0 に潰れ、係数の列 {cₙ} は連続関数——**スペクトル**——に移行する:
+
+```text
+F(ω) = ∫ f(t) e^{−iωt} dt        (フーリエ変換: 時間 → 周波数)
+f(t) = (1/2π) ∫ F(ω) e^{iωt} dω  (逆変換: 周波数 → 時間)
+```
+
+F(ω) は複素数で、`|F(ω)|` が各周波数成分の**振幅スペクトル**、偏角が位相を与える。工学では振幅を **dB (デシベル)**——`20 log₁₀|F|`——の対数目盛で読むのが標準である: 桁で変わる量が直線的に見え、直列システムの利得が掛け算から足し算になり、Bode 線図の「−20 dB/dec で落ちる」という読みが可能になる。「振幅が 1/f で減る」は Bode 語で「−20 dB/dec」、方形波の高調波の 1/n 減衰もこの傾きである。
+
+パーセバルの定理 `∫|f|²dt = (1/2π)∫|F|²dω` は、信号のエネルギーが時間側と周波数側で同じであることを保証する——`|F(ω)|²` は文字通り「周波数 ω 付近にあるエネルギー密度」であり、スペクトラムアナライザが表示している量である (Bracewell 2000, Ch. 6)。
+
+### 3. 主要な変換対と時間・周波数の双対性 (key transform pairs and time-frequency duality)
+
+少数の変換対を覚えれば、スケーリング則と組み合わせて大半のスペクトルが暗算できる:
+
+```text
+矩形パルス (幅 τ)  ⟷  sinc: τ·sin(ωτ/2)/(ωτ/2) — 主ローブ幅 ∝ 1/τ
+ガウス関数          ⟷  ガウス関数 (形を変えない唯一の族)
+指数減衰 e^{−t/τ}   ⟷  1/(1/τ + iω) — 1次ローパス。折れ点 ω = 1/τ
+δ(t)               ⟷  1 (全周波数を均等に含む)
+1 (直流)           ⟷  2π·δ(ω) (成分は周波数 0 のみ)
+時間スケーリング:   f(at) ⟷ (1/|a|)·F(ω/a)
+```
+
+スケーリング則が語るのは**双対性 (duality)** である——時間軸を a 倍に圧縮するとスペクトルは a 倍に広がる。「短いパルスほど広い帯域を占める」ことは例外なく成り立ち、その定量版が**不確定性関係 (uncertainty relation)**:
+
+```text
+Δt · Δω ≥ 1/2   (時間幅と帯域幅の積には下限がある。等号はガウス波形のみ)
+```
+
+これは工学の随所で「帯域幅の代価」として現れる: 立ち上がり時間 t_r のエッジを通すには帯域 `BW ≈ 0.35/t_r` が要る(オシロスコープ選定の経験則)、レーダーの距離分解能は送信パルスの帯域で決まる、通信で 1 秒あたり多くのシンボル(=短いシンボル)を送るほど広い周波数帯を占有する。**速さと帯域は同じものの2つの顔**である。
+
+### 4. 畳み込みと LTI システム (convolution and LTI systems)
+
+**線形時不変 (linear time-invariant, LTI)** システム——重ね合わせが効き、応答が時刻によらないシステム——は、**インパルス応答 (impulse response)** h(t)(δ(t) を入れたときの出力)だけで完全に決まる。任意の入力はデルタ関数の連続的な重ね合わせと見なせるから、出力は**畳み込み (convolution)** になる:
+
+```text
+y(t) = (x ∗ h)(t) = ∫ x(τ) h(t−τ) dτ
+```
+
+そして中心定理——**畳み込み定理 (convolution theorem)**:
+
+```text
+時間領域の畳み込み  ⟷  周波数領域の掛け算:  Y(ω) = X(ω) · H(ω)
+```
+
+H(ω)(h の変換)が**周波数応答 (frequency response)** である。根拠は前提知識で見た事実——複素指数 `e^{iωt}` は LTI システムの**固有関数**であり、通すと `H(ω)` 倍されて出てくるだけで形を変えない (Oppenheim & Willsky 1996, Ch. 4)。だから信号を固有関数の和に分解(= フーリエ変換)すれば、システムの作用は成分ごとの複素数の掛け算に**対角化**される——線形代数の固有値分解と完全に同じ構図である。
+
+**フィルタ (filter)** とはこの H(ω) の設計に他ならない。ローパス(高周波を落とす=波形を鈍らせる)、ハイパス(直流を落とす=エッジだけ残す)、バンドパス(特定帯域だけ通す=ラジオの選局)。逆に、チャネルの劣化 H(ω) を打ち消すには `1/H(ω)` に近いフィルタを縦続すればよい——これが**イコライゼーション (equalization) = 逆フィルタリング**であり、高速シリアルリンクの CTLE/FFE の数学的正体である。
+
+### 5. デルタ関数と「エッジ = 高周波」の直観 (the delta function and why edges are high-frequency)
+
+δ(t) は「幅 0・面積 1 の理想パルス」——矩形パルスの幅 τ → 0 の極限であり、§3 の変換対の通りスペクトルは平坦 `F(ω) = 1` になる。双対性の極限事例である: **時間的に最も局在した事象は、すべての周波数を均等に含む**。
+
+階段状のエッジ(不連続)はデルタ関数の積分だから、そのスペクトルは 1/ω——高周波成分が 1/f でしか減衰しない。滑らかな信号のスペクトルが指数的に速く落ちるのと対照的に、**不連続(角)は高周波の減衰を代数的(遅い)に留める**。これが「エッジは高周波の塊」の正確な意味である: エッジそのものが高い周波数「で」できているのではなく、エッジを鋭く保つために高周波成分が広い帯域にわたって必要になる。
+
+この直観は逆向きにも読める。チャネルがローパス(伝送線路の表皮効果・誘電損失は高周波ほど強く減衰させる)なら、通過後の信号は高周波成分を失い、**エッジが必ず鈍る**。鈍ったエッジが隣のビット時間に裾を引けば符号間干渉 (ISI) であり、画像の輪郭がぼやける機構も、音の立ち上がり(アタック)が失われる機構も、すべて同じ一つの文——「ローパスはエッジを殺す」——の別の顔である。
+
+## 工学への接続 (Engineering Connections)
+
+- **立ち上がり時間と帯域の換算 `BW ≈ 0.35/t_r`**: 1次ローパスのステップ応答から出る経験則 (§3)。「1 GHz のクロック」の SI 設計で本当に問題になるのはクロック周波数ではなく**エッジレート**であり、5 次・7 次高調波まで(数 GHz)をチャネルが運べるかが波形品質を決める。
+- **Bode 的な暗算**: システムを 1 次要素の縦続に分解し、各折れ点で −20 dB/dec ずつ傾きを足す (§2, §3)。dB の加法性のおかげで、複雑な伝達関数の概形が対数方眼上の折れ線で描ける——アナログ設計・制御設計の共通言語。
+- **EMC/EMI とスペクトル管理**: 放射ノイズの規制はスペクトルへの上限である。エッジを意図的に鈍らせる(スルーレート制御)、クロックを揺らして線スペクトルを面に薄めるスペクトラム拡散クロック (SSC)——どちらも §5 の「エッジと帯域の交換」を規制適合に使う操作。
+- **変調というスペクトルの引っ越し**: 搬送波 `e^{iω_c t}` を掛けるとスペクトルは ω_c だけ平行移動する(変換の周波数シフト則)。ベースバンド信号を無線帯域へ運ぶ変調・復調の数学はこの1行であり、Wi-Fi の OFDM は直交する多数の搬送波への同時射影——フーリエ級数の直交性 (§1) の通信への直輸入——である。
+
+## Daedalus内の応用 (Applications within Daedalus)
+
+| 文書 | 接続点 |
+|------|--------|
+| [`foundations/physics/electromagnetism/transmission-lines-signal-integrity.md`](../../physics/electromagnetism/transmission-lines-signal-integrity.md) | 周波数依存損失がエッジを鈍らせ ISI を生む機構 (同文書 §4) の数学的基盤 (§4–5) |
+| [`hardware/serdes-signal-integrity/signal-integrity-engineering.md`](../../../hardware/serdes-signal-integrity/signal-integrity-engineering.md) | S パラメータ・挿入損失は H(ω) の実測 (§4)、ジッタ・アイの周波数領域解析 |
+| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | CTLE/FFE/DFE = チャネルの逆フィルタリング (§4)、帯域とシンボルレートの交換 (§3) |
+| [`hardware/peripherals-connectivity/audio-subsystem.md`](../../../hardware/peripherals-connectivity/audio-subsystem.md) | 可聴帯域・イコライザ・スペクトルという言語の全体 (§1–4)、dB (§2) |
+| [`hardware/peripherals-connectivity/wifi-architecture.md`](../../../hardware/peripherals-connectivity/wifi-architecture.md) | OFDM = 直交搬送波への射影 (§1)、チャネル帯域幅とスループット (§3) |
+| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | 映像の空間周波数、スケーリング・圧縮のフィルタリング (§4)、高速リンクのエッジ (§5) |
+| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 光学ローパスフィルタとモアレ——2次元空間周波数でのエイリアシング前史 (§3, 次回) |
+
+## 参考文献 (References)
+
+- Oppenheim, A. V., & Willsky, A. S. (1996). *Signals and Systems* (2nd ed.). Prentice Hall. — フーリエ級数・変換・LTI システム論の主参照
+- Bracewell, R. N. (2000). *The Fourier Transform and Its Applications* (3rd ed.). McGraw-Hill. — 変換対・双対性・デルタ関数の扱いの主参照
+- Lyons, R. G. (2011). *Understanding Digital Signal Processing* (3rd ed.). Prentice Hall. — 工学的直観と実務側の副読本(次回の DFT/FFT の主参照)
+- Körner, T. W. (1988). *Fourier Analysis*. Cambridge University Press. — 収束・ギブス現象など数学的側面の古典

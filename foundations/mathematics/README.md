@@ -18,6 +18,12 @@
   待ち行列・パフォーマンス分析 (`../../software/observability/`) の言語
 - `calculus-analysis/` — 微分積分・解析(極限、微分、積分、テイラー展開、
   微分方程式 …)。物理学シリーズ全体と制御理論の前提
+- `fourier-signal-processing/` — フーリエ解析・信号処理(フーリエ級数/変換、
+  畳み込み、サンプリング定理、FFT …)。無線
+  (`../../hardware/peripherals-connectivity/wifi-architecture.md`)、オーディオ
+  (`../../hardware/peripherals-connectivity/audio-subsystem.md`)、
+  画像・ディスプレイ (`../../hardware/peripherals-connectivity/display-pipeline.md`)、
+  高速シリアルリンク (`../../hardware/serdes-signal-integrity/`) の土台
 
 ## 今後のテーマ候補
 
@@ -25,11 +31,6 @@
 
 ### 優先度 中
 
-- フーリエ解析・信号処理 (Fourier analysis & signal processing) — フーリエ級数/変換、
-  サンプリング定理、FFT。無線
-  (`../../hardware/peripherals-connectivity/wifi-architecture.md`)、オーディオ
-  (`../../hardware/peripherals-connectivity/audio-subsystem.md`)、
-  画像・ディスプレイ (`../../hardware/peripherals-connectivity/display-pipeline.md`) の土台
 - 離散数学・論理 (discrete mathematics & logic) — ブール代数、グラフ、オートマトン。
   論理回路・ISA (`../../hardware/cpu-architecture/`)、プロトコルの状態機械
   (`../../software/networking/`)、データベース (`../../software/databases/`) の骨格
