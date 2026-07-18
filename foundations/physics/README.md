@@ -6,6 +6,10 @@
 
 ## 構成 (Structure)
 
+- `classical-mechanics/` — 古典力学(運動方程式、運動量とエネルギー、剛体と回転、
+  振動・共振、安定性 …)。ロボティクス (`../../hardware/robotics/`)、
+  航空宇宙 (`../../hardware/aerospace/`)、自動車 (`../../hardware/automotive/`) の
+  制御対象 (プラント) のモデルを与える
 - `electromagnetism/` — 電磁気学(電荷・電場・電位、静磁気、電磁誘導、
   マクスウェル方程式、回路理論、伝送線路 …)。
   バス・インターコネクト (`../../hardware/hw-sw-interface/bus-interconnect.md`)、
@@ -26,12 +30,6 @@
 ## 今後のテーマ候補
 
 優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
-
-### 優先度 中
-
-- 古典力学 (classical mechanics) — 運動方程式、剛体、振動。自動車
-  (`../../hardware/automotive/`)、航空宇宙 (`../../hardware/aerospace/`)、
-  ロボティクス (`../../hardware/robotics/`) の制御対象のモデル
 
 ### 優先度 低 (将来の拡張)
 

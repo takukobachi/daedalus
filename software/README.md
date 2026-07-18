@@ -49,6 +49,9 @@
 - `messaging-streaming/` — メッセージングとストリーム処理（分散ログ, 複製と耐久性,
   配信セマンティクス/exactly-once, ウィンドウとチェックポイント, バックプレッシャ）。
   `distributed-systems/`・`databases/` の機構をシステム間のデータフローへ応用する層
+- `object-storage/` — オブジェクトストレージ（S3 型設計, メタデータ層とデータ層の分離,
+  イレイジャーコーディング, CRUSH 型配置, 耐久性のモデル）。`distributed-systems/`・
+  `databases/`・`hardware/storage-devices/` の合流点
 
 ### プラットフォーム分析 (Platform Analysis)
 
@@ -88,9 +91,6 @@ README のロードマップに置き、ここには重複させない。優先�
 
 ### 優先度 中 (応用層を広げる)
 
-- オブジェクトストレージ (object storage) — S3 型設計、イレイジャーコーディング、
-  メタデータ層とデータ層の分離、CRUSH 型配置。`distributed-systems/`・`databases/`・
-  `hardware/storage-devices/` の合流点
 - 検索と情報検索 (search & IR) — 転置インデックス, ランキング (BM25),
   近似最近傍探索 (ANN)。`databases/` と `ml-systems/`（ベクトル検索）の合流点
 
