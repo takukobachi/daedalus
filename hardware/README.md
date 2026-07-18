@@ -14,6 +14,9 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 - `cpu-architecture/` — CPU内部（ISA, キャッシュ, メモリ順序, 仮想記憶 …）
 - `gpu-accelerators/` — GPU・アクセラレータ（SIMT, メモリ階層/HBM, Tensor Core …）。
   `cpu-architecture/` の対照編で、`software/ml-systems/` と対で読む
+- `fpga-reconfigurable/` — FPGA・再構成可能計算（LUT と配線ファブリック, 設計フロー・
+  タイミングクロージャ, HLS, 部分再構成, SmartNIC/DPU …）。`gpu-accelerators/` が描く
+  専用化スペクトラム（CPU → GPU → ASIC）の間を埋める「書き換え可能なハードウェア」の層
 - `serdes-signal-integrity/` — 高速シリアルリンクと SI（SerDes, PAM4, イコライゼーション,
   ジッタ, S パラメータ, COM …）。PCIe (`hw-sw-interface/`)・USB/ディスプレイ
   (`peripherals-connectivity/`)・Ethernet (`network-hardware/`) が論理層で共有する
@@ -60,11 +63,6 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
 README のロードマップに置き、ここには重複させない。優先度は「既存ドキュメントとの
 相互参照が何本張れるか（スタックの穴を埋めるか）」を基準に付けている。
-
-### 優先度 中 (新しいドメインを開く)
-
-- FPGA・再構成可能計算 (FPGA & reconfigurable computing) — LUT とルーティング、
-  HLS、SmartNIC/DPU。`gpu-accelerators/` が描く専用化スペクトラムの続き
 
 ### 優先度 低 (将来の拡張)
 
