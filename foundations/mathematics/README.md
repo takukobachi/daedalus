@@ -24,6 +24,11 @@
   `../../hardware/fpga-reconfigurable/`)、経路制御 (`../../software/networking/`)、
   正規表現・パーサ・検証の限界 (`../../software/security/`,
   `../../software/ebpf/`) の骨格
+- `number-theory-algebra/` — 数論・代数(合同算術と群、有限体、公開鍵暗号の数学 …)。
+  TLS・セキュアブート (`../../software/networking/tls-internals.md`,
+  `../../hardware/hardware-security/`)、CRC・スクランブラ
+  (`../../hardware/serdes-signal-integrity/`)、イレイジャーコーディング
+  (`../../software/object-storage/`)・ECC (`../../hardware/storage-devices/`) の代数
 - `fourier-signal-processing/` — フーリエ解析・信号処理(フーリエ級数/変換、
   畳み込み、サンプリング定理、FFT …)。無線
   (`../../hardware/peripherals-connectivity/wifi-architecture.md`)、オーディオ
@@ -37,7 +42,5 @@
 
 ### 優先度 低 (将来の拡張)
 
-- 数論・代数 (number theory & algebra) — 合同算術、群・環・体。暗号
-  (`../../software/security/`) と誤り訂正符号の前提
 - 数値解析 (numerical analysis) — 浮動小数点、誤差解析、反復法。
   科学技術計算と機械学習の数値的基盤
