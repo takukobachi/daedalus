@@ -18,6 +18,12 @@
   待ち行列・パフォーマンス分析 (`../../software/observability/`) の言語
 - `calculus-analysis/` — 微分積分・解析(極限、微分、積分、テイラー展開、
   微分方程式 …)。物理学シリーズ全体と制御理論の前提
+- `discrete-logic/` — 離散数学・論理(命題論理・ブール代数、グラフと木、
+  オートマトン・形式言語、計算可能性 …)。
+  論理回路・FPGA (`../physics/quantum-solid-state/mosfet-cmos.md`,
+  `../../hardware/fpga-reconfigurable/`)、経路制御 (`../../software/networking/`)、
+  正規表現・パーサ・検証の限界 (`../../software/security/`,
+  `../../software/ebpf/`) の骨格
 - `fourier-signal-processing/` — フーリエ解析・信号処理(フーリエ級数/変換、
   畳み込み、サンプリング定理、FFT …)。無線
   (`../../hardware/peripherals-connectivity/wifi-architecture.md`)、オーディオ
@@ -28,12 +34,6 @@
 ## 今後のテーマ候補
 
 優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
-
-### 優先度 中
-
-- 離散数学・論理 (discrete mathematics & logic) — ブール代数、グラフ、オートマトン。
-  論理回路・ISA (`../../hardware/cpu-architecture/`)、プロトコルの状態機械
-  (`../../software/networking/`)、データベース (`../../software/databases/`) の骨格
 
 ### 優先度 低 (将来の拡張)
 
