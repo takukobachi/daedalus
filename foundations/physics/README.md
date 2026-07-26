@@ -26,6 +26,10 @@
   (`../../hardware/hw-sw-interface/clock-power-reset.md`)、発電
   (`../../hardware/power-generation/`)、データセンター冷却
   (`../../hardware/datacenter-infrastructure/`) の支配法則
+- `fluid-dynamics/` — 流体力学(圧縮性流れ、マッハ数、デ・ラバルノズル、
+  膨張比と Isp …)。ロケットエンジン
+  (`../../hardware/aerospace/spacex-rocket-engines.md`) と航空機空力
+  (`../../hardware/aerospace/aircraft-engineering-fundamentals.md`) の理論的土台
 
 ## 今後のテーマ候補
 

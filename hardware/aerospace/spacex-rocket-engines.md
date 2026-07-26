@@ -9,7 +9,7 @@
 
 本ドキュメントは、前提となる **ツィオルコフスキーのロケット方程式**と**比推力 (Isp)** を確認したうえで、Merlin と Raptor を「サイクルの選択」という設計判断として対比する。とりわけ Raptor の FFSC が「なぜ難しく、なぜ価値があるか」を、ガスジェネレータ／部分二段燃焼との比較で解剖する。分析深度は Level 3。
 
-> 前提知識として、`aircraft-engineering-fundamentals.md`「ロケットへの橋渡し」節（航空機との差分：自前の酸化剤・推力支配・ロケット方程式）を踏まえる。
+> 前提知識として、`aircraft-engineering-fundamentals.md`「ロケットへの橋渡し」節（航空機との差分：自前の酸化剤・推力支配・ロケット方程式）を踏まえる。ノズル・膨張比・Isp の式の理論的導出は `../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md` に置く。
 
 ## 方法論 (Methodology)
 
