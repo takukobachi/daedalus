@@ -6,7 +6,7 @@
 
 SpaceX は TPS の2つの系譜を実用している。**Dragon** カプセルは NASA Ames 由来のアブレータ **PICA** を自社改良した **PICA-X** で使い捨て熱を凌ぎつつカプセル再使用を成立させ、**Starship** 上段は Space Shuttle の系譜に連なる**再使用型セラミックタイル**を、六角形状・機械固定・ステンレス機体という新しい組み合わせで「最小整備の完全再使用」に挑んでいる。本ドキュメントは、再突入の物理（なぜ鈍頭か、熱はどこから来るか）から説き起こし、TPS の設計空間の中に Dragon と Starship を位置づける。分析深度は Level 3。
 
-> 前提: 軌道エネルギーと Δv は `orbital-mechanics.md`、Starship の機体側の文脈は `spacex-starship-superheavy.md`「耐熱防護システム」節。
+> 前提: 軌道エネルギーと Δv は `orbital-mechanics.md`、Starship の機体側の文脈は `spacex-starship-superheavy.md`「耐熱防護システム」節。衝撃波・実在気体効果の理論的導出は `../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md` に置く。
 
 ## 方法論 (Methodology)
 

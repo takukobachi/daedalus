@@ -39,6 +39,7 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 
 - [`satellites/`](satellites/README.md) — 衛星バス・コンステレーション（ペイロード側）
   - [`satellites/starlink-satellite-bus.md`](satellites/starlink-satellite-bus.md) — Starlink：フラットパネルとスタック展開、Kr/Ar ホールスラスタ、フェーズドアレイ、レーザー衛星間リンク、自律衝突回避、デブリ・天文考察
+  - [`satellites/electric-propulsion.md`](satellites/electric-propulsion.md) — 電気推進：F = 2ηP/v_e の三角関係、ホール vs イオン、磁気シールディング、PPU、フライトヘリテージ
 
 ### アビオニクス (Avionics)
 
@@ -46,8 +47,9 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 
 ## 今後のテーマ候補
 
-衛星側の候補（電気推進の深掘り、デブリ・軌道交通管理、衛星の電力・熱設計）は
-`satellites/README.md` のロードマップに置く。
+衛星側の候補（デブリ・軌道交通管理、衛星の電力・熱設計）は
+`satellites/README.md` のロードマップに置く。衝撃波・極超音速の理論編は
+`foundations/physics/fluid-dynamics/shock-waves-hypersonics.md` として整備済み。
 
-- 極超音速飛行と空力加熱の理論編 — 衝撃波・膨張波（`foundations/physics/fluid-dynamics/` のロードマップと連携）
 - 有人 Starship (crewed Starship) — アボートを持たない設計の有人認定という未解決問題。`dragon-spacecraft.md` の結論の続き
+- 月着陸ミッションアーキテクチャ (HLS) — Starship HLS、軌道上給油の回数収支、Artemis との接続。`propellant-fluid-systems.md` の軌道上移送の続き
