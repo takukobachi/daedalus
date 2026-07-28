@@ -31,11 +31,23 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 - [`launch-ground-systems.md`](launch-ground-systems.md) — 射点と地上系 (launch & ground systems)：Stage 0 の思想、タンクファームと過冷却、水デリュージと音響荷重、IFT-1 射点破壊と水冷鋼板デッキ、水平統合 vs タワー統合
 - [`range-safety-fts.md`](range-safety-fts.md) — 飛行安全と自律飛行中断 (range safety & AFSS)：飛行回廊・破壊限界線・瞬時落下点、FTS の判断系と執行系、コマンド式→自律式の転換、Starship 飛行試験での FTS 作動
 
+### エンジンの深掘り (Engine Deep-Dives)
+
+- [`combustion-instability.md`](combustion-instability.md) — 燃焼安定性 (combustion instability)：レイリー基準、チャギング/バジング/スクリーチ、F-1 の1,000回試験とボム試験、バッフルと音響キャビティ、中型多数クラスタとガス-ガス噴射の安定上の利得
+
+### 衛星 (Satellites)
+
+- [`satellites/`](satellites/README.md) — 衛星バス・コンステレーション（ペイロード側）
+  - [`satellites/starlink-satellite-bus.md`](satellites/starlink-satellite-bus.md) — Starlink：フラットパネルとスタック展開、Kr/Ar ホールスラスタ、フェーズドアレイ、レーザー衛星間リンク、自律衝突回避、デブリ・天文考察
+
 ### アビオニクス (Avionics)
 
 - [`avionics-gnc.md`](avionics-gnc.md) — アビオニクスと GNC (avionics & GNC)：GNC ループ（航法/誘導/制御）、冗長計算機とフォールトトレランス（Shuttle・777・A320・Falcon 9）、Byzantine 障害、凸最適化着陸誘導、航空宇宙バス (1553/AFDX)、Apollo AGC
 
 ## 今後のテーマ候補
 
-- Starlink と衛星バス (satellite bus) — ホールスラスタ、レーザー衛星間リンク、フェーズドアレイ。ロケットではなく衛星側のハードウェアなので、着手時はサブディレクトリ（例: `satellites/`）を切る
-- 燃焼安定性 (combustion instability) — 音響モードと燃焼の結合、噴射器設計、F-1 の教訓。エンジン編の深掘り
+衛星側の候補（電気推進の深掘り、デブリ・軌道交通管理、衛星の電力・熱設計）は
+`satellites/README.md` のロードマップに置く。
+
+- 極超音速飛行と空力加熱の理論編 — 衝撃波・膨張波（`foundations/physics/fluid-dynamics/` のロードマップと連携）
+- 有人 Starship (crewed Starship) — アボートを持たない設計の有人認定という未解決問題。`dragon-spacecraft.md` の結論の続き
