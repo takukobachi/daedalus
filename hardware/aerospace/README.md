@@ -41,6 +41,11 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
   - [`satellites/starlink-satellite-bus.md`](satellites/starlink-satellite-bus.md) — Starlink：フラットパネルとスタック展開、Kr/Ar ホールスラスタ、フェーズドアレイ、レーザー衛星間リンク、自律衝突回避、デブリ・天文考察
   - [`satellites/electric-propulsion.md`](satellites/electric-propulsion.md) — 電気推進：F = 2ηP/v_e の三角関係、ホール vs イオン、磁気シールディング、PPU、フライトヘリテージ
 
+### ミッションと有人化 (Missions & Human Spaceflight)
+
+- [`hls-lunar-architecture.md`](hls-lunar-architecture.md) — HLS と月着陸アーキテクチャ (lunar architecture)：給油キャンペーン、NRHO の Δv 収支、Apollo LM との対比、真空専用機の引き算、噴煙とレゴリス、GAO/OIG のリスク評価
+- [`crewed-starship.md`](crewed-starship.md) — 有人 Starship の認定問題 (crew certification)：脱出系/信頼性設計/頻度実証の3パラダイム、Shuttle 遡及 PRA の実数、rule of three による必要飛行回数、段階的有人化の経路
+
 ### アビオニクス (Avionics)
 
 - [`avionics-gnc.md`](avionics-gnc.md) — アビオニクスと GNC (avionics & GNC)：GNC ループ（航法/誘導/制御）、冗長計算機とフォールトトレランス（Shuttle・777・A320・Falcon 9）、Byzantine 障害、凸最適化着陸誘導、航空宇宙バス (1553/AFDX)、Apollo AGC
@@ -51,5 +56,5 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 `satellites/README.md` のロードマップに置く。衝撃波・極超音速の理論編は
 `foundations/physics/fluid-dynamics/shock-waves-hypersonics.md` として整備済み。
 
-- 有人 Starship (crewed Starship) — アボートを持たない設計の有人認定という未解決問題。`dragon-spacecraft.md` の結論の続き
-- 月着陸ミッションアーキテクチャ (HLS) — Starship HLS、軌道上給油の回数収支、Artemis との接続。`propellant-fluid-systems.md` の軌道上移送の続き
+- 火星往還アーキテクチャ (Mars architecture) — ISRU 収支の全体設計、地球帰還までの閉じた質量・電力収支。`hls-lunar-architecture.md` と `propellant-fluid-systems.md` の合流点
+- 打ち上げ市場の経済分析 (launch economics) — 価格弾力性、需要の誘発、競合（再使用機の追随勢）。`spacex-reusability.md` の経済節の産業視点への拡張
