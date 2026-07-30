@@ -24,14 +24,16 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
 - `cloud-iam-authorization.md` — クラウド IAM と認可：SigV4 署名とステートレス認証、
   ポリシー評価論理（明示的拒否・境界・和と積）、STS と一時クレデンシャル、
   ポリシーの形式検証 (Zelkova/Cedar)、confused deputy と IMDS、Zanzibar との対比
+- `cloud-databases-aurora-dynamodb.md` — クラウドデータベースの設計系譜：Aurora の
+  「ログこそデータベース」（6/4/3 クォーラム, VDL 水位線, リカバリの定常化）と
+  DynamoDB の「予測可能性こそ商品」（有界リクエスト, Multi-Paxos, GAC, MemDS,
+  ワンショットトランザクション）を「何を約束し続けるか」の対として読む
+- `cloud-block-storage.md` — ブロックストレージ (EBS 型)：ブロック意味論の契約と
+  チェーン複製, 構成管理の分業 (Physalia), 2011 年再ミラーリングの嵐, スナップショットの
+  増分参照構造と lazy restore, SRD/Nitro オフロード, 故障ドメイン分離という商品
 
 ## 今後のテーマ候補
 
-- ブロックストレージ (EBS 型) — チェーン複製, ボリューム仮想化, スナップショットの増分構造。
-  `physalia` (設定ストア) は `cloud-control-planes.md` が扱済み
-- クラウドデータベースの設計系譜 — DynamoDB (ATC '22) と Aurora (SIGMOD '17) を
-  「計算と記憶の分離」「ログこそデータベース」の対として読む。
-  [`../databases/`](../databases/) のストレージエンジン論の応用層
 - コンテナオーケストレーション — Kubernetes の宣言的状態と reconciliation loop, etcd,
   スケジューラ。`cloud-control-planes.md` の望ましい状態 (desired state) 論の一般化
 - マルチリージョンとグローバルサービス — リージョン隔離の設計原則, グローバルテーブル,
