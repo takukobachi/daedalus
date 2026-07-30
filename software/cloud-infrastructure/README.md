@@ -31,11 +31,20 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
 - `cloud-block-storage.md` — ブロックストレージ (EBS 型)：ブロック意味論の契約と
   チェーン複製, 構成管理の分業 (Physalia), 2011 年再ミラーリングの嵐, スナップショットの
   増分参照構造と lazy restore, SRD/Nitro オフロード, 故障ドメイン分離という商品
+- `container-orchestration-kubernetes.md` — コンテナオーケストレーション：宣言的状態と
+  level-triggered reconciliation, etcd と楽観並行制御による振り付けなし協調,
+  スケジューリングパイプライン, EKS の接合部 (IRSA/VPC CNI/Karpenter),
+  namespace はテナント境界ではないという等級論
+- `multi-region-global-architecture.md` — マルチリージョンとグローバルサービス：
+  リージョン独立性という資産と隠れ結合 (2021-12 us-east-1), 光速が引く同期/非同期境界,
+  RTO/RPO の値段表, 競合解決の 4 択 (回避/LWW/CRDT/合意, Spanner 対比),
+  フェイルオーバー工学と静的安定な引き金
 
 ## 今後のテーマ候補
 
-- コンテナオーケストレーション — Kubernetes の宣言的状態と reconciliation loop, etcd,
-  スケジューラ。`cloud-control-planes.md` の望ましい状態 (desired state) 論の一般化
-- マルチリージョンとグローバルサービス — リージョン隔離の設計原則, グローバルテーブル,
-  コンフリクト解決。[`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) の実地応用
-- スポット市場と容量経済 — 統計多重化の価格設計, interruption notice, 容量予約
+- スポット市場と容量経済 — 統計多重化の価格設計, interruption notice, 容量予約,
+  Karpenter の consolidation との接続
+- 鍵管理と機密計算 — KMS のエンベロープ階層と HSM, Nitro Enclaves / TEE,
+  [`../../hardware/hardware-security/side-channels-tee-secure-boot.md`](../../hardware/hardware-security/side-channels-tee-secure-boot.md) のクラウド応用層
+- Infrastructure as Code — CloudFormation/CDK/Terraform の宣言的状態管理と drift,
+  `container-orchestration-kubernetes.md` の調停ループ論との同型性
