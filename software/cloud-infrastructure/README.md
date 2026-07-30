@@ -39,12 +39,18 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
   リージョン独立性という資産と隠れ結合 (2021-12 us-east-1), 光速が引く同期/非同期境界,
   RTO/RPO の値段表, 競合解決の 4 択 (回避/LWW/CRDT/合意, Spanner 対比),
   フェイルオーバー工学と静的安定な引き金
+- `cloud-kms-confidential-computing.md` — 鍵管理と機密計算：鍵を出さず演算を売る KMS,
+  エンベロープ暗号化と encryption context, 鍵階層と主権の選択 (BYOK/外部キーストア),
+  Nitro Enclaves の隔離と attestation (「コードへの認可」), 保証等級の正直な評価
+- `spot-capacity-economics.md` — スポット市場と容量経済：価格モデル＝容量リスクの配分契約,
+  入札の時代から中断設計の時代へ (独立検証 ACM TEAC 2013), 120 秒の退去プロトコル,
+  プール分散という相関回避, 容量ポートフォリオ, 余剰/逼迫レジームと GPU の予約回帰
 
 ## 今後のテーマ候補
 
-- スポット市場と容量経済 — 統計多重化の価格設計, interruption notice, 容量予約,
-  Karpenter の consolidation との接続
-- 鍵管理と機密計算 — KMS のエンベロープ階層と HSM, Nitro Enclaves / TEE,
-  [`../../hardware/hardware-security/side-channels-tee-secure-boot.md`](../../hardware/hardware-security/side-channels-tee-secure-boot.md) のクラウド応用層
 - Infrastructure as Code — CloudFormation/CDK/Terraform の宣言的状態管理と drift,
   `container-orchestration-kubernetes.md` の調停ループ論との同型性
+- エッジとグローバルアクセラレーション — CloudFront/Global Accelerator の anycast 設計。
+  [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md) のクラウド製品側からの再訪
+- データ分析基盤 — S3 上のレイクハウス (Parquet/Iceberg), 計算と記憶の分離のクエリエンジン版
+  (Athena/Redshift 型), [`../databases/`](../databases/) の列指向・実行エンジン論への接続
