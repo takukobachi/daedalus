@@ -59,10 +59,21 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
 - `cloud-network-topology.md` — ネットワークトポロジー：到達性は負債という第一原理,
   ピアリングの非推移性 → TGW のハブ&スポーク → PrivateLink という進化, 経路表という
   ポリシー言語, ハイブリッド接続と分割解決 DNS, CIDR 計画, ゼロトラスト下の境界の位置づけ
+- `cloud-observability.md` — クラウド可観測性：外形計測の内蔵と内部計装の二重視点,
+  カーディナリティの経済 (Gorilla/Monarch と課金構造), 信号の相互変換, 監査 (CloudTrail)
+  と運用 (CloudWatch) の分離, 欠損データの意味論, OTel による計装の脱ベンダー化
+- `cloud-design-principles.md` — **総括**：領域 14 本を貫く七つの設計原則 (相関の破壊,
+  制御/実行の分離, ログこそデータベース, 計算と記憶の分離, 機能の削除, 文脈の明示化と
+  機械検証, 難しさの移動) の帰納と、原則 × 文書の出現マップ・学習経路・設計レビュー
+  への変換。まずここから読み、各論へ降りる入口としても使える
+
+なおエッジ配信 (CloudFront 型) は [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md)
+が CloudFront を事例に含めて既に Level 3 で扱っており、本領域では重複させない。
 
 ## 今後のテーマ候補
 
-- エッジとグローバルアクセラレーション — CloudFront/Global Accelerator の anycast 設計。
-  [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md) のクラウド製品側からの再訪
-- クラウド可観測性 — CloudWatch/X-Ray 型の製品構造, メトリクスの集約と課金,
-  [`../observability/`](../observability/) の一般論のクラウド適用
+- マルチテナント SaaS 設計 — テナント隔離のパターン (silo/pool/bridge), テナントごとの
+  計量と noisy neighbor, `cloud-control-planes.md` の隔離 vs 多重化の応用層
+- AI/エージェント基盤 — マネージド推論 (Bedrock 型) の計量・隔離・容量,
+  [`../ml-systems/`](../ml-systems/) の製品側からの再訪。エージェントの認可は
+  `cloud-iam-authorization.md` の「認可の主語の拡張」の次の段
