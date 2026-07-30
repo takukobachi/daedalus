@@ -45,12 +45,20 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
 - `spot-capacity-economics.md` — スポット市場と容量経済：価格モデル＝容量リスクの配分契約,
   入札の時代から中断設計の時代へ (独立検証 ACM TEAC 2013), 120 秒の退去プロトコル,
   プール分散という相関回避, 容量ポートフォリオ, 余剰/逼迫レジームと GPU の予約回帰
+- `infrastructure-as-code.md` — Infrastructure as Code：意図・記録・現実の三体問題,
+  差分計画のコンパイラという読み方, 置換 (replacement) と事故の機構, drift と常時調停
+  (GitOps) の適用範囲, saga 型ロールバック vs 停止, policy as code というガバナンス執行点
+- `data-lakehouse-analytics.md` — データレイクハウス：列指向 (Parquet) と「読まない技術」,
+  テーブル形式 (Iceberg) によるオブジェクトストア上の ACID の買い戻し (メタデータ木 +
+  ポインタ CAS), カタログ＝コントロールプレーン, compaction という LSM の再演,
+  分離クエリエンジンとスキャン課金の経済
 
 ## 今後のテーマ候補
 
-- Infrastructure as Code — CloudFormation/CDK/Terraform の宣言的状態管理と drift,
-  `container-orchestration-kubernetes.md` の調停ループ論との同型性
+- イベント駆動アーキテクチャとワークフロー — キュー/トピック/イベントバスの使い分け,
+  ステートマシン型オーケストレーション (Step Functions 型) と saga,
+  [`../messaging-streaming/`](../messaging-streaming/) の配信意味論の製品側からの再訪
 - エッジとグローバルアクセラレーション — CloudFront/Global Accelerator の anycast 設計。
   [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md) のクラウド製品側からの再訪
-- データ分析基盤 — S3 上のレイクハウス (Parquet/Iceberg), 計算と記憶の分離のクエリエンジン版
-  (Athena/Redshift 型), [`../databases/`](../databases/) の列指向・実行エンジン論への接続
+- クラウド可観測性 — CloudWatch/X-Ray 型の製品構造, メトリクスの集約と課金,
+  [`../observability/`](../observability/) の一般論のクラウド適用
