@@ -52,12 +52,16 @@ AWS を主要な走る事例 (running example) として、標準・論文・オ
   テーブル形式 (Iceberg) によるオブジェクトストア上の ACID の買い戻し (メタデータ木 +
   ポインタ CAS), カタログ＝コントロールプレーン, compaction という LSM の再演,
   分離クエリエンジンとスキャン課金の経済
+- `event-driven-architecture.md` — イベント駆動とワークフロー：時間的独立という商品と
+  分散トランザクションという代金, 4 つの抽象 (キュー/トピック/バス/ログ) の座標,
+  at-least-once + 冪等受信・saga・outbox という規律, オーケストレーション vs
+  コレオグラフィ, DLQ と毒メッセージ
+- `cloud-network-topology.md` — ネットワークトポロジー：到達性は負債という第一原理,
+  ピアリングの非推移性 → TGW のハブ&スポーク → PrivateLink という進化, 経路表という
+  ポリシー言語, ハイブリッド接続と分割解決 DNS, CIDR 計画, ゼロトラスト下の境界の位置づけ
 
 ## 今後のテーマ候補
 
-- イベント駆動アーキテクチャとワークフロー — キュー/トピック/イベントバスの使い分け,
-  ステートマシン型オーケストレーション (Step Functions 型) と saga,
-  [`../messaging-streaming/`](../messaging-streaming/) の配信意味論の製品側からの再訪
 - エッジとグローバルアクセラレーション — CloudFront/Global Accelerator の anycast 設計。
   [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md) のクラウド製品側からの再訪
 - クラウド可観測性 — CloudWatch/X-Ray 型の製品構造, メトリクスの集約と課金,
