@@ -27,7 +27,8 @@
 ## 今後のテーマ候補
 
 - レート歪み理論の各論 (rate-distortion theory) — 歪み尺度と知覚品質の乖離、
-  非可逆圧縮 (`../../software/compression/` 予定) の理論的下限の深掘り
+  非可逆圧縮 ([`../../software/compression/`](../../software/compression/)) の
+  理論的下限の深掘り
 - 情報理論とセキュリティ (information-theoretic security) — 完全秘匿 (one-time pad)、
   エントロピー源の健全性評価 (min-entropy, NIST SP 800-90B)、サイドチャネルの
   情報量的定式化。`../../hardware/hardware-security/` との合流点

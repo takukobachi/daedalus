@@ -57,6 +57,11 @@
   HNSW/IVF-PQ による近似最近傍探索, ハイブリッド検索）。厳密一致ではなく関連度で
   top-k を返す第三のデータシステムで、`databases/`（LSM 同型のセグメント設計）と
   `ml-systems/`（埋め込みの供給側）の合流点
+- `compression/` — データ圧縮とコーデック（LZ77, Huffman/算術符号/ANS,
+  DEFLATE/zstd, 予測→変換→量子化の映像・音声符号化, H.264/AV1/Opus）。
+  `databases/`（ページ圧縮）・`observability/`（時系列符号化）・
+  `networking/`（転送圧縮, 配信）が暗黙に依存する「縮める層」で、
+  理論限界は `foundations/information-theory/` が与える
 
 ### プラットフォーム分析 (Platform Analysis)
 
