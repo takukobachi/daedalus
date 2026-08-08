@@ -91,6 +91,10 @@
 - `observability/` — 可観測性と性能工学（PMU/トップダウン解析, カーネルトレーシング,
   eBPF 集計, 分散トレーシング, メトリクス, SLO, 測定方法論）。`security/` に続く
   第二の横串で、各領域の「観測の入口」表を束ねて一般化する
+- `formal-methods/` — 形式手法（時相論理, TLA+/SPIN によるモデル検査, Hoare 論理と
+  演繹的検証 (seL4/CompCert), SMT・抽象解釈, eBPF 検証器・Rust 型システムという
+  軽量形式手法）。`distributed-systems/`・`concurrency/`・`ebpf/` に散在していた
+  検証への言及を束ねる第三の横串で、「誤りを設計から排除する」側の品質保証
 
 ## 今後のテーマ候補
 
