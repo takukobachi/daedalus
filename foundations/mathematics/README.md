@@ -35,6 +35,11 @@
   (`../../hardware/peripherals-connectivity/audio-subsystem.md`)、
   画像・ディスプレイ (`../../hardware/peripherals-connectivity/display-pipeline.md`)、
   高速シリアルリンク (`../../hardware/serdes-signal-integrity/`) の土台
+- `optimization/` — 最適化(凸性と LP/QP/SOCP、勾配法、KKT 条件、双対性と影の価格 …)。
+  着陸誘導 (`../../hardware/aerospace/avionics-gnc.md`)、電力市場
+  (`../../hardware/power-generation/electricity-markets-dispatch.md`)、
+  ML 訓練 (`../../software/ml-systems/`)、MPC (`../../hardware/robotics/control-systems.md`)
+  の共通言語
 
 ## 今後のテーマ候補
 
