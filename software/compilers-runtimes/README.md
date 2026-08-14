@@ -11,14 +11,15 @@
 - `managed-runtimes-gc-jit.md` — マネージドランタイム：階層型 JIT (インタプリタ →
   最適化コンパイラ)、hidden class とインラインキャッシュ、投機と deoptimization、
   GC (世代仮説・並行化・バリア)、参照カウントとの対比、JIT/GC のセキュリティ
+- `language-implementations-cpython-go-rust.md` — 言語処理系の設計対比:「意味論の
+  保証をいつ払うか」の軸で CPython (バイトコード・GIL・特殊化・free-threading)、
+  Go (GMP スケジューラ・伸長スタック・並行 GC)、Rust (所有権・単相化・unsafe 境界)
+  を 5 軸で比較。並行安全性の 3 戦略 (ロック・検出器・型) の対比
 
 ## 今後のテーマ候補
 
 - コンパイラ中盤 (compiler middle-end) — IR・SSA 形式、主要最適化 (インライン化,
   ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu-architecture/simd-vector.md`
   の自動ベクトル化の供給側
-- 言語処理系の設計対比 (language implementations) — CPython の GIL と 3.13 以降の
-  free-threading、Go ランタイム (goroutine スケジューラ, 低停止 GC)、
-  Rust (所有権 = コンパイル時のメモリ管理) の三者比較
 - WebAssembly — 検証可能な移植可能バイナリ、サンドボックス、コンポーネントモデル。
   `../ebpf/` (カーネル内の検証付き実行) とのサンドボックス設計対比
