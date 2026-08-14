@@ -14,7 +14,8 @@
 - `language-implementations-cpython-go-rust.md` — 言語処理系の設計対比:「意味論の
   保証をいつ払うか」の軸で CPython (バイトコード・GIL・特殊化・free-threading)、
   Go (GMP スケジューラ・伸長スタック・並行 GC)、Rust (所有権・単相化・unsafe 境界)
-  を 5 軸で比較。並行安全性の 3 戦略 (ロック・検出器・型) の対比
+  を 7 軸で比較。並行安全性の 3 戦略 (ロック・検出器・型)、async の三答
+  (「関数の色」問題・stackful/stackless)、エラー処理の課金方式の対比
 
 ## 今後のテーマ候補
 
