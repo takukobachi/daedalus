@@ -20,7 +20,8 @@
   レジスタ割り当て (register allocation)、命令スケジューリング。
   `hardware/cpu-architecture/` の ISA・パイプライン分析との合流点
 - ビルドシステムと再現可能ビルド (build systems & reproducible builds) —
-  依存グラフ、キャッシュと分散ビルド、ビット単位で同一な成果物が
+  依存グラフとパッケージ依存解決 (go modules の MVS, cargo の semver, pip)、
+  キャッシュと分散ビルド、ビット単位で同一な成果物が
   サプライチェーン検証に持つ意味
 - デバッグ情報とアンワインド (debug info & unwinding) — DWARF、
   スタックアンワインド (CFI)、シンボリケーション。プロファイラ・例外処理・
