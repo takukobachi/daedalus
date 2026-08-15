@@ -17,15 +17,16 @@
   を 8 軸で比較。並行安全性の 3 戦略 (ロック・検出器・型)、async の三答
   (「関数の色」問題・stackful/stackless)、エラー処理の課金方式、
   起動とデプロイの形の対比
+- `stdlib-internals-cpython-go-rust.md` — 標準ライブラリのデータ構造内部:
+  dict / map / HashMap の実装対比 (compact dict, Go の漸進疎開と Swiss map,
+  hashbrown/SwissTable の SIMD 照合)、反復順序という意味論の分岐、
+  SipHash と HashDoS、文字列表現 (「i 番目の文字」への三つの答え)
 
 ## 今後のテーマ候補
 
 - コンパイラ中盤 (compiler middle-end) — IR・SSA 形式、主要最適化 (インライン化,
   ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu-architecture/simd-vector.md`
   の自動ベクトル化の供給側
-- 標準ライブラリのデータ構造内部 (standard library internals) — dict / map /
-  HashMap の実装対比 (open addressing, SwissTable, SipHash と HashDoS 耐性)、
-  文字列表現 (PyUnicode の可変幅表現 vs Go/Rust の UTF-8)
 - 非同期実行器の内部 (async executors) — Tokio (ワークスティーリング, waker,
   タスクの状態機械)、asyncio イベントループの実装。
   `language-implementations-cpython-go-rust.md` の async 設計対比の深掘り側で、
