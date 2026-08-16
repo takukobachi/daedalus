@@ -151,6 +151,8 @@ OS から見えるのは少数の M だけであり、数万の G の切替は�
 
 ### 次の接続先 (Related Topics)
 
+- [`stdlib-internals-cpython-go-rust.md`](stdlib-internals-cpython-go-rust.md) — 本書の各論 (その 1)。dict / map / HashMap と文字列表現で、支払時期テーゼをデータ構造の内部まで検証する。
+- [`async-executors-asyncio-tokio.md`](async-executors-asyncio-tokio.md) — 本書の各論 (その 2)。async の三答の実行器側 (イベントループ・poll/Waker・ワークスティーリング) の内部。
 - [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) — JIT・GC の一般論。CPython の特殊化が再演している歴史の本体。
 - [`../toolchain/linkers-loaders-elf.md`](../toolchain/linkers-loaders-elf.md) — 三者のバイナリが等しく通る「プロセスになる」経路。
 - [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — Go/Rust のメモリモデルが立脚する一般論。torn write の物理。

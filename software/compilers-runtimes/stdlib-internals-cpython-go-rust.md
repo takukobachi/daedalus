@@ -110,6 +110,7 @@
 ### 次の接続先 (Related Topics)
 
 - [`language-implementations-cpython-go-rust.md`](language-implementations-cpython-go-rust.md) — 本書の親。支払時期テーゼと boxing の税の一般論。
+- [`async-executors-asyncio-tokio.md`](async-executors-asyncio-tokio.md) — 姉妹編の各論 (その 2)。実行器の内部と協調スケジューリングの統治。
 - [`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md) — 開番地法と SwissTable を勝たせた物理。
 - [`../../hardware/cpu-architecture/simd-vector.md`](../../hardware/cpu-architecture/simd-vector.md) — 制御バイト一括照合を可能にする命令群。
 - [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) — 漸進疎開と同型の「停止を薄く塗る」設計の一般論。
