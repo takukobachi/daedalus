@@ -6,6 +6,9 @@
 [`../android/art-runtime-internals.md`](../android/art-runtime-internals.md) (ART) や
 ブラウザの JS エンジンはこの層の実プロダクトである。
 
+`language-implementations-cpython-go-rust.md` を起点に、標準ライブラリ内部・
+非同期実行器へ掘り下げる CPython / Go / Rust 比較の三部作を含む。
+
 ## 構成
 
 - `managed-runtimes-gc-jit.md` — マネージドランタイム：階層型 JIT (インタプリタ →
