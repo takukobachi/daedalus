@@ -21,15 +21,15 @@
   dict / map / HashMap の実装対比 (compact dict, Go の漸進疎開と Swiss map,
   hashbrown/SwissTable の SIMD 照合)、反復順序という意味論の分岐、
   SipHash と HashDoS、文字列表現 (「i 番目の文字」への三つの答え)
+- `async-executors-asyncio-tokio.md` — 非同期実行器の内部:asyncio の
+  イベントループ (コールバック機械 + Task の二層) と Tokio のワークスティーリング
+  実行器 (poll/Waker 契約, LIFO スロット, 協調的バジェット)、キャンセルの三哲学
+  (注入・破棄・合意)、構造化並行性への収斂、協調世界の可用性攻撃面
 
 ## 今後のテーマ候補
 
 - コンパイラ中盤 (compiler middle-end) — IR・SSA 形式、主要最適化 (インライン化,
   ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu-architecture/simd-vector.md`
   の自動ベクトル化の供給側
-- 非同期実行器の内部 (async executors) — Tokio (ワークスティーリング, waker,
-  タスクの状態機械)、asyncio イベントループの実装。
-  `language-implementations-cpython-go-rust.md` の async 設計対比の深掘り側で、
-  `../concurrency/` との棲み分けを決めた上で着手する
 - WebAssembly — 検証可能な移植可能バイナリ、サンドボックス、コンポーネントモデル。
   `../ebpf/` (カーネル内の検証付き実行) とのサンドボックス設計対比
