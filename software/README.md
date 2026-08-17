@@ -28,7 +28,7 @@
 - `toolchain/` — ツールチェーン（ELF, リンカ, 動的リンク, ローダ, ASLR）。
   コンパイル後の成果物がプロセスになるまでを扱う層で、
   `hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側
-- `compilers-runtimes/` — コンパイラとランタイム（階層型 JIT, 投機と deopt, GC, 言語処理系の設計対比）。
+- `compilers-runtimes/` — コンパイラとランタイム（階層型 JIT, 投機と deopt, GC, 言語処理系の設計対比, WebAssembly）。
   `toolchain/` (AOT 側) の対になる「実行しながら翻訳する」側で、
   `android/`・`ios/` のランタイム分析の一般論
 
