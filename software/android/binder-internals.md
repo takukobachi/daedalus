@@ -42,7 +42,7 @@ Binder を深掘りする価値は、それが単なる「速い IPC」ではな
                     └─ transaction stack … 同期呼び出しの文脈チェーン
 ```
 
-- **BBinder**（サーバ側実体）と **BpBinder**（クライアント側プロキシ、中身はハンドル番号）が libbinder の中心対。AIDL はこの上に型安全な Stub/Proxy を生成するだけで、輸送はすべて `transact`/`onTransact` に落ちる。
+- **BBinder**（サーバ側実体）と **BpBinder**（クライアント側プロキシ、中身はハンドル番号）が libbinder の中心対。AIDL（[`aidl-interfaces.md`](aidl-interfaces.md)）はこの上に型安全な Stub/Proxy を生成するだけで、輸送はすべて `transact`/`onTransact` に落ちる。
 - ハンドル 0 は予約されており **ServiceManager** を指す。名前→ハンドルの辞書自体が、一つの Binder サービスとして実装されている（自己ホスト構造）。
 
 ### ハンドル翻訳 — ケイパビリティの実装
@@ -113,7 +113,7 @@ Binder を深掘りする価値は、それが単なる「速い IPC」ではな
 | `/dev/vndbinder` | ベンダプロセス間 | `vndservicemanager` | vendor デーモン |
 
 - ドメイン分離により、**アプリの Binder 流量が HAL 呼び出しを飽和させない**（バッファ・スレッドプールが独立）し、SELinux ポリシも境界ごとに書ける。AIDL for HALs への移行後もこの分離構造は維持されている。
-- Treble の「安定インタフェース」の実体は、この hwbinder/AIDL 境界の**バージョン管理された .aidl 定義**であり、VTS が互換性を機械検証する。
+- Treble の「安定インタフェース」の実体は、この hwbinder/AIDL 境界の**バージョン管理された .aidl 定義**（stable AIDL・frozen API は [`aidl-interfaces.md`](aidl-interfaces.md)）であり、VTS が互換性を機械検証する。
 
 ### 7. なぜソケットではないのか — 設計比較
 
@@ -150,6 +150,8 @@ Binder を深掘りする価値は、それが単なる「速い IPC」ではな
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — 優先度継承・スレッドプールの一般論。
 - [`../concurrency/lock-free-data-structures.md`](../concurrency/lock-free-data-structures.md) — カーネル内寿命管理バグ（UAF）が昇格になる構造の一般論。
 - [`../../hardware/hw-sw-interface/abi-syscalls.md`](../../hardware/hw-sw-interface/abi-syscalls.md) — その下の syscall 境界。Binder は ioctl 一本の上に築かれた第二の特権境界。
+- [`aidl-interfaces.md`](aidl-interfaces.md) — Binder の上に載る IDL・コード生成・stable AIDL と版管理。
+- [`process-thread-model.md`](process-thread-model.md) — Binder スレッドプールとプロセス内スレッド構成。
 
 ## 参考文献 (References)
 

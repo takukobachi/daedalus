@@ -81,7 +81,7 @@ Activity は「画面を表す UI クラス」として説明されることが�
 ### 3. 状態保存 — Bundle の旅と三層の使い分け
 
 ```
- onSaveInstanceState(bundle)  … onStop までに呼ばれる (Android 9+ は onStop 後)
+ onSaveInstanceState(bundle)  … API 27 以前は onStop の前、API 28 (Android 9) 以降は onStop の後に呼ばれる
    └─ Bundle は Parcel 化され ──Binder──▶ system_server の ActivityRecord に退避
  (プロセスが lmkd に殺される)
  ユーザが Recents から復帰:
@@ -94,7 +94,7 @@ Activity は「画面を表す UI クラス」として説明されることが�
 
 ### 4. プロセス重要度との結合 — ライフサイクルは oom_adj の入力である
 
-- ATMS の台帳が更新されるたび、ProcessRecord の重要度(前面/可視/サービス/cached)が再計算され、lmkd の kill 順([`platform-architecture.md`](platform-architecture.md))と cgroup の CPU 配分([`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))に反映される。**onStop はコールバックであると同時に「殺してよいリストへの登載通知」**であり、ライフサイクルの各点は開発者向け API とリソース管理の二重の意味を持つ。
+- ATMS の台帳が更新されるたび、ProcessRecord の重要度(前面/可視/サービス/cached)が再計算され、lmkd の kill 順([`platform-architecture.md`](platform-architecture.md))と cgroup の CPU 配分([`process-thread-model.md`](process-thread-model.md)、[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))に反映される。**onStop はコールバックであると同時に「殺してよいリストへの登載通知」**であり、ライフサイクルの各点は開発者向け API とリソース管理の二重の意味を持つ。
 - プロセス側の死は Binder の死亡通知(linkToDeath)で ATMS に届き、台帳(ActivityRecord)は保存状態を抱えて生き残る——[`binder-internals.md`](binder-internals.md) の「看取りの機構」が、ユーザ体験(Recents からの完全復帰)に直結する経路がこれである。
 
 ### 5. ANR — 時間による同期の回復
@@ -108,7 +108,7 @@ Activity は「画面を表す UI クラス」として説明されることが�
 
 | 機構 | Nougat (有野 2017 Ⅱ巻 4 章) | 現在 | 変化の理由 |
 |---|---|---|---|
-| Activity 管理の担当 | AMS (`com.android.server.am`) がプロセス管理と Activity/タスク管理を兼務 | Android 10 で **ActivityTaskManagerService** (`com.android.server.wm`) に分離。AMS はプロセス・サービス・ブロードキャスト・oom_adj を担当 | 肥大化した AMS から Activity/タスク管理を切り出し、WindowManager と同じロック (`WindowManagerGlobalLock`)・同じ階層で扱うため |
+| Activity 管理の担当 | AMS (`com.android.server.am`) がプロセス管理と Activity/タスク管理を兼務 | Android 10 で **ActivityTaskManagerService** (`com.android.server.wm`) に分離。AMS はプロセス・サービス・ブロードキャスト・oom_adj を担当 | 肥大化した AMS から Activity/タスク管理を切り出し、WindowManager と同じロック (`WindowManagerGlobalLock`)・同じ階層で扱うため（[`window-manager.md`](window-manager.md)） |
 | スタックとタスク | `ActivityStack` がタスク群を保持し、`ActivityStackSupervisor` が全体を統括 | Android 12 (API 31) で `ActivityStack` は **`Task` に統合**(Task が入れ子になれる)、Supervisor は `ActivityTaskSupervisor` に改名。階層の根は `RootWindowContainer` | マルチウィンドウ・分割画面・フリーフォームで「スタック」と「タスク」の区別が意味を失い、WindowContainer の木に一本化された |
 | タスク内の分割 | なし(1 タスク = 1 列のバックスタック) | Android 12L で **TaskFragment** 導入。1 タスク内で複数 Activity を横並びに表示 (Activity embedding) | 大画面・折りたたみ端末で「2 画面を 1 タスクに」を表現するため |
 | ライフサイクル指示 | AMS が `IApplicationThread` の個別メソッド (`schedulePauseActivity` 等) を oneway で呼び、アプリ側クラス `H` の `handleMessage()` が分岐 | Android 9 で **ClientTransaction** に集約(本書 §1)。`H` は `EXECUTE_TRANSACTION` を受けて TransactionExecutor に渡す | 個別 RPC の順序と途中状態を管理するより、「目標状態の宣言」を冪等に適用するほうが堅牢 |
@@ -143,6 +143,8 @@ Activity は「画面を表す UI クラス」として説明されることが�
 - [`looper-handler-message-loop.md`](looper-handler-message-loop.md) — ライフサイクル指示が載るメインスレッドのキューの機構。
 - [`memory-lmkd.md`](memory-lmkd.md) — 本書 §4 の先。oom_score_adj の算出と lmkd・freezer による kill/凍結の詳細。
 - [`package-management.md`](package-management.md) — 暗黙的 Intent の解決 (resolveIntent) とパッケージ可視性。
+- [`system-server-services.md`](system-server-services.md) — ATMS/AMS をホストする system_server の構成と Watchdog。
+- [`window-manager.md`](window-manager.md) — ActivityRecord/Task と同じ WindowContainer 木を管理する WMS。
 
 ## 参考文献 (References)
 

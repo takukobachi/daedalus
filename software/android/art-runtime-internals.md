@@ -88,7 +88,7 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 
 - 単一の中間表現 **HIR**（SSA ベースのグラフ）上で、インライン化・境界チェック除去・ループ最適化・intrinsic 置換（`String.indexOf` 等をハンドコード実装へ）を行う標準的な最適化コンパイラ。JIT と AOT は**同一コンパイラの呼び出し方の違い**であり、生成コードの形式も共通。
 - **JIT モード**: プロセス内のコードキャッシュ（実行可能ページ）に書く。容量は限られ、GC される（コールドになったコードは捨てる）。Zygote 起動後の system_server などには **JIT zygote**（Zygote 内で予熱し fork で配る）最適化がある。
-- **AOT モード (dex2oat)**: `dex2oat` は独立プロセスとして走り、cgroup で背景優先度に絞られる（[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 適用例）。生成物は上表の OAT/VDEX/ART。
+- **AOT モード (dex2oat)**: `dex2oat` は独立プロセスとして走り、cgroup で背景優先度に絞られる（[`process-thread-model.md`](process-thread-model.md)、[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 適用例）。生成物は上表の OAT/VDEX/ART。
 - **プロファイルの中身**: 「ホットメソッド集合」に加え「起動時ロードクラス集合」を含み、AOT 対象選定と dexlayout・.art イメージの事前初期化対象の両方に使われる。
 
 ### 3. GC — 並行コピーから userfaultfd マークコンパクトへ
@@ -155,6 +155,7 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - [`memory-lmkd.md`](memory-lmkd.md) — Clean/Dirty・Shared/Private の分類が lmkd・zram・PSS 計測でどう使われるか。本書の「成果物を Clean に保つ」設計の受け皿。
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — Zygote fork → `handleBindApplication`（ProfileSaver 起動点）→ 初回フレームまで。AOT/JIT/アプリイメージが起動時間のどこに効くか。
 - [`package-management.md`](package-management.md) — インストール時 dexopt の起点（PackageManagerService → ART Service/artd）と APK・split・DEX の配置。
+- [`process-thread-model.md`](process-thread-model.md) — dex2oat・GC スレッドの cgroup/優先度配置。
 
 ## 参考文献 (References)
 
