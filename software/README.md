@@ -70,7 +70,8 @@
 相互対比する。
 
 - `android/` — Android プラットフォーム内部（Zygote, Binder, ART, lmkd, Treble,
-  グラフィックス, セキュリティモデル）
+  グラフィックス, セキュリティモデル, メッセージループ, 入力, View システム, パッケージ管理,
+  ブートと init, アプリ起動の全行程）
 - `ios/` — iOS プラットフォーム内部（XNU, launchd, Mach IPC/XPC, ARC, Jetsam,
   コード署名, Secure Enclave）
 - `browsers/` — ブラウザ内部（マルチプロセスとサイト分離, サンドボックス, Mojo,

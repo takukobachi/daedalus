@@ -112,6 +112,8 @@
 - [`binder-internals.md`](binder-internals.md) — フレームワーク層検査の土台（呼び出し元 UID 刻印）と Rust 化の実践。
 - [`art-runtime-internals.md`](art-runtime-internals.md) — 検証器・JIT・JNI という実行系側の型安全境界。
 - [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — 多層防御・HSM・アテステーションの車載版設計文法。
+- [`package-management.md`](package-management.md) — 権限検査の第一層 (UID) を割り当てる側。installd・packages.xml・パッケージ可視性。
+- [`boot-init-properties.md`](boot-init-properties.md) — ブートローダーのアンロック・fastboot・init による SELinux ポリシー読み込み。
 
 ## 参考文献 (References)
 
@@ -128,3 +130,4 @@
 - Mayrhofer, R., Stoep, J. V., Brubaker, C., & Kralevich, N. (2021). The Android Platform Security Model. *ACM Transactions on Privacy and Security*, 24(3), 1–35. DOI: 10.1145/3448609 — プラットフォーム設計者自身による脅威モデルと設計原則の体系化。
 - Google Project Zero (2017–). Janus (CVE-2017-13156)・Bad Binder ほか Android 事例の技術分析. — [googleprojectzero.blogspot.com](https://googleprojectzero.blogspot.com/) — Accessed: 2026-07-03。
 - Arm, *Memory Tagging Extension (MTE) 仕様・ホワイトペーパー*. — [developer.arm.com](https://developer.arm.com/documentation/108035/latest/) — Accessed: 2026-07-03。
+- 有野和真 (2017).『Androidを支える技術〈II〉真のマルチタスクに挑んだモバイルOSの心臓部』技術評論社. ISBN 978-4-7741-8861-4 — 第2章 2.1〜2.4（アプリをユーザーに見立てる UID モデル・installd の権限・packages.xml）。Android 7.0 Nougat 基準。書籍内コードは著者による簡略化であり、現行 AOSP との対応は [`../../references/books/book-android-internals-arino.md`](../../references/books/book-android-internals-arino.md) を参照。

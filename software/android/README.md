@@ -30,6 +30,32 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
   v1〜v4 と鍵ローテーション、scoped storage と FBE (CE/DE)、Keystore・鍵アテステーション・
   Play Integrity、エクスプロイト緩和 (CFI/MTE/Rust)
 
+- `looper-handler-message-loop.md` — UI スレッドとメッセージループ：単一スレッド UI の理由、
+  Looper/TLS、MessageQueue と epoll/eventfd、Handler、同期バリアと非同期メッセージ（フレーム優先の仕組み）、
+  IdleHandler、Binder スレッド → `H` → UI スレッドの受け渡し、ロックフリー MessageQueue (DeliQueue)
+- `input-pipeline.md` — 入力パイプライン：evdev と multitouch slot、EventHub/InputReader、
+  InputReader〜InputDispatcher 間の処理段、SurfaceFlinger 由来のウィンドウ情報とヒットテスト、
+  InputChannel (socketpair)、VSYNC 同期のバッチングと resampling、タップジャッキング対策
+- `view-system-layout.md` — View システムとレイアウト：バイナリリソースと AssetManager、
+  LayoutInflater・テーマ解決、PhoneWindow/DecorView、MeasureSpec と多重 measure のコスト、
+  ViewRootImpl.performTraversals と WMS との契約、状態保存、Compose・edge-to-edge
+- `package-management.md` — パッケージ管理とインストール：アプリ＝Linux ユーザーの UID 割り当て、
+  PMS の分解（Computer スナップショット・InstallPackageHelper）、installd と artd、packages.xml (ABX)、
+  ブートスキャン、インテント解決とパッケージ可視性
+- `memory-lmkd.md` — メモリ管理と Low Memory Killer：カーネルのページ回収と OOM Killer、
+  lowmemorykiller ドライバから PSI ベースの lmkd へ、oom_score_adj の算出 (OomAdjuster)、
+  cached app freezer、zram と MGLRU、16KB ページ、アプリ別メモリ上限
+- `boot-init-properties.md` — ブートと init：ブートローダーと fastboot/fastbootd、A/B・Virtual A/B・
+  dynamic partitions・GKI ブートイメージ、2 段階 init と SELinux 読み込み、プロパティサービス、
+  Android Init Language、Zygote と system_server の起動
+- `app-launch-end-to-end.md` — アプリ起動の全行程：ランチャーのタップから最初のフレームまでを
+  プロセス/スレッド/IPC 単位で追う。ATMS → zygote ソケット (USAP) → specialize → ActivityThread →
+  bindApplication → ClientTransaction → 最初のフレーム、cold/warm/hot 起動と計測
+
+各ドキュメントは、有野和真『Androidを支える技術〈I〉〈II〉』(Android 7.0 Nougat 基準) を機構の基準線とし、
+現行 AOSP との差分を「Nougat → 現在」の表で明示している。章とドキュメントの対応・読み替えガイドは
+[`../../references/books/book-android-internals-arino.md`](../../references/books/book-android-internals-arino.md) を参照。
+
 ## 今後のテーマ候補
 
 - Android Automotive OS — 車載への展開（`../../hardware/automotive/` との合流点）

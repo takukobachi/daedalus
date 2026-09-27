@@ -16,5 +16,5 @@
 ## Structure
 
 - `papers/` — 学術論文、技術論文
-- `books/` — 参考書籍の情報
+- `books/` — 参考書籍の情報（[索引](books/README.md)）
 - `articles/` — オンライン記事、ブログ投稿
