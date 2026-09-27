@@ -52,7 +52,7 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
   bindApplication → ClientTransaction → 最初のフレーム、cold/warm/hot 起動と計測
 - `process-thread-model.md` — プロセスとスレッドのモデル：アプリ＝UID、Zygote fork によるプロセス生成と
   `android:process`、アプリプロセスのスレッド一覧 (UI/RenderThread/Binder/ART デーモン)、スレッド優先度と
-  task profiles・cgroup v2、プロセス状態と oom_score_adj、freezer、seccomp/SELinux ドメイン
+  task profiles・cgroup (v1/v2 の混在)、プロセス状態と oom_score_adj、freezer、seccomp/SELinux ドメイン
 - `aidl-interfaces.md` — AIDL：`.aidl` から生成される Stub/Proxy と onTransact、in/out/inout・oneway・
   Parcelable、Java/C++/NDK/Rust バックエンド、stable AIDL (`@VintfStability`・凍結 API・版管理)、
   Binder 越しの例外、`@EnforcePermission`、Parcel 不整合型の脆弱性
