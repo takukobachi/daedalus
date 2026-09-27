@@ -45,7 +45,7 @@
 ```
 
 - **描画と合成は別プロセス**: アプリがクラッシュ・停止しても画面全体は SurfaceFlinger が守る。逆に SurfaceFlinger は「全アプリのバッファを見られる」特権プロセスであり、隔離の要でもある。
-- **WindowManager (system_server) は制御面のみ**: どの Surface がどの Z 順・領域にあるかを決め、SurfaceControl として surfaceflinger に指示する。画素は一切通らない。
+- **WindowManager (system_server) は制御面のみ**（詳細は [`window-manager.md`](window-manager.md)）: どの Surface がどの Z 順・領域にあるかを決め、SurfaceControl として surfaceflinger に指示する。画素は一切通らない。
 
 ### 1 フレームの予算配分（60Hz・位相オフセットの考え方）
 
@@ -114,7 +114,7 @@
 | SurfaceView / TextureView / MediaCodec | SurfaceView は窓に「穴」を開けて直下に別 Surface（別 BufferQueue）を用意し、`MediaCodec.configure(..., surface, ...)` でデコーダが gralloc バッファへ直接出力、HWC がそのまま合成（CPU/GPU 不要、Ⅰ巻 6.6.2）。デコーダは mediaserver から分離途中（6.7 コラム、stagefright 対策） | SurfaceView は独立レイヤ（現在は SurfaceControl の子レイヤ）として HWC オーバーレイ合成が可能で、Android 7.0 以降は親ウィンドウとの位置同期も改善。TextureView はバッファをアプリの GPU 描画のテクスチャとして取り込むため 1 回の GPU 合成と遅延を余分に払う。メディアは media.codec 等の専用・低権限プロセスへ分離済み | 動画は「ハードデコーダ → HWC」直結が電力的に最適で、画面上の自由な変形が要る時だけ TextureView を使う、という選択肢の構造は書籍時点から同じ。変わったのは同期性（BLAST/Transaction）と隔離（Stagefright 以降のメディア権限分割） |
 
 - 表全体を貫く傾向は、**継ぎ目の位置は据え置き、継ぎ目の形式と同期点を強化する**ことである。gralloc/HWC の境界は 2016 年と同じ場所にあるが、`.so` の関数表から版管理された IPC/C ABI へ、暗黙キューから明示トランザクションへ、固定周期から交渉される周期へ、と「暗黙の前提」を一つずつ明示的な契約に置き換えている。
-- 書籍自身が「追い切れなかった」と明言する箇所（Java の `mSurface` がどこで gralloc バッファと結び付くか、`relayoutWindow` → `createSurface` 周辺。Ⅰ巻 6.5.4 コラム）は、現行では「WMS が `SurfaceControl` を作ってアプリに返し、アプリは自前の `BLASTBufferQueue` からバッファを取る」形に単純化されており、当時の不透明さ自体が BLAST 化の動機の一端だったと読める（この因果は本書の解釈）。
+- 書籍自身が「追い切れなかった」と明言する箇所（Java の `mSurface` がどこで gralloc バッファと結び付くか、`relayoutWindow` → `createSurface` 周辺。Ⅰ巻 6.5.4 コラム）は、現行では「WMS（[`window-manager.md`](window-manager.md)）が `SurfaceControl` を作ってアプリに返し、アプリは自前の `BLASTBufferQueue` からバッファを取る」形に単純化されており、当時の不透明さ自体が BLAST 化の動機の一端だったと読める（この因果は本書の解釈）。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -140,6 +140,7 @@
 - [`view-system-layout.md`](view-system-layout.md) — 本書の上流。View ツリーの measure/layout/draw と `invalidate()`/`requestLayout()` の区別が、技術詳細 1 の再描画 4 ケースの入口になる。
 - [`looper-handler-message-loop.md`](looper-handler-message-loop.md) — Choreographer のフレームコールバックが乗る UI スレッドのメッセージループ（同期バリアによる traversal 優先）。
 - [`input-pipeline.md`](input-pipeline.md) — 入力 → ViewRootImpl → View 配信の経路。VSYNC に揃えた入力バッチングとスクロール／fling の起点。
+- [`window-manager.md`](window-manager.md) — SurfaceControl の親子・Z 順を決める制御面。
 
 ## 参考文献 (References)
 

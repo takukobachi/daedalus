@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-アプリの画面は「XML で書いた部品の木」として語られるが、プラットフォーム内部から見ると別の構造が見える: **(1) コンパイル済みバイナリリソースを mmap して高速に木を復元するデシリアライザ (LayoutInflater / AssetManager)、(2) 親が子に「許される大きさ」を 32bit 整数で渡す 2 パスの制約伝播系 (measure / layout)、(3) その木を 1 つのウィンドウとして WindowManagerService (WMS) に登録し、VSYNC ごとに走査するドライバ (ViewRootImpl)**。本書はこの 3 層を、`setContentView()` から最初の `performTraversals()` までの流れで通しに追う。
+アプリの画面は「XML で書いた部品の木」として語られるが、プラットフォーム内部から見ると別の構造が見える: **(1) コンパイル済みバイナリリソースを mmap して高速に木を復元するデシリアライザ (LayoutInflater / AssetManager)、(2) 親が子に「許される大きさ」を 32bit 整数で渡す 2 パスの制約伝播系 (measure / layout)、(3) その木を 1 つのウィンドウとして WindowManagerService (WMS、[`window-manager.md`](window-manager.md)) に登録し、VSYNC ごとに走査するドライバ (ViewRootImpl)**。本書はこの 3 層を、`setContentView()` から最初の `performTraversals()` までの流れで通しに追う。
 
 本ドキュメントが答える問い: なぜレイアウト XML は APK の中でテキストではなくバイナリなのか。なぜ `layout_weight` や入れ子の `RelativeLayout` は遅いのか。ViewRootImpl はなぜ View ではないのか。`requestLayout()` はどうやって画面の再描画に化けるのか。そして 2016 年 (Nougat) の設計の上に、Jetpack Compose・ConstraintLayout・edge-to-edge 強制 (Android 15〜) がどう積み増され、何が変わっていないのか。描画以降 (RenderThread・BLAST・SurfaceFlinger) は [`graphics-pipeline.md`](graphics-pipeline.md) に委ねる。分析深度は Level 3。
 
@@ -166,7 +166,7 @@ ViewRootImpl.requestLayout()                  ViewRootImpl.onDescendantInvalidat
 
 ## セキュリティ考察 (Security Considerations)
 
-- **窓の追加は権限である**: `WindowManager.addView()` を他アプリの上に向けて呼ぶには `SYSTEM_ALERT_WINDOW` と設定画面での許可が要り (Android 6.0〜、書籍 6.6.1)、Android 8.0 以降は `TYPE_APPLICATION_OVERLAY` 型に限定された。オーバーレイは UI 偽装・タップジャッキングの主要手段であり、`filterTouchesWhenObscured` や Android 12 の「信頼できないオーバーレイ越しのタッチ遮断」は、IWindow 単位の Z 順を WMS が握っていることを利用した対策である ([`graphics-pipeline.md`](graphics-pipeline.md)・[`security-model.md`](security-model.md))。
+- **窓の追加は権限である**: `WindowManager.addView()` を他アプリの上に向けて呼ぶには `SYSTEM_ALERT_WINDOW` と設定画面での許可が要り (Android 6.0〜、書籍 6.6.1)、Android 8.0 以降は `TYPE_APPLICATION_OVERLAY` 型に限定された。オーバーレイは UI 偽装・タップジャッキングの主要手段であり、`filterTouchesWhenObscured` や Android 12 の「信頼できないオーバーレイ越しのタッチ遮断」は、IWindow 単位の Z 順を WMS が握っていることを利用した対策である（WMS の窓階層は [`window-manager.md`](window-manager.md)） ([`graphics-pipeline.md`](graphics-pipeline.md)・[`security-model.md`](security-model.md))。
 - **リソースパーサは不信入力を読む**: `resources.arsc` とバイナリ XML は APK から来る攻撃者制御のバイト列で、それを解釈する libandroidfw (C++) はアプリだけでなく PackageManager・ランチャー・system_server からも呼ばれる。オフセット走査という高速化の設計は、境界検査の欠落が即メモリ破壊になる設計でもあり、ネイティブパーサの堅牢化・ファジング ([`../security/fuzzing-program-analysis.md`](../security/fuzzing-program-analysis.md)) の対象領域である。インストール時の構造検証 (整列要求など) は性能要件であると同時に入口の正規化として働く。
 - **インフレーションはコード実行である**: レイアウトのタグ名はクラス名としてリフレクションでロードされる。通常は自 APK 内のリソースだが、`createPackageContext()` で他パッケージのレイアウトを inflate すると相手のクラスを自プロセスで実行しうる (`CONTEXT_INCLUDE_CODE` を伴う場合)。RemoteViews が inflate 可能なクラスを `@RemoteView` 注釈付きの許可リストに限定しているのは、この経路を閉じるためである。
 - **状態保存は漏洩経路になりうる**: saveHierarchyState は ID 付きの EditText の内容を自動で Bundle に入れ、Bundle は system_server に退避される。機密を表示する EditText や独自 View の `onSaveInstanceState()` は、明示しない限り内容をそのまま保存対象にしうるため、意図せず永続・転送される。`saveEnabled=false` と `FLAG_SECURE` (最近のタスクのサムネイル・スクリーンショット抑止) は別層の対策として併用する必要がある。
@@ -190,6 +190,8 @@ ViewRootImpl.requestLayout()                  ViewRootImpl.onDescendantInvalidat
 - [`binder-internals.md`](binder-internals.md) — IWindow/IWindowSession の同期・oneway の機構的裏付け。
 - [`../ios/core-animation-render-server.md`](../ios/core-animation-render-server.md) — 対比: レイヤーツリーをレンダーサーバに渡す iOS の設計。
 - [`../browsers/browser-architecture.md`](../browsers/browser-architecture.md) — 対比: DOM/CSS レイアウトとの比較 (制約伝播と多重レイアウト)。
+- [`window-manager.md`](window-manager.md) — IWindowSession/IWindow の相手側 (WMS) の内部。
+- [`aidl-interfaces.md`](aidl-interfaces.md) — IWindow の `oneway interface` 等、AIDL 定義の読み方。
 
 ## 参考文献 (References)
 

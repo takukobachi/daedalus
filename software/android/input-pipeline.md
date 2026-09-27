@@ -50,7 +50,7 @@ flowchart LR
 ```
 
 - **境界①（カーネル ↔ ユーザ空間）**: 標準の文字デバイス + epoll。Android 固有物はない。
-- **境界②③（system_server ↔ アプリ）**: ウィンドウごとの InputChannel。サーバ端は InputDispatcher、クライアント端は ViewRootImpl が持つ。チャネルの生成は WindowManagerService が `addWindow`（アプリ側 `WindowManager.addView`）時に InputManagerService へ依頼し、片端を Binder の out 引数としてアプリに渡す——**fd は Binder で一度だけ運ばれ、以後のイベント本体は fd 上を流れる**という、[`binder-internals.md`](binder-internals.md) の「大物は fd で」の入力版である。
+- **境界②③（system_server ↔ アプリ）**: ウィンドウごとの InputChannel。サーバ端は InputDispatcher、クライアント端は ViewRootImpl が持つ。チャネルの生成は WindowManagerService（[`window-manager.md`](window-manager.md)）が `addWindow`（アプリ側 `WindowManager.addView`）時に InputManagerService へ依頼し、片端を Binder の out 引数としてアプリに渡す——**fd は Binder で一度だけ運ばれ、以後のイベント本体は fd 上を流れる**という、[`binder-internals.md`](binder-internals.md) の「大物は fd で」の入力版である。
 - **ウィンドウ情報の流れ（破線ではない第三の入力）**: WMS → SurfaceControl トランザクション → SurfaceFlinger → WindowInfosListener → InputDispatcher。入力の宛先決定は、画面合成と同じ真実（レイヤ木）を参照する。
 
 ### スレッド構成 — 読むスレッドと配るスレッドを分ける理由
@@ -185,6 +185,7 @@ flowchart LR
 - [`security-model.md`](security-model.md) — オーバーレイ・アクセシビリティ・署名権限の位置づけ。
 - [`../../hardware/peripherals-connectivity/input-devices-hid.md`](../../hardware/peripherals-connectivity/input-devices-hid.md) — デバイス側（HID レポート、ポーリングと遅延バジェット）。
 - [`../operating-systems/power-management.md`](../operating-systems/power-management.md) — `EPOLLWAKEUP` と wakeup source。
+- [`window-manager.md`](window-manager.md) — addWindow による InputChannel 生成とフォーカス決定。
 
 ## 参考文献 (References)
 

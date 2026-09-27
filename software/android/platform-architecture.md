@@ -42,7 +42,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
  └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **system_server** がフレームワークサービスの束を一手に担う巨大プロセスで、全アプリと Binder で会話する。Android の「カーネルの外のカーネル」。
+- **system_server** がフレームワークサービスの束を一手に担う巨大プロセスで（起動フェーズ・SystemServiceManager・Watchdog は [`system-server-services.md`](system-server-services.md)）、全アプリと Binder で会話する。Android の「カーネルの外のカーネル」。
 - パーティションは役割で分離される: `boot`(カーネル)・`system`(AOSP)・`vendor`(SoC/ベンダ)・`userdata`。Treble 以降、`system` と `vendor` の境界が安定 ABI になった。
 
 ### プロセス生成 — Zygote モデル
@@ -83,7 +83,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 
 - **DEX**: Java/Kotlin は JVM バイトコードではなく、レジスタベースの DEX に変換されて APK に載る。
 - **コンパイル戦略の変遷**: Dalvik (JIT のみ) → ART 初期 (インストール時に全 AOT: インストールが遅くストレージを食う) → **Android 7+ のハイブリッド**——初回はインタープリタ＋JIT で走らせ、ホットメソッドのプロファイルを記録し、**充電中・アイドル時に profile-guided AOT** (`speed-profile`) を行う。よく使う画面は速く、触らないコードはコンパイルすらされない。アプリ配布側はベースラインプロファイル (Baseline Profiles) で「初回からホットパスを AOT 済み」にできる。
-- **GC**: 並行コピー GC (Concurrent Copying, Android 8+)。リージョンベースのヒープを、読み取りバリアを使って**アプリを止めずに**コンパクションする。Android 10+ で世代別化され、短命オブジェクト優先の回収になった。UI スレッドを 16ms のフレーム予算内に保つことが GC 設計の支配的要求で、「スループットよりポーズ時間」という組込み寄りの選択である。
+- **GC**: 並行コピー GC (Concurrent Copying, Android 8+)。リージョンベースのヒープを、読み取りバリアを使って**アプリを止めずに**コンパクションする。Android 10+ で世代別化され、短命オブジェクト優先の回収になった。その後 Android 13 で userfaultfd ベースの並行マークコンパクト (CMC) が導入され、ART の Mainline 更新により対応カーネルの端末では既定 GC になった（[`art-runtime-internals.md`](art-runtime-internals.md) 参照）。UI スレッドを 16ms のフレーム予算内に保つことが GC 設計の支配的要求で、「スループットよりポーズ時間」という組込み寄りの選択である。
 
 ### 2. メモリ管理 — lmkd と「プロセス＝キャッシュ」
 
@@ -91,7 +91,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 - **重要度は ActivityManager が決める**: 前面 (foreground) > 可視 > サービス > **cached**（画面から消えたアプリ）の順で `oom_score_adj` を動的に更新し、lmkd は**低重要度から**殺す。cached プロセスは「次の起動を速くするためのキャッシュ」であり、殺されることが正常系——[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の OOM killer が「破綻処理」なのに対し、Android では**平常運転の仕組み**に昇格している。
 - **逼迫の検知は PSI**: 現代の lmkd はカーネルの PSI (Pressure Stall Information) を監視して「回収で停滞し始めた」を早期検知して動く（旧カーネル lowmemorykiller の置き換え）。
 - **アプリ側の契約**: ライフサイクルコールバック（onStop で状態保存、onDestroy は当てにしない）は、この「いつ殺されてもよい」メモリ管理と表裏一体の API 設計である。
-- **CPU 側の対応物**: cgroup/cpuset で `top-app`（前面アプリ）に広いコア集合と高い優先度を与え、`background` を絞る。big.LITTLE の非対称コアへの配置もここで決まる——[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 階層の実プロダクト適用。
+- **CPU 側の対応物**: cgroup/cpuset で `top-app`（前面アプリ）に広いコア集合と高い優先度を与え、`background` を絞る。big.LITTLE の非対称コアへの配置もここで決まる——[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 階層の実プロダクト適用（プロセス/スレッドと cgroup・task profile の対応は [`process-thread-model.md`](process-thread-model.md)）。
 
 ### 3. HAL と Project Treble — 更新可能性の構造改革
 
@@ -144,6 +144,9 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 - [`memory-lmkd.md`](memory-lmkd.md) — 本書 §2「プロセス＝キャッシュ」の深掘り（カーネル回収・oom_score_adj・lmkd・freezer）。
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — 本書 §5「1 タップの旅」をプロセス/スレッド単位に展開したもの。
 - [`package-management.md`](package-management.md) — アプリ＝Linux ユーザの UID 割り当て・installd・packages.xml。
+- [`process-thread-model.md`](process-thread-model.md) — Android のプロセス/スレッドと cgroup・優先度の対応（読む順序の第 1 層）。
+- [`aidl-interfaces.md`](aidl-interfaces.md) — HAL/フレームワーク境界を定義する AIDL と stable AIDL の版管理。
+- [`system-server-services.md`](system-server-services.md) — 「カーネルの外のカーネル」system_server の内部構成・起動フェーズ・Watchdog。
 
 ## 参考文献 (References)
 

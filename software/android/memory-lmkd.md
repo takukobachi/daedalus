@@ -9,7 +9,7 @@ Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀�
 **本ドキュメントが答える問い**
 
 - カーネルは何を「回収可能」とみなし、なぜスワップの無い Android では clean/dirty の区別が決定的になるのか。
-- `oom_score_adj` は誰が、どの台帳から、どの値に設定しているのか。書籍 (Nougat) の -17〜16 表と現在の -1000〜1001 はどう対応するのか。
+- `oom_score_adj` は誰が、どの台帳から、どの値に設定しているのか。書籍 (Nougat) の -17〜16 表と現在の -1000〜999（カーネルの上限は 1000、`UNKNOWN_ADJ`=1001 はカーネルに書かれない内部値）はどう対応するのか。
 - カーネル内 lowmemorykiller ドライバ (shrinker) はなぜ廃止され、userspace の lmkd (vmpressure → PSI) に置き換わったのか。
 - cached app freezer・zram・MGLRU・16 KB ページ・Android 17 の Memory Limiter は、「プロセス＝キャッシュ」モデルの何を補強・修正したのか。
 
@@ -25,11 +25,11 @@ Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀�
 ## 発見事項 (Findings)
 
 1. **Android の回収戦略は「clean を増やし、shared を増やす」の一点に集約される。** スワップ先が無い世界では、カーネルが黙って捨てられるのはファイルと内容が一致する clean ページだけであり、anonymous な dirty ページはプロセスごと殺す以外に取り戻せない。DEX/OAT・`.so`・リソースを mmap して実行する設計と、Zygote からの fork による COW 共有は、この制約から逆算された必然である（有野 (2017) Ⅰ巻 7.3）。**メモリ効率の良し悪しはアロケーション量ではなく「private dirty の量」で決まる。**
-2. **`oom_score_adj` は「カーネルに渡すアプリケーション知識」のチャネルである。** カーネルは各プロセスの意味（前面か、音楽再生中か、ホームか）を知らない。ActivityManagerService (AMS) がプロセス状態から重要度を計算し、特権デーモン lmkd に Unix ソケットで送り、lmkd が `/proc/<pid>/oom_score_adj` に書く。書籍の「スコアを付けるのは UI 側、殺すのはカーネル側」という分業は現在も不変で、変わったのは**殺す主体がカーネルから lmkd に移った**ことだけである。
+2. **`oom_score_adj` は「カーネルに渡すアプリケーション知識」のチャネルである。** カーネルは各プロセスの意味（前面か、音楽再生中か、ホームか）を知らない。ActivityManagerService (AMS、[`system-server-services.md`](system-server-services.md)) がプロセス状態から重要度を計算し、特権デーモン lmkd に Unix ソケットで送り、lmkd が `/proc/<pid>/oom_score_adj` に書く。書籍の「スコアを付けるのは UI 側、殺すのはカーネル側」という分業は現在も不変で、変わったのは**殺す主体がカーネルから lmkd に移った**ことだけである。
 3. **書籍の -17〜16 表は旧 `oom_adj` 表記であり、Nougat の実コードは既に oom_score_adj 単位だった。** `android-7.0.0_r6` の `ProcessList.java` は FOREGROUND 0 / VISIBLE 100 / … / CACHED 900〜906 と定義しており、書籍のコラムが述べる「外部インタフェースが旧 oom_adj のまま」は lowmemorykiller ドライバの `parameters/adj` 側の事情である。現在は CACHED が 900〜999 に拡張され、PERCEPTIBLE_LOW/MEDIUM 等の中間段が追加されて**階層が細分化**した。
 4. **lowmemorykiller ドライバは「shrinker の目的外使用」であり、それが廃止理由でもあった。** ディスクキャッシュ解放用の `register_shrinker()` コールバックでプロセスを殺す設計は、書籍が「裏の Activity をキャッシュとみなす」と読み解いた通り巧妙だが、発動が回収経路の内側（ロック保持中・直接回収中）に縛られ、空きページ数の閾値 (minfree) しか見ないため、ファイルキャッシュが大きい負荷で誤判定した。Linux 4.12 で staging から削除され、userspace lmkd に一本化された。
 5. **逼迫の尺度が「空き量」から「停滞時間」へ移った。** lmkd は vmpressure イベント（誤検知が多い）を経て、Android 10 から PSI (Pressure Stall Information) の `some`/`full` 停滞時間で逼迫を測る。「空きが何 MB あるか」ではなく「回収待ちで何 ms 止まったか」を見ることで、大きなページキャッシュを抱えた端末でも**ユーザが体感する遅延そのもの**を閾値にできるようになった。
-6. **cached プロセスは「殺す」前に「凍らせる」段が加わった。** Android 11 で導入された cached apps freezer は cgroup v2 freezer で cached プロセスの実行を止め、Android 14 では cached 化から 10 秒後に凍結する。メモリは解放しないが CPU・電力・予期しない dirty 化を止め、zram への退避を安定させる。**プロセス＝キャッシュの「キャッシュ」が文字通り不活性データになった**。
+6. **cached プロセスは「殺す」前に「凍らせる」段が加わった。** Android 11 で導入された cached apps freezer は cgroup v2 freezer（[`process-thread-model.md`](process-thread-model.md)）で cached プロセスの実行を止め、Android 14 では（有効な端末で）cached 化から 10 秒後に凍結する。有効化の既定は端末依存である（Pixel 等は有効、§4 参照）。メモリは解放しないが CPU・電力・予期しない dirty 化を止め、zram への退避を安定させる。**プロセス＝キャッシュの「キャッシュ」が文字通り不活性データになった**。
 7. **2026 年の Android 17 で、殺す基準に「プロセス単体の上限」が加わった。** Memory Limiter は cgroup v2 の `memory.high` / `memory.swap.max` で端末 RAM 階層ごとの per-app 上限を課し、超過すると当該 cgroup に回収を集中させ、zram も尽きれば kill する（`ApplicationExitInfo` の説明に `MemoryLimiter:AnonSwap`）。**システム全体の逼迫に反応する lmkd と、個別アプリの暴走を封じ込める Memory Limiter の二層**が現在の姿である。
 
 ## アーキテクチャ (Architecture)
@@ -174,7 +174,7 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 |---|---|---|---|
 | kill の主体 | カーネル lowmemorykiller（shrinker）＋OOM killer | userspace lmkd（＋OOM killer は最終手段、Android 17 は Memory Limiter も） | 方針を userspace に出し、mainline カーネルの汎用機構だけで動かすため（staging 削除 4.12） |
 | 逼迫の尺度 | 空きページ数 vs minfree 固定閾値 | PSI stall 時間・thrashing 率・swap 残量 | 大きなページキャッシュでの誤判定をなくし、体感遅延を直接測るため |
-| 重要度の表現 | 書籍は旧 oom_adj -17〜16 で説明（実コードは 0〜906） | oom_score_adj -1000〜999、中間段追加、cached 900〜999 | 知覚可能性の細分化と cached LRU の分解能向上 |
+| 重要度の表現 | 書籍は旧 oom_adj -17〜16 で説明（実コードは -1000〜906） | oom_score_adj -1000〜999、中間段追加、cached 900〜999 | 知覚可能性の細分化と cached LRU の分解能向上 |
 | AMS ↔ lmkd | LMK_TARGET / LMK_PROCPRIO の一方向 2 コマンド | 12 コマンドの双方向（kill 通知・購読・一括更新） | kill の実行主体が lmkd に移り、結果を AMS に返す必要が生じた |
 | 重要度計算 | 再帰的 computeOomAdj | バケット式 OomAdjusterModernImpl、部分更新 | プロセス依存グラフの循環・入力順依存とコストの解消 |
 | cached の扱い | 生きたまま待機、onTrimMemory で自主解放を依頼 | cgroup v2 freezer で凍結、圧縮、UI_HIDDEN/BACKGROUND のみ通知 | 背面の CPU・電力消費と dirty 化を止め、kill を遅らせるため |
@@ -209,6 +209,8 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — LRU・ページキャッシュ・OOM killer の一般論。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — cgroup 階層（cpuset・freezer・memory）の一般論。
 - [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md) — フラッシュの消去単位と書込寿命（ディスクスワップを避ける理由）。
+- [`process-thread-model.md`](process-thread-model.md) — freezer が作用する cgroup v2 階層とプロセスの対応。
+- [`system-server-services.md`](system-server-services.md) — OomAdjuster/ProcessList を持つ AMS の位置づけ。
 
 ## 参考文献 (References)
 

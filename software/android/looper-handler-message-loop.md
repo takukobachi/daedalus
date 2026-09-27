@@ -13,7 +13,7 @@ Android アプリのほぼすべてのコード——ライフサイクルコー
 - 機構の基準線 (baseline) には有野 (2017) Ⅰ巻 第3章(UI スレッド・Looper・Handler、Android 7.0 Nougat ベース)と Ⅱ巻 1.4・5.4(Looper/Handler/Binder の速習、ActivityThread の `main()` と内部クラス `H`/`ApplicationThread`)を用いる。書籍のコードは著者による簡略化擬似コードであり、本書では再引用せず、現行 AOSP のクラス・メソッド名で再構成する。
 - 現在の姿は AOSP の `android17-release` ブランチ(`android-17.0.0_r1`、2026-06 公開)のソースで確認した: `frameworks/base/core/java/android/os/{Looper,Handler,MessageQueue}.java`、`CombinedDeliMessageQueue/MessageQueue.java`、`MessageHeap.java`、`MessageStack.java`、`LooperDoctor.java`、`core/java/android/view/Choreographer.java`、`system/core/libutils/Looper.cpp`、`services/java/com/android/server/SystemServer.java`。行番号はファイル改訂で動くため、原則としてクラス・メソッド名で参照する。
 - Android 17 の lock-free MessageQueue (DeliQueue) は、一次資料である Android Developers Blog(設計者本人の解説)と behavior change ガイドを、AOSP ソースの実装(ChangeId・データ構造)と突き合わせて記述する。性能数値は Google 自身の測定であり、独立検証は未見であることを明記する。
-- 「Nougat → 現在」の差分を技術詳細 §7 に表として集約し、各所にも注記する。スレッド優先度・cgroup の一般論は [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) に委ねる。
+- 「Nougat → 現在」の差分を技術詳細 §7 に表として集約し、各所にも注記する。スレッド優先度・cgroup の一般論は [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) に、Android でのスレッドと cgroup の対応は [`process-thread-model.md`](process-thread-model.md) に委ねる。
 
 ## 発見事項 (Findings)
 
@@ -150,7 +150,7 @@ sequenceDiagram
 
 ## セキュリティ考察 (Security Considerations)
 
-- **UI スレッドの占有は可用性攻撃の面である**: 悪意ある/不具合のあるライブラリが UI スレッドで重い処理や Binder 同期呼び出しを行うと、アプリは ANR で kill される。逆に **system_server のメインループや Binder スレッドを塞げれば端末全体の可用性が落ちる**ため、system_server は Watchdog(ハンドラスレッドの定期チェックと停滞時の自己再起動)と slow ログで自らを守る。キューの滞留監視はセキュリティ上も「サービス拒否の検知器」である。
+- **UI スレッドの占有は可用性攻撃の面である**: 悪意ある/不具合のあるライブラリが UI スレッドで重い処理や Binder 同期呼び出しを行うと、アプリは ANR で kill される。逆に **system_server のメインループや Binder スレッドを塞げれば端末全体の可用性が落ちる**ため、system_server は Watchdog(ハンドラスレッドの定期チェックと停滞時の自己再起動、[`system-server-services.md`](system-server-services.md))と slow ログで自らを守る。キューの滞留監視はセキュリティ上も「サービス拒否の検知器」である。
 - **Handler 経由のスレッド乗り換えは信頼境界の乗り換えでもある**: Binder スレッド上では `Binder.getCallingUid()` が呼び出し元を示すが、Handler で UI スレッドに移した後は呼び出し元の身元は失われる。権限検査は**乗り換え前(Binder スレッド上)で行う**のが原則で、`loopOnce()` がメッセージ処理の前後で `Binder.clearCallingIdentity()` の値を比較し「Thread identity changed」を警告するのは、身元の取り違えを検出するための防御である([`binder-internals.md`](binder-internals.md)、[`security-model.md`](security-model.md))。
 - **非同期メッセージとバリアは優先度の特権である**: `postSyncBarrier` を `@hide` に留め、アプリがバリアを立てられないようにしているのは、任意のコードがフレーム優先レーンを塞いだり、他コンポーネントのメッセージを無期限に止めたりできないようにするためと解釈できる。フレームワーク内部の `@UnsupportedAppUsage` を反射で叩く行為は、Android 17 の `mMessages` 無効化が示すように、実装差し替えで予告なく壊れる。
 - **反射による内部参照の禁止は堅牢性の要件になった**: DeliQueue では `mMessages` が常に null を返し、反射で内部を覗くコードは静かに誤動作する。非 SDK インタフェース制限と同じ方向で、実装を差し替え可能に保つことが性能改善(と、それに伴う競合バグの除去)の前提になっている。
@@ -173,6 +173,8 @@ sequenceDiagram
 - [`binder-internals.md`](binder-internals.md) — ApplicationThread が乗る Binder スレッドプールと oneway の意味論。
 - [`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md) — 同じ「epoll + タスクキュー」骨格を持つ汎用イベントループとの比較。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — UI スレッド/RenderThread の優先度と、優先度逆転の一般論。
+- [`process-thread-model.md`](process-thread-model.md) — UI スレッド/RenderThread/Binder スレッドの Linux スレッドとしての姿。
+- [`system-server-services.md`](system-server-services.md) — system_server の Looper 群・Watchdog・LooperStats。
 
 ## 参考文献 (References)
 

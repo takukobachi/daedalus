@@ -134,11 +134,11 @@ sequenceDiagram
 **File**: `system/core/rootdir/init.zygote64.rc`（AOSP main, 2026-09-27 参照）
 **Purpose**: Zygote の起動定義。書籍 (Ⅱ巻 6.5.5) の 32bit 版 `app_process -Xzygote … --start-system-server` から、64bit 化・USAP プール用ソケット・task_profiles・critical 窓が加わった。
 
-- 言語の要素は書籍どおり **action（`on <trigger>` ＋コマンド列）・trigger（イベント／`property:<name>=<value>`）・service（名前・実行ファイル・オプション）・import** の 4 つ。現在のオプションには `seclabel`・`capabilities`・`task_profiles`（Android 14〜、cgroup 設定の抽象化）・`interface`（提供する AIDL/HIDL サービスの宣言。servicemanager の遅延起動と連動）・`updatable`（APEX による上書きを許す）・`restart_period`・`timeout_period` 等が加わった。
+- 言語の要素は書籍どおり **action（`on <trigger>` ＋コマンド列）・trigger（イベント／`property:<name>=<value>`）・service（名前・実行ファイル・オプション）・import** の 4 つ。現在のオプションには `seclabel`・`capabilities`・`task_profiles`（Android 12〜、cgroup 設定の抽象化で `writepid` を置換。[`process-thread-model.md`](process-thread-model.md) 参照。Android 14 からはメインスレッドだけでなくプロセス全体に適用）・`interface`（提供する AIDL/HIDL サービスの宣言。servicemanager の遅延起動と連動）・`updatable`（APEX による上書きを許す）・`restart_period`・`timeout_period` 等が加わった。
 - **ソケットを init が作る理由**（書籍の主張、現在も有効）: init がソケットを作り fd を環境変数 `ANDROID_SOCKET_<name>` で子に渡すので、デーモンは特権なしで listen でき、異常終了後も init が確実に後始末して再起動できる。現在はこれに SELinux ラベル付けが加わり、「どのドメインがこのソケットに connect できるか」までを init.rc＋ポリシーで宣言する。
 - **起動順序**: `late-init` が `early-fs → fs → post-fs → late-fs → post-fs-data → zygote-start → early-boot → boot` を順に trigger する。`post-fs-data` では apexd が `/data` 上の更新済み APEX を含めて活性化し、`wait_for_prop apexd.status activated` で待つ（ART 自体が APEX であるため、Zygote より前に済ませる必要がある）。`zygote-start` は odsign（On-device Signing による ART 成果物の検証）の完了を待ってから `start zygote` / `start zygote_secondary` を実行する。
 - **APEX と .rc**: APEX はモジュール内の `etc/*.rc` を持ち込み、`updatable` なサービスを置き換えられる。書籍時点の「init.rc は system イメージと一体」という前提が崩れ、**サービス定義もモジュール単位で更新可能**になった（Mainline、[`package-management.md`](package-management.md)）。
-- **Zygote → system_server**: `--start-system-server` を受けた ZygoteInit が最初に system_server を fork し（UID system）、以後 Zygote はソケットでアプリの fork 要求を待つ。system_server は起動完了時に `sys.boot_completed=1` を設定し、`on property:sys.boot_completed=1` の action 群が連鎖する。アプリ起動側の続きは [`app-launch-end-to-end.md`](app-launch-end-to-end.md)。
+- **Zygote → system_server**: `--start-system-server` を受けた ZygoteInit が最初に system_server を fork し（UID system）、以後 Zygote はソケットでアプリの fork 要求を待つ。system_server は起動フェーズ（[`system-server-services.md`](system-server-services.md)）を経て起動完了時に `sys.boot_completed=1` を設定し、`on property:sys.boot_completed=1` の action 群が連鎖する。アプリ起動側の続きは [`app-launch-end-to-end.md`](app-launch-end-to-end.md)。
 
 ### 7. プロパティサービス — 共有メモリと単一書き手
 
@@ -189,6 +189,8 @@ sequenceDiagram
 - [`binder-internals.md`](binder-internals.md) — servicemanager と `interface` 宣言による遅延起動。
 - [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) — Boot ROM・DRAM 初期化・多段ブートローダの一般構造。
 - [`../operating-systems/block-io-stack.md`](../operating-systems/block-io-stack.md) ／ [`../operating-systems/filesystems.md`](../operating-systems/filesystems.md) — device-mapper と early mount の下回り。
+- [`system-server-services.md`](system-server-services.md) — SystemServer.main 以降の起動フェーズと sys.boot_completed まで。
+- [`process-thread-model.md`](process-thread-model.md) — init.rc の task_profiles と cgroup 階層。
 
 ## 参考文献 (References)
 

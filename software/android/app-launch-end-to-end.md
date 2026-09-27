@@ -58,7 +58,7 @@ flowchart LR
   MT -- Binder: addToDisplay / relayout --> WMS
 ```
 
-凡例: 実線は IPC／呼び出し、点線はプロセス生成。`ATMS` は Android 10 で AMS から分離されたが、同一 system_server プロセス内にあるため両者間は通常のメソッド呼び出しである。
+凡例: 実線は IPC／呼び出し、点線はプロセス生成。`ATMS` は Android 10 で AMS から分離されたが、同一 system_server プロセス内にあるため両者間は通常のメソッド呼び出しである。system_server 内のサービス構成は [`system-server-services.md`](system-server-services.md)。
 
 ### 背骨 — 15 ホップのシーケンス
 
@@ -95,7 +95,7 @@ sequenceDiagram
 
 - **ホップ 1**: Launcher のメインスレッドが `IActivityTaskManager.startActivity` を**同期**で呼ぶ。system_server 側では Binder スレッドプールの 1 本がこれを受け、`ActivityStarter` が実務を担う。
 - **ホップ 2 (Intent 解決)**: `ActivityStarter` は PackageManagerService に Intent を解決させ、対象 `ActivityInfo` (所属パッケージ・uid・launchMode・taskAffinity・テーマ) を得る。同一プロセス内の呼び出しなので IPC は発生しない。書籍 Ⅱ巻 5.7.2 が「最初はインテントの解決」と位置づけた段で、ここで得た **uid と seinfo** が後の fork 引数になる (パッケージ台帳側は [`package-management.md`](package-management.md))。続いて権限・exported・Background Activity Launch 検査を経て `ActivityRecord` を作り `Task` に積む。
-- **ホップ 3 (starting window)**: プロセスの有無と無関係に、WindowManager が対象 Activity のテーマ (`windowBackground`／Android 12〜は `windowSplashScreen*` 属性) から**アプリのコードを使わずに**描ける窓を先に出す。タップへの視覚応答をアプリの起動速度から切り離す仕掛けである。
+- **ホップ 3 (starting window)**: プロセスの有無と無関係に、WindowManager（[`window-manager.md`](window-manager.md)）が対象 Activity のテーマ (`windowBackground`／Android 12〜は `windowSplashScreen*` 属性) から**アプリのコードを使わずに**描ける窓を先に出す。タップへの視覚応答をアプリの起動速度から切り離す仕掛けである。
 - **ホップ 4 (プロセス判定)**: `ActivityTaskSupervisor.startSpecificActivity` が `WindowProcessController` を引き、`wpc.hasThread()` なら既存プロセスへ直接 `realStartActivityLocked` (warm start)、無ければ `mService.startProcessAsync(r, knownToBeDead, isTop, HOSTING_TYPE_TOP_ACTIVITY …)` へ分岐する (AOSP main で確認)。書籍 Ⅱ巻 4.3.4 の「ProcessRecord があれば scheduleLaunchActivity、無ければ Process.start」の二分岐と同じ判断である。**名前が「Async」である点**が重要で、ATMS はここで待たずにロックを手放し、Launcher の同期呼び出しを早く返す。
 
 ### 2. Zygote — preload・ソケット・fork (ホップ 5〜7)
@@ -146,14 +146,14 @@ sequenceDiagram
 ### 6. 計測と最適化の道具
 
 - **計測**: logcat の `Displayed`／`Fully drawn`、`adb shell am start -W` (TotalTime/WaitTime)、Macrobenchmark の `StartupTimingMetric`、Perfetto トレースの `android_startup` 派生メトリクス (トレースを開くと自動計算され、メインスレッドの `bindApplication`・`activityStart`・`activityResume`・`installContentProviders` スライスや、fork 前の待ち・Binder 遅延・GC・I/O 待ちに内訳を割り付ける)。Android 15 (API 35) では `ActivityManager.getHistoricalProcessStartReasons` (ApplicationStartInfo) により、アプリ自身が本番環境で起動種別と各段のタイムスタンプを取得できるようになった。
-- **最適化の系統**: (a) **Baseline Profiles**——起動経路のメソッドをインストール時に AOT コンパイルさせ、解釈実行と JIT を避ける (公式主張は初回起動からコード実行が約 30% 高速化; ベンダ主張であり端末・アプリ依存)。(b) **App Startup ライブラリ**——各ライブラリが個別に仕込んでいた ContentProvider を単一の `InitializationProvider` に集約し、依存順を宣言的に解決、不要なものは遅延初期化 (発見事項 3 の税の削減)。(c) Application／最初の Activity の onCreate からの遅延初期化・メインスレッドの Binder 同期呼び出しとディスク I/O の排除 (StrictMode で検出)。(d) プラットフォーム側では preload・USAP・プロセス起動の非同期化・起動中プロセスの top-app cgroup/優先度ブースト ([`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))。
+- **最適化の系統**: (a) **Baseline Profiles**——起動経路のメソッドをインストール時に AOT コンパイルさせ、解釈実行と JIT を避ける (公式主張は初回起動からコード実行が約 30% 高速化; ベンダ主張であり端末・アプリ依存)。(b) **App Startup ライブラリ**——各ライブラリが個別に仕込んでいた ContentProvider を単一の `InitializationProvider` に集約し、依存順を宣言的に解決、不要なものは遅延初期化 (発見事項 3 の税の削減)。(c) Application／最初の Activity の onCreate からの遅延初期化・メインスレッドの Binder 同期呼び出しとディスク I/O の排除 (StrictMode で検出)。(d) プラットフォーム側では preload・USAP・プロセス起動の非同期化・起動中プロセスの top-app cgroup/優先度ブースト ([`process-thread-model.md`](process-thread-model.md)、[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))。
 
 ### 7. 何が変わり、何が変わっていないか (2016 Nougat → 現在)
 
 | 機構 | Nougat (書籍) | 現在 (AOSP main / Android 16 世代) | 変化の理由 |
 |------|--------------|----------------------------------|-----------|
 | 起動要求の受け手 | ActivityManagerService / ActivityStackSupervisor (Ⅱ巻 5.5.3 図 5.4) | ActivityTaskManagerService / ActivityStarter / `ActivityTaskSupervisor` (Android 10 で ATMS 分離、12 で改名) | ウィンドウ・タスク管理を WM 側へ寄せ、AMS をプロセス/サービス管理に絞る責務分割 |
-| プロセス生成要求 | ATMS 内で同期に `Process.start` (Ⅱ巻 4.3.4) | `startProcessAsync` → ProcStart ハンドラで非同期、zygote policy flag 付き | ソケット往復中に巨大ロックを握らない (起動と他操作の相互ブロック回避) |
+| プロセス生成要求 | AMS (ActivityStackSupervisor 経由) 内で同期に `Process.start` (Ⅱ巻 4.3.4。ATMS は Android 10 で分離) | `startProcessAsync` → ProcStart ハンドラで非同期、zygote policy flag 付き | ソケット往復中に巨大ロックを握らない (起動と他操作の相互ブロック回避) |
 | zygote 構成 | 32/64 の 2 zygote 構成が一般的 (`init.zygote32.rc` 等, Ⅱ巻 5.2.1 注 5) | 64-bit only 端末は zygote64 単独 (Pixel 7 以降等)、加えて WebView zygote・app zygote | 32-bit アプリ廃止に伴う常駐メモリ削減、用途別 preload の分離 |
 | fork のタイミング | 要求到着後に fork | USAP プールで要求前に fork 可能 (Android 10〜、AOSP 既定は無効) | fork＋初期化をクリティカルパス外へ |
 | 子で main を呼ぶ方法 | `MethodAndArgsCaller` 例外でスタックを巻き戻す (Ⅱ巻 5.2.2) | `Runnable` を返して `caller.run()` | 例外を制御フローに使う技巧の解消、可読性 |
@@ -191,6 +191,9 @@ sequenceDiagram
 - [`boot-init-properties.md`](boot-init-properties.md) — init が zygote を起動するまで。
 - [`art-runtime-internals.md`](art-runtime-internals.md) — boot image・AOT/JIT・プロファイル。Baseline Profiles の土台。
 - [`security-model.md`](security-model.md) — uid サンドボックス・SELinux・seccomp の位置づけ。
+- [`process-thread-model.md`](process-thread-model.md) — fork 後のスレッド構成と top-app cgroup への移動。
+- [`system-server-services.md`](system-server-services.md) — ホップ 1〜4 を担うサービス群の起動と配置。
+- [`window-manager.md`](window-manager.md) — starting window と addToDisplay/relayout の WMS 側。
 
 ## 参考文献 (References)
 

@@ -92,7 +92,7 @@
 
 本書全体がセキュリティ分析だが、モデル自体の残余リスク——**どの仮定が破れると何が失われるか**——を挙げる。
 
-- **system_server は単一障害点である**: フレームワーク層の権限検査は system_server 内で行われるため、その侵害は「全アプリの権限表の書き換え」に等しい。SELinux とハードウェア層（鍵・Verified Boot）は残るが、ユーザデータの機密性は大きく失われる。巨大単一プロセスという設計（[`platform-architecture.md`](platform-architecture.md)）のセキュリティ上の代償であり、iOS の「デーモンの連邦」との構造的差異が最も効く点。
+- **system_server は単一障害点である**: フレームワーク層の権限検査は system_server 内で行われるため、その侵害は「全アプリの権限表の書き換え」に等しい。SELinux とハードウェア層（鍵・Verified Boot）は残るが、ユーザデータの機密性は大きく失われる。巨大単一プロセスという設計（[`platform-architecture.md`](platform-architecture.md)、[`system-server-services.md`](system-server-services.md)）のセキュリティ上の代償であり、iOS の「デーモンの連邦」との構造的差異が最も効く点。
 - **ベンダコードは品質の分散が大きい**: SoC ベンダのドライバ・HAL（GPU・モデム・カメラ）は Security Bulletin の常連であり、Treble の境界はあっても**カーネル空間のベンダドライバは依然カーネル権限**で走る。エコシステムの開放性（多ベンダ）がそのまま攻撃面の分散になる——Android モデル固有の宿命。
 - **ユーザの同意は最弱の輪であり続ける**: サイドロードの許可・アクセシビリティサービスの悪用・オーバーレイによる UI 偽装は、権限モデルの外側（ユーザの判断）を突く。Android 13+ の「サイドロードアプリへのアクセシビリティ制限」等、**同意経路そのものへの摩擦の設計**が対策の主戦場になっている。
 - **物理アクセスと BFU/AFU**: AFU 状態の端末からのデータ抽出（ロック画面バイパスや lockscreen 脆弱性経由）は、鍵がメモリに存在する以上、原理的に消せない残余リスクである。防御は「BFU に戻す（再起動）」「認証必須鍵（Keystore の auth-bound）」の利用拡大に向かう。
@@ -114,6 +114,8 @@
 - [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — 多層防御・HSM・アテステーションの車載版設計文法。
 - [`package-management.md`](package-management.md) — 権限検査の第一層 (UID) を割り当てる側。installd・packages.xml・パッケージ可視性。
 - [`boot-init-properties.md`](boot-init-properties.md) — ブートローダーのアンロック・fastboot・init による SELinux ポリシー読み込み。
+- [`system-server-services.md`](system-server-services.md) — 単一障害点としての system_server の内部構造。
+- [`process-thread-model.md`](process-thread-model.md) — UID/プロセスと SELinux ドメインの対応。
 
 ## 参考文献 (References)
 

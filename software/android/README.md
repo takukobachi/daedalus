@@ -29,7 +29,6 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
   フレームワーク × ハードウェア)、権限モデルの意味論と confused deputy、アプリ署名
   v1〜v4 と鍵ローテーション、scoped storage と FBE (CE/DE)、Keystore・鍵アテステーション・
   Play Integrity、エクスプロイト緩和 (CFI/MTE/Rust)
-
 - `looper-handler-message-loop.md` — UI スレッドとメッセージループ：単一スレッド UI の理由、
   Looper/TLS、MessageQueue と epoll/eventfd、Handler、同期バリアと非同期メッセージ（フレーム優先の仕組み）、
   IdleHandler、Binder スレッド → `H` → UI スレッドの受け渡し、ロックフリー MessageQueue (DeliQueue)
@@ -51,6 +50,43 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
 - `app-launch-end-to-end.md` — アプリ起動の全行程：ランチャーのタップから最初のフレームまでを
   プロセス/スレッド/IPC 単位で追う。ATMS → zygote ソケット (USAP) → specialize → ActivityThread →
   bindApplication → ClientTransaction → 最初のフレーム、cold/warm/hot 起動と計測
+- `process-thread-model.md` — プロセスとスレッドのモデル：アプリ＝UID、Zygote fork によるプロセス生成と
+  `android:process`、アプリプロセスのスレッド一覧 (UI/RenderThread/Binder/ART デーモン)、スレッド優先度と
+  task profiles・cgroup v2、プロセス状態と oom_score_adj、freezer、seccomp/SELinux ドメイン
+- `aidl-interfaces.md` — AIDL：`.aidl` から生成される Stub/Proxy と onTransact、in/out/inout・oneway・
+  Parcelable、Java/C++/NDK/Rust バックエンド、stable AIDL (`@VintfStability`・凍結 API・版管理)、
+  Binder 越しの例外、`@EnforcePermission`、Parcel 不整合型の脆弱性
+- `system-server-services.md` — system_server と SystemService：SystemServer の起動段 (bootstrap/core/other/apex)、
+  SystemServiceManager と boot phase、publishBinderService と LocalServices、内部スレッドと大域ロック、
+  Watchdog とランタイム再起動、呼び出し元 ID と権限検査
+- `window-manager.md` — WindowManagerService：WindowContainer 階層 (RootWindowContainer → DisplayContent →
+  Task → ActivityRecord → WindowState)、ウィンドウ種別と Z 順、addWindow/relayout と SurfaceControl、
+  フォーカスと入力への窓情報、insets、Shell Transitions、マルチウィンドウ、オーバーレイ攻撃対策
+
+## 読む順序 (Reading Path)
+
+下の層から順に読むと、各層が直下の層の機構だけで説明できるように並べてある。
+[`platform-architecture.md`](platform-architecture.md) は全体の見取り図として最初に、
+[`security-model.md`](security-model.md) は全層を横断する観点として最後に読む。
+
+```text
+1. Linux process / thread      → process-thread-model.md
+        ↓                         （一般論: ../operating-systems/process-thread-scheduling.md）
+2. Binder                      → binder-internals.md
+        ↓
+3. AIDL                        → aidl-interfaces.md
+        ↓
+4. system_server / SystemService → system-server-services.md
+        ↓                         （起動まで: boot-init-properties.md ／ PMS: package-management.md）
+5. Zygote / ART                → art-runtime-internals.md
+        ↓                         （メモリと kill: memory-lmkd.md）
+6. Activity / Task             → app-components-lifecycle.md
+        ↓                         （全行程: app-launch-end-to-end.md）
+7. Looper / Handler            → looper-handler-message-loop.md
+        ↓
+8. Window / Input / Graphics   → window-manager.md → view-system-layout.md
+                                  → input-pipeline.md → graphics-pipeline.md
+```
 
 各ドキュメントは、有野和真『Androidを支える技術〈I〉〈II〉』(Android 7.0 Nougat 基準) を機構の基準線とし、
 現行 AOSP との差分を「Nougat → 現在」の表で明示している。章とドキュメントの対応・読み替えガイドは
