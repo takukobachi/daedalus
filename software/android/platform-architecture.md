@@ -140,6 +140,10 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 - [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) — Verified Boot が挿入されるブート段の一般構造。
 - [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — HSM・セキュアブート・多層防御の車載版。Android Automotive OS で両者は合流する。
 - [`../specifications/authentication-tokens-specification.md`](../specifications/authentication-tokens-specification.md) — アプリ層の認証。Keystore はそのトークン・鍵の置き場になる。
+- [`boot-init-properties.md`](boot-init-properties.md) — ブートローダーから init・プロパティ・init.rc を経て Zygote に至る起動の詳細。
+- [`memory-lmkd.md`](memory-lmkd.md) — 本書 §2「プロセス＝キャッシュ」の深掘り（カーネル回収・oom_score_adj・lmkd・freezer）。
+- [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — 本書 §5「1 タップの旅」をプロセス/スレッド単位に展開したもの。
+- [`package-management.md`](package-management.md) — アプリ＝Linux ユーザの UID 割り当て・installd・packages.xml。
 
 ## 参考文献 (References)
 
@@ -156,3 +160,5 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 
 - Yaghmour, K. (2013). *Embedded Android*. O'Reilly. — init・Zygote・ネイティブ層の古典的詳説（バージョンは古いが構造の理解に有効）。
 - Android Platform Team (2015–). *Stagefright 以後のメディアスタック分割に関する公式ブログ・セキュリティ告示*（Android Security Bulletins）. — [source.android.com/docs/security/bulletin](https://source.android.com/docs/security/bulletin) — Accessed: 2026-07-02。
+- 有野和真 (2017).『Androidを支える技術〈I〉60fpsを達成するモダンなGUIシステム』技術評論社. ISBN 978-4-7741-8759-4 — 第1章 (GUI システムの三つの時代・Zygote・init.rc・プロパティの速習)、第7章 (Dalvik/ART とメモリ節約)。
+- 有野和真 (2017).『Androidを支える技術〈II〉真のマルチタスクに挑んだモバイルOSの心臓部』技術評論社. ISBN 978-4-7741-8861-4 — 第2章 (インストールと UID)、第3章 (Low Memory Killer)、第5章 (Zygote と ActivityThread)、第6章 (ブートローダーと init)。Android 7.0 Nougat 基準。書籍内コードは著者による簡略化であり、現行 AOSP との対応は [`../../references/books/book-android-internals-arino.md`](../../references/books/book-android-internals-arino.md) を参照。

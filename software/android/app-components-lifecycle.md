@@ -100,7 +100,22 @@ Activity は「画面を表す UI クラス」として説明されることが�
 ### 5. ANR — 時間による同期の回復
 
 - oneway で指示するシステムは、完了を**時間**でしか検証できない。ATMS/InputDispatcher は「入力がウィンドウに 5 秒読まれない」「onPause の報告が来ない」等を監視し、超過で ANR(トレース収集 → ダイアログ → kill)に至る。
-- メインスレッドを塞ぐ三大原因——重い処理・**Binder 同期呼び出しの連鎖**(相手のスレッドプール枯渇に巻き込まれる)・ロック競合——はいずれも「ライフサイクルと同じキューを奪う」ことで顕在化する。[`binder-internals.md`](binder-internals.md) の「Binder スレッドは枯渇する」のアプリ側の像が ANR である。
+- メインスレッドを塞ぐ三大原因——重い処理・**Binder 同期呼び出しの連鎖**(相手のスレッドプール枯渇に巻き込まれる)・ロック競合——はいずれも「ライフサイクルと同じキューを奪う」ことで顕在化する。[`binder-internals.md`](binder-internals.md) の「Binder スレッドは枯渇する」のアプリ側の像が ANR である。キューそのものの機構(同期バリア・非同期メッセージ・epoll 待ち)は [`looper-handler-message-loop.md`](looper-handler-message-loop.md) を参照。
+
+### 6. Nougat (書籍) から現在への構造変化 — 台帳の担当者は変わり、契約は変わらない
+
+有野 (2017) Ⅱ巻 第4章は、Nougat の ActivityManagerService (AMS) と **ActivityStack**(タスクを束ねるスタック)を軸に、ライフサイクルを「ActivityStack の視点・Activity インスタンスの視点・AMS の視点」の三つから読み解く。同章の見取り図——**真実の状態はシステム側の ActivityRecord にあり、アプリ側の Activity はその一時的な実体にすぎない**——は本書の「二重の台帳」と同じ構図であり、現在もそのまま通用する。変わったのは台帳を持つクラスの配置である。
+
+| 機構 | Nougat (有野 2017 Ⅱ巻 4 章) | 現在 | 変化の理由 |
+|---|---|---|---|
+| Activity 管理の担当 | AMS (`com.android.server.am`) がプロセス管理と Activity/タスク管理を兼務 | Android 10 で **ActivityTaskManagerService** (`com.android.server.wm`) に分離。AMS はプロセス・サービス・ブロードキャスト・oom_adj を担当 | 肥大化した AMS から Activity/タスク管理を切り出し、WindowManager と同じロック (`WindowManagerGlobalLock`)・同じ階層で扱うため |
+| スタックとタスク | `ActivityStack` がタスク群を保持し、`ActivityStackSupervisor` が全体を統括 | Android 12 (API 31) で `ActivityStack` は **`Task` に統合**(Task が入れ子になれる)、Supervisor は `ActivityTaskSupervisor` に改名。階層の根は `RootWindowContainer` | マルチウィンドウ・分割画面・フリーフォームで「スタック」と「タスク」の区別が意味を失い、WindowContainer の木に一本化された |
+| タスク内の分割 | なし(1 タスク = 1 列のバックスタック) | Android 12L で **TaskFragment** 導入。1 タスク内で複数 Activity を横並びに表示 (Activity embedding) | 大画面・折りたたみ端末で「2 画面を 1 タスクに」を表現するため |
+| ライフサイクル指示 | AMS が `IApplicationThread` の個別メソッド (`schedulePauseActivity` 等) を oneway で呼び、アプリ側クラス `H` の `handleMessage()` が分岐 | Android 9 で **ClientTransaction** に集約(本書 §1)。`H` は `EXECUTE_TRANSACTION` を受けて TransactionExecutor に渡す | 個別 RPC の順序と途中状態を管理するより、「目標状態の宣言」を冪等に適用するほうが堅牢 |
+| Bundle の居場所 | ActivityRecord が保持し、プロセスが kill されても残る(同 4.3) | 同じ。Android 13 で lazy bundle 化(復元時の型混同対策、セキュリティ考察参照) | 契約(プロセス死を生き延びる小さな再構築レシピ)は不変 |
+
+- 読み替えの要点: 書籍の「ActivityStack」は現在の **Task (と親子の Task)**、「AMS の Activity 管理部分」は **ATMS**、「`H` のライフサイクルメッセージ群」は **ClientTransaction の Item 群** (`LaunchActivityItem`・`PauseActivityItem` ほか) に対応する。ソースを読むときは `com.android.server.am` ではなく `com.android.server.wm` を探す。
+- 起動の全行程(Zygote fork から最初のフレームまで)をプロセス・スレッド単位で追う議論は [`app-launch-end-to-end.md`](app-launch-end-to-end.md) に分けた。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -124,6 +139,10 @@ Activity は「画面を表す UI クラス」として説明されることが�
 - [`graphics-pipeline.md`](graphics-pipeline.md) — activityIdle 後の世界。Surface 取得と最初のフレームの詳細。
 - [`security-model.md`](security-model.md) — exported/PendingIntent/BAL の権限モデル上の位置づけ。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — 二重台帳の結果整合・「宣言を送る」設計の一般論。
+- [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — 本書「1 回の起動」の拡大版。Zygote fork・bindApplication・最初のフレームまでをプロセス/スレッド単位で追う。
+- [`looper-handler-message-loop.md`](looper-handler-message-loop.md) — ライフサイクル指示が載るメインスレッドのキューの機構。
+- [`memory-lmkd.md`](memory-lmkd.md) — 本書 §4 の先。oom_score_adj の算出と lmkd・freezer による kill/凍結の詳細。
+- [`package-management.md`](package-management.md) — 暗黙的 Intent の解決 (resolveIntent) とパッケージ可視性。
 
 ## 参考文献 (References)
 
@@ -138,3 +157,4 @@ Activity は「画面を表す UI クラス」として説明されることが�
 
 - Promon (2019). *StrandHogg: Android vulnerability*（taskAffinity 悪用によるタスク偽装の技術分析）. — [promon.io/security-news/strandhogg](https://promon.io/security-news/strandhogg) — Accessed: 2026-07-03。
 - Android Developers Blog, *Lazy bundles / Parcel 堅牢化と Bundle 系脆弱性への対応*（Android 13 リリース解説）. — [android-developers.googleblog.com](https://android-developers.googleblog.com/) — Accessed: 2026-07-03。
+- 有野和真 (2017).『Androidを支える技術〈II〉真のマルチタスクに挑んだモバイルOSの心臓部』技術評論社. ISBN 978-4-7741-8861-4 — 第4章 (ActivityStack・タスク・ActivityRecord と Bundle・ライフサイクルの三視点)、付録 (View ツリーの状態保存)。Android 7.0 Nougat 基準。書籍内コードは著者による簡略化であり、現行 AOSP との対応は [`../../references/books/book-android-internals-arino.md`](../../references/books/book-android-internals-arino.md) を参照。

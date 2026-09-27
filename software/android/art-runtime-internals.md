@@ -12,6 +12,7 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - GC は「何を止めるか」を基準に世代を整理する: STW コンパクション → 並行コピー (Baker リードバリア) → userfaultfd マークコンパクト。各方式の代償（バリアのコードサイズ・スループット・ポーズ）を対比する。
 - 一次資料は AOSP の ART 公式ドキュメントと `art/` ソースツリーに置き、バージョン依存の挙動は導入バージョンを付記する。数値（ヒープ既定値・閾値）はベンダ構成で変わりうることを明示する。
 - JVM (HotSpot) との対比は設計判断の理由を示す範囲に留め、HotSpot 自体の詳説はしない。
+- 有野 (2017) Ⅰ巻 第 7 章（Android 7.0 Nougat 基準）を機構レベルの基準線とし、現在の AOSP（ART Service/artd, nterp, Mainline 化）との差分を技術詳細 6 に表で明示する。書籍の記述は言い換えて引用し、現行の挙動は AOSP 公式文書・ソースで確認した。
 
 ## 発見事項 (Findings)
 
@@ -58,13 +59,29 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 
 - boot image は「フレームワーククラスのロード・検証・初期化・JIT 予熱」を**ビルド時に済ませてスナップショット化**したものと読める。Zygote のプリロード（[`platform-architecture.md`](platform-architecture.md)）は、この mmap 済みイメージの上でさらにアプリ共通分を温める第二段である。
 
+### 成果物設計の根 — Clean/Dirty × Shared/Private
+
+上表の「共有のされ方」列がなぜ設計の中心なのかは、ページを 2 軸で分類すると見える（有野 (2017) Ⅰ巻 7.3.2–7.3.4）。
+
+| | Private | Shared |
+|---|---|---|
+| **Clean**（ファイル内容と一致） | 中: 捨てられるが 1 プロセス分 | **最良**: 捨てられ、かつ物理 1 部 |
+| **Dirty**（書き換え済み・無名） | **最悪**: 捨てられず、プロセス数だけ増える | 中: COW 共有中は 1 部 |
+
+- **なぜ Clean が効くのか**: フラッシュ（eMMC/UFS）は書き込みが遅く寿命も有限なため、Android は伝統的にディスクスワップを持たない。するとメモリ逼迫時にカーネルが**捨てられるのはファイルと同内容の Clean ページだけ**になる——捨てても次のアクセスでページフォルトから再読込できるからである。DEX/VDEX/OAT を**再配置なしでそのまま mmap して実行できる形式**にしてあるのは、コード領域全体を Clean に保つためであり、DEX を APK 内で**無圧縮**格納するのも、展開すればその先が Dirty になるからである。mmap は触れたページしか実メモリに載らないので、巨大なフレームワークの「使われないコード」はそもそもメモリを消費しない（同 7.3.3–7.3.4）。現在の Android はディスクスワップの代わりに zram（メモリ内圧縮スワップ）で Dirty 無名ページの一部を圧縮退避するが、「Clean は捨てるだけで済む」という非対称は変わらない——詳細は [`memory-lmkd.md`](memory-lmkd.md)。
+- **なぜ Zygote のプリロードが元を取るのか**: fork 直後は全ページが COW で共有されるため、Zygote が**事前に**ロード・初期化したクラスは、書き換えられない限り全アプリで Shared のまま残る。書籍の算術例に倣えば、10MB を使うアプリ 3 つが 8MB を共有できれば実消費は 3×2+8=14MB で、全 Private の 30MB の半分以下になる。副次効果として、VM 初期化とクラスロードを毎回やり直さずに済む分**起動も速い**（同 7.3.4）。アプリ単位の起動経路は [`app-launch-end-to-end.md`](app-launch-end-to-end.md)。
+- **JIT の成果物が「最悪象限」に落ちる理由**: JIT コードはプロセス内のコードキャッシュ（無名メモリ）に書かれるので Dirty かつ Private であり、しかもバイトコードより膨らむ。同じフレームワークメソッドを 10 プロセスが JIT すれば 10 部できる。AOT 済みの boot.oat が mmap＋fork 前ロードで Clean・Shared になるのと正反対であり、**「JIT は必要最小限、共通部分は AOT」という ART の配分はこの表から導かれる**（同 7.4.2, 7.4.3）。現在の JIT zygote（system_server/Zygote 内で JIT したコードを fork で配る）は、この欠点を部分的に Shared 側へ寄せる工夫と読める。
+- 同じ理由で、クラスを列挙するリフレクション型ライブラリ（アノテーション走査など）は、使わないクラスまで触ってページインさせる——Clean で「まだ載っていない」はずの領域を実メモリに引き込むため、サーバ Java ほど歓迎されない（同 7.3.4 コラム）。
+
 ## 技術詳細 (Technical Details)
 
 ### 1. DEX 形式と nterp
 
 - **レジスタベース**: 各メソッドは仮想レジスタ配列上で動き、JVM のオペランドスタック操作（push/pop の列）が 1 命令に畳まれる。命令数が減る分、インタープリタのディスパッチ回数が減る——インタープリタ滞在時間が長い ART の戦略と整合する。
+- **小さな比較例**（有野 (2017) Ⅰ巻 7.2.2–7.2.4 の例を再構成）: `int r = add(3, 4)` は、スタック型 (JVM) では「3 を積む → 4 を積む → `invokestatic #n`（引数は暗黙にスタック上）→ 結果をローカルへ `istore`」の 4 命令、レジスタ型 (Dalvik) では「`const/4 v0, 3` → `const/4 v1, 4` → `invoke-static {v0, v1}, add` → `move-result v0`」の 4 命令で、単純な呼び出しでは差が出ない。差が出るのはループ等の実コードで、`for (i<n) res+=1` 相当ではスタック型が 12 命令（load/store の往復が要る）に対しレジスタ型は 7 命令、かつ Dalvik 命令は 16 ビット単位で揃い、オペランドにレジスタ番号を直接書ける。**命令数が少ない＝インタープリタが速い・コードが小さい**のがレジスタ型の利点、**値の生存区間がスタックの積み降ろしから機械的に読める＝JIT/AOT のレジスタ割付が容易**なのがスタック型の利点で、JIT を持たず RAM も乏しかった初期 Android がレジスタ型を選んだのは当時として必然、というのが書籍の整理である。Optimizing コンパイラが SSA 形式の HIR に変換してから割付けを行うのは、このスタック型の利点を解析で取り戻す現代的な解と読める。
+- **DEX の 2 つの設計目的**（同 7.2.5）: (1) 文字列・型名などの定数を**複数クラスで共有**してサイズを削る（`Ljava/lang/Object;` のような文字列はほぼ全 .class が個別に持つ）、(2) **再配置なしで mmap して実行できる**形式にする。命令中の定数はすべて ID（固定幅インデックス）で参照されるので命令長が一定になりパースも速い。書籍が引く初期の公式比較では、無圧縮 jar 100% に対し圧縮 jar 50%、無圧縮 DEX 46% と、**圧縮なしで圧縮 jar 並み**に収まる——無圧縮であることが上記の Clean mmap の前提である。
 - **統合定数プール**: 文字列・型・メソッド・フィールドの表を DEX ファイル単位で共有し、クラスごとの定数プール (JVM .class) の重複を排除する。64K メソッド参照上限（multidex の由来）はこの表のインデックス幅の帰結。
-- **nterp** (Android 12+): C++ の switch インタープリタ (mterp 以前) を置き換えるアーキテクチャ別アセンブリ実装。JIT/AOT とスタックフレーム形式を揃え、形態遷移（インタープリタ⇄コンパイル済み）の境界コストを下げた。
+- **nterp** (ARM では Android 12+): Nougat で導入されたアセンブリ実装インタープリタ mterp（source.android.com *ART improvements*）の後継となるアーキテクチャ別アセンブリ実装。`art/runtime/interpreter/mterp/` は android-11.0.0_r1 で `nterp.cc` と x86_64 用の `x86_64ng/` のみを持ち、android-12.0.0_r1 で `arm64ng/`・`armng/` が加わる（android.googlesource.com/platform/art のタグ比較, Accessed: 2026-09-27）。JIT/AOT とスタックフレーム形式を揃え、形態遷移（インタープリタ⇄コンパイル済み）の境界コストを下げた。
 - **dexlayout / DEX 最適化**: プロファイルに基づき「起動時に触るクラス・メソッド」を DEX 内で物理的に近接配置し、ページイン局所性を高める（[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) のページキャッシュ効率への直接介入）。
 
 ### 2. dex2oat と Optimizing コンパイラ
@@ -94,6 +111,27 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - 境界コスト: 引数のマーシャリング・スレッド状態遷移（GC が「ネイティブ実行中」を待たなくてよいようにする runnable/native の遷移）・例外チェック。`@FastNative` は遷移を軽くし、`@CriticalNative` は参照受け渡し自体を禁じて生値のみにする——**速さは不変条件の放棄と引き換え**。
 - 参照表のあふれ（ローカル参照のリーク）は即クラッシュであり、「ハンドルで持ち、スコープで返す」規律が要る。fd・Binder ハンドルと同じ「テーブル＋不透明ハンドル」文法である。
 
+### 6. Dalvik → Lollipop AOT → Nougat ハイブリッド → 現在
+
+書籍（有野 (2017) Ⅰ巻 7.1.2, 7.4, 7.5 および 1.2.4）は Android 7.0 Nougat を「AOT・JIT・profile guided コンパイル・イメージファイルのハイブリッド」の完成形として描いた。その骨格はほぼそのまま現在も生きており、変わったのは**誰が・どこで・何の情報でコンパイルを駆動するか**の周辺である。
+
+| 機構 | Nougat (有野 2017) | 現在（Android 14〜16 世代） | 変化の理由 |
+|---|---|---|---|
+| バイトコード | Dalvik バイトコード（レジスタ型）＋ DEX。dx が .class から変換（Jack は実験段階） | 形式は同じ。変換は **d8**（dex 化）＋ **R8**（縮小・最適化）に統合、Jack は廃止 | 実行側の形式を変えずツールチェーンだけ進化させる方が互換性コストが低い |
+| 64K 上限 | メソッド ID が 16 ビット（0〜0xffff）。5.0 から複数 DEX をネイティブ対応、4.4 以前はライブラリ頼み | 上限自体は不変。**API 21+ はネイティブ multidex が既定**、R8 の縮小で上限に届きにくくする方針が第一推奨 | ファイル形式の ID 幅は互換性上変えられないので、回避策側（複数 DEX・縮小）が標準化した |
+| インタープリタ | switch（実体は関数ポインタ表）型の C++ 実装と、アセンブリ実装の mterp | **nterp**（ARM は Android 12〜、x86_64 は 11 から）: JIT/AOT とフレーム形式を揃えたアセンブリ実装 | 「まず解釈実行」の時間が長い以上、解釈⇄コンパイル済みの遷移コストを下げる価値が大きい |
+| JIT の単位 | Dalvik（2.2〜4.4）は**トレース JIT**（実行パスの断片）→ N で**メソッド単位 JIT** に | メソッド単位 JIT を継続（OSR・JIT zygote 等を追加） | メソッド単位なら JIT と AOT（dex2oat）で同じコンパイラモジュールを共有でき、プロファイルも「メソッド集合」として AOT に渡せる。書籍はこれをトレース JIT を捨てた主因と推測 |
+| AOT の時期 | 5.0〜6.x は**インストール時にフル AOT**。N ではブートクラスパスと `coreApp` 等だけを事前 AOT、他は初回 JIT | OTA・初回ブート=`verify`、背景=`speed-profile`。インストール時は Android 13 以前の推奨値が `pm.dexopt.install=speed-profile`（同梱／クラウドのプロファイルがあれば該当分だけ AOT） | フル AOT は OTA のたびに全アプリ再コンパイル（数十分級）を強い、月例セキュリティ更新と両立しなかった。使われないアプリまでコンパイルする無駄も大きい |
+| プロファイル採取 | アプリプロセスの **ProfileSaver** スレッドが JIT コードキャッシュからメソッド一覧を周期保存（`/data/misc/profiles/cur/<user>/<pkg>/primary.prof`） | 同じ骨格。クラス・起動時メソッド・ホット度など情報量が拡張され、dexlayout や .art 生成にも使用 | 採取点を JIT に同居させると追加コストがほぼゼロで済む |
+| 背景コンパイルの駆動 | system_server の **BackgroundDexOptService**（JobScheduler: アイドル＋充電中、1 日 1 回）→ installd に `merge_profiles` → **profman** が cur を ref にマージし差分が閾値超なら → installd が **dex2oat** `--profile-file` | Android 14〜は **ART Service**（`libartservice`、ART モジュール内）が dexopt を所管し、特権作業（ファイル操作・dex2oat 起動、および **profman** の起動: `art/artd/artd.cc` の `mergeProfiles`・`isProfileUsable`・`copyAndRewriteProfile` が `GetProfman()` で得た profman を `art_exec` 経由で実行, main @ android.googlesource.com, Accessed: 2026-09-27）は **artd** デーモンが担う。bg-dexopt は依然「1 日 1 回、アイドル＋充電中」で、熱状態 moderate 以上や使用再開で中断 | dexopt ロジックを OS 本体（PackageManager/installd）から更新可能な ART モジュールへ移し、Play 経由で改善を配るため |
+| コンパイル理由とフィルタ | install・bg-dexopt・first-boot 等の理由ごとに `pm.dexopt.*` プロパティ | 理由は first-boot / boot-after-ota / boot-after-mainline-update / install（＋install-fast 等の派生）/ bg-dexopt / inactive / cmdline 等。既定は bg-dexopt=`speed-profile`、boot 系=`verify`、他アプリから使われる共有ライブラリ=`speed`、長期未使用は `inactive` で `verify` へ**降格** | 「測ってから必要分だけ」を理由ごとに細分化し、ストレージ回収（降格）まで同じ枠組みで扱う |
+| プロファイルの出所 | 端末内の実行のみ（初回は必ず JIT で温める） | **Cloud Profiles**（Play が多数端末の実測を集約し、Android 9+ にインストール時配布）＋ **Baseline Profiles**（開発者が `assets/dexopt/baseline.prof` を同梱、初回起動から約 30% 高速化と公称） | 「一度使わないと速くならない」ハイブリッドの弱点を、プロファイルを端末の外から先回り供給して消す |
+| アプリイメージ (.art) | N で一般アプリにも導入。クラスをロードし自明な初期化まで済ませたヒープを保存し、起動時に mmap して初期化を省略。oat と相互に絶対アドレス参照 | プロファイル駆動（`speed-profile`）でプロファイル記載クラスについて生成される点は同じ。boot image 側も「ART モジュール分」と「フレームワーク分」(boot image extension) に分かれ、ART モジュール更新後は `odrefresh` が ART APEX 外の boot classpath（framework.jar 等）と system_server jar を端末上で再コンパイルする構成になった | JIT 回帰で遅くなった起動時間を AOT 時代並みに戻すための仕掛けだった（書籍の推測）が、起動最適化の標準部品として定着 |
+| ART 自体の更新 | OS に固定（OTA でしか変わらない） | **ART は Mainline（APEX）モジュール**（Android 12〜）。Google Play システムアップデートで ART・コンパイラ・GC を更新 | ランタイムのセキュリティ修正・最適化を端末メーカーの OTA 周期から切り離す |
+
+- **変わらなかったもの**: バイトコード形式（DEX）、「成果物は mmap して Clean に保つ」方針、「全体ではなくホットな少数だけをコンパイルする」戦略、プロファイルのマージ閾値で再コンパイル要否を決める構造は、書籍の記述がそのまま当てはまる。書籍の「JIT に戻ったことは『実行時さえ速ければコンパイルに時間をかけてよい』わけではないという結論を意味し、コンパイルが容易なレジスタ型の意義はまだある」という見立ても、ART が DEX を維持している事実と整合する。
+- **注意（書籍の限界）**: 書籍時点では「プロファイルは『コンパイルするか否か』の判定にしか使われていない」と明記されていたが、現在はアプリイメージに載せるクラスの選定や DEX レイアウト（dexlayout）などにも使われる。また ART Service の内部 API は Android バージョンごとに変わっており、上表の理由名・既定値は AOSP 公式の *ART Service configuration* と `ReasonMapping.java` を基準にした（端末ベンダは `pm.dexopt.*` で上書き可能）。
+
 ## セキュリティ考察 (Security Considerations)
 
 - **DEX/OAT は攻撃者入力である**: サイドロードされた APK の DEX は任意に細工できる。検証器 (verifier) は型混同（verifier を騙して `int` を参照として扱わせる類）に対する第一防壁であり、verifier のバグはサンドボックス内コード実行からの脱出起点になりうる。OAT/VDEX の**ロード時整合性**（dm-verity 圏外の `/data` に置かれる）も、ブート検証の連鎖（[`platform-architecture.md`](platform-architecture.md) の Verified Boot）から見ると相対的に弱い環である。
@@ -114,6 +152,9 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - [`binder-internals.md`](binder-internals.md) — 「テーブル＋不透明ハンドル」文法の IPC 版。Rust 化の動機の共通性。
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — mmap・COW・userfaultfd・ページイン局所性の一般論。本書はその実行系での活用。
 - [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — リードバリア・並行 GC が依拠する順序保証の一般論。
+- [`memory-lmkd.md`](memory-lmkd.md) — Clean/Dirty・Shared/Private の分類が lmkd・zram・PSS 計測でどう使われるか。本書の「成果物を Clean に保つ」設計の受け皿。
+- [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — Zygote fork → `handleBindApplication`（ProfileSaver 起動点）→ 初回フレームまで。AOT/JIT/アプリイメージが起動時間のどこに効くか。
+- [`package-management.md`](package-management.md) — インストール時 dexopt の起点（PackageManagerService → ART Service/artd）と APK・split・DEX の配置。
 
 ## 参考文献 (References)
 
@@ -125,7 +166,17 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - Android Developers, *Baseline Profiles overview*. — [developer.android.com/topic/performance/baselineprofiles/overview](https://developer.android.com/topic/performance/baselineprofiles/overview) — Accessed: 2026-07-03。同梱プロファイルと Cloud Profiles の規範。
 - Android Developers Blog / AOSP (2023). *Concurrent Mark Compact (userfaultfd) GC の導入解説*（Android 13 リリースノート・ART モジュール更新）. — [source.android.com/docs/core/runtime/gc-debug](https://source.android.com/docs/core/runtime/gc-debug) — Accessed: 2026-07-03。
 
+- AOSP, *ART Service configuration*（Android 14〜の dexopt 理由・既定コンパイラフィルタ・背景ジョブ条件）. — [source.android.com/docs/core/runtime/configure/art-service](https://source.android.com/docs/core/runtime/configure/art-service) — Accessed: 2026-09-27。
+- AOSP, *Package manager configuration*（Android 13 以前の `pm.dexopt.*` 既定値）. — [source.android.com/docs/core/runtime/configure/package-manager](https://source.android.com/docs/core/runtime/configure/package-manager) — Accessed: 2026-09-27。
+- AOSP `art/artd/README.md`（artd = system_server に無い特権で dex2oat 起動・ファイル操作を行う shim）および `art/libartservice/service/java/com/android/server/art/ReasonMapping.java`（コンパイル理由の定義）. — [android.googlesource.com/platform/art/+/refs/heads/main/artd](https://android.googlesource.com/platform/art/+/refs/heads/main/artd/) — Accessed: 2026-09-27。
+- Android Developers, *Enable multidex for apps with over 64K methods*（API 21+ のネイティブ multidex、R8 による縮小の推奨）. — [developer.android.com/build/multidex](https://developer.android.com/build/multidex) — Accessed: 2026-09-27。
+
 **二次資料 (Secondary)**
+
+- 有野和真 (2017).『Androidを支える技術〈I〉60fpsを達成するモダンなGUIシステム』技術評論社. ISBN 978-4-7741-8759-4. — 第 7 章「バイトコード実行環境 Dalvik と ART」（7.2 Dalvik バイトコードと dex、7.3 メモリ節約の工夫と Zygote、7.4 JIT/AOT の変遷、7.5 Nougat の ProfileSaver・BackgroundDexOptService・profman・dex2oat・.art）および 1.2.4。Android 7.0 (android-7.0.0_r6)・2016 年 12 月時点の記述であり、コード片は著者による簡略化擬似コード。本ドキュメントでは Nougat の基準線として使用。
+- AOSP, `art/odrefresh/README.md`（ART APEX 更新後に boot classpath extension と system_server の成果物を再生成するツール）. — [android.googlesource.com/platform/art/+/refs/heads/main/odrefresh/README.md](https://android.googlesource.com/platform/art/+/refs/heads/main/odrefresh/README.md) — Accessed: 2026-09-27。
+- Android Developers Blog (2023). *Latest ARTwork on hundreds of millions of devices*（ART の Google Play システムアップデート配信が Android 12 以降の全端末に及ぶこと、ART 13 更新で起動最大 30% 改善）. — [android-developers.googleblog.com](https://android-developers.googleblog.com/2023/08/latest-artwork-on-hundreds-of-millions-of-devices.html) — Accessed: 2026-09-27。ART の Mainline 化時期の一次確認。
+- XDA Developers (2021). *Google will make the Android Runtime (ART) a Mainline module in Android 12*. — [xda-developers.com](https://www.xda-developers.com/google-android-runtime-art-mainline-module-android-12/) — Accessed: 2026-09-27。ART の Mainline 化時期の確認用（一次資料は AOSP Mainline 文書）。
 
 - Google ART チームによる各種カンファレンス発表（Google I/O・Android Dev Summit の ART セッション: nterp, userfaultfd GC, Mainline 化）。— [youtube.com/@AndroidDevelopers](https://www.youtube.com/@AndroidDevelopers) — Accessed: 2026-07-03。
 - JVM (HotSpot) との比較参照として: Lindholm, T. et al. (2015). *The Java Virtual Machine Specification, Java SE 8 Edition*. Oracle. — スタックマシン・クラスファイル定数プールとの対比の基準。
