@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-`control-systems.md` の制御則はすべて「状態 `x` は既知」と仮定していた。実際のロボットが持っているのはノイズを含むセンサ測定値の列だけであり、そこから状態（姿勢・速度・自己位置・周囲の地図）を実時間で再構成する層が**状態推定 (state estimation)** である。制御が「望む未来を作る」層だとすれば、推定は「現在をもっともらしく言い当てる」層であり、両者は同じフィードバックループの両輪をなす。
+[`control-systems.md`](control-systems.md) の制御則はすべて「状態 `x` は既知」と仮定していた。実際のロボットが持っているのはノイズを含むセンサ測定値の列だけであり、そこから状態（姿勢・速度・自己位置・周囲の地図）を実時間で再構成する層が**状態推定 (state estimation)** である。制御が「望む未来を作る」層だとすれば、推定は「現在をもっともらしく言い当てる」層であり、両者は同じフィードバックループの両輪をなす。
 
 本ドキュメントは、確率的推定の統一的な枠組みである**ベイズフィルタ (Bayes filter)** を出発点に、カルマンフィルタ (KF) とその非線形拡張 (EKF/UKF)、パーティクルフィルタ、センサフュージョン、そしてオドメトリのドリフトを地図との整合で抑え込む **SLAM (simultaneous localization and mapping)** までを、「どの仮定を置くと何が使えるか」の観点で整理する。数学的前提は [`../../foundations/mathematics/probability-statistics/`](../../foundations/mathematics/probability-statistics/) の確率・推定理論であり、本ドキュメントはその最も直接的な応用先である。
 
@@ -11,7 +11,7 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 ## 方法論 (Methodology)
 
 - すべての推定手法を**ベイズフィルタ（予測 → 更新）の近似**として位置づけ、「状態の表現（ガウス分布か粒子か）」と「モデルの扱い（線形化か サンプリングか）」の2軸で分類する。
-- センサは `robotics-fundamentals.md` の分類（自己受容/外受容）を引き継ぎ、**誤差の性質**（高周波ノイズか低周波ドリフトか、有界か非有界か）で相補性を説明する。
+- センサは [`robotics-fundamentals.md`](robotics-fundamentals.md) の分類（自己受容/外受容）を引き継ぎ、**誤差の性質**（高周波ノイズか低周波ドリフトか、有界か非有界か）で相補性を説明する。
 - SLAM はアルゴリズムの列挙ではなく、**「逐次フィルタから一括最適化（因子グラフ）へ」というパラダイム転換**を軸に整理する[^cadena-slam]。
 - 数値（周期・精度）は代表値・桁感を優先する。
 
@@ -19,10 +19,10 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 
 1. **推定はすべて「予測と更新の交互反復」である。** 運動モデルで信念 (belief) を前に進め（予測、不確かさは増える）、測定モデルで補正する（更新、不確かさは減る）。このベイズフィルタの枠組みは KF・EKF・UKF・パーティクルフィルタ・SLAM バックエンドまで共通であり、手法の違いは信念の表現と近似の仕方に過ぎない[^thrun]。
 2. **カルマンフィルタは線形・ガウスの仮定の下での厳密解であり、その本体はカルマンゲインによる「分散の重み付き平均」である。** 予測と測定を、それぞれの不確かさ（共分散）に反比例する重みで混ぜる。これは [`../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md) の最小分散推定の逐次版である[^kalman]。
-3. **非線形への拡張は「どこで線形化するか」の選択である。** EKF はヤコビアン（`kinematics-dynamics.md` と同じ道具）でモデルを線形化し、UKF はシグマ点で分布を輸送し、パーティクルフィルタは分布仮定自体を捨てる。計算コストと歪みへの頑健性のトレードオフが一直線に並ぶ[^thrun]。
-4. **センサフュージョンの本質は誤差特性の相補性である。** IMU は高レート・低遅延だが積分でドリフトし（非有界誤差）、視覚・LiDAR・GNSS は低レートだが誤差が有界。**「速いが漂う」センサを「遅いが漂わない」センサで係留する**のがフュージョンの普遍的構図で、姿勢推定の相補フィルタから VIO (visual-inertial odometry) まで同型である。
+3. **非線形への拡張は「どこで線形化するか」の選択である。** EKF はヤコビアン（[`kinematics-dynamics.md`](kinematics-dynamics.md) と同じ道具）でモデルを線形化し、UKF はシグマ点で分布を輸送し、パーティクルフィルタは分布仮定自体を捨てる。計算コストと歪みへの頑健性のトレードオフが一直線に並ぶ[^thrun]。
+4. **センサフュージョンの本質は誤差特性の相補性である。** IMU は高レート・低遅延だが積分でドリフトし（非有界誤差）、視覚・LiDAR・GNSS は低レートだが誤差が有界。**「速いが漂う」センサを「遅いが漂わない」センサで係留する**のがフュージョンの普遍的構図で、姿勢推定の相補フィルタ[^mahony]から VIO (visual-inertial odometry)[^forster-vio] まで同型である。
 5. **オドメトリは原理的にドリフトする。増分の積算だからである。** 車輪・脚・視覚のいずれでも、各ステップの小さな誤差が積算され、走行距離に応じて自己位置誤差は非有界に成長する。これを止める唯一の方法が「過去に見た場所を再訪したと認識する」**ループ閉じ込み (loop closure)** であり、この時点で問題は逐次推定から大域的な整合問題（SLAM）に変わる。
-6. **現代 SLAM は「疎な非線形最小二乗」である。** ポーズと地図点を頂点、測定を辺とする**因子グラフ (factor graph)** 上の最適化として定式化され、問題の疎性（各測定は少数の変数にしか触れない）が大規模化を可能にする[^cadena-slam]。フロントエンド（データ対応付け）とバックエンド（最適化）の分離が標準アーキテクチャである。
+6. **現代 SLAM は「疎な非線形最小二乗」である。** ポーズと地図点を頂点、測定を辺とする**因子グラフ (factor graph)** 上の最適化として定式化され、問題の疎性（各測定は少数の変数にしか触れない）が大規模化を可能にする[^cadena-slam][^dellaert-kaess]。逐次的に再線形化・再分解する iSAM2 がオンライン SLAM の標準的バックエンドである[^isam2]。フロントエンド（データ対応付け）とバックエンド（最適化）の分離が標準アーキテクチャである。
 7. **脚式ロボットの状態推定は接触が鍵になる。** 浮遊ベースの姿勢・速度は直接測れないため、「接地している足は滑らない」という接触制約を測定として使い、脚キネマティクスと IMU を融合する。接触検知の誤り（滑り・空振り）が推定を汚すため、接触の確からしさ自体も推定対象になる[^bloesch]。
 
 ## アーキテクチャ (Architecture)
@@ -74,8 +74,8 @@ flowchart LR
 更新:  bel(x_t)  ∝ p(z_t | x_t) · bel⁻(x_t)                         （測定モデル）
 ```
 
-- 必要なのは運動モデル `p(x_t|u_t,x_{t-1})` と測定モデル `p(z_t|x_t)` の2つだけ。以降のすべての手法は、この積分と正規化をどう計算可能にするかの近似である[^thrun]。
-- マルコフ性（現在の状態が過去を要約する）が前提であり、状態ベクトルの設計とは「何を含めればマルコフ性が成り立つか」を決める作業である（例: IMU バイアスを状態に含めるのはバイアスが時間相関を持つから）。
+- 必要なのは運動モデル `p(x_t|u_t,x_{t-1})` と測定モデル `p(z_t|x_t)` の2つだけ。以降のすべての手法は、この積分と正規化をどう計算可能にするかの近似である[^thrun]。更新式はベイズの定理そのもので、確率変数・条件付き確率の基礎は [`../../foundations/mathematics/probability-statistics/probability-random-variables.md`](../../foundations/mathematics/probability-statistics/probability-random-variables.md) にある。
+- マルコフ性（現在の状態が過去を要約する。[`../../foundations/mathematics/probability-statistics/markov-chains-queueing.md`](../../foundations/mathematics/probability-statistics/markov-chains-queueing.md)）が前提であり、状態ベクトルの設計とは「何を含めればマルコフ性が成り立つか」を決める作業である（例: IMU バイアスを状態に含めるのはバイアスが時間相関を持つから）。
 
 ### 2. カルマンフィルタ (Kalman Filter)
 
@@ -94,7 +94,7 @@ flowchart LR
 
 - **EKF**: 非線形モデル `f, h` を現在推定値まわりのヤコビアンで線形化して KF の式を回す。ロボティクスの実装の大半（VIO、脚式、GNSS/INS 統合）は EKF 系である。線形化誤差は推定値が真値から離れるほど大きくなり、**フィルタの過信（共分散の過小評価）→ 発散**が古典的な故障モード。
 - **UKF**: 分布を代表するシグマ点を非線形関数にそのまま通し、変換後の点群から平均・共分散を再構成する（unscented 変換）。ヤコビアン不要で、2次精度[^julier-ukf]。
-- **パーティクルフィルタ**: 信念を粒子の集合で表す。多峰性（「廊下のどちら側かわからない」）を表現できる唯一の選択肢で、占有格子地図上の大域自己位置推定 (Monte Carlo localization) の標準手法。次元の呪いにより高次元状態には不向き[^thrun]。
+- **パーティクルフィルタ**: 信念を粒子の集合で表す。多峰性（「廊下のどちら側かわからない」）を表現できる唯一の選択肢で、占有格子地図上の大域自己位置推定 (Monte Carlo localization) の標準手法。次元の呪いにより高次元状態には不向き[^gordon-pf][^thrun]。
 
 ### 4. センサフュージョンの定石 (Sensor Fusion Patterns)
 
@@ -128,8 +128,8 @@ X* = argmin_X Σ_k ‖ h_k(X_k) − z_k ‖²_{Σ_k}
 ## セキュリティ考察 (Security Considerations)
 
 - **推定は攻撃面である。** 制御はセンサを直接見ず推定値を信じるため、センサへの攻撃は推定を経由して制御に届く。GNSS スプーフィング（偽衛星信号による位置の誘導）は実証済みの脅威であり、LiDAR への赤外パルス注入・カメラへの敵対的パターンも研究レベルで示されている。防御の基本は**フュージョンの冗長性**である。単一センサでは推定が動かない構成にし、イノベーション（測定残差）の統計的監視で「あり得ない測定」を棄却する（χ² 検定によるゲーティング）。
-- **推定の故障は制御の故障として現れる。** フィルタ発散・誤ったループ閉じ込みは、制御器から見ると「状態の突然のジャンプ」であり、機体の急動作に直結する。共分散の監視（過信の検出）、推定値のレート制限、推定系と独立な安全層（`control-systems.md` の STO/SLS は推定を経由しない関節側の量で動く）が防護壁になる。
-- **地図はプライバシーと完全性の対象である。** 稼働環境の 3D 地図は施設情報そのものであり、クラウドへの地図アップロードは情報漏洩経路になる。また永続地図の改竄は、以後のすべての自己位置推定を系統的に歪める。地図データの署名・変更監査には `control-systems.md` のパラメータ完全性と同じ扱いが要る。
+- **推定の故障は制御の故障として現れる。** フィルタ発散・誤ったループ閉じ込みは、制御器から見ると「状態の突然のジャンプ」であり、機体の急動作に直結する。共分散の監視（過信の検出）、推定値のレート制限、推定系と独立な安全層（[`control-systems.md`](control-systems.md) の STO/SLS は推定を経由しない関節側の量で動く）が防護壁になる。
+- **地図はプライバシーと完全性の対象である。** 稼働環境の 3D 地図は施設情報そのものであり、クラウドへの地図アップロードは情報漏洩経路になる。また永続地図の改竄は、以後のすべての自己位置推定を系統的に歪める。地図データの署名・変更監査には [`control-systems.md`](control-systems.md) のパラメータ完全性と同じ扱いが要る。
 
 ## 結論 (Conclusions)
 
@@ -153,7 +153,16 @@ X* = argmin_X Σ_k ‖ h_k(X_k) − z_k ‖²_{Σ_k}
 
 [^bloesch]: Bloesch, M. et al. (2013). State Estimation for Legged Robots: Consistent Fusion of Leg Kinematics and IMU. *Robotics: Science and Systems VIII*. DOI: 10.15607/RSS.2012.VIII.003 — 接触制約を用いた脚式状態推定の代表的定式化。
 
+[^mahony]: Mahony, R., Hamel, T. & Pflimlin, J.-M. (2008). Nonlinear Complementary Filters on the Special Orthogonal Group. *IEEE Transactions on Automatic Control*, 53(5), 1203–1218. DOI: 10.1109/TAC.2008.923738 — IMU 姿勢推定の相補フィルタの代表的定式化。
+
+[^forster-vio]: Forster, C., Carlone, L., Dellaert, F. & Scaramuzza, D. (2017). On-Manifold Preintegration for Real-Time Visual–Inertial Odometry. *IEEE Transactions on Robotics*, 33(1), 1–21. DOI: 10.1109/TRO.2016.2597321 — IMU 事前積分による因子グラフ型 VIO。
+
+[^gordon-pf]: Gordon, N. J., Salmond, D. J. & Smith, A. F. M. (1993). Novel Approach to Nonlinear/Non-Gaussian Bayesian State Estimation. *IEE Proceedings F (Radar and Signal Processing)*, 140(2), 107–113. DOI: 10.1049/ip-f-2.1993.0015 — パーティクルフィルタ（ブートストラップフィルタ）の原典。
+
+[^dellaert-kaess]: Dellaert, F. & Kaess, M. (2017). Factor Graphs for Robot Perception. *Foundations and Trends in Robotics*, 6(1-2), 1–139. DOI: 10.1561/2300000043 — 因子グラフ定式化と GTSAM の理論的背景。
+
+[^isam2]: Kaess, M., Johannsson, H., Roberts, R., Ila, V., Leonard, J. J. & Dellaert, F. (2012). iSAM2: Incremental Smoothing and Mapping Using the Bayes Tree. *The International Journal of Robotics Research*, 31(2), 216–235. DOI: 10.1177/0278364911430419 — 増分的な平滑化と地図作成。
+
 その他の標準的典拠を以下に挙げる。
 
 - Barfoot, T. D. (2017). *State Estimation for Robotics*. Cambridge University Press. — SO(3)/SE(3) 上の推定・因子グラフの数学的に厳密な扱い。
-- Dellaert, F. & Kaess, M. (2017). Factor Graphs for Robot Perception. *Foundations and Trends in Robotics*, 6(1-2), 1–139. DOI: 10.1561/2300000043 — 因子グラフ定式化と GTSAM の理論的背景。

@@ -50,6 +50,30 @@
    コントロールプレーン・デプロイ・資格情報の共有は独立性の消費である。
 ```
 
+### フェイルオーバーのシーケンス — データプレーン上の引き金
+
+上の基本形でリージョン A が劣化したときの切替手順を時系列で示す。引き金（ARC のルーティング制御）と DNS 回答はデータプレーン側で完結し、障害リージョンのコントロールプレーンを経由しない。DNS 切替だけでは旧主の書き込みを止められないので、データ層のフェンシングを別段で行う（技術詳細の split-brain 防止）。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Op as 運用者 / 自動化
+    participant ARC as ARC ルーティング制御 (複製データプレーン)
+    participant DNS as Route 53 (DNS データプレーン)
+    participant A as Region A (旧 active)
+    participant B as Region B (standby, 容量事前確保)
+    Note over A,B: 平時: A → B へ非同期複製 (RPO = 複製ラグ秒級)
+    DNS->>A: ヘルスチェック
+    A--xDNS: 応答劣化
+    Op->>ARC: ルーティング制御を B 側へ切替
+    ARC-->>DNS: 制御状態を反映
+    DNS->>DNS: 以後の回答を Region B に向ける
+    Op->>A: フェンシング (旧主の書き込み拒否・降格)
+    Op->>B: DB 昇格 (読み取り専用 → 書き込み可)
+    Note over B: 複製ラグ分の未到達書き込みは失われうる (RPO)
+    Note over DNS,A: キャッシュを持つクライアントは TTL まで A へ向かい続ける
+```
+
 ### 競合解決の選択肢 — 5 軸の交換条件
 
 | 方式 | RPO | 書き込みレイテンシ | 並行更新の意味論 | 代金 |
@@ -107,6 +131,7 @@ Spanner (OSDI '12) は大陸規模で外部一貫性 (external consistency: コ�
 - [`cloud-databases-aurora-dynamodb.md`](cloud-databases-aurora-dynamodb.md) — Global Tables / Global Database の単一リージョン側の機構。
 - [`../networking/dns-resolution.md`](../networking/dns-resolution.md) / [`../networking/ip-routing-bgp.md`](../networking/ip-routing-bgp.md) — TTL とキャッシュ、anycast と BGP 収束というフェイルオーバーの床。
 - [`cloud-iam-authorization.md`](cloud-iam-authorization.md) — グローバルサービスとしての IAM と結果整合な認可伝播。
+- [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — 並列冗長の信頼度合成と共通原因故障。リージョンを独立な故障ドメインとして数える前提と、共有コントロールプレーンがその独立性を崩す構図の数理。
 
 ## 参考文献 (References)
 

@@ -28,7 +28,10 @@ eBPF (extended Berkeley Packet Filter) も、カーネル機構の一部とし�
 
 ## 今後のテーマ候補
 
-- システムコール境界 (kernel/userspace boundary) — `hardware/hw-sw-interface/abi-syscalls.md` の続き
+- システムコール境界のカーネル側 (kernel/userspace boundary) — エントリ処理、
+  `copy_from_user` とユーザポインタ検証、vDSO、seccomp による syscall フィルタ。
+  [`../../hardware/hw-sw-interface/abi-syscalls.md`](../../hardware/hw-sw-interface/abi-syscalls.md)
+  が扱う呼び出し規約・特権遷移（ハードウェア側）の続き
 - XDP と高速データプレーン深掘り — Katran / Cilium の実装分析、DPDK・カーネル
   バイパスとの対比、`../networking/` のトランスポート層との合流点
 - sched_ext によるスケジューラの eBPF 化 — `process-thread-scheduling.md`

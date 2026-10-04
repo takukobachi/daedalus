@@ -63,6 +63,31 @@
    ②〜④が 120 秒に収まるかは、状態外部化と粒度設計で事前に決まっている
 ```
 
+### 中断プロトコルのシーケンス
+
+上の 120 秒の退去を、関係者ごとのレーンに分けて時系列で示す。② から ④ を期限内に終えられるかどうかは、状態の外部化と仕事の粒度によって中断前に決まっている。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Prov as クラウド事業者 (容量回収)
+    participant Ctl as 調停ループ (Karpenter / ASG / エージェント)
+    participant LB as LB / キュー
+    participant Node as スポットインスタンス
+    participant Store as 外部ストレージ
+    Prov->>Ctl: 中断通知 (2 分前, IMDS / EventBridge)
+    Ctl->>LB: デレジスト・キュー購読停止 (新規受付停止)
+    Ctl->>Node: 進行中の仕事を処置
+    alt 冪等・再実行可
+        Node->>LB: キューへ返却 (visibility timeout / nack)
+    else 長時間ジョブ
+        Node->>Store: チェックポイント保存
+    end
+    Ctl->>Prov: 代替容量を起動 (別プール優先 = 相関回避)
+    Note over Prov,Node: 期限到来: 猶予は延長されない
+    Prov--xNode: インスタンス回収
+```
+
 ## 技術詳細 (Technical Details)
 
 ### 1. 旧スポットの解剖 — 「市場」の独立検証

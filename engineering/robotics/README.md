@@ -39,8 +39,9 @@
 ### 事例分析とソフトウェア基盤 (Case Studies & Software Stack)
 
 - [`humanoid-robots.md`](humanoid-robots.md) — ヒューマノイド事例分析
-  (2026-07 時点)：Tesla Optimus・Figure・Unitree・Boston Dynamics の設計比較
-  （アクチュエータ戦略、手と腱駆動、二系統 VLA、生産体制）。目標値と実証値を峻別
+  (2026-10 時点)：Tesla Optimus・Figure・Unitree・Boston Dynamics の設計比較
+  （アクチュエータ戦略、手と腱駆動、二系統 VLA、生産体制）と Agility・1X の動向、
+  ISO 25785-1 の策定状況。目標値と実証値を峻別
 - [`robot-software-stack.md`](robot-software-stack.md) — ロボットソフトウェアスタック：
   ROS 2 / DDS（QoS・ディスカバリ）、リアルタイム性の境界と ros2_control、
   Nav2 / MoveIt、シミュレーションと sim-to-real、SROS2

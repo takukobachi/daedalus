@@ -4,7 +4,7 @@
 
 仮想記憶 (virtual memory) は、各プロセスに「自分専用の連続したアドレス空間」という幻想を与える仕組みである。物理メモリの実体とは独立した**仮想アドレス (virtual address)** をプログラムが使い、**MMU (Memory Management Unit)** がそれを**物理アドレス (physical address)** へ変換する。この一段の間接化が、プロセス分離・メモリ保護・デマンドページング・共有メモリといった OS の基盤機能すべてを支えている。
 
-本ドキュメントは、アドレス変換の仕組み（ページテーブル、MMU、TLB）を整理し、`mmap`・ページフォルト・なぜ大量メモリ走査が遅いか、といったソフトウェア挙動の原因を明らかにする。既存の `cache-memory-hierarchy.md`（物理メモリの速度）と `memory-ordering-atomics.md`（共有の正しさ）の基盤に位置づけられる。
+本ドキュメントは、アドレス変換の仕組み（ページテーブル、MMU、TLB）を整理し、`mmap`・ページフォルト・なぜ大量メモリ走査が遅いか、といったソフトウェア挙動の原因を明らかにする。既存の [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md)（物理メモリの速度）と [`memory-ordering-atomics.md`](memory-ordering-atomics.md)（共有の正しさ）の基盤に位置づけられる。フォルト処理・置換・スワップといった OS 側の機構は [`../../software/operating-systems/virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md) が扱い、本書はハードウェア側（MMU/TLB/PTE）に集中する。
 
 ## 方法論 (Methodology)
 
@@ -14,11 +14,11 @@
 
 ## 発見事項 (Findings)
 
-1. **メモリはページ (page) 単位で管理される。** 一般に 4KiB。仮想・物理ともページ境界で区切られ、変換はページ番号単位で行われる。
-2. **変換表 (page table) は多段ツリー。** 64bit 空間を平坦な表で持つのは非現実的なため、4〜5段の階層構造で疎に表現する。
-3. **TLB が変換結果をキャッシュし、変換コストを隠す。** TLB ヒットならほぼ無料、ミスすると複数段のメモリアクセス（page walk）が発生する。
-4. **ページフォルト (page fault) は「例外」だが正常運用の一部。** デマンドページング、コピーオンライト、スワップはすべてフォルトを契機に動く。
-5. **TLB は性能だけでなく機密の境界でもある。** ページテーブル分離 (KPTI) や TLB の汚染はサイドチャネル・性能に直結する。
+1. **メモリはページ (page) 単位で管理される。** 一般に 4KiB。仮想・物理ともページ境界で区切られ、変換はページ番号単位で行われる[^denning70]。
+2. **変換表 (page table) は多段ツリー。** 64bit 空間を平坦な表で持つのは非現実的なため、4〜5段の階層構造で疎に表現する[^intel-sdm][^riscv-priv]。
+3. **TLB が変換結果をキャッシュし、変換コストを隠す。** TLB ヒットならほぼ無料、ミスすると複数段のメモリアクセス（page walk）が発生する[^hp]。
+4. **ページフォルト (page fault) は「例外」だが正常運用の一部。** デマンドページング、コピーオンライト、スワップはすべてフォルトを契機に動く[^ostep]。
+5. **TLB は性能だけでなく機密の境界でもある。** ページテーブル分離 (KPTI) や TLB の汚染はサイドチャネル・性能に直結する[^gruss17]。
 
 ## アーキテクチャ (Architecture)
 
@@ -45,10 +45,36 @@
         ページフォルト (page fault) → OS が処理
 ```
 
+### 変換フロー: TLB → ページウォーク → フォルト (Translation Flow)
+
+上図を判定の流れとして書き直す。x86-64 の4段ページング（RISC-V Sv48 も 9bit×4 段で同形、Sv39 は3段）を例に、各段で present ビットと権限を検査し、葉に達するか途中でフォルトするかが決まる[^intel-sdm][^riscv-priv]。
+
+```mermaid
+flowchart TD
+    VA["仮想アドレス (VA)"] --> TLB{"L1/L2 TLB ヒット?<br/>(ASID/PCID 一致)"}
+    TLB -- "Yes" --> PERM{"権限 OK?<br/>(R/W, U/S, NX)"}
+    TLB -- "No" --> PWC["ページウォーク開始<br/>基点 CR3 / SATP / TTBRn<br/>(MMU キャッシュで上位段を短絡)"]
+    PWC --> LV["段 L のエントリを読む<br/>L = 4 (PML4) → 3 → 2 → 1"]
+    LV --> P{"present = 1?"}
+    P -- "No" --> PF["ページフォルト例外<br/>(OS ハンドラへ)"]
+    P -- "Yes" --> LEAF{"葉か?<br/>(L = 1、または PS=1 のヒュージページ)"}
+    LEAF -- "No (次段の物理基底)" --> LV
+    LEAF -- "Yes" --> FILL["TLB に充填<br/>A/D ビットを更新"]
+    FILL --> PERM
+    PERM -- "Yes" --> PA["物理アドレス = PFN ‖ offset<br/>→ キャッシュ参照"]
+    PERM -- "No" --> PF
+    PF --> OS{"OS の判断"}
+    OS -- "正当 (デマンドページング / CoW / swap-in)" --> FIX["PTE を設定し命令を再実行"]
+    OS -- "不正アクセス" --> SEGV["SIGSEGV などで通知"]
+    FIX --> VA
+```
+
+- 各段の読み出しは前段の結果に依存する逐次アクセスであり、それ自体がデータキャッシュを経由する。ミス時に例外を上げて OS が TLB を埋めるソフトウェア管理 TLB では、上図のウォーク部分がハンドラの命令列に置き換わる[^hp]。
+
 ### ページとページテーブル
 
 - **ページ (page)**: 仮想空間の管理単位。標準 4KiB。大きな領域向けに**ヒュージページ (huge page)** 2MiB / 1GiB もある。
-- **ページテーブル (page table)**: VPN → PFN の対応表。x86-64 は4段（PML4 → PDPT → PD → PT、5段構成もあり）。各エントリ (PTE) は物理フレーム番号と属性ビットを持つ。
+- **ページテーブル (page table)**: VPN → PFN の対応表。x86-64 は4段（PML4 → PDPT → PD → PT、5段構成もあり）。各エントリ (PTE) は物理フレーム番号と属性ビットを持つ[^intel-sdm]。
   - present（実在するか）、R/W（書込可否）、U/S（ユーザ/特権）、NX（実行不可）、accessed/dirty（参照・更新の記録）。
 - **ページテーブルの基点**は制御レジスタ（x86 の `CR3`）が指す。**プロセス切り替え (context switch) で `CR3` を載せ替える**ことで、各プロセスが別の変換表＝別のアドレス空間を持つ。これがプロセス分離の本体。
 
@@ -58,14 +84,14 @@ page walk は最大4〜5回のメモリアクセスを要するため、毎回�
 
 - **TLB ヒット**: 変換が即座に済む（ほぼ無料）。
 - **TLB ミス**: page walk が走る。ハードウェア（x86）または OS（一部 RISC）が表を辿り TLB に充填。
-- **TLB フラッシュ**: プロセス切り替えで変換が変わるため TLB を無効化する必要がある。全フラッシュは高コストなので、**ASID/PCID（アドレス空間ID）** でエントリにプロセスタグを付け、切り替え時のフラッシュを避ける最適化がある。
-- **MMU キャッシュ**: page walk 自体を速めるため、中間段（PD など）をキャッシュする仕組みもある。
+- **TLB フラッシュ**: プロセス切り替えで変換が変わるため TLB を無効化する必要がある。全フラッシュは高コストなので、**ASID/PCID（アドレス空間ID）** でエントリにプロセスタグを付け、切り替え時のフラッシュを避ける最適化がある[^intel-sdm][^arm-arm]。
+- **MMU キャッシュ**: page walk 自体を速めるため、中間段（PD など）をキャッシュする仕組みもある[^barr10]。
 
 ### 多段ページテーブルとページウォーク (Multi-level Page Table & Page Walk)
 
-64bit のアドレス空間（理論上 16EiB）を平坦な配列で持つことは不可能なため、ページテーブルは**疎な木 (sparse tree)** として表現される。各段が次段の物理基底を指し、葉だけが実フレームを指す。マップされていない領域はその段のエントリが空（present=0）なので、木全体を持つ必要がない。
+64bit のアドレス空間（理論上 16EiB）を平坦な配列で持つことは不可能なため、ページテーブルは**疎な木 (sparse tree)** として表現される。各段が次段の物理基底を指し、葉だけが実フレームを指す[^ostep]。マップされていない領域はその段のエントリが空（present=0）なので、木全体を持つ必要がない。
 
-x86-64 の標準は**4段 (PML4)**。仮想アドレス48bit を 9bit×4＋12bit のオフセットに分割する。
+x86-64 の標準は**4段 (PML4)**。仮想アドレス48bit を 9bit×4＋12bit のオフセットに分割する[^intel-sdm]。
 
 ```
    x86-64 4段ページウォーク (4-level page walk)
@@ -83,9 +109,9 @@ x86-64 の標準は**4段 (PML4)**。仮想アドレス48bit を 9bit×4＋12bit
 ```
 
 - **段数ぶんのコスト**: TLB ミス1回につき最悪で段数と同数（4段なら4回、5段なら5回）の**逐次依存メモリアクセス**が発生する。各アクセスは前段の結果に依存するため並列化できず、しかも自身がキャッシュミスしうる。これが「TLB ミスは二重に高い」の正体。
-- **5段 (PML5 / LA57)**: 仮想アドレスを57bit に拡張し、512GiB を超える巨大アドレス空間（大規模サーバ）に対応する。段が1つ増える分ウォークも1段深くなる。
-- **ARMv8 (AArch64)**: 「**変換テーブル (translation table)**」と呼び、4KiB ページ＋48bit 仮想アドレスで同様に4段（粒度 16KiB/64KiB では段数が変わる）。基底レジスタは `TTBR0_EL1`（ユーザ）と `TTBR1_EL1`（カーネル）に分かれ、上位/下位アドレスで自動選択する点が x86 の単一 `CR3` と異なる。
-- **ハードウェアウォーカ vs ソフトウェア管理TLB**: x86 / ARM は**ハードウェアページテーブルウォーカ (HPTW)** を持ち、TLB ミスを CPU が自律的に解決する（OS はテーブル形式を ISA に従わせる）。対して古典的 MIPS や一部 RISC は**ソフトウェア管理TLB**で、ミス時に例外を上げ OS のハンドラがテーブルを辿って TLB へ書き込む。後者はテーブル形式が自由だがミスごとの例外コストが高い。RISC-V は HPTW 方式（`SATP` が基底を指す Sv39/Sv48/Sv57）。
+- **5段 (PML5 / LA57)**: 仮想アドレスを57bit に拡張し、512GiB を超える巨大アドレス空間（大規模サーバ）に対応する。段が1つ増える分ウォークも1段深くなる[^intel-sdm]。
+- **ARMv8 (AArch64)**: 「**変換テーブル (translation table)**」と呼び、4KiB ページ＋48bit 仮想アドレスで同様に4段（粒度 16KiB/64KiB では段数が変わる）。基底レジスタは `TTBR0_EL1`（ユーザ）と `TTBR1_EL1`（カーネル）に分かれ、上位/下位アドレスで自動選択する点が x86 の単一 `CR3` と異なる[^arm-arm]。
+- **ハードウェアウォーカ vs ソフトウェア管理TLB**: x86 / ARM は**ハードウェアページテーブルウォーカ (HPTW)** を持ち、TLB ミスを CPU が自律的に解決する（OS はテーブル形式を ISA に従わせる）。対して古典的 MIPS や一部 RISC は**ソフトウェア管理TLB**で、ミス時に例外を上げ OS のハンドラがテーブルを辿って TLB へ書き込む。後者はテーブル形式が自由だがミスごとの例外コストが高い。RISC-V は HPTW 方式（`SATP` が基底を指す Sv39/Sv48/Sv57）[^riscv-priv]。ISA 全体は [`isa-riscv-intro.md`](isa-riscv-intro.md) を参照。
 
 ### PTE のビットと保護機構 (PTE Bits & Protection)
 
@@ -104,15 +130,15 @@ x86-64 の標準は**4段 (PML4)**。仮想アドレス48bit を 9bit×4＋12bit
 - **U/S (user/supervisor)**: ユーザモードからアクセス可能か。カーネル領域は S にしてユーザからの参照を禁じる。
 - **NX (No-eXecute)**: このページからの命令フェッチを禁止。データ領域の実行を阻む W^X / DEP の基盤。
 - **A (accessed) / D (dirty)**: ハードが参照/更新時に自動でセットする。OS はこれをページ置換（どのページを退避するか）とライトバック（dirty なら書き戻す）の判断材料に使う。
-- **PCD/PWT/PAT (キャッシュ属性)**: そのページをキャッシュ可能か、ライトスルー/ライトバックか等を指定。MMIO 領域は uncacheable にする（`../hw-sw-interface/mmio-dma-interrupts.md`）。
+- **PCD/PWT/PAT (キャッシュ属性)**: そのページをキャッシュ可能か、ライトスルー/ライトバックか等を指定。MMIO 領域は uncacheable にする（[`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md)）。
 - **PS (page size)**: 中間段でこのビットを立てると、そこで木を打ち切りヒュージページ（2MiB/1GiB）になる。
 - **G (global)**: 後述のグローバルページ指定。
 
-権限ビットは page walk の各段で AND され、最も厳しい権限が適用される（途中段が R/W=0 なら末端が書込可でも書けない）。これにより上位段の1ビットで広範囲のアクセスを一括制御できる。
+権限ビットは page walk の各段で AND され、最も厳しい権限が適用される（途中段が R/W=0 なら末端が書込可でも書けない）。これにより上位段の1ビットで広範囲のアクセスを一括制御できる[^intel-sdm]。
 
 ### TLB の階層とカバレッジ (TLB Hierarchy & Coverage)
 
-TLB はキャッシュと同様に**多階層**化されている。現代 x86 は典型的に L1 TLB（命令用 iTLB とデータ用 dTLB に分離、各数十エントリ、1サイクル級）と、統合された L2 TLB（数千エントリ、数サイクル）を持つ。さらにページサイズ別に専用エントリ群を設けることが多い。
+TLB はキャッシュと同様に**多階層**化されている。現代 x86 は典型的に L1 TLB（命令用 iTLB とデータ用 dTLB に分離、各数十エントリ、1サイクル級）と、統合された L2 TLB（数千エントリ、数サイクル）を持つ。さらにページサイズ別に専用エントリ群を設けることが多い[^intel-opt]。
 
 ```
    TLB 階層とミス時の流れ
@@ -135,7 +161,7 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
    └───────────────────────┘
 ```
 
-- **カバレッジ (coverage / TLB reach)**: TLB が同時に覆える仮想空間の大きさ ＝ `エントリ数 × ページサイズ`。例えば 1536 エントリ × 4KiB ≒ 6MiB。これを超えるワーキングセットを走査すると、データがキャッシュに載っていても TLB ミスが恒常化する。ヒュージページはこのカバレッジを桁で拡大する手段である（後述）。
+- **カバレッジ (coverage / TLB reach)**: TLB が同時に覆える仮想空間の大きさ ＝ `エントリ数 × ページサイズ`。例えば 1536 エントリ × 4KiB ≒ 6MiB。これを超えるワーキングセットを走査すると、データがキャッシュに載っていても TLB ミスが恒常化する。ヒュージページはこのカバレッジを桁で拡大する手段である（後述）。大容量メモリのワークロードでは TLB ミス処理が実行時間の相当割合を占めうることが測定されている[^basu13]。
 - **グローバルページ (global page, G ビット)**: カーネルの恒久マッピングなど全プロセス共通のページは G を立て、プロセス切り替え時の TLB フラッシュから除外する。毎回フラッシュし直す無駄を省く（ただし KPTI 下ではユーザ/カーネルの分離のため扱いが変わる）。
 - **ASID / PCID (アドレス空間識別子, Address Space ID)**: 各 TLB エントリにプロセスのタグを付け、`CR3` 載せ替え時に全フラッシュせず「タグ不一致なら無視」で済ませる。コンテキストスイッチの実コストを大きく下げる中核最適化。ARM の ASID も同役割。
 
@@ -143,9 +169,9 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
 
 ### 1. なぜランダムな大量メモリ走査は二重に遅いのか
 
-大きな配列をランダムアクセスすると、`cache-memory-hierarchy.md` のキャッシュミスに加えて **TLB ミス**も多発する。1アクセスで「データのキャッシュミス（〜数百サイクル）」＋「TLB ミスによる page walk（さらに数回のメモリアクセス）」が重なる。
+大きな配列をランダムアクセスすると、[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) のキャッシュミスに加えて **TLB ミス**も多発する。1アクセスで「データのキャッシュミス（〜数百サイクル）」＋「TLB ミスによる page walk（さらに数回のメモリアクセス）」が重なる。
 
-**対策**: ヒュージページ (huge page) で1エントリが覆う範囲を 4KiB→2MiB に拡大し、TLB の到達範囲 (TLB reach) を広げてミスを減らす。データベースや JVM/大規模数値計算で有効。
+**対策**: ヒュージページ (huge page) で1エントリが覆う範囲を 4KiB→2MiB に拡大し、TLB の到達範囲 (TLB reach) を広げてミスを減らす。データベースや JVM/大規模数値計算で有効[^navarro02]。
 
 ### 2. ページフォルトを契機に動く OS 機能
 
@@ -164,11 +190,11 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
 
 ### 4. 仮想化での二段変換
 
-仮想マシンでは、ゲスト仮想 → ゲスト物理 → ホスト物理 の**二段変換**が要る。ハードウェア支援（Intel EPT / AMD NPT、いわゆる nested paging）が両段を担い、page walk のコストは増える（その分 TLB と MMU キャッシュが重要になる）。
+仮想マシンでは、ゲスト仮想 → ゲスト物理 → ホスト物理 の**二段変換**が要る。ハードウェア支援（Intel EPT / AMD NPT、いわゆる nested paging）が両段を担い、page walk のコストは増える（その分 TLB と MMU キャッシュが重要になる）[^bhargava08]。ハイパーバイザ側の構成は [`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) を参照。
 
 ### 5. TLB シュートダウン (TLB Shootdown)
 
-ページテーブルはメモリ上にあり全コアで共有されるが、**TLB は各コア私有**である。あるコアが PTE を変更（アンマップ、権限縮小、ページ移動）しても、他コアの TLB には古い変換が残り続ける。ハードウェアは TLB をコア間でコヒーレントに保たない（`cache-coherence.md` のキャッシュコヒーレンスと対照的）。この不整合を OS がソフトで解消する手続きが **TLB シュートダウン**である。
+ページテーブルはメモリ上にあり全コアで共有されるが、**TLB は各コア私有**である。あるコアが PTE を変更（アンマップ、権限縮小、ページ移動）しても、他コアの TLB には古い変換が残り続ける。ハードウェアは TLB をコア間でコヒーレントに保たない（[`cache-coherence.md`](cache-coherence.md) のキャッシュコヒーレンスと対照的）。この不整合を OS がソフトで解消する手続きが **TLB シュートダウン**である[^black89]。
 
 ```
    TLB シュートダウン (IPI ベース)
@@ -185,18 +211,18 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
      ▼
 ```
 
-- **コスト**: IPI の送信と全対象コアの割込み処理＋応答待ちが直列に入る（`../hw-sw-interface/mmio-dma-interrupts.md` の割込み機構を使う）。対象コア数 N に対しレイテンシは概ね O(N)〜数 µs 規模に達し、`munmap`／`mprotect`／ページ移行がスケールしない主因になる。
-- **緩和**: 無効化対象をマスクで絞る（そのアドレス空間を走らせていないコアは飛ばす）、複数 PTE 変更をまとめて1回のシュートダウンにバッチ化する、新しい ISA 拡張（ARMv8 の broadcast TLBI 命令、x86 の `INVLPGB` など）でハードに肩代わりさせる、といった手がある。**順序**が重要で、PTE を先に書き換えてからシュートダウンし、Ack 完了まで物理ページを再利用してはならない（さもないと古い TLB 経由で解放済みページへアクセスされる use-after-free 的な穴になる）。
+- **コスト**: IPI の送信と全対象コアの割込み処理＋応答待ちが直列に入る（[`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) の割込み機構を使う）。対象コア数 N に対しレイテンシは概ね O(N)〜数 µs 規模に達し、`munmap`／`mprotect`／ページ移行がスケールしない主因になる。
+- **緩和**: 無効化対象をマスクで絞る（そのアドレス空間を走らせていないコアは飛ばす）、複数 PTE 変更をまとめて1回のシュートダウンにバッチ化する、新しい ISA 拡張（ARMv8 の broadcast TLBI 命令、x86 の `INVLPGB` など）でハードに肩代わりさせる、といった手がある。**順序**が重要で、PTE を先に書き換えてからシュートダウンし、Ack 完了まで物理ページを再利用してはならない（さもないと古い TLB 経由で解放済みページへアクセスされる use-after-free 的な穴になる）[^black89][^arm-arm]。
 
 ### 6. ヒュージページとカバレッジ (Huge Pages & THP)
 
-**ヒュージページ (huge page)** は1エントリで大きな領域を覆い、TLB カバレッジを拡大する。x86-64 では 2MiB（PD 段で打ち切り）と 1GiB（PDPT 段で打ち切り）が使える。1エントリが覆う範囲が 4KiB→2MiB なら、同じ TLB エントリ数で覆える空間が 512 倍になり、page walk も1段浅くなる。
+**ヒュージページ (huge page)** は1エントリで大きな領域を覆い、TLB カバレッジを拡大する。x86-64 では 2MiB（PD 段で打ち切り）と 1GiB（PDPT 段で打ち切り）が使える。1エントリが覆う範囲が 4KiB→2MiB なら、同じ TLB エントリ数で覆える空間が 512 倍になり、page walk も1段浅くなる[^intel-sdm]。
 
-- **効果**: 大規模ワーキングセット（データベースのバッファプール、JVM ヒープ、HPC の配列）で TLB ミスを劇的に減らす。明示確保（`MAP_HUGETLB`、hugetlbfs）と、カーネルが自動で 4KiB を 2MiB に昇格する **THP (Transparent Huge Pages)** の2方式がある。
+- **効果**: 大規模ワーキングセット（データベースのバッファプール、JVM ヒープ、HPC の配列）で TLB ミスを劇的に減らす。明示確保（`MAP_HUGETLB`、hugetlbfs）と、カーネルが自動で 4KiB を 2MiB に昇格する **THP (Transparent Huge Pages)** の2方式がある[^linux-thp]。
 - **トレードオフ**:
   - **内部断片化 (internal fragmentation)**: 2MiB 単位で割り当てるため、わずかしか使わなくても 2MiB を消費しメモリを浪費しうる。
   - **CoW の粒度が粗い**: ヒュージページに書き込むと 2MiB 丸ごとを複製する羽目になり、`fork` 後の細かい書き込みが重くなる。
-  - **割り当ての難しさ**: 連続した物理 2MiB が要るため、断片化が進むと確保できず、THP のための圧縮 (compaction) がレイテンシスパイクを生むことがある（遅延に敏感な系で THP を無効化する事例の理由）。
+  - **割り当ての難しさ**: 連続した物理 2MiB が要るため、断片化が進むと確保できず、THP のための圧縮 (compaction) がレイテンシスパイクを生むことがある（遅延に敏感な系で THP を無効化する事例の理由）[^linux-thp][^navarro02]。
 
 ### 7. 二段アドレス変換の TLB コスト (Nested Paging TLB Cost)
 
@@ -208,8 +234,10 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
    （各ゲスト中間段アドレスがゲスト物理であり、ホスト変換を要するため）
 ```
 
+二次元ウォークの最悪 24 回という数は、AMD による nested paging の評価で示されたものである[^bhargava08]。
+
 - **含意**: 二段変換下では TLB ミスのペナルティが単段の数倍に膨れる。そのため仮想化環境では TLB ヒット率の維持がいっそう重要で、ヒュージページの効果も大きい。ハードは結合 TLB（ゲスト仮想→ホスト物理を直接キャッシュ）と、ネストされたページウォークキャッシュでこのコストを緩和する。
-- **IOMMU**: デバイス DMA に対するアドレス変換・保護は **IOMMU (Intel VT-d / AMD-Vi、ARM SMMU)** が担い、デバイスから見た仮想アドレス（IOVA）を物理へ変換する。これは「MMU のデバイス版」であり、DMA リマップ・デバイス分離・パススルー仮想化の基盤になる（詳細は `../hw-sw-interface/mmio-dma-interrupts.md`）。
+- **IOMMU**: デバイス DMA に対するアドレス変換・保護は **IOMMU (Intel VT-d / AMD-Vi、ARM SMMU)** が担い、デバイスから見た仮想アドレス（IOVA）を物理へ変換する。これは「MMU のデバイス版」であり、DMA リマップ・デバイス分離・パススルー仮想化の基盤になる（詳細は [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md)）。
 
 ### 8. ページフォルトの分類と OS の役割 (Page Fault Taxonomy)
 
@@ -217,20 +245,20 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
 
 - **マイナーフォルト**: 物理ページは既にメモリ上にある（別プロセスと共有中、または page cache に存在）が、当該プロセスの PTE が未設定。テーブルを埋めるだけで済み、I/O を伴わず軽い。デマンドページングの初回アクセスや CoW の多くがこれ。
 - **メジャーフォルト**: 必要なページがメモリになく、ストレージ（スワップ、またはファイルの未読部分）からの I/O を要する。ミリ秒級で桁違いに高い。
-- これらを契機に動く **demand paging / CoW / スワップ / mmap** は本ドキュメント前掲（技術詳細 2）の通り。フォルトハンドリングの OS 側の詳細、すなわち VMA 管理、置換アルゴリズム（LRU 近似に A ビットを使う）、スワップ機構、メモリ cgroup による制限は、`../../software/operating-systems/process-thread-scheduling.md` 隣接の今後の仮想記憶ドキュメントに委ねる。本書はあくまでハードウェア機構（MMU/TLB/PTE）側の記述に留める。
+- これらを契機に動く **demand paging / CoW / スワップ / mmap** は本ドキュメント前掲（技術詳細 2）の通り。フォルトハンドリングの OS 側の詳細、すなわち VMA 管理、置換アルゴリズム（LRU 近似に A ビットを使う）、スワップ機構、メモリ cgroup による制限は、[`../../software/operating-systems/virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md) に委ねる。本書はあくまでハードウェア機構（MMU/TLB/PTE）側の記述に留める。
 
 ## セキュリティ考察 (Security Considerations)
 
-- **Meltdown とページテーブル分離 (KPTI)**: 投機実行がカーネルページの内容をキャッシュ状態に漏らす Meltdown への対策として、ユーザ実行時にカーネルのマッピングをほぼ取り除く **KPTI (Kernel Page Table Isolation)** が導入された。代償として syscall ごとに TLB/CR3 操作が増え性能が低下する（PCID で緩和）。
-- **NX/DEP と W^X**: データ領域を実行不可にし、書き込み可能かつ実行可能なページを作らせない (W^X) ことで、コード注入攻撃を困難にする。
+- **Meltdown とページテーブル分離 (KPTI)**: 投機実行がカーネルページの内容をキャッシュ状態に漏らす Meltdown への対策として、ユーザ実行時にカーネルのマッピングをほぼ取り除く **KPTI (Kernel Page Table Isolation)** が導入された。代償として syscall ごとに TLB/CR3 操作が増え性能が低下する（PCID で緩和）[^lipp20][^gruss17]。
+- **NX/DEP と W^X**: データ領域を実行不可にし、書き込み可能かつ実行可能なページを作らせない (W^X) ことで、コード注入攻撃を困難にする。ソフトウェア側の緩和策の体系は [`../../software/security/memory-safety-exploit-mitigations.md`](../../software/security/memory-safety-exploit-mitigations.md) を参照。
 - **ASLR (Address Space Layout Randomization)**: マッピング位置を乱択し、攻撃者がアドレスを予測しにくくする。仮想記憶が前提の防御。
-- **TLB/ページングを使ったサイドチャネル**: page walk のタイミングや TLB の状態差から情報が漏れる攻撃がある。`cache-memory-hierarchy.md` のキャッシュサイドチャネルと同系統で、機密処理ではアクセスパターンの秘密依存を避ける。
+- **TLB/ページングを使ったサイドチャネル**: page walk のタイミングや TLB の状態差から情報が漏れる攻撃がある。[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) のキャッシュサイドチャネルと同系統で、機密処理ではアクセスパターンの秘密依存を避ける。
 
-- **Spectre 系と権限境界**: Meltdown（技術詳細上掲の KPTI で緩和）に対し、**Spectre** は分岐予測・投機実行を悪用して、同一権限内であってもプログラム自身の境界チェックを投機的に踏み越えさせ、秘密をキャッシュ状態経由で漏らす（`branch-prediction-speculation.md` 参照）。ページ権限（U/S, NX）はアーキテクチャ上のアクセスを止めるが、**投機的アクセスのマイクロアーキ副作用までは止めない**点が問題の核で、緩和は分岐絶縁（retpoline、IBRS/IBPB）やフェンス挿入に依存する。
+- **Spectre 系と権限境界**: Meltdown（技術詳細上掲の KPTI で緩和）に対し、**Spectre** は分岐予測・投機実行を悪用して、同一権限内であってもプログラム自身の境界チェックを投機的に踏み越えさせ、秘密をキャッシュ状態経由で漏らす（[`branch-prediction-speculation.md`](branch-prediction-speculation.md) 参照）[^kocher19]。ページ権限（U/S, NX）はアーキテクチャ上のアクセスを止めるが、**投機的アクセスのマイクロアーキ副作用までは止めない**点が問題の核で、緩和は分岐絶縁（retpoline、IBRS/IBPB）やフェンス挿入に依存する。
 
 - **SMEP / SMAP**: **SMEP (Supervisor Mode Execution Prevention)** はカーネル特権でユーザページ（U/S=user）の命令を実行することを禁じ、`ret2usr` 型（カーネル制御フローをユーザ空間のシェルコードへ飛ばす）攻撃を阻む。**SMAP (Supervisor Mode Access Prevention)** はカーネルがユーザページを不用意に読み書きすることを禁じ、ユーザ提供ポインタの誤参照を例外化する（正当なアクセスは `stac`/`clac` で一時許可）。いずれも PTE の U/S ビットを CPU が特権モードで再解釈する保護。
 
-- **KASLR とその弱点**: ユーザ空間の ASLR（前掲）に対し、**KASLR (Kernel ASLR)** はカーネルイメージのマッピング位置を起動時に乱択する。ただし TLB/キャッシュのタイミング差（マップ済みアドレスは未マップより page walk が速い等）からカーネル配置を逆算する攻撃が知られ、KPTI はこの de-randomization 経路の遮断にも寄与する。
+- **KASLR とその弱点**: ユーザ空間の ASLR（前掲）に対し、**KASLR (Kernel ASLR)** はカーネルイメージのマッピング位置を起動時に乱択する。ただし TLB/キャッシュのタイミング差（マップ済みアドレスは未マップより page walk が速い等）からカーネル配置を逆算する攻撃が知られ[^hund13]、KPTI（原型の KAISER）はこの de-randomization 経路の遮断を目的の一つとして提案された[^gruss17]。
 
 - **W^X の徹底**: NX/DEP（前掲）を前提に、書き込み可能かつ実行可能なページを存在させない **W^X** を強制すると、攻撃者は注入したデータを直接実行できず、ROP/JOP のような既存コード片の再利用へ追い込まれる。JIT は「書いてから実行不可へ、次に実行可能へ」と権限を切り替える（W xor X を時間方向で守る）必要がある。
 
@@ -243,21 +271,51 @@ TLB はキャッシュと同様に**多階層**化されている。現代 x86 �
 
 ### 次の接続先 (Related Topics)
 
-- `cache-memory-hierarchy.md` — TLB ミスと重なるデータのキャッシュミス。
-- `memory-ordering-atomics.md` — 共有メモリ（同一物理フレームの共有）の正しさ。
-- `cache-coherence.md` — TLB はコア間でコヒーレントでないため、ソフトによる TLB シュートダウンが要る（キャッシュとの対比）。
-- `branch-prediction-speculation.md` — 投機実行がページ権限境界を越えて副作用を残す Meltdown/Spectre の前提機構。
-- `../hw-sw-interface/mmio-dma-interrupts.md` — DMA と IOMMU（デバイス用のアドレス変換・保護）、および TLB シュートダウンに使う割込み (IPI)。
-- `../../software/operating-systems/process-thread-scheduling.md` — ページフォルト処理・置換・スワップの OS 側（今後の仮想記憶ドキュメントの隣接領域）。
+- [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — TLB ミスと重なるデータのキャッシュミス。
+- [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — 共有メモリ（同一物理フレームの共有）の正しさ。
+- [`cache-coherence.md`](cache-coherence.md) — TLB はコア間でコヒーレントでないため、ソフトによる TLB シュートダウンが要る（キャッシュとの対比）。
+- [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 投機実行がページ権限境界を越えて副作用を残す Meltdown/Spectre の前提機構。
+- [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) — DMA と IOMMU（デバイス用のアドレス変換・保護）、および TLB シュートダウンに使う割込み (IPI)。
+- [`../../software/operating-systems/virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md) — ページフォルト処理・置換・スワップ・THP 運用の OS 側。
+- [`../../software/operating-systems/process-thread-scheduling.md`](../../software/operating-systems/process-thread-scheduling.md) — コンテキストスイッチ（`CR3`/`SATP` 載せ替え）を伴うスケジューリング。
+- [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) — 特権遷移としてのシステムコール（KPTI 下のコスト）。
 
 ## 参考文献 (References)
 
-**一次資料 (Primary — 仕様・論文)**
+**一次資料 (Primary — 仕様・論文・教科書)**
 
-- Denning, P. J. (1970). Virtual Memory. *ACM Computing Surveys*, 2(3), 153–189. DOI: 10.1145/356571.356573 — 仮想記憶の古典的整理。
-- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 4 “Paging”. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。多段ページテーブル・PTE ビット・TLB 無効化の規範。
-- *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture* — Sv39/Sv48 と satp の規範。 — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。
+[^denning70]: Denning, P. J. (1970). Virtual Memory. *ACM Computing Surveys*, 2(3), 153–189. DOI: 10.1145/356571.356573 — 仮想記憶の古典的整理。
+
+[^intel-sdm]: Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 4 “Paging”. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。4/5段ページング・PTE ビット・PCID・TLB 無効化の規範。
+
+[^riscv-priv]: RISC-V International. *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture*. — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。Sv39/Sv48/Sv57 と satp の規範。
+
+[^arm-arm]: Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487). — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-10-04。VMSAv8-64 の変換テーブル・TTBR0/TTBR1・ASID・broadcast TLBI の規範。
+
+[^hp]: Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 2 / Appendix B（仮想記憶と TLB、ソフトウェア管理 TLB）。
+
+[^bhargava08]: Bhargava, R., Serebrin, B., Spadini, F., & Manne, S. (2008). Accelerating Two-Dimensional Page Walks for Virtualized Systems. *Proc. ASPLOS XIII*, 26–35. DOI: 10.1145/1346281.1346286 — nested paging の二次元ウォーク（最悪 24 回参照）とその緩和。
+
+[^barr10]: Barr, T. W., Cox, A. L., & Rixner, S. (2010). Translation Caching: Skip, Don't Walk (the Page Table). *Proc. ISCA '10*, 48–59. DOI: 10.1145/1815961.1815970 — ページウォーク（MMU）キャッシュの設計空間の整理。
+
+[^black89]: Black, D. L., Rashid, R. F., Golub, D. B., & Hill, C. R. (1989). Translation Lookaside Buffer Consistency: A Software Approach. *Proc. ASPLOS III*, 113–122. DOI: 10.1145/70082.68193 — IPI による TLB シュートダウンの古典。
+
+[^navarro02]: Navarro, J., Iyer, S., Druschel, P., & Cox, A. (2002). Practical, Transparent Operating System Support for Superpages. *Proc. OSDI '02*. — 透過的スーパーページ（ヒュージページ）の昇格・断片化のトレードオフ。
+
+[^basu13]: Basu, A., Gandhi, J., Chang, J., Hill, M. D., & Swift, M. M. (2013). Efficient Virtual Memory for Big Memory Servers. *Proc. ISCA '13*, 237–248. DOI: 10.1145/2508148.2485943 — 大容量メモリワークロードにおける TLB ミスのコスト測定。
+
+[^lipp20]: Lipp, M. et al. (2020). Meltdown: Reading Kernel Memory from User Space. *Communications of the ACM*, 63(6), 46–56. DOI: 10.1145/3357033 — Meltdown（USENIX Security 2018 初出）と KPTI の必要性。
+
+[^gruss17]: Gruss, D., Lipp, M., Schwarz, M., Fellner, R., Maurice, C., & Mangard, S. (2017). KASLR is Dead: Long Live KASLR. *Engineering Secure Software and Systems (ESSoS 2017)*, LNCS, 161–176. DOI: 10.1007/978-3-319-62105-0_11 — KPTI の原型 KAISER。
+
+[^hund13]: Hund, R., Willems, C., & Holz, T. (2013). Practical Timing Side Channel Attacks against Kernel Space ASLR. *2013 IEEE Symposium on Security and Privacy*, 191–205. DOI: 10.1109/SP.2013.23 — TLB/ページウォークのタイミングによる KASLR 破り。
+
+[^kocher19]: Kocher, P. et al. (2019). Spectre Attacks: Exploiting Speculative Execution. *2019 IEEE Symposium on Security and Privacy*, 1–19. DOI: 10.1109/SP.2019.00002 — 権限チェックを投機的に踏み越える攻撃の一次資料。
+
+[^intel-opt]: Intel. *Intel 64 and IA-32 Architectures Optimization Reference Manual*. — [intel.com](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-10-04。世代別の TLB 構成（エントリ数・ページサイズ別エントリ）。
+
+[^linux-thp]: The Linux Kernel documentation. *Transparent Hugepage Support*. — [docs.kernel.org](https://docs.kernel.org/admin-guide/mm/transhuge.html) — Accessed: 2026-10-04。THP の動作モードと compaction（khugepaged）の挙動。
 
 **二次資料 (Secondary)**
 
-- Arpaci-Dusseau, R. H., & Arpaci-Dusseau, A. C. *Operating Systems: Three Easy Pieces* — 仮想記憶章。 — [OSTEP](https://pages.cs.wisc.edu/~remzi/OSTEP/) — Accessed: 2026-07-02。OS 側（フォルト処理・置換）の無償公開教科書。
+[^ostep]: Arpaci-Dusseau, R. H., & Arpaci-Dusseau, A. C. *Operating Systems: Three Easy Pieces* — 仮想記憶章。 — [OSTEP](https://pages.cs.wisc.edu/~remzi/OSTEP/) — Accessed: 2026-07-02。OS 側（フォルト処理・置換）の無償公開教科書。

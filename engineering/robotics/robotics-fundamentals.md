@@ -4,7 +4,7 @@
 
 ロボット (robot) は、**センシング（知覚）→ 計算（判断）→ アクチュエーション（行動）** のループを物理世界に対して閉じる機械である。ソフトウェアだけのシステムと決定的に違うのは、このループの中に**慣性・摩擦・遅れ・ノイズを持つ物理プラント**が挟まっている点であり、ロボット工学 (robotics) とはこの「物理を挟んだ制御ループ」を意図どおりに・安全に・実時間で回すための学問体系である。
 
-本ドキュメントは、地上ロボットである産業用マニピュレータ (industrial manipulator)、脚式ロボット (legged robot)、自律移動ロボット (AMR) を対象に、ロボットを構成する要素技術（アクチュエータ・センサ・計算機・制御階層）を「なぜこの部品構成になるのか」の粒度で整理する。後続の `kinematics-dynamics.md`（機構の数学）と `control-systems.md`（制御則）の基礎となる、領域の入口である。
+本ドキュメントは、地上ロボットである産業用マニピュレータ (industrial manipulator)、脚式ロボット (legged robot)、自律移動ロボット (AMR) を対象に、ロボットを構成する要素技術（アクチュエータ・センサ・計算機・制御階層）を「なぜこの部品構成になるのか」の粒度で整理する。後続の [`kinematics-dynamics.md`](kinematics-dynamics.md)（機構の数学）と [`control-systems.md`](control-systems.md)（制御則）の基礎となる、領域の入口である。
 
 CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし、各主張には標準的なロボット工学の教科書（Siciliano, Lynch & Park ほか）と安全規格 (ISO 10218, ISO/TS 15066) を典拠として付す。
 
@@ -12,8 +12,8 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 
 - ロボットを **「機構 + アクチュエータ + センサ + 計算機」の4要素**に分解し、各要素を「性能指標」と「支配的なトレードオフ」で押さえる（トルク密度 vs バックドライバビリティ、分解能 vs 周期、汎用性 vs 決定性）。
 - 数値は代表機・部品カタログ・教科書の代表値に基づき、**桁感 (order of magnitude) を優先**する。個別製品の精密諸元ではなく、設計判断の理解が目的。
-- 制御は本ドキュメントでは**階層と周期**（どの層が何 Hz で回るか）の構造だけを押さえ、制御則の中身は `control-systems.md` に譲る。
-- 安全は「事故らないこと」ではなく**規格が定める設計手順**（ISO 10218 / ISO/TS 15066）として扱い、`../automotive/functional-safety-iso26262.md` の機能安全の考え方と接続する。
+- 制御は本ドキュメントでは**階層と周期**（どの層が何 Hz で回るか）の構造だけを押さえ、制御則の中身は [`control-systems.md`](control-systems.md) に譲る。
+- 安全は「事故らないこと」ではなく**規格が定める設計手順**（ISO 10218 / ISO/TS 15066）として扱い、[`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) の機能安全の考え方と接続する。
 
 ## 発見事項 (Findings)
 
@@ -58,7 +58,7 @@ flowchart TB
 ```
 
 - ループは入れ子であり、**内側のループは外側より 5〜10 倍以上速く**回すのが設計の定石（外側から見て内側が「即応する理想アクチュエータ」に見えるようにする）。
-- 駆動層は専用 IC / マイコン（モータードライバ）、制御層はリアルタイム制御器、計画層は汎用計算機（Linux + GPU）と、**周期要件がそのまま計算機の種類に対応**する。層間を繋ぐ産業用フィールドバス（EtherCAT 等）は `control-systems.md` で扱う。
+- 駆動層は専用 IC / マイコン（モータードライバ）、制御層はリアルタイム制御器、計画層は汎用計算機（Linux + GPU）と、**周期要件がそのまま計算機の種類に対応**する。層間を繋ぐ産業用フィールドバス（EtherCAT 等）は [`control-systems.md`](control-systems.md) で扱う。
 
 ### ロボットの分類
 
@@ -71,7 +71,7 @@ flowchart TB
 | 脚式・ヒューマノイド | 多接触・浮遊ベース | 四足ロボット、人型 | 動的バランス・高トルク密度 |
 
 - 直列リンク機構は可動域が広い代わりに誤差と慣性が先端へ累積し、パラレル機構は逆に高剛性・高速だが可動域が狭い。このように、**機構トポロジーの選択が精度・速度・可動域のトレードオフを最初に決める**。
-- 脚式は「床に固定されていない（浮遊ベース, floating base）」「接触が断続する」の2点で他と質的に異なり、制御問題が一段難しくなる（`control-systems.md` の MPC 節で触れる）。
+- 脚式は「床に固定されていない（浮遊ベース, floating base）」「接触が断続する」の2点で他と質的に異なり、制御問題が一段難しくなる（[`control-systems.md`](control-systems.md) の MPC 節で触れる）。
 
 ## 技術詳細 (Technical Details)
 
@@ -83,7 +83,7 @@ flowchart TB
 τ = K_t · i        （τ: トルク, K_t: トルク定数, i: 電流）
 ```
 
-- この線形性が「**電流を測ればトルクが分かる**」ことを意味し、後述の QDD によるトルク推定の物理的根拠になる。磁気の原理は [`../../foundations/physics/electromagnetism/current-magnetostatics.md`](../../foundations/physics/electromagnetism/current-magnetostatics.md) を参照。
+- この線形性が「**電流を測ればトルクが分かる**」ことを意味し、後述の QDD によるトルク推定の物理的根拠になる。磁気の原理は [`../../foundations/physics/electromagnetism/current-magnetostatics.md`](../../foundations/physics/electromagnetism/current-magnetostatics.md)、回転に伴う逆起電力とインダクタンスは [`../../foundations/physics/electromagnetism/induction-inductance.md`](../../foundations/physics/electromagnetism/induction-inductance.md) を参照。
 - 駆動はインバータによる**ベクトル制御 (field-oriented control, FOC)** が標準で、電流ループを 10〜40 kHz で回す。EV のトラクションモーターと同じ技術系譜であり（[`../automotive/ev/tesla-battery-powertrain.md`](../automotive/ev/tesla-battery-powertrain.md) 参照）、ロボットはその小型・高応答版といえる。
 - ロボット用途で重要な性能指標は最高出力よりも**トルク密度 (Nm/kg) と熱的な連続トルク**。関節は低速・高トルク・頻繁な正逆転で使われるため、熱設計（巻線の許容温度）が実効性能を決める。
 
@@ -149,7 +149,7 @@ J_reflected = N² · J_m
 
 ### 機能安全 — 規格の構造
 
-- **ISO 10218-1/-2**（産業用ロボットの安全要求）が製造者側（-1: ロボット本体）と統合者側（-2: システム統合）の要求を定める[^iso10218]。安全関連制御部の性能は ISO 13849-1 のパフォーマンスレベル (PL) / IEC 62061 の SIL で規定され、`../automotive/functional-safety-iso26262.md` の ASIL と同じ「リスクに応じた完全性レベル」の考え方である。
+- **ISO 10218-1/-2**（産業用ロボットの安全要求）が製造者側（-1: ロボット本体）と統合者側（-2: システム統合）の要求を定める[^iso10218]。安全関連制御部の性能は ISO 13849-1 のパフォーマンスレベル (PL) / IEC 62061 の SIL で規定され、[`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) の ASIL と同じ「リスクに応じた完全性レベル」の考え方である。
 - **ISO/TS 15066**（協働ロボット）は人とロボットの協働を4方式に整理する[^iso15066]。
   1. 安全適合監視停止 (safety-rated monitored stop) — 人が入ると停止
   2. ハンドガイド (hand guiding) — 人が直接誘導

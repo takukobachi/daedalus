@@ -61,6 +61,21 @@
  ⑥ 閉ループ:           cloud-observability → (本書)
 ```
 
+### 学習経路の依存グラフ
+
+上の学習経路を依存グラフとして描き直す。矢印は「先に読むと後段の語彙が揃う」順序であり、各段の注記はその段で中心になる原則番号である。
+
+```mermaid
+flowchart LR
+    S1["① 土台 (機構)<br/>virtualization / object-storage /<br/>distributed-systems"]
+    S2["② 経済と制御<br/>serverless-faas → control-planes → spot<br/>(原則 1, 2, 4)"]
+    S3["③ 権限と信頼<br/>IAM → KMS・機密計算 → network<br/>(原則 5, 6)"]
+    S4["④ データ<br/>databases → block-storage → lakehouse<br/>(原則 3, 4, 7)"]
+    S5["⑤ 組み立て<br/>K8s → event-driven → IaC → multi-region<br/>(調停ループの連続体)"]
+    S6["⑥ 閉ループ<br/>observability → 本書"]
+    S1 --> S2 --> S3 --> S4 --> S5 --> S6
+```
+
 ## 技術詳細 (Technical Details) — 原則の使い方
 
 ### 1. 設計レビューの質問群への変換

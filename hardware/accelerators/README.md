@@ -13,7 +13,7 @@
   スケールアウト学習 (interconnects & scale-out training)：スケールアップ (NVLink/NVSwitch) と
   スケールアウト (InfiniBand/RoCEv2) の2階層、リング/木 all-reduce の算術、GPUDirect RDMA、
   SHARP (スイッチ内リダクション)、レール最適化、万台規模の故障と可用性。
-  `../networking/` と `../../software/ai/ml-training-systems.md` の中間層
+  `../networking/` と [`../../software/ai/ml-training-systems.md`](../../software/ai/ml-training-systems.md) の中間層
 
 ## 今後のテーマ候補
 

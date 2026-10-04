@@ -6,7 +6,7 @@
 
 EV の本質は、自動車を**エネルギー貯蔵・電力変換・制御の問題**として捉え直すことにある。ICE が機械（ピストン・変速機・排気）の塊だったのに対し、EV は電気とソフトウェアの比重が大きい。本ドキュメントは、EV パワートレインを構成要素に分解し、各要素の原理と設計トレードオフ（エネルギー密度 vs コスト、効率 vs 重量、充電速度 vs 電池寿命）を Level 3 で整理する。後続の**テスラ深掘り**（バッテリ/4680・パワートレイン・E/E アーキ・製造）の共通土台とすることを狙う。
 
-> 既存の `../in-vehicle-networks.md`（車載ネットワークと ECU）・`../functional-safety-iso26262.md`（機能安全）が「制御と通信」を扱うのに対し、本章は「電動化そのもの（エネルギーと動力）」を扱う。原理は EV 工学の標準教科書（Husain, Ehsani ほか）を一次資料とする（CLAUDE.md「Source Hierarchy」: 原理は教科書/査読/標準を優先）。
+> 既存の [`../in-vehicle-networks.md`](../in-vehicle-networks.md)（車載ネットワークと ECU）・[`../functional-safety-iso26262.md`](../functional-safety-iso26262.md)（機能安全）が「制御と通信」を扱うのに対し、本章は「電動化そのもの（エネルギーと動力）」を扱う。原理は EV 工学の標準教科書（Husain, Ehsani ほか）を一次資料とする（CLAUDE.md「Source Hierarchy」: 原理は教科書/査読/標準を優先）。
 
 ## 方法論 (Methodology)
 
@@ -30,24 +30,24 @@ EV の本質は、自動車を**エネルギー貯蔵・電力変換・制御の
 
 ### EV パワートレインの構成 (Powertrain Block Diagram)
 
+```mermaid
+flowchart LR
+    ACG["AC 系統<br/>(普通充電)"] --> OBC["車載充電器 OBC<br/>(AC→DC)"]
+    DCFC["DC 急速充電器<br/>(充電器側で DC 化)"] ==> PACK
+    OBC --> PACK["電池パック<br/>~400 / 800 V"]
+    PACK <==> INV["インバータ<br/>(DC↔三相 AC, PWM)"]
+    INV <==> MOT["モータ<br/>(回生時は発電機)"]
+    MOT <==> GEAR["減速ギア + デフ"]
+    GEAR <==> WHL["車輪"]
+    PACK --> DCDC["DC-DC コンバータ<br/>(HV→12 V)"]
+    DCDC --> AUX["12 V 補機<br/>(灯火・制御・空調等)"]
+    BMS["BMS<br/>(電圧・温度・SoC/SoH)"] -. "監視・保護" .- PACK
+    THM["熱マネジメント<br/>(液冷・ヒートポンプ)"] -. "温調" .- PACK
+    VCU["車両制御 (VCU)"] -. "トルク指令" .-> INV
+    BMS -. "許容電力" .-> VCU
 ```
-                 ┌──────────────── 高電圧 DC バス ────────────────┐
-                 │                                               │
-   ┌─────────┐   │   ┌──────────┐   ┌──────────┐   ┌─────────┐   │
-   │ 電池パック │──┼──▶│ インバータ │──▶│  モータ   │──▶│ 減速ギア │──▶ 車輪
-   │ (Battery) │◀─┼───│ (DC→3φAC) │◀──│ (回生で   │   │ + デフ  │   (駆動)
-   │  ~400/800V│   │   │ PWM 制御  │   │  発電機に) │   └─────────┘
-   └─────────┘   │   └──────────┘   └──────────┘
-        │        │        │
-        │        │   ┌────────────┐  ┌──────────────┐
-        │        └──▶│ DC-DCコンバ │─▶│ 12V系/補機    │（灯火・制御・空調等）
-        │            │ (HV→12V)   │  └──────────────┘
-        │            └────────────┘
-        │        ┌──────────────┐
-        └───────▶│ 車載充電器 OBC │◀── AC 普通充電（系統 AC→DC）
-        │        └──────────────┘
-        └──────────────────────────◀── DC 急速充電（充電器側で DC 直結）
-```
+
+凡例: 太線＝高電力経路、両矢印＝回生で逆向きにも流れる経路、細線＝補機・充電経路、点線＝監視・制御信号。電力は電池→インバータ→モータ→車輪と流れ、減速時は逆向きに回生される。BMS が電池の許容電力を車両制御へ伝え、それがインバータへのトルク指令の上限になる。
 
 | 要素 | 役割 | ICE の対応物 |
 |---|---|---|
@@ -109,7 +109,7 @@ EV 用モータの主流は2種ある。
 | **誘導機 (induction, IM)** | 回転子に電流を誘導し回す（磁石不要） | 磁石不要・堅牢・高速域で有利 | 効率・トルク密度はやや劣る |
 
 - **瞬時トルク**: 電動機は停止状態から最大トルクを出せるため、EV は変速機をほぼ不要にし、加速が滑らか。
-- **界磁弱め (field weakening)**: 高速域で逆起電力を抑え回転数を伸ばす制御。
+- **界磁弱め (field weakening)**: 高速域で逆起電力を抑え回転数を伸ばす制御。逆起電力・発電機作用（回生）の電磁気学的原理は [`induction-inductance.md`](../../../foundations/physics/electromagnetism/induction-inductance.md) §2 を参照。
 - テスラのように**前後で PMSM と誘導機を使い分ける**（効率と性能の両取り）設計もある（深掘りで詳述）。
 
 ### 3. 電力変換器 — インバータと半導体 (Power Electronics)
@@ -121,7 +121,7 @@ EV 用モータの主流は2種ある。
 | **IGBT**（シリコン） | 成熟・安価、スイッチング損失やや大 | 従来の標準 |
 | **SiC MOSFET**（炭化ケイ素） | 高速・低損失・高温/高電圧に強い | **効率↑→航続↑、800V 化に好適**（コスト高） |
 
-- SiC 採用で**インバータ損失を低減**し、同じ電池で航続を伸ばせる。テスラ Model 3 が量産車で先駆けて SiC を採用した。
+- SiC 採用で**インバータ損失を低減**し、同じ電池で航続を伸ばせる。SiC が高温・高電圧に強いのはバンドギャップが広い（~3.3 eV、Si は 1.12 eV）ためで、その物理は [`band-theory-semiconductors.md`](../../../foundations/physics/quantum-solid-state/band-theory-semiconductors.md) の工学への接続を参照。テスラ Model 3 が量産車で先駆けて SiC を採用した。
 - 周辺に **DC-DC コンバータ**（高電圧→12V 補機）と **車載充電器 (OBC)**（AC→DC）が付く。これらを**一体化（パワーエレクトロニクス統合）** して小型軽量化する流れがある。
 
 ### 4. 回生ブレーキ (Regenerative Braking)
@@ -158,11 +158,11 @@ EV 用モータの主流は2種ある。
         （＋回生で運動エネルギーを回収）
 ```
 
-EV はエネルギー密度でガソリンに約2桁劣るが、**タンク→車輪効率で 2–3 倍優位**かつ回生で回収できるため、実用エネルギー効率は大きく上回る（ウェル・トゥ・ホイールは発電構成に依存）。
+ICE の熱効率が低いのは、熱機関である以上カルノー効率で上限が抑えられ、実機はさらにそれを下回るためである（[`laws-entropy-heat-engines.md`](../../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) §4）。電動機は熱機関ではないため、この上限を受けない。EV はエネルギー密度でガソリンに約2桁劣るが、**タンク→車輪効率で 2–3 倍優位**かつ回生で回収できるため、実用エネルギー効率は大きく上回る（ウェル・トゥ・ホイールは発電構成に依存）。
 
 ## 安全考察 (Safety Considerations)
 
-> 本分野の「セキュリティ考察」を、EV では**電気安全・熱安全**として読み替える（`../functional-safety-iso26262.md` の機能安全と相補的）。
+> 本分野の「セキュリティ考察」を、EV では**電気安全・熱安全**として読み替える（[`../functional-safety-iso26262.md`](../functional-safety-iso26262.md) の機能安全と相補的）。
 
 | ハザード | 機構 | 対策・標準 |
 |---|---|---|
@@ -171,7 +171,7 @@ EV はエネルギー密度でガソリンに約2桁劣るが、**タンク→�
 | **衝突安全** | パックの圧壊・短絡・漏液 | 構造保護（床下配置・剛性筐体）、クラッシュ時遮断、ISO 6469 / UN R100 |
 | **充電時の事故** | 過電流・接触不良・発熱 | 規格化されたハンドシェイク（充電器⇄車）、温度監視、ロック機構 |
 
-主な標準: **ISO 6469**（EV 電気安全）、**UN ECE R100**（高電圧安全）、**ISO 26262**（機能安全, `../functional-safety-iso26262.md`）、**SAE J1772 / IEC 62196**（充電）。
+主な標準: **ISO 6469**（EV 電気安全）、**UN ECE R100**（高電圧安全）、**ISO 26262**（機能安全, [`../functional-safety-iso26262.md`](../functional-safety-iso26262.md)）、**SAE J1772 / IEC 62196**（充電）。
 
 ## 結論 (Conclusions)
 
@@ -205,6 +205,12 @@ EV はエネルギー密度でガソリンに約2桁劣るが、**タンク→�
 
 **本リポジトリ内参照**
 
-- `../in-vehicle-networks.md` — 車載ネットワークと ECU（制御・通信層）。
-- `../functional-safety-iso26262.md` — 機能安全（ISO 26262）。
-- `tesla-battery-powertrain.md` / `tesla-software-manufacturing.md` — 本基礎を踏まえたテスラ深掘り。
+- [`../in-vehicle-networks.md`](../in-vehicle-networks.md) — 車載ネットワークと ECU（制御・通信層）。
+- [`../functional-safety-iso26262.md`](../functional-safety-iso26262.md) — 機能安全（ISO 26262）。
+- [`tesla-battery-powertrain.md`](tesla-battery-powertrain.md) / [`tesla-software-manufacturing.md`](tesla-software-manufacturing.md) — 本基礎を踏まえたテスラ深掘り。
+- [`../../energy/battery-energy-storage.md`](../../energy/battery-energy-storage.md) — 同じリチウムイオンセル・BMS を系統用蓄電 (BESS) に用いた場合の設計。
+- [`../ee-architecture.md`](../ee-architecture.md) — 電動化と並行して進む E/E アーキテクチャの集約。
+- [`../../../foundations/physics/electromagnetism/induction-inductance.md`](../../../foundations/physics/electromagnetism/induction-inductance.md) — 電動機・発電機（回生）と逆起電力の原理。
+- [`../../../foundations/physics/electromagnetism/circuit-theory.md`](../../../foundations/physics/electromagnetism/circuit-theory.md) — 電力 P = VI、電池の等価回路、インバータの回路理論。
+- [`../../../foundations/physics/quantum-solid-state/band-theory-semiconductors.md`](../../../foundations/physics/quantum-solid-state/band-theory-semiconductors.md) — SiC/GaN（ワイドバンドギャップ）の物理。
+- [`../../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) — ICE 熱効率の上限（カルノー）と熱マネジメントの伝熱。

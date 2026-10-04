@@ -2,9 +2,9 @@
 
 ## 概要 (Overview)
 
-`kinematics-dynamics.md` で運動方程式 `M(q)q̈ + C(q,q̇)q̇ + g(q) = τ` を手に入れた。制御 (control) とは、この方程式に対して「望む運動・望む力学的振る舞いを実現するトルク `τ` を、センサの測定値から実時間で決め続ける」ことである。
+[`kinematics-dynamics.md`](kinematics-dynamics.md) で運動方程式 `M(q)q̈ + C(q,q̇)q̇ + g(q) = τ` を手に入れた。制御 (control) とは、この方程式に対して「望む運動・望む力学的振る舞いを実現するトルク `τ` を、センサの測定値から実時間で決め続ける」ことである。
 
-本ドキュメントは、ロボット制御を**モデルへの依存度の順**に整理する。モデルを使わない PID から、モデルで線形化する計算トルク法、最適化として解く LQR/MPC、そして目標自体を「運動」から「力学的関係」へ置き換えるインピーダンス制御までを並べ、それを支えるリアルタイム実行基盤（制御周期・産業用フィールドバス EtherCAT）まで通して扱う。`../aerospace/avionics-gnc.md` の GNC ループ、`../energy/plant-control-scada-security.md` のプラント制御と対比しながら読むと、「制御工学の同じ枠組みが対象ごとにどう形を変えるか」が見える。
+本ドキュメントは、ロボット制御を**モデルへの依存度の順**に整理する。モデルを使わない PID から、モデルで線形化する計算トルク法、最適化として解く LQR/MPC、そして目標自体を「運動」から「力学的関係」へ置き換えるインピーダンス制御までを並べ、それを支えるリアルタイム実行基盤（制御周期・産業用フィールドバス EtherCAT）まで通して扱う。[`../aerospace/avionics-gnc.md`](../aerospace/avionics-gnc.md) の GNC ループ、[`../energy/plant-control-scada-security.md`](../energy/plant-control-scada-security.md) のプラント制御と対比しながら読むと、「制御工学の同じ枠組みが対象ごとにどう形を変えるか」が見える。
 
 CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし、各主張には標準的教科書（Åström & Murray, Siciliano ほか）と一次文献（Hogan のインピーダンス制御など）を典拠として付す。
 
@@ -17,13 +17,13 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 
 ## 発見事項 (Findings)
 
-1. **産業用ロボットの大半は、今も単軸 PID + フィードフォワードで動いている。** 高減速比の減速機が反射慣性 `N²·J_m` でリンク間の連成を覆い隠すため、各関節を独立した線形系として扱えてしまう（`kinematics-dynamics.md` 参照）。モデルベース制御が必須になるのは、低減速比 (QDD)・高速動作・力制御の領域である。
+1. **産業用ロボットの大半は、今も単軸 PID + フィードフォワードで動いている。** 高減速比の減速機が反射慣性 `N²·J_m` でリンク間の連成を覆い隠すため、各関節を独立した線形系として扱えてしまう（[`kinematics-dynamics.md`](kinematics-dynamics.md) 参照）。モデルベース制御が必須になるのは、低減速比 (QDD)・高速動作・力制御の領域である。
 2. **フィードフォワードが仕事の大半をし、フィードバックは残差を消す。** 既知の軌道に対しては逆動力学で必要トルクを先に計算して与え（計算トルク法）、フィードバックにはモデル誤差と外乱だけを担当させる。この役割分担が高精度と安定性を両立させる定石である[^siciliano]。
-3. **LQR は「ゲイン調整を最適化問題に置き換える」発想の転換である。** 二次コスト `∫(xᵀQx + uᵀRu)dt` を最小化する状態フィードバック `u = −Kx` が Riccati 方程式から一意に決まる。多入出力 (MIMO) 系で「どの軸のゲインをいくつにするか」を個別に調整する代わりに、重み `Q, R` という設計意図だけを指定すればよい[^astrom-murray]。
-4. **MPC の本質は「制約を明示的に扱えること」である。** 関節トルク上限・可動域・接触力の摩擦錐といった不等式制約の下で、有限ホライズンの最適化を毎周期解き直す (receding horizon)。凸 QP への定式化と数値ソルバの進歩により、脚式ロボットの接触計画すら実時間で解けるようになった。四足ロボットの動的歩行を実現したのは制御理論の新定理ではなく**最適化の計算が周期内に収まるようになったこと**である[^dicarlo-mpc]。
+3. **LQR は「ゲイン調整を最適化問題に置き換える」発想の転換である。** 二次コスト `∫(xᵀQx + uᵀRu)dt` を最小化する状態フィードバック `u = −Kx` が Riccati 方程式から一意に決まる[^kalman-lqr]。多入出力 (MIMO) 系で「どの軸のゲインをいくつにするか」を個別に調整する代わりに、重み `Q, R` という設計意図だけを指定すればよい[^astrom-murray]。
+4. **MPC の本質は「制約を明示的に扱えること」である。** 関節トルク上限・可動域・接触力の摩擦錐といった不等式制約の下で、有限ホライズンの最適化を毎周期解き直す (receding horizon)。凸 QP への定式化（[`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md)）と数値ソルバの進歩により、脚式ロボットの接触計画すら実時間で解けるようになった[^rawlings-mpc]。四足ロボットの動的歩行を実現したのは制御理論の新定理ではなく**最適化の計算が周期内に収まるようになったこと**である[^dicarlo-mpc]。
 5. **接触するロボットでは、位置制御は原理的に破綻する。** 剛な環境に対する位置制御は、ミリメートル級の位置誤差を巨大な接触力に変換する（環境剛性が高いほど激しく）。解は「位置と力を同時に指定する」ことではなく、**位置と力の関係（機械インピーダンス）を指定する**ことである。Hogan のインピーダンス制御は、ロボットを仮想的なバネ・マス・ダンパ系として振る舞わせる[^hogan]。協働ロボットの「押すと退く」挙動はこの実装である。
-6. **制御性能の上限は制御則ではなく実行基盤が決めることが多い。** サンプリング周期は達成可能な閉ループ帯域を直接制限し、ジッタは実効的な位相遅れとして安定余裕を減らす。産業用フィールドバス EtherCAT が分散クロックでサブマイクロ秒級の同期を提供するのは、多軸補間の同時性が加工精度そのものだからである[^ethercat]。
-7. **安全機能は制御則の外に置く。** STO (safe torque off)・SLS (safely-limited speed) などのドライブ安全機能 (IEC 61800-5-2) は、制御計算機の暴走・侵害からも独立して働くよう、認証された別経路に実装される。「制御ソフトの品質」と「安全」を分離するこの構造は、車載 (`../automotive/functional-safety-iso26262.md`) と同じ設計思想である。
+6. **制御性能の上限は制御則ではなく実行基盤が決めることが多い。** サンプリング周期は達成可能な閉ループ帯域を直接制限し、ジッタは実効的な位相遅れとして安定余裕を減らす[^astrom-wittenmark]。産業用フィールドバス EtherCAT が分散クロックでサブマイクロ秒級の同期を提供するのは、多軸補間の同時性が加工精度そのものだからである[^ethercat]。
+7. **安全機能は制御則の外に置く。** STO (safe torque off)・SLS (safely-limited speed) などのドライブ安全機能 (IEC 61800-5-2)[^iec61800-5-2] は、制御計算機の暴走・侵害からも独立して働くよう、認証された別経路に実装される。「制御ソフトの品質」と「安全」を分離するこの構造は、車載 ([`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md)) と同じ設計思想である。
 
 ## アーキテクチャ (Architecture)
 
@@ -51,7 +51,7 @@ flowchart LR
     M -->|電流センサ| CC
 ```
 
-- 内側ループほど速く回し、外側からは「理想化された速いアクチュエータ」に見せる。**内外の帯域を 5〜10 倍以上離す**のがカスケード設計の経験則で、これが `robotics-fundamentals.md` の周期階層の理由である。
+- 内側ループほど速く回し、外側からは「理想化された速いアクチュエータ」に見せる。**内外の帯域を 5〜10 倍以上離す**のがカスケード設計の経験則で、これが [`robotics-fundamentals.md`](robotics-fundamentals.md) の周期階層の理由である。
 - フィードフォワード経路（逆動力学）とフィードバック経路（サーボ）が並走し、電流指令で合流する。モデルが正確なほどフィードバック側の負担（＝ゲイン）を下げられ、ノイズ増幅と発振リスクが減る。
 
 ### 制御則の階段 — モデル依存度による整理
@@ -73,7 +73,7 @@ flowchart LR
 ```
 
 - 比例 `K_p` は仮想バネ、微分 `K_d` は仮想ダンパとして働く。積分項は定常偏差（主に重力・摩擦）を消すが、飽和との組合せでワインドアップ (integrator windup) を起こすため、アンチワインドアップ処理が実装上必須[^astrom-murray]。
-- 重力項 `g(q)` だけモデルから補償する「PD + 重力補償」は、受動性（`Ṁ − 2C` の歪対称性）により**大域漸近安定が証明できる**。モデルの一部だけを使う折衷が、理論的にも正当化される代表例である[^siciliano]。
+- 重力項 `g(q)` だけモデルから補償する「PD + 重力補償」は、受動性（`Ṁ − 2C` の歪対称性）により**大域漸近安定が証明できる**[^takegaki-arimoto]。モデルの一部だけを使う折衷が、理論的にも正当化される代表例である[^siciliano]。
 - 限界: ゲインは動作点周りの応答で調整するため、慣性が配位で大きく変わる（腕を伸ばす/畳む）低減速比機では、全域で良い応答を得られない。
 
 ### 2. 計算トルク法 (Computed Torque / Inverse Dynamics Control)
@@ -97,7 +97,7 @@ J = ∫₀^∞ (xᵀQx + uᵀRu) dt   →   u = −Kx,  K は代数 Riccati 方�
 
 - `Q`（状態誤差の重み）と `R`（入力の重み）が唯一の設計変数で、「精度と省エネのトレードオフ」を直接表現する。安定性は保証付き（可制御性の下で）。
 - 状態が直接測れない場合は観測器（カルマンフィルタ）と組み合わせる (LQG)。倒立振子としてのバランス制御（セグウェイ型・ヒューマノイドの直立）が典型的な適用先。
-- 固有値・可制御性の数学は [`../../foundations/mathematics/linear-algebra/eigenvalues-diagonalization.md`](../../foundations/mathematics/linear-algebra/eigenvalues-diagonalization.md) が基礎になる。`../aerospace/avionics-gnc.md` の飛行制御と同じ道具立てである。
+- 固有値・可制御性の数学は [`../../foundations/mathematics/linear-algebra/eigenvalues-diagonalization.md`](../../foundations/mathematics/linear-algebra/eigenvalues-diagonalization.md) が基礎になる。[`../aerospace/avionics-gnc.md`](../aerospace/avionics-gnc.md) の飛行制御と同じ道具立てである。
 
 ### 4. モデル予測制御 (Model Predictive Control, MPC)
 
@@ -113,7 +113,7 @@ s.t. x_{k+1} = A·x_k + B·u_k          （予測モデル）
 
 - **制約の明示的扱い**が PID/LQR に対する質的優位。飽和を「起きてから対処する」のではなく、最適化が飽和を見越した解を返す。
 - 脚式ロボットでは、床反力を決定変数に含む凸 QP として定式化した MPC（数十〜数百 Hz）と、より高周波の全身制御 (whole-body control, WBC) を階層化する構成が確立している[^dicarlo-mpc]。ここでも「外側 MPC・内側 WBC」というカスケード原理が再帰的に現れる。
-- 計算コストが本質的制約であり、ソルバ（QP の内点法・ADMM）の実行時間分布、とくに最悪実行時間 (WCET) がリアルタイム保証の対象になる。この論点は [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) の WCET 解析と直結する。
+- 計算コストが本質的制約であり、ソルバ（QP の内点法・ADMM）の実行時間分布、とくに最悪実行時間 (WCET) がリアルタイム保証の対象になる。この論点は [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) の WCET 解析と直結し、周期タスクの実行基盤は [`../../software/embedded/rtos-architectures.md`](../../software/embedded/rtos-architectures.md) が扱う。
 
 ### 5. 力制御とインピーダンス制御 (Force & Impedance Control)
 
@@ -125,26 +125,26 @@ F = M_d·(ẍ − ẍ_d) + B_d·(ẋ − ẋ_d) + K_d·(x − x_d)
 ```
 
 - Hogan の枠組みでは、環境がアドミタンス（力→動き）なら制御器はインピーダンス（動き→力）を提示すべき、という**相互作用の相補性**が出発点になる[^hogan]。
-- 実装は2系統ある: トルク源として直接実現する**インピーダンス制御**（QDD・トルクセンサ付き関節向き）と、位置制御器の上に力センサで目標位置を修正する**アドミタンス制御**（高減速比の産業機向き）。ハードウェアの素性（`robotics-fundamentals.md` のバックドライバビリティ）が制御方式の選択を決める好例である。
+- 実装は2系統ある: トルク源として直接実現する**インピーダンス制御**（QDD・トルクセンサ付き関節向き）と、位置制御器の上に力センサで目標位置を修正する**アドミタンス制御**（高減速比の産業機向き）。ハードウェアの素性（[`robotics-fundamentals.md`](robotics-fundamentals.md) のバックドライバビリティ）が制御方式の選択を決める好例である。
 - 剛性 `K_d` を対角行列で方向別に設定すれば「挿入方向は柔らかく、横方向は硬く」といったタスク座標系での設計ができる（ペグ挿入の定石）。
 
 ### 6. リアルタイム実行基盤 (Real-Time Execution & Fieldbus)
 
-- **サンプリング周期と帯域**: 経験則として、閉ループ帯域の 10〜20 倍以上のサンプリングレートを取る。周期 1 ms（1 kHz）のサーボなら閉ループ帯域はせいぜい 50〜100 Hz 程度であり、「制御周期を上げること」はゲインを上げられること＝剛性・応答の向上に直結する。
+- **サンプリング周期と帯域**: 経験則として、閉ループ帯域の 10〜20 倍以上のサンプリングレートを取る[^astrom-wittenmark]（標本化の理論は [`../../foundations/mathematics/fourier-signal-processing/sampling-dft-fft.md`](../../foundations/mathematics/fourier-signal-processing/sampling-dft-fft.md)）。周期 1 ms（1 kHz）のサーボなら閉ループ帯域はせいぜい 50〜100 Hz 程度であり、「制御周期を上げること」はゲインを上げられること＝剛性・応答の向上に直結する。
 - **ジッタは位相遅れ**: 周期の揺らぎ・演算完了時刻の揺らぎは平均的に位相遅れとして働き、位相余裕を削る。リアルタイム性の要求は「速いこと」ではなく「**遅くならないことが保証されていること**」である。
 - **EtherCAT**: 産業用ロボットで支配的なフィールドバス。標準 Ethernet フレームを各スレーブが通過中に読み書きする (processing on the fly) ことで、100 Mbps でも多数軸を 250 µs〜1 ms 周期で更新できる。**分散クロック (distributed clocks)** 機構により各ドライブの同期精度は 1 µs を大きく下回り、多軸補間の同時性を保証する[^ethercat]。ドライブへの指令は CiA 402 プロファイル（位置/速度/トルクの各運転モードと状態機械）が事実上の標準。
 - 車載の Time-Sensitive Networking（[`../automotive/automotive-ethernet-tsn.md`](../automotive/automotive-ethernet-tsn.md)）とは「Ethernet に決定性を足す」という同じ問題への並行解であり、対比して読むと設計空間が見える。
 
 ## セキュリティ考察 (Security Considerations)
 
-- **フィールドバスは無防備が既定**: EtherCAT・CiA 402 には認証も暗号化もなく、制御ネットワークに到達した攻撃者はトルク指令を直接注入できる。防御は、制御セグメントの物理的分離や、情報系との間のゲートウェイ・データダイオードといった境界で行う。この構図は [`../energy/plant-control-scada-security.md`](../energy/plant-control-scada-security.md) の OT セキュリティと同一で、産業ロボットでは IEC 62443 系列が枠組みを与える。
+- **フィールドバスは無防備が既定**: EtherCAT・CiA 402 には認証も暗号化もなく、制御ネットワークに到達した攻撃者はトルク指令を直接注入できる。防御は、制御セグメントの物理的分離や、情報系との間のゲートウェイ・データダイオードといった境界で行う。この構図は [`../energy/plant-control-scada-security.md`](../energy/plant-control-scada-security.md) の OT セキュリティと同一で、産業ロボットでは IEC 62443 系列が枠組みを与える[^iec62443]。
 - **安全機能の独立経路**: STO・SS1・SLS (IEC 61800-5-2) は、制御ソフトウェア・ネットワークの侵害からも独立して機能するよう、安全 PLC と安全対応ドライブの間の認証された経路（FSoE: Fail Safe over EtherCAT 等）に実装する。**「制御は騙せても安全は騙せない」構造**を保つことが設計原則。
 - **モデル・パラメータの完全性**: 計算トルク法・MPC はモデルパラメータ（質量・ペイロード設定・制約値）に依存する。これらの設定値の改竄は、明示的な攻撃コードなしに危険な挙動（衝突検知の無効化、速度制限の緩和）を引き起こせるため、レシピ・パラメータ類も完全性保護（署名・変更監査）の対象に含める。
 - **学習ベース制御の検証問題**: 強化学習ポリシーには古典制御のような安定余裕・証明可能な保証がない。実務は「学習ポリシーの外側に、証明可能な安全層（速度・トルク・ワークスペースの監視と STO への接続）を置く」構成に収斂しつつあり、これは発見事項 7 の「安全機能は制御則の外に置く」原則の再適用である。
 
 ## 結論 (Conclusions)
 
-ロボット制御は、**モデルをどれだけ信じるか**の階段として一望できる。その階段は、PID（信じない）→ 計算トルク（線形化に使う）→ LQR/MPC（最適化の材料にする）→ インピーダンス（目標自体を力学で書く）と進む。そしてどの段を選ぶかは、制御理論の趣味ではなく、`robotics-fundamentals.md` で見たハードウェアの素性（減速比・センサ構成）と、`kinematics-dynamics.md` で見た運動方程式の構造（連成の強さ・受動性）が決める。制御則・機構・実行基盤は独立に選べる部品ではなく、一体の設計である。
+ロボット制御は、**モデルをどれだけ信じるか**の階段として一望できる。その階段は、PID（信じない）→ 計算トルク（線形化に使う）→ LQR/MPC（最適化の材料にする）→ インピーダンス（目標自体を力学で書く）と進む。そしてどの段を選ぶかは、制御理論の趣味ではなく、[`robotics-fundamentals.md`](robotics-fundamentals.md) で見たハードウェアの素性（減速比・センサ構成）と、[`kinematics-dynamics.md`](kinematics-dynamics.md) で見た運動方程式の構造（連成の強さ・受動性）が決める。制御則・機構・実行基盤は独立に選べる部品ではなく、一体の設計である。
 
 ### 続編への橋渡し
 
@@ -165,8 +165,18 @@ F = M_d·(ẍ − ẍ_d) + B_d·(ẋ − ẋ_d) + K_d·(x − x_d)
 
 [^ethercat]: EtherCAT Technology Group. *EtherCAT — The Ethernet Fieldbus* (ETG.1000 series specifications). https://www.ethercat.org/ — Accessed: 2026-07-12. — processing on the fly・分散クロックの一次仕様。
 
+[^rawlings-mpc]: Rawlings, J. B., Mayne, D. Q. & Diehl, M. (2017). *Model Predictive Control: Theory, Computation, and Design* (2nd ed.). Nob Hill Publishing. — MPC の理論（receding horizon・制約付き最適化・安定性）と実装。
+
+[^kalman-lqr]: Kalman, R. E. (1960). Contributions to the Theory of Optimal Control. *Boletín de la Sociedad Matemática Mexicana*, 5, 102–119. — 線形二次最適レギュレータ (LQR) と Riccati 方程式の原典。
+
+[^takegaki-arimoto]: Takegaki, M. & Arimoto, S. (1981). A New Feedback Method for Dynamic Control of Manipulators. *Journal of Dynamic Systems, Measurement, and Control*, 103(2), 119–125. DOI: 10.1115/1.3139651 — PD + 重力補償の大域漸近安定性の原典。
+
+[^astrom-wittenmark]: Åström, K. J. & Wittenmark, B. (1997). *Computer-Controlled Systems: Theory and Design* (3rd ed.). Prentice Hall. — サンプリング周期の選定、計算遅延・ジッタが安定余裕に与える影響。
+
+[^iec61800-5-2]: IEC 61800-5-2:2016. *Adjustable speed electrical power drive systems — Part 5-2: Safety requirements — Functional*. International Electrotechnical Commission. — STO/SS1/SLS 等ドライブ安全機能の定義。
+
+[^iec62443]: IEC 62443 series. *Security for industrial automation and control systems*. International Electrotechnical Commission. — ゾーン/コンジット・セキュリティレベルによる OT セキュリティの枠組み。
+
 その他の標準的典拠を以下に挙げる。
 
-- Rawlings, J. B., Mayne, D. Q. & Diehl, M. (2017). *Model Predictive Control: Theory, Computation, and Design* (2nd ed.). Nob Hill Publishing. — MPC の理論と実装。
-- IEC 61800-5-2:2016. *Adjustable speed electrical power drive systems — Safety requirements — Functional*. — STO/SS1/SLS 等ドライブ安全機能の定義。
 - CiA 402 / IEC 61800-7-201. *Drive profile for power drive systems*. — サーボドライブの運転モードと状態機械。

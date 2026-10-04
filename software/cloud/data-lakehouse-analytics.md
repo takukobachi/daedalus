@@ -50,6 +50,27 @@
  分散ログ (Kafka/Kinesis) からの取り込み    メンテナンスジョブ
 ```
 
+### テーブル形式のメタデータ木とコミット
+
+上の積層のうち、ACID を買い戻す中核である Iceberg のメタデータ木を展開する。実線は参照（ポインタ）、点線は新しいメタデータが前世代を履歴として指す関係を表す。コミットは新しい木を書き終えてからルートポインタ 1 つを振り替える操作であり、旧スナップショットの木は不変のまま残る（発見事項 4）。
+
+```mermaid
+flowchart TB
+    CAT["カタログ (Glue / REST)<br/>table → 現行メタデータ"]
+    subgraph S3["S3 (不変オブジェクト)"]
+        M1["metadata.json (v1)"] --> ML1["manifest list<br/>(スナップショット S1)"]
+        M2["metadata.json (v2)"] --> ML2["manifest list<br/>(スナップショット S2)"]
+        ML1 --> MA["manifest A<br/>(列統計)"]
+        ML2 --> MA
+        ML2 --> MB["manifest B<br/>(列統計)"]
+        MA --> D1["data file 1 (Parquet)"]
+        MA --> D2["data file 2 (Parquet)"]
+        MB --> D3["data file 3 (Parquet)<br/>新規コミット分"]
+    end
+    CAT -->|"現行ポインタ<br/>(コミット = v1 → v2 の CAS, 敗者はリトライ)"| M2
+    M2 -. "前世代の履歴" .-> M1
+```
+
 ### スキャン刈り込みの多段構造
 
 | 段 | 判定材料 | 除外の粒度 | 書き込み時に仕込むもの |
@@ -105,6 +126,7 @@ Trino/Athena 型のエンジンは、コーディネータがクエリを段 (st
 - [`../messaging/distributed-logs-delivery-semantics.md`](../messaging/distributed-logs-delivery-semantics.md) — 取り込み側の意味論 (順序・重複・exactly-once)。
 - [`cloud-databases-aurora-dynamodb.md`](cloud-databases-aurora-dynamodb.md) — OLTP 側の計算と記憶の分離。CDC で本書の入力になる。
 - [`../ai/ml-training-systems.md`](../ai/ml-training-systems.md) — レイクハウスの主要な下流 (特徴量・学習データの供給先)。
+- [`../../foundations/information-theory/entropy-source-coding.md`](../../foundations/information-theory/entropy-source-coding.md) — エントロピーと最適符号長の下限。列指向の圧縮 (辞書・RLE・delta 符号化) が同型データの連続で効く理由を、情報源の統計的偏りとして読む理論的背景。
 
 ## 参考文献 (References)
 

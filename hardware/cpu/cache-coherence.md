@@ -4,11 +4,11 @@
 
 マルチコアCPUでは、各コアが自分専用のキャッシュ (private cache) を持ちながら、主記憶 (main memory) は全コアで共有する。この「私有キャッシュ (private cache) と共有メモリ (shared memory) の同居」が根本的な矛盾を生む。あるアドレスのコピーが複数コアのキャッシュに同時に存在しうるため、1つのコアが書き換えると、他コアの手元のコピーが**陳腐化 (stale)** する。これを放置すると、同じアドレスを読んでもコアごとに違う値が返り、共有メモリという抽象が崩壊する。
 
-この矛盾を「ハードウェアが自動で」吸収する仕組みが**キャッシュコヒーレンス (cache coherence)** である。`cache-memory-hierarchy.md` では MESI と false sharing を概観したが、本ドキュメントはその**機構レベル (mechanism level)** へ踏み込む。すなわち、状態遷移はどのバストランザクションで起き、なぜそれが性能やスケーラビリティの限界を決め、アトミック命令・DMA・NUMA とどう繋がるかを整理する。
+この矛盾を「ハードウェアが自動で」吸収する仕組みが**キャッシュコヒーレンス (cache coherence)** である[^sorin]。[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) では MESI と false sharing を概観したが、本ドキュメントはその**機構レベル (mechanism level)** へ踏み込む。すなわち、状態遷移はどのバストランザクションで起き、なぜそれが性能やスケーラビリティの限界を決め、アトミック命令・DMA・NUMA とどう繋がるかを整理する。
 
 ## 方法論 (Methodology)
 
-- まず**コヒーレンス (coherence)** と**コンシステンシ (memory consistency)** を厳密に区別する。前者は「単一アドレス」の問題、後者は「複数アドレス間の順序」の問題であり、混同が誤解の最大の源である。
+- まず**コヒーレンス (coherence)** と**コンシステンシ (memory consistency)** を厳密に区別する。前者は「単一アドレス」の問題、後者は「複数アドレス間の順序」の問題であり、混同が誤解の最大の源である[^sorin]。
 - コヒーレンスプロトコルを2軸で分類する。**実装機構の軸**（スヌープ型 / ディレクトリ型）と、**書き込みポリシーの軸**（無効化ベース / 更新ベース）。
 - 状態機械を MSI → MESI → MOESI / MESIF と漸進的に拡張し、各状態が「どの非効率を消すために増えたか」を差分で説明する。
 - 数値は一般的な x86-64 / ARM サーバ世代の桁感 (order of magnitude) であり、世代・実装で大きく変動する。本文では絶対値より「相対コストの序列」を理解の基準とする。
@@ -16,13 +16,13 @@
 
 ## 発見事項 (Findings)
 
-1. **コヒーレンスとコンシステンシは別物。** コヒーレンスは「ある1つのアドレスについて、全コアが最終的に同じ書き込み順序を観測する」ことだけを保証する。複数アドレス間でどの順に可視になるかは**メモリコンシステンシモデル (consistency model)** の領分であり、コヒーレンスは何も言わない（`memory-ordering-atomics.md` 参照）。
+1. **コヒーレンスとコンシステンシは別物。** コヒーレンスは「ある1つのアドレスについて、全コアが最終的に同じ書き込み順序を観測する」ことだけを保証する。複数アドレス間でどの順に可視になるかは**メモリコンシステンシモデル (consistency model)** の領分であり、コヒーレンスは何も言わない（[`memory-ordering-atomics.md`](memory-ordering-atomics.md)、ソフトウェア側の言語メモリモデルは [`../../software/concurrency/memory-models-synchronization.md`](../../software/concurrency/memory-models-synchronization.md) 参照）[^sorin]。
 
-2. **無効化ベースが事実上の標準。** 書き込み側が他コアのコピーを**無効化 (invalidate)** してから書く方式が主流。更新 (update) ベースは書き込みごとに新値を撒くため、書き込みが多いと帯域を使い果たす。現代の汎用CPUはほぼ無効化ベースである。
+2. **無効化ベースが事実上の標準。** 書き込み側が他コアのコピーを**無効化 (invalidate)** してから書く方式が主流。更新 (update) ベースは書き込みごとに新値を撒くため、書き込みが多いと帯域を使い果たす。現代の汎用CPUはほぼ無効化ベースである[^archibald86]。
 
-3. **スヌープ型はブロードキャストでスケールせず、ディレクトリ型へ移行する。** バスを全コアが監視するスヌープ (snooping) は、コア数 N に対しトラフィックが O(N) 以上で増え、共有バスが飽和する。大規模ではコア単位の所有者を記録する**ディレクトリ (directory)** で必要なコアにだけ通知する方式が必須になる。
+3. **スヌープ型はブロードキャストでスケールせず、ディレクトリ型へ移行する。** バスを全コアが監視するスヌープ (snooping) は、コア数 N に対しトラフィックが O(N) 以上で増え、共有バスが飽和する。大規模ではコア単位の所有者を記録する**ディレクトリ (directory)** で必要なコアにだけ通知する方式が必須になる[^censier78][^hp]。
 
-4. **false sharing はコヒーレンスの「最小単位がライン」であることの直接の帰結。** 論理的に独立な2変数でも同一キャッシュライン (cache line) に同居すると、片方への書き込みがライン全体を無効化し、もう片方を保持する全コアを巻き込む。コヒーレンスはバイト単位ではなくライン単位 (通常64B) で動くという機構そのものが原因である。
+4. **false sharing はコヒーレンスの「最小単位がライン」であることの直接の帰結。** 論理的に独立な2変数でも同一キャッシュライン (cache line) に同居すると、片方への書き込みがライン全体を無効化し、もう片方を保持する全コアを巻き込む。コヒーレンスはバイト単位ではなくライン単位 (通常64B) で動くという機構そのものが原因である[^torrellas94]。
 
 5. **アトミック命令・LL/SC・NUMA・DMA はすべてコヒーレンスの上に成立する。** アトミックなRead-Modify-Write は「ラインを排他所有してから操作する」ことで実現され、LL/SC はラインのコヒーレンス状態監視で成り立つ。NUMA はコヒーレンスを跨ノードへ拡張した結果であり、DMA は逆に「コヒーレンスの輪の外にいるデバイス」を扱う問題である。
 
@@ -30,7 +30,7 @@
 
 ### スヌープ型構成の俯瞰
 
-各コアのキャッシュコントローラが共有相互接続を**監視 (snoop)** し、他コアのトランザクションに反応する。
+各コアのキャッシュコントローラが共有相互接続を**監視 (snoop)** し、他コアのトランザクションに反応する。この方式はバス監視型キャッシュの提案 (Goodman の write-once) に遡る[^goodman83]。
 
 ```
    Core0        Core1        Core2        Core3
@@ -52,7 +52,7 @@
 
 ### MESI 状態遷移 (State Transitions)
 
-各キャッシュラインは4状態のいずれかを持つ。`cache-memory-hierarchy.md` では定義を示したが、ここでは**遷移を引き起こすイベント**を明示する。プロセッサ操作 (PrRd/PrWr) とバス監視 (BusRd/BusRdX/BusUpgr) で遷移する。
+各キャッシュラインは4状態のいずれかを持つ。MESI は Papamarcos と Patel が提案した Illinois プロトコルを原型とする[^papamarcos84]。[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) では定義を示したが、ここでは**遷移を引き起こすイベント**を明示する。プロセッサ操作 (PrRd/PrWr) とバス監視 (BusRd/BusRdX/BusUpgr) で遷移する。
 
 ```
                   PrWr / BusRdX
@@ -74,6 +74,29 @@
    他コアが BusRdX/Invalidate を出すと、自ラインは I へ
 ```
 
+同じ遷移を Mermaid の状態図で示す。ラベルは「契機 / 発行するバストランザクション」の形で、`Pr*` は自コアの操作、`Bus*` は他コアの要求を監視 (snoop) した結果である[^sorin][^papamarcos84]。
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> I
+    I --> E: PrRd / BusRd (他に共有者なし)
+    I --> S: PrRd / BusRd (共有者あり)
+    I --> M: PrWr / BusRdX
+    E --> M: PrWr (バス通信なし)
+    E --> S: 他コアの BusRd を観測
+    E --> I: 他コアの BusRdX を観測
+    S --> M: PrWr / BusUpgr
+    S --> I: 他コアの BusRdX または BusUpgr を観測
+    M --> S: 他コアの BusRd を観測 (データ供給と書き戻し)
+    M --> I: 他コアの BusRdX を観測 (データ供給)
+    M --> M: PrRd または PrWr (ヒット)
+    E --> E: PrRd (ヒット)
+    S --> S: PrRd または他コアの BusRd
+```
+
+- MOESI では「M で他コアの BusRd を観測」した際に S ではなく **O (Owned)** へ遷移し、書き戻しを省いて自らが以後の供給者になる[^amd-apm]。MESIF では I から共有読み出しで入ったラインが **F (Forward)** になり、次の共有読み出し要求への代表応答役を担う[^hum-mesif]。
+
 要点を以下にまとめる。
 - **E (Exclusive) の存在意義**: 「自分だけが持ち、まだ書いていない」状態。ここから書く時はバストランザクション**不要**でローカルに M へ昇格できる。MSI（E がない）だと毎回 BusUpgr が要り無駄。E はその1往復を消すために追加された。
 - **M を持つコアの責務**: 他コアの BusRd を監視したら、自分が唯一の最新値の持ち主なので、主記憶より先にデータを供給する (cache-to-cache transfer または write-back)。
@@ -84,8 +107,8 @@
 |---|---|---|
 | **MSI** | (基本3状態) | 最小構成。未変更の私有ラインでも書き込み時に必ずバス通信 |
 | **MESI** | E (Exclusive) | E→M をローカル化し、私有データ書き込みのバス往復を削除 |
-| **MOESI** | O (Owned) | dirty なラインを**主記憶に書き戻さず共有**できる。所有者が供給責任を持つ。AMD 系 |
-| **MESIF** | F (Forward) | 複数の S 保持者のうち1つを「応答役 (Forwarder)」に指名し、cache-to-cache 供給の重複応答を抑制。Intel 系 |
+| **MOESI** | O (Owned) | dirty なラインを**主記憶に書き戻さず共有**できる。所有者が供給責任を持つ。AMD 系[^amd-apm] |
+| **MESIF** | F (Forward) | 複数の S 保持者のうち1つを「応答役 (Forwarder)」に指名し、cache-to-cache 供給の重複応答を抑制。Intel 系[^hum-mesif] |
 
 - **O (Owned)**: 「dirty だが共有もされている」を表す。MESI では dirty ラインを共有するには主記憶へ書き戻して S にせざるを得ないが、MOESI は O のまま他コアに供給でき、書き戻しを遅延できる。
 - **F (Forward)**: 純粋な MESI で S 状態のラインを別コアが要求すると、複数の S 保持者が一斉に応答しうる（あるいは誰も応答せず主記憶から取る）。F は「この S 保持者だけが代表で応答する」と決め、応答の一意性と cache-to-cache の活用を両立させる。
@@ -103,7 +126,7 @@
 | スケール | 数コア〜十数コアで頭打ち | 数十〜数百コア／マルチソケット |
 | 代表 | 単一ソケットの小〜中規模 | 大規模メニーコア・NUMA |
 
-ディレクトリは各メモリラインについて「どのコアが、どの状態で保持しているか」を記録する。書き込み要求が来ると、ディレクトリは**共有者集合 (sharer set)** だけに無効化を送る。ブロードキャストを点対点 (point-to-point) に置き換えることで、メッシュ/リングのような順序を保証しない相互接続上でも動作する。
+ディレクトリは各メモリラインについて「どのコアが、どの状態で保持しているか」を記録する。書き込み要求が来ると、ディレクトリは**共有者集合 (sharer set)** だけに無効化を送る。ブロードキャストを点対点 (point-to-point) に置き換えることで、メッシュ/リングのような順序を保証しない相互接続上でも動作する[^censier78][^sorin]。オンチップ相互接続そのものは [`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md) を参照。
 
 ```
 // 例示 (illustrative)。ディレクトリエントリの概念的な構造。実コードではない。
@@ -135,11 +158,11 @@ struct DirectoryEntry {
 ```
 
 - **無効化ベース**が圧倒的多数派。書き込みバースト（同じコアが同じ変数を連続更新）に強く、無駄な配信がない。
-- **更新ベース**は「書いたらすぐ別コアが読む」生産者-消費者で理論上は有利だが、書き込みが読まれずに上書きされる場合に帯域を浪費する。ハイブリッド（数回更新して以降は無効化に切替）も研究されたが、実装複雑性から汎用CPUでは無効化ベースが定着した。
+- **更新ベース**は「書いたらすぐ別コアが読む」生産者-消費者で理論上は有利だが、書き込みが読まれずに上書きされる場合に帯域を浪費する。ハイブリッド（数回更新して以降は無効化に切替）も研究されたが、実装複雑性から汎用CPUでは無効化ベースが定着した。両方式の性能比較はシミュレーションによる古典的評価で整理されている[^archibald86]。
 
 ### 3. false sharing の発生機構
 
-`cache-memory-hierarchy.md` では「同一ラインの別変数を書くと性能が崩壊する」と述べた。その**機構**を遷移列で示す。前提: 変数 `a` と `b` が同一64Bライン L に同居し、Core0 が `a`、Core1 が `b` を更新する。
+[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) では「同一ラインの別変数を書くと性能が崩壊する」と述べた。その**機構**を遷移列で示す。前提: 変数 `a` と `b` が同一64Bライン L に同居し、Core0 が `a`、Core1 が `b` を更新する。
 
 ```
 // 例示 (illustrative)。L = {a, b} は同一キャッシュライン。
@@ -150,17 +173,17 @@ struct DirectoryEntry {
  t3  Core1: b++      I            M            BusRdX(L)   ← 以降ピンポン...
 ```
 
-`a` と `b` は論理的に無関係なのに、ラインがコア間を往復し続ける (**cache line ping-pong**)。各往復は BusRdX とデータ転送を伴い、レイテンシは L1 ヒット (数サイクル) ではなく cache-to-cache 転送（数十〜百サイクル超）に増える。**コヒーレンスの最小単位がバイトでなくラインである**ことが根本原因であり、対策はライン境界へのパディング/アラインメント (`alignas(64)`) でしかない。「真の共有 (true sharing)」と異なり、データ依存が実在しないため、配置を直せば消える点が特徴。
+`a` と `b` は論理的に無関係なのに、ラインがコア間を往復し続ける (**cache line ping-pong**)。各往復は BusRdX とデータ転送を伴い、レイテンシは L1 ヒット (数サイクル) ではなく cache-to-cache 転送（数十〜百サイクル超）に増える。**コヒーレンスの最小単位がバイトでなくラインである**ことが根本原因であり、対策はライン境界へのパディング/アラインメント (`alignas(64)`) でしかない。「真の共有 (true sharing)」と異なり、データ依存が実在しないため、配置を直せば消える点が特徴[^torrellas94][^drepper]。
 
 ### 4. コヒーレンストラフィックのスケーラビリティ限界
 
 - スヌープ型では、書き込み1回が原理的に全コアへの通知を要する。ホットな共有ライン（グローバルロック、共有カウンタ）は、コア数に比例して無効化のファンアウトが増え、**シリアライズ点 (serialization point)** になる。
 - これは「アムダールの法則 (Amdahl's law) のハードウェア版」と言える。論理的にロックフリーでも、同一ラインへの競合があれば物理的にシリアライズされる。
-- 緩和の定石: (a) 共有を減らす（per-core / per-thread データ）、(b) 偽共有を除く（パディング）、(c) 競合の集中を散らす（カウンタのシャーディング、MCS ロックなど隣接ノードだけと通信する待ち行列ロック）。いずれも「同一ラインに触るコア数を減らす」ことに帰着する。
+- 緩和の定石: (a) 共有を減らす（per-core / per-thread データ）、(b) 偽共有を除く（パディング）、(c) 競合の集中を散らす（カウンタのシャーディング、MCS ロックなど隣接ノードだけと通信する待ち行列ロック）。いずれも「同一ラインに触るコア数を減らす」ことに帰着する[^mcs91]。ロックフリー構造側の実装は [`../../software/concurrency/lock-free-data-structures.md`](../../software/concurrency/lock-free-data-structures.md) を参照。
 
 ### 5. NUMA とコヒーレンスの拡張
 
-複数ソケット構成では、メモリはソケットごとに分散し (NUMA: Non-Uniform Memory Access)、コヒーレンスはソケット間相互接続 (Intel UPI / AMD Infinity Fabric 等) を跨いで維持される。これを **ccNUMA (cache-coherent NUMA)** と呼ぶ。
+複数ソケット構成では、メモリはソケットごとに分散し (NUMA: Non-Uniform Memory Access)、コヒーレンスはソケット間相互接続 (Intel UPI / AMD Infinity Fabric 等) を跨いで維持される。これを **ccNUMA (cache-coherent NUMA)** と呼ぶ[^hp]。
 
 - ローカルノードのメモリは速く、リモートノードは1ホップ以上遠い（レイテンシは桁感で1.5〜2倍以上、世代依存）。
 - コヒーレンストランザクションがソケットを跨ぐと、リモートディレクトリ参照と相互接続の往復が加わり、コストが跳ね上がる。
@@ -168,55 +191,80 @@ struct DirectoryEntry {
 
 ### 6. アトミック命令・LL/SC とコヒーレンスの関係
 
-`memory-ordering-atomics.md` のアトミック操作は、コヒーレンス機構の上で次のように実装される。
+[`memory-ordering-atomics.md`](memory-ordering-atomics.md) のアトミック操作は、コヒーレンス機構の上で次のように実装される。
 
-- **RMW (`lock xadd`, `lock cmpxchg`)**: アトミックに読み書きするには、操作の間ラインを**他コアに触らせない**必要がある。実装は対象ラインを M 状態（排他所有）に遷移させ、その間コヒーレンスプロトコルで他コアの介入を排除する。古典的なバスロックと違い、現代は「ライン単位の所有」で局所化する（**cache locking**）。それでも所有獲得のためのバス往復が要るため、アトミック命令は通常命令より高コスト。
-- **LL/SC (Load-Linked / Store-Conditional, ARM の `ldxr`/`stxr`)**: LL でラインを監視対象 (link/reservation) に登録し、SC は「その間ラインへの他コアの書き込み（=コヒーレンス無効化）が無かった場合のみ」成功する。つまり SC の成否判定そのものがコヒーレンス状態の監視に依存する。`memory-ordering-atomics.md` の ABA 問題が CAS で起きるのに対し、LL/SC は「途中で誰かが触ったか」を検出するため A→B→A でも SC が失敗しうる（ただしフォルスフェイルもある）点が機構的な違い。
+- **RMW (`lock xadd`, `lock cmpxchg`)**: アトミックに読み書きするには、操作の間ラインを**他コアに触らせない**必要がある。実装は対象ラインを M 状態（排他所有）に遷移させ、その間コヒーレンスプロトコルで他コアの介入を排除する。古典的なバスロックと違い、現代は「ライン単位の所有」で局所化する（**cache locking**）[^intel-sdm]。それでも所有獲得のためのバス往復が要るため、アトミック命令は通常命令より高コスト。
+- **LL/SC (Load-Linked / Store-Conditional, ARM の `ldxr`/`stxr`)**: LL でラインを監視対象 (link/reservation) に登録し、SC は「その間ラインへの他コアの書き込み（=コヒーレンス無効化）が無かった場合のみ」成功する。Arm はこの監視を排他モニタ (exclusive monitor) として規定する[^arm-arm]。つまり SC の成否判定そのものがコヒーレンス状態の監視に依存する。[`memory-ordering-atomics.md`](memory-ordering-atomics.md) の ABA 問題が CAS で起きるのに対し、LL/SC は「途中で誰かが触ったか」を検出するため A→B→A でも SC が失敗しうる（ただしフォルスフェイルもある）点が機構的な違い。
 - いずれもコヒーレンスが「単一ラインの所有と無効化検出」を提供するからこそ成立する。アトミック性はコヒーレンスの一機能を借りて作られている。
 
 ### 7. DMA のコヒーレンス問題との接続
 
-コヒーレンスは「コア間」の問題だが、**DMA はコヒーレンスの輪の外にいるデバイス**を持ち込む（`../hw-sw-interface/mmio-dma-interrupts.md` 参照）。
+コヒーレンスは「コア間」の問題だが、**DMA はコヒーレンスの輪の外にいるデバイス**を持ち込む（[`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) 参照）。
 
 - コヒーレントでない (non-coherent) DMA では、デバイスが主記憶を直接書き換えても、CPU キャッシュのコピーは更新されない（無効化トランザクションが飛ばない）。受信前に該当範囲を **invalidate**、送信前に **flush (clean)** が要る。これはコア間で自動的に起きる無効化を、ソフトが手動で代行している姿である。
-- 一方 **coherent DMA**（多くの x86、IOMMU/相互接続がデバイスをコヒーレンスドメインに含める構成）では、デバイスのアクセスもバス上の他「コア」と同様に扱われ、無効化が自動で伝播する。`dma_alloc_coherent` 系で手動同期が不要になるのはこのため。
+- 一方 **coherent DMA**（多くの x86、IOMMU/相互接続がデバイスをコヒーレンスドメインに含める構成）では、デバイスのアクセスもバス上の他「コア」と同様に扱われ、無効化が自動で伝播する。`dma_alloc_coherent` 系で手動同期が不要になるのはこのため。カーネル側の I/O 経路は [`../../software/operating-systems/block-io-stack.md`](../../software/operating-systems/block-io-stack.md) も参照。
 - つまり DMA コヒーレンスは「コア間コヒーレンスをデバイスまで拡張するか、しないか」の選択であり、本質的に同じ無効化/フラッシュの問題を、自動か手動かで分けているだけである。
 
 ## セキュリティ考察 (Security Considerations)
 
 コヒーレンスは性能機構であると同時に、状態が**観測可能な副作用**として漏れるサイドチャネルの源にもなる。
 
-- **コヒーレンス由来のタイミングチャネル**: あるラインが他コアで M/E 状態にあると、自コアの読みは cache-to-cache 転送や無効化往復を要し、ローカルヒットより遅い。攻撃者はアクセス時間からラインの**コヒーレンス状態**（=被害者コアがそのラインに触ったか）を推定できる。`cache-memory-hierarchy.md` の Flush+Reload / Prime+Probe を、コア間（クロスコア）に拡張した変種が成立する。
+- **コヒーレンス由来のタイミングチャネル**: あるラインが他コアで M/E 状態にあると、自コアの読みは cache-to-cache 転送や無効化往復を要し、ローカルヒットより遅い。攻撃者はアクセス時間からラインの**コヒーレンス状態**（=被害者コアがそのラインに触ったか）を推定できる[^yao18]。[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) の Flush+Reload / Prime+Probe を、コア間（クロスコア）に拡張した変種が成立する。
 
 - **false sharing を使った観測 (covert / side channel)**: 攻撃者と被害者が同一ラインの別オフセットを使うよう仕向けると、被害者の書き込みが攻撃者側のラインを無効化する。攻撃者は自分のアクセスが急に遅くなる（無効化された）ことを検知し、被害者の活動有無を1ビットのチャネルとして読み取れる。論理的に共有していないのに観測経路ができる点が false sharing の危険性。
 
 - **ディレクトリ／コヒーレンス状態を介したクロスコア漏洩**: スヌープのブロードキャストや、ディレクトリの共有者更新は、被害者の動作に依存してタイミングが変わる。ノイズは多いが、コア境界を越える点でプロセス/VM 隔離を脅かす。
 
-- **緩和策 (mitigations)**: 秘密依存のメモリアクセスを排した定数時間実装 (constant-time)、機密データのライン分離とパーティショニング、信頼境界を跨ぐコア共有の回避（コア固定/隔離）。`cache-memory-hierarchy.md` のキャッシュ側チャネル対策と同根で、いずれも性能と引き換えになる。
+- **緩和策 (mitigations)**: 秘密依存のメモリアクセスを排した定数時間実装 (constant-time)、機密データのライン分離とパーティショニング、信頼境界を跨ぐコア共有の回避（コア固定/隔離）。[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) のキャッシュ側チャネル対策と同根で、いずれも性能と引き換えになる。
 
 教訓: コヒーレンスは「触ったか否か」をコア境界を越えて伝える機構であり、その伝播そのものが情報になる。性能最適化（共有・cache-to-cache の活用）と隔離（コア間で何も漏らさない）は、ここでも対立する。
 
 ## 結論 (Conclusions)
 
 - キャッシュコヒーレンスは「私有キャッシュと共有メモリの矛盾」をハードウェアが自動で吸収する仕組みであり、マルチコアの共有メモリ抽象を成立させる基盤である。
-- コヒーレンス（単一アドレスの収束）とコンシステンシ（複数アドレス間の順序）は別問題であり、後者は `memory-ordering-atomics.md` のメモリモデルが担う。コヒーレンスは順序を保証しない。
+- コヒーレンス（単一アドレスの収束）とコンシステンシ（複数アドレス間の順序）は別問題であり、後者は [`memory-ordering-atomics.md`](memory-ordering-atomics.md) のメモリモデルが担う。コヒーレンスは順序を保証しない。
 - 機構は無効化ベースが標準、小規模はスヌープ型、大規模・NUMA はディレクトリ型へ移行する。共通の限界は「ホットな共有ラインがシリアライズ点になる」こと。スケールの鍵は同一ラインに触るコア数を減らすこと（per-core 化・パディング・競合の分散）に集約される。
 - false sharing・アトミック命令・LL/SC・NUMA・DMA コヒーレンスは、いずれもこの単一の機構（ライン単位の所有と無効化）の異なる現れである。最適化もセキュリティも、この機構の理解から出発する。
 
 ### 次の接続先 (Related Topics)
 
-- `memory-ordering-atomics.md` — コヒーレンスの上に立つメモリ順序とアトミック操作。コヒーレンスは単一アドレスの収束のみを保証し、複数アドレス間の可視順はメモリモデルが規定する。
-- `cache-memory-hierarchy.md` — キャッシュライン構造と false sharing の概観。本ドキュメントの機構レベルの深掘りの前提。
-- `../hw-sw-interface/mmio-dma-interrupts.md` — DMA のキャッシュ整合問題。コヒーレンスの輪の外にあるデバイスを、手動 flush/invalidate か coherent DMA でどう扱うか。
+- [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — コヒーレンスの上に立つメモリ順序とアトミック操作。コヒーレンスは単一アドレスの収束のみを保証し、複数アドレス間の可視順はメモリモデルが規定する。
+- [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — キャッシュライン構造と false sharing の概観。本ドキュメントの機構レベルの深掘りの前提。
+- [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) — DMA のキャッシュ整合問題。コヒーレンスの輪の外にあるデバイスを、手動 flush/invalidate か coherent DMA でどう扱うか。
+- [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — TLB はコア間でコヒーレントに保たれず、ソフトウェアの TLB シュートダウンが要る（本書との対比）。
+- [`../../software/concurrency/memory-models-synchronization.md`](../../software/concurrency/memory-models-synchronization.md) — 言語レベルのメモリモデルと同期プリミティブ。
+- [`../security/side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) — キャッシュ/コヒーレンス由来のサイドチャネルと隔離技術の全体像。
 
 ## 参考文献 (References)
 
-**一次資料 (Primary — 論文・教科書)**
+**一次資料 (Primary — 論文・教科書・仕様)**
 
-- Sorin, D. J., Hill, M. D., & Wood, D. A. (2020). *A Primer on Memory Consistency and Cache Coherence* (2nd ed.). Morgan & Claypool. DOI: 10.2200/S00962ED2V01Y201910CAC049 — スヌープ/ディレクトリ型・MESI 系プロトコルの標準的整理。
-- Papamarcos, M. S., & Patel, J. H. (1984). A Low-Overhead Coherence Solution for Multiprocessors with Private Cache Memories. *ISCA '84*, 348–354. DOI: 10.1145/800015.808204 — MESI (Illinois) プロトコルの原典。
-- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 5 (Thread-Level Parallelism)。
+[^sorin]: Sorin, D. J., Hill, M. D., & Wood, D. A. (2020). *A Primer on Memory Consistency and Cache Coherence* (2nd ed.). Morgan & Claypool. DOI: 10.2200/S00962ED2V01Y201910CAC049 — コヒーレンス/コンシステンシの区別、スヌープ/ディレクトリ型・MESI 系プロトコルの標準的整理。
+
+[^papamarcos84]: Papamarcos, M. S., & Patel, J. H. (1984). A Low-Overhead Coherence Solution for Multiprocessors with Private Cache Memories. *ISCA '84*, 348–354. DOI: 10.1145/800015.808204 — MESI (Illinois) プロトコルの原典。
+
+[^goodman83]: Goodman, J. R. (1983). Using Cache Memory to Reduce Processor-Memory Traffic. *Proc. ISCA '83*, 124–131. DOI: 10.1145/800046.801647 — バス監視（スヌープ）型コヒーレンス (write-once) の原典。
+
+[^censier78]: Censier, L. M., & Feautrier, P. (1978). A New Solution to Coherence Problems in Multicache Systems. *IEEE Transactions on Computers*, C-27(12), 1112–1118. DOI: 10.1109/TC.1978.1675013 — 共有者ビットベクタを持つディレクトリ方式の原典。
+
+[^archibald86]: Archibald, J., & Baer, J.-L. (1986). Cache Coherence Protocols: Evaluation Using a Multiprocessor Simulation Model. *ACM Transactions on Computer Systems*, 4(4), 273–298. DOI: 10.1145/6513.6514 — 無効化型・更新型を含むスヌープ型プロトコル群の比較評価。
+
+[^hp]: Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 5 (Thread-Level Parallelism)。スヌープ/ディレクトリ・分散共有メモリ (ccNUMA)。
+
+[^torrellas94]: Torrellas, J., Lam, M. S., & Hennessy, J. L. (1994). False Sharing and Spatial Locality in Multiprocessor Caches. *IEEE Transactions on Computers*, 43(6), 651–663. DOI: 10.1109/12.286299 — false sharing の定量評価。
+
+[^mcs91]: Mellor-Crummey, J. M., & Scott, M. L. (1991). Algorithms for Scalable Synchronization on Shared-Memory Multiprocessors. *ACM Transactions on Computer Systems*, 9(1), 21–65. DOI: 10.1145/103727.103729 — ローカルスピンの MCS ロック。共有ラインへの競合集中を避ける同期の原典。
+
+[^yao18]: Yao, F., Doroslovacki, M., & Venkataramani, G. (2018). Are Coherence Protocol States Vulnerable to Information Leakage? *2018 IEEE International Symposium on High Performance Computer Architecture (HPCA)*, 168–179. DOI: 10.1109/HPCA.2018.00024 — コヒーレンス状態のタイミング差を使ったクロスコア漏洩の実証。
+
+[^hum-mesif]: Hum, H. H. J., & Goodman, J. R. (2005). *Forward State for Use in Cache Coherency in a Multiprocessor System*. US Patent 6,922,756 B2. — [Google Patents](https://patents.google.com/patent/US6922756B2/en) — Accessed: 2026-10-04。MESIF の F 状態の一次資料（Intel 出願）。
+
+[^amd-apm]: AMD. *AMD64 Architecture Programmer's Manual, Volume 2: System Programming* (Pub. 24593). — [docs.amd.com](https://docs.amd.com/v/u/en-US/24593_3.45_APM_Vol2_PUB) — Accessed: 2026-10-04。MOESI 状態遷移（メモリシステム章）の規範。
+
+[^intel-sdm]: Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Multiple-Processor Management 章. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-10-04。LOCK 操作がバスロックでなくキャッシュロックで実現される条件の規範。
+
+[^arm-arm]: Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487). — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-10-04。LDXR/STXR と排他モニタ (exclusive monitor) の規範。
 
 **二次資料 (Secondary)**
 
-- Drepper, U. (2007). *What Every Programmer Should Know About Memory*. — [PDF](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf) — Accessed: 2026-07-02。false sharing とコヒーレンストラフィックのソフトウェア視点の解説。
+[^drepper]: Drepper, U. (2007). *What Every Programmer Should Know About Memory*. — [PDF](https://people.freebsd.org/~lstewart/articles/cpumemory.pdf) — Accessed: 2026-07-02。false sharing とコヒーレンストラフィックのソフトウェア視点の解説。

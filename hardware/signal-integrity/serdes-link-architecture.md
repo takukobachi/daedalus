@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-PCIe も USB も Ethernet もディスプレイリンクも、論理層は互いに似ていないのに、物理層はほぼ同じ機械、つまり **SerDes (serializer/deserializer)** で動いている。数十本のパラレル配線を捨てて 1 対の差動線に数十 Gbit/s を流し、クロックはデータに埋め込み、送受信器の信号処理でチャネルの損失を打ち消す。この共通機械の構造を理解すれば、`../hw-sw-interface/bus-interconnect.md` (PCIe)・`../peripherals/usb-architecture.md`・`../networking/nic-switch-architecture.md`・`../../engineering/automotive/automotive-ethernet-tsn.md` の物理層仕様は、同じ部品の異なる構成として一望できる。
+PCIe も USB も Ethernet もディスプレイリンクも、論理層は互いに似ていないのに、物理層はほぼ同じ機械、つまり **SerDes (serializer/deserializer)** で動いている。数十本のパラレル配線を捨てて 1 対の差動線に数十 Gbit/s を流し、クロックはデータに埋め込み、送受信器の信号処理でチャネルの損失を打ち消す。この共通機械の構造を理解すれば、[`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md) (PCIe)・[`../peripherals/usb-architecture.md`](../peripherals/usb-architecture.md)・[`../networking/nic-switch-architecture.md`](../networking/nic-switch-architecture.md)・[`../../engineering/automotive/automotive-ethernet-tsn.md`](../../engineering/automotive/automotive-ethernet-tsn.md) の物理層仕様は、同じ部品の異なる構成として一望できる。
 
 基礎となる物理、つまり銅線が信号を鈍らせる理由（表皮効果・誘電損）、反射と終端、差動伝送は [`../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md`](../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md) で扱った。本ドキュメントはその結論である「**物理の損失は減らせないので、トランジスタ（計算）で波形を修復する**」を出発点に、シリアル化・符号化・変調 (NRZ/PAM4)・イコライゼーション・クロック再生 (CDR)・リンクトレーニング・FEC という SerDes の全部品を、「何の問題を、何のコストで解くか」で分解する。分析深度は Level 3。
 
@@ -20,8 +20,8 @@ PCIe も USB も Ethernet もディスプレイリンクも、論理層は互い
 3. **PAM4 への移行は「Nyquist 周波数の半減」と「SNR −9.5 dB」の交換であり、FEC を前提にして初めて成立する。** 1 シンボルに 2 bit を載せる PAM4 は同一データレートで必要帯域を半分にするが、アイの高さは 1/3（20·log₁₀(1/3) ≈ −9.5 dB）になる。チャネル損失が周波数に対して急峻に増える領域では「帯域半減」の利得が勝つ。これが ~50 Gbit/s/レーンを境に業界が一斉に PAM4 へ移った理由である。代償として素の BER は 10⁻⁴ 級まで悪化し、**FEC がリンクの正式な構成部品**に昇格した[^802-3]。
 4. **イコライゼーションは「チャネルの逆関数」を送受信器に分担させる設計問題である。** その分担先は、送信 FFE（既知の ISI を事前に打ち消すプリ/デエンファシス）、受信 CTLE（高周波を持ち上げるアナログフィルタ、ノイズも持ち上げる）、DFE（判定済みビットで後続 ISI を差し引く帰還フィルタ、ノイズを増幅しないが誤り伝播する）であり、各段は「どこで・アナログかデジタルか・ノイズをどう扱うか」が異なる。112G/224G 世代では受信器が ADC + DSP 化し、イコライゼーションはデジタル信号処理（FFE/DFE/MLSD）になった。こうして**リンクの性能がプロセス微細化（計算の価格）に直結する**構造が完成している。
 5. **CDR のループ帯域は「追従」と「除去」の交換である。** クロック・データ・リカバリはデータ遷移から位相誤差を検出（bang-bang/Alexander 位相検出器が典型）し、PLL/DLL で受信クロックを合わせ込む。ループ帯域を広げれば入力ジッタに追従でき（ジッタトレランス向上）、狭めれば入力ジッタを濾過できる（ジッタ転送の抑制）。両者は両立しないため、規格はジッタ転送・トレランス・生成の3特性を別々に規定する[^razavi]。
-6. **リンクは「起動時に交渉し、稼働中も適応し続ける」。つまり物理層にもプロトコルがある。** イコライザ係数は設置されたチャネルごとに違うため、PCIe はトレーニングフェーズで送信 FFE のプリセット交換と微調整を行い、Ethernet はオートネゴシエーションとリンクトレーニングを規定する。温度ドリフトに対する稼働中の適応（DFE 係数・CDR 位相の連続更新）も含め、**物理層は静的な配線ではなく閉ループ制御系**である。`../../engineering/robotics/control-systems.md` の適応制御と同じ仕組みが、ここではビット時間 10 ps の世界で回っている。
-7. **FEC とリタイマは「損失バジェットの通貨」である。** RS-FEC（802.3 の RS(544,514)、いわゆる KP4）は約 10⁻⁴ の素の BER を 10⁻¹³ 級に引き上げ、そのぶんチャネル損失を許容する。符号化利得を dB に換算してバジェットに繰り入れる会計が成立する。届かない距離はリタイマ（プロトコル認識の全再生中継器）で区間分割する。PCIe Gen5/6 のサーバボードでリタイマが常備品になったことは、「銅の限界」が規格の紙面ではなく製品の BOM に現れた徴候である[^pcie]。
+6. **リンクは「起動時に交渉し、稼働中も適応し続ける」。つまり物理層にもプロトコルがある。** イコライザ係数は設置されたチャネルごとに違うため、PCIe はトレーニングフェーズで送信 FFE のプリセット交換と微調整を行い、Ethernet はオートネゴシエーションとリンクトレーニングを規定する。温度ドリフトに対する稼働中の適応（DFE 係数・CDR 位相の連続更新）も含め、**物理層は静的な配線ではなく閉ループ制御系**である。[`../../engineering/robotics/control-systems.md`](../../engineering/robotics/control-systems.md) の適応制御と同じ仕組みが、ここではビット時間 10 ps の世界で回っている。
+7. **FEC とリタイマは「損失バジェットの通貨」である。** RS-FEC（802.3 の RS(544,514)、いわゆる KP4）は約 10⁻⁴ の素の BER を 10⁻¹³ 級に引き上げ、そのぶんチャネル損失を許容する。符号化利得を dB に換算してバジェットに繰り入れる会計が成立する。RS 符号の代数的構造（GF(2^m) 上の多項式）は [`../../foundations/mathematics/number-theory-algebra/finite-fields-coding.md`](../../foundations/mathematics/number-theory-algebra/finite-fields-coding.md)、符号化利得の理論的上限は [`../../foundations/information-theory/channel-capacity-coding.md`](../../foundations/information-theory/channel-capacity-coding.md) が扱う。届かない距離はリタイマ（プロトコル認識の全再生中継器）で区間分割する。PCIe Gen5/6 のサーバボードでリタイマが常備品になったことは、「銅の限界」が規格の紙面ではなく製品の BOM に現れた徴候である[^pcie]。
 
 ## アーキテクチャ (Architecture)
 
@@ -70,14 +70,14 @@ flowchart LR
 「Nyquist 半減で稼ぐ dB」 > 「アイ縮小で失う 9.5 dB」となり PAM4 が勝つ
 ```
 
-- PAM4 は多値化により**遷移の種類**も増え（レベル間で立ち上がり時間が異なる）、CDR・ジッタ解析が複雑化する。さらなる多値化（PAM6/PAM8）と光への移行が 224G 以降の分岐点であり、`../networking/` の光インターコネクト候補に接続する。
+- PAM4 は多値化により**遷移の種類**も増え（レベル間で立ち上がり時間が異なる）、CDR・ジッタ解析が複雑化する。さらなる多値化（PAM6/PAM8）と光への移行が 224G 以降の分岐点であり、[`../networking/`](../networking/) の光インターコネクト候補に接続する。
 
 ### 2. イコライゼーションの積層 (The Equalization Stack)
 
 - **TX FFE**: 送信波形を FIR フィルタで整形し、主カーソルの前後のシンボルに逆符号の成分を混ぜて既知の ISI を事前打消しする。送信振幅の総量は規定されているため、**エンファシスは「主信号を削って辺縁に配る」ゼロサム**である。
 - **CTLE**: 高周波にピーキングを持つアナログ連続時間フィルタ。安価で遅延ゼロだが、信号とノイズ・クロストークを区別せず持ち上げる。
-- **DFE**: 直前の判定ビット列に係数を掛けて減算する。**判定済みの値**を使うためノイズ増幅がない一方、誤判定が後続に伝播する（FEC との相性で管理）。第1タップは判定までの時間制約が最も厳しく、投機（両方計算して選ぶ）で解く。`../cpu/branch-prediction-speculation.md` と同じ「待てないなら両方やる」発想である。
-- **ADC-DSP 受信器**: 波形を数十 GS/s で量子化し、FFE/DFE/最尤系列推定 (MLSD) をデジタルで行う。適応が柔軟で PAM4 に適するが、電力は ADC が支配する。SerDes の消費電力指標 (pJ/bit) がスイッチ ASIC の電力予算を左右する時代（`../networking/nic-switch-architecture.md`）の主因である。
+- **DFE**: 直前の判定ビット列に係数を掛けて減算する。**判定済みの値**を使うためノイズ増幅がない一方、誤判定が後続に伝播する（FEC との相性で管理）。第1タップは判定までの時間制約が最も厳しく、投機（両方計算して選ぶ）で解く。[`../cpu/branch-prediction-speculation.md`](../cpu/branch-prediction-speculation.md) と同じ「待てないなら両方やる」発想である。
+- **ADC-DSP 受信器**: 波形を数十 GS/s で量子化し、FFE/DFE/最尤系列推定 (MLSD) をデジタルで行う。適応が柔軟で PAM4 に適するが、電力は ADC が支配する。SerDes の消費電力指標 (pJ/bit) がスイッチ ASIC の電力予算を左右する時代（[`../networking/nic-switch-architecture.md`](../networking/nic-switch-architecture.md)）の主因である。
 
 ### 3. クロック構成と CDR (Clocking & CDR)
 
@@ -91,13 +91,13 @@ flowchart LR
 
 ## セキュリティ考察 (Security Considerations)
 
-- **高速リンクは既定で平文である。** PCIe/NVLink/Ethernet の物理層に機密性はなく、インターポーザ（リンクに挟む解析治具）による盗聴・改竄は、ゲーム機や TPM への実攻撃で実証されてきた。対策として PCIe/CXL は **IDE (integrity and data encryption)**（リンク/セレクティブストリームの AES-GCM 保護）を規格化し、TEE のデバイス拡張 (TEE Device Interface Security Protocol) と組み合わされる。`../security/side-channels-tee-secure-boot.md` の信頼境界が「チップの縁」から「リンクの向こう」へ拡張される動きであり、`../accelerators/` のアクセラレータ機密計算の基盤になる。
-- **リタイマ・ケーブルは能動部品でありサプライチェーン面を持つ。** ファームウェアを持つリタイマ・スマートケーブルはリンク上の中間者になれる位置にあり、`../../software/security/software-supply-chain-security.md` の来歴・完全性の議論がボード部品にも適用される。
-- **トレーニング・適応の悪用**: リンクネゴシエーションは認証を持たないため、悪意ある終端が縮退（速度・幅の低下）を誘発する可用性攻撃は原理的に排除できない。物理アクセスを前提とする攻撃の常として、防御は筐体・スロットの物理管理と、縮退の監視 (`../../software/observability/`) に置かれる。
+- **高速リンクは既定で平文である。** PCIe/NVLink/Ethernet の物理層に機密性はなく、インターポーザ（リンクに挟む解析治具）による盗聴・改竄は、ゲーム機や TPM への実攻撃で実証されてきた。対策として PCIe/CXL は **IDE (integrity and data encryption)**（リンク/セレクティブストリームの AES-GCM 保護）を規格化し、TEE のデバイス拡張 (TEE Device Interface Security Protocol) と組み合わされる。[`../security/side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) の信頼境界が「チップの縁」から「リンクの向こう」へ拡張される動きであり、[`../accelerators/`](../accelerators/) のアクセラレータ機密計算の基盤になる。
+- **リタイマ・ケーブルは能動部品でありサプライチェーン面を持つ。** ファームウェアを持つリタイマ・スマートケーブルはリンク上の中間者になれる位置にあり、[`../../software/security/software-supply-chain-security.md`](../../software/security/software-supply-chain-security.md) の来歴・完全性の議論がボード部品にも適用される。
+- **トレーニング・適応の悪用**: リンクネゴシエーションは認証を持たないため、悪意ある終端が縮退（速度・幅の低下）を誘発する可用性攻撃は原理的に排除できない。物理アクセスを前提とする攻撃の常として、防御は筐体・スロットの物理管理と、縮退の監視 ([`../../software/observability/`](../../software/observability/)) に置かれる。
 
 ## 結論 (Conclusions)
 
-SerDes は「銅線の物理は変えられない」という制約に対し、**計算（イコライゼーション・FEC・適応制御）を注ぎ込んで帯域を買い続ける機械**である。クロックの廃止（埋め込み）、符号税の軽減、PAM4 の SNR 取引、イコライザの ADC-DSP 化、FEC の正式部品化のどの段階も、「より汚い波形を、より賢い受信器で読む」方向への一歩であり、その賢さの価格はプロセス微細化 (`../semiconductor-manufacturing/`) が決める。PCIe・USB・Ethernet・車載の物理層仕様は、この一つの部品箱の構成差にすぎない。
+SerDes は「銅線の物理は変えられない」という制約に対し、**計算（イコライゼーション・FEC・適応制御）を注ぎ込んで帯域を買い続ける機械**である。クロックの廃止（埋め込み）、符号税の軽減、PAM4 の SNR 取引、イコライザの ADC-DSP 化、FEC の正式部品化のどの段階も、「より汚い波形を、より賢い受信器で読む」方向への一歩であり、その賢さの価格はプロセス微細化 ([`../semiconductor-manufacturing/`](../semiconductor-manufacturing/)) が決める。PCIe・USB・Ethernet・車載の物理層仕様は、この一つの部品箱の構成差にすぎない。
 
 ### 続編への橋渡し
 

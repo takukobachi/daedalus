@@ -4,7 +4,7 @@
 
 CPU は命令を1つずつ順番に実行しているように見えるが、実際の現代コアは1サイクルに複数の命令を発行し、プログラム順序とは異なる順で演算し、後から辻褄を合わせている。この**動的実行 (dynamic execution)** 機構こそが、同じクロック周波数でも世代ごとに性能を伸ばしてきた中心であり、ソフトウェアの実効性能を左右する。
 
-本ドキュメントは、パイプライン (pipeline)・スーパースカラ (superscalar)・アウトオブオーダ実行 (out-of-order execution, OoO) の3層を整理し、命令レベル並列性 (ILP) がどこまで引き出せるか、命令の並びがなぜ IPC（instructions per cycle）を左右するか、コンパイラやプログラマが何を意識すべきかを、ハードウェアの観点から明らかにする。分岐予測と投機実行 (speculative execution) は別ドキュメント `branch-prediction-speculation.md` で深掘りするため、ここでは投機の入口として軽く触れるに留める。
+本ドキュメントは、パイプライン (pipeline)・スーパースカラ (superscalar)・アウトオブオーダ実行 (out-of-order execution, OoO) の3層を整理し、命令レベル並列性 (ILP) がどこまで引き出せるか、命令の並びがなぜ IPC（instructions per cycle）を左右するか、コンパイラやプログラマが何を意識すべきかを、ハードウェアの観点から明らかにする。分岐予測と投機実行 (speculative execution) は別ドキュメント [`branch-prediction-speculation.md`](branch-prediction-speculation.md) で深掘りするため、ここでは投機の入口として軽く触れるに留める。
 
 ## 方法論 (Methodology)
 
@@ -53,7 +53,7 @@ CPU は命令を1つずつ順番に実行しているように見えるが、実
 - **データハザード (data hazard)**: ある命令の結果を次が使うのに、まだ書き戻されていない。
   - **RAW (Read After Write)**: 真の依存 (true dependency)。フォワーディングで多くは救えるが、ロード結果を直後で使うと**ロード・ユース遅延 (load-use latency)** が残る。
   - **WAR / WAW**: 名前依存 (name dependency)。インオーダでは問題にならないが、OoO で順序を入れ替えると顕在化する。リネーミングで除去。
-- **制御ハザード (control hazard)**: 分岐の行き先が EX まで確定せず、その間どの命令をフェッチすべきか分からない。分岐予測 (branch prediction) で投機的に進め、外れたらフラッシュする（詳細は `branch-prediction-speculation.md`）。
+- **制御ハザード (control hazard)**: 分岐の行き先が EX まで確定せず、その間どの命令をフェッチすべきか分からない。分岐予測 (branch prediction) で投機的に進め、外れたらフラッシュする（詳細は [`branch-prediction-speculation.md`](branch-prediction-speculation.md)）。
 
 ### フォワーディングとストール (Forwarding & Stall)
 
@@ -121,6 +121,33 @@ CPU は命令を1つずつ順番に実行しているように見えるが、実
 
 要点は **「順不同で実行し、順序通りに確定する (execute out-of-order, retire in-order)」**。この分離が、ILP を引き出しつつプログラムの意味を保つ鍵である。
 
+### 命令のライフサイクル全体図 (OoO Pipeline Overview)
+
+以下は1命令がフェッチからコミットまでに通る構造を、インオーダ部（青枠の前後）とアウトオブオーダ部（中央）に分けて示したものである。破線は分岐予測ミス・例外時のフラッシュ経路を表す。
+
+```mermaid
+flowchart LR
+    subgraph FE["インオーダ・フロントエンド (in-order)"]
+        F["フェッチ<br/>(I-cache + 分岐予測)"] --> D["デコード<br/>(μop 化)"]
+        D --> R["リネーム<br/>(RAT: 論理→物理レジスタ)"]
+        R --> DS["ディスパッチ<br/>(ROB / RS / LSQ に割当)"]
+    end
+    subgraph OOO["アウトオブオーダ実行 (out-of-order)"]
+        IQ["発行キュー / 予約ステーション<br/>(オペランド準備完了で発行)"] --> EU["実行ユニット<br/>ALU / LD-ST / FP-SIMD / BR"]
+        EU -->|"結果ブロードキャスト<br/>(wakeup / bypass)"| IQ
+        LSQ["ロード/ストアキュー<br/>+ ストアバッファ"] <--> EU
+    end
+    subgraph BE["インオーダ・リタイア (in-order)"]
+        ROB["リオーダバッファ (ROB)<br/>プログラム順に保持"] --> C["コミット<br/>(アーキテクチャ状態を確定)"]
+    end
+    DS --> IQ
+    DS --> LSQ
+    DS --> ROB
+    EU -->|"完了通知"| ROB
+    C -->|"ストアをキャッシュへ書出し"| LSQ
+    EU -.->|"分岐ミス / 例外:<br/>以降の ROB エントリを破棄"| F
+```
+
 ## 技術詳細 (Technical Details)
 
 ### 1. 名前依存とリネーミングの効果
@@ -171,11 +198,11 @@ double sum = s0 + s1 + s2 + s3;
 | L1 ミス → L2/L3 | ~10–40 サイクル | OoO がその間に独立命令で隠せる範囲 |
 | 主記憶アクセス（LLC ミス） | ~200–300 サイクル | ROB 容量を超えると隠しきれず**ストール** |
 
-OoO は「待っている間に他の独立命令を進める」ことで遅延を隠す。だが隠せる量は ROB／物理レジスタ／予約ステーションの容量で頭打ちになる。主記憶遅延（数百サイクル）は、ROB 数百エントリでも埋めきれず、結局フロントエンドが止まる。**メモリ遅延が ILP の最大の敵**であり、その背景は `cache-memory-hierarchy.md` に詳しい。
+OoO は「待っている間に他の独立命令を進める」ことで遅延を隠す。だが隠せる量は ROB／物理レジスタ／予約ステーションの容量で頭打ちになる。主記憶遅延（数百サイクル）は、ROB 数百エントリでも埋めきれず、結局フロントエンドが止まる。**メモリ遅延が ILP の最大の敵**であり、その背景は [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) に詳しい。
 
 ### 4. メモリ命令の順序とメモリ曖昧性 (Memory Disambiguation)
 
-ロード／ストアの並べ替えは特に難しい。アドレスが実行時まで分からないため、「後続ロードが先行ストアと同じ番地か」を確定できない。コアは**ストアバッファ (store buffer)** とロード／ストアキューで管理し、安全なら後続ロードを先行させる（投機的メモリ順序）。誤れば（先行ストアと同番地と判明）ロードをやり直す。この機構は単一スレッドでは透過的だが、**マルチスレッドではメモリ順序 (memory ordering) として観測可能になる**。詳細は `memory-ordering-atomics.md`。
+ロード／ストアの並べ替えは特に難しい。アドレスが実行時まで分からないため、「後続ロードが先行ストアと同じ番地か」を確定できない。コアは**ストアバッファ (store buffer)** とロード／ストアキューで管理し、安全なら後続ロードを先行させる（投機的メモリ順序）。誤れば（先行ストアと同番地と判明）ロードをやり直す。この機構は単一スレッドでは透過的だが、**マルチスレッドではメモリ順序 (memory ordering) として観測可能になる**。詳細は [`memory-ordering-atomics.md`](memory-ordering-atomics.md)。
 
 ### 5. SMT / ハイパースレッディング (Simultaneous Multithreading)
 
@@ -183,17 +210,17 @@ ILP が尽きて遊休になった発行スロットを、**別スレッドの�
 
 - **利点**: ある1スレッドだけでは ILP・メモリ遅延で空く実行資源を、別スレッドが活用しスループットを底上げ（典型で +20〜30% 程度、ワークロード依存）。
 - **限界**: 物理資源（実行ユニット・キャッシュ・ROB・帯域）は共有。両スレッドが同種資源を奪い合うと、かえって遅くなることもある（キャッシュ容量の取り合い等）。レイテンシ重視のシングルスレッド性能は上がらない。
-- **設計上の含意**: SMT は ILP の限界を「スレッドレベル並列性 (TLP) で補う」発想。ILP（命令内並列）と TLP（スレッド間並列）は相補的な性能源である。
+- **設計上の含意**: SMT は ILP の限界を「スレッドレベル並列性 (TLP) で補う」発想（OS はこれを前提に SMT 兄弟を避けてタスクを分散する。[`process-thread-scheduling.md`](../../software/operating-systems/process-thread-scheduling.md) 参照）。ILP（命令内並列）と TLP（スレッド間並列）は相補的な性能源である。
 
 ### 6. 投機実行の入口 (Speculation — pointer to深掘り)
 
-OoO エンジンは分岐の結果を待たず、予測した経路を**投機的に**実行して ROB に積む。予測が当たればそのまま確定し、外れれば該当分岐以降の ROB エントリを破棄して正しい経路を再フェッチする（フラッシュ）。投機は ILP を引き出す要だが、**外れたときの命令も一時的には実行されてしまう**点が、マイクロアーキテクチャ状態（キャッシュ等）に痕跡を残し、後述のセキュリティ問題につながる。分岐予測器の構造と投機の深掘りは `branch-prediction-speculation.md` に委ねる。
+OoO エンジンは分岐の結果を待たず、予測した経路を**投機的に**実行して ROB に積む。予測が当たればそのまま確定し、外れれば該当分岐以降の ROB エントリを破棄して正しい経路を再フェッチする（フラッシュ）。投機は ILP を引き出す要だが、**外れたときの命令も一時的には実行されてしまう**点が、マイクロアーキテクチャ状態（キャッシュ等）に痕跡を残し、後述のセキュリティ問題につながる。分岐予測器の構造と投機の深掘りは [`branch-prediction-speculation.md`](branch-prediction-speculation.md) に委ねる。
 
 ## セキュリティ考察 (Security Considerations)
 
 動的実行は性能機構であると同時に、近年の代表的なマイクロアーキテクチャ攻撃の前提でもある。本質は「アーキテクチャ上は取り消される投機実行が、マイクロアーキテクチャ状態には痕跡を残す」ことにある。
 
-- **Spectre 系**: 分岐予測を攻撃者が誘導し、本来到達しないコード（境界チェックの先など）を投機実行させる。投機中に秘密値に依存したメモリアクセスを起こさせ、その痕跡をキャッシュのタイミング差から読み出す（`cache-memory-hierarchy.md` の Flush+Reload／Prime+Probe を参照）。分岐予測の悪用が中心のため、攻撃面の詳細は `branch-prediction-speculation.md` で扱う。
+- **Spectre 系**: 分岐予測を攻撃者が誘導し、本来到達しないコード（境界チェックの先など）を投機実行させる。投機中に秘密値に依存したメモリアクセスを起こさせ、その痕跡をキャッシュのタイミング差から読み出す（[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) の Flush+Reload／Prime+Probe を参照）。分岐予測の悪用が中心のため、攻撃面の詳細は [`branch-prediction-speculation.md`](branch-prediction-speculation.md) で扱う。
 - **Meltdown 系**: 例外を起こすアクセスでも、例外が**リタイア時に**確定するまでの間、後続命令が投機的に秘密値を使えてしまう設計上の隙を突く。インオーダ・リタイアの「確定は遅れる」性質が逆手に取られた形。
 - **MDS / ポートコンテンション系**: ストアバッファ・ロードバッファ・ラインフィルバッファ等、OoO/SMT が共有する内部バッファや実行ポートの競合から、同居スレッドの情報が漏れる（例: 実行ポートの混雑をタイミングで観測）。SMT は資源共有ゆえに**スレッド間サイドチャネル**を生みやすい。
 - **緩和策 (mitigations)**: 投機バリア（`lfence` 等で投機を堰き止める）、間接分岐の制御 (retpoline、IBRS/IBPB)、信頼境界をまたぐ際のバッファクリア、セキュリティ要件の高い環境での **SMT 無効化**、ハードウェア世代での設計修正。いずれも ILP・スループットを犠牲にし、**性能と機密性が直接対立する**。
@@ -213,6 +240,10 @@ OoO エンジンは分岐の結果を待たず、予測した経路を**投機�
 - [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — メモリ遅延がパイプライン／OoO を止める背景。ILP の最大の制約要因。
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 制御ハザードと投機実行の深掘り（分岐予測器・Spectre 系攻撃面）。
 - [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — OoO・ストアバッファがメモリ順序に与える影響と並行制御。
+- [`../../software/concurrency/memory-models-synchronization.md`](../../software/concurrency/memory-models-synchronization.md) — ストアバッファ由来の並べ替えを言語メモリモデルがどう抽象化するか（ソフトウェア側）。
+- [`../../software/operating-systems/process-thread-scheduling.md`](../../software/operating-systems/process-thread-scheduling.md) — SMT 兄弟を意識した負荷分散とコア・スケジューリング（OS 側）。
+- [`../security/side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) — 投機・資源共有サイドチャネルのハードウェアセキュリティ全体像。
+- [`../../foundations/mathematics/discrete-logic/propositional-boolean-logic.md`](../../foundations/mathematics/discrete-logic/propositional-boolean-logic.md) — 実行ユニット・パイプラインレジスタを構成する組合せ／順序回路の論理的基礎。
 
 ## 参考文献 (References)
 

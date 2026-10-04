@@ -4,22 +4,22 @@
 
 デジタル回路は「いつ動くか」「どれだけ電力を使うか」「どの状態から始まるか」の3点で支配される。これを担うのが、**クロック (clock)** 生成・分配網、**電源 (power)** 供給網、そして **リセット (reset)** 系である。性能 (performance)・電力 (power)・熱 (thermal) は独立に最適化できない一つの三角形を成し、SoC (System-on-Chip) 設計とOSの電源管理 (power management) は終始このトレードオフを調停し続ける。
 
-本ドキュメントは、クロックがどう作られ分配されるか、電力がどこで消費され制御されるか、そしてシステムが安全な初期状態へどう収束するかを整理し、それらが最終的にレジスタという**ソフトウェアの制御点 (software control point)** に集約される様子を示す。動作周波数 (operating frequency) と実効性能の関係は `../cpu/pipeline-superscalar-ooo.md` と、レジスタ経由の制御という形式は `mmio-dma-interrupts.md` と同根である。
+本ドキュメントは、クロックがどう作られ分配されるか、電力がどこで消費され制御されるか、そしてシステムが安全な初期状態へどう収束するかを整理し、それらが最終的にレジスタという**ソフトウェアの制御点 (software control point)** に集約される様子を示す。動作周波数 (operating frequency) と実効性能の関係は [`pipeline-superscalar-ooo.md`](../cpu/pipeline-superscalar-ooo.md) と、レジスタ経由の制御という形式は [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) と同根である。電力の物理的起源（CMOS のスイッチングとリーク）は [`mosfet-cmos.md`](../../foundations/physics/quantum-solid-state/mosfet-cmos.md)、OS 側のガバナ・アイドル管理は [`power-management.md`](../../software/operating-systems/power-management.md) が扱う。
 
 ## 方法論 (Methodology)
 
 - 3系統（クロック・電源・リセット）を、「何が生成・供給されるか」「どう分配・順序づけられるか」「ソフトがどのレジスタで制御するか」の3軸で分解する。
-- 動的消費電力の基礎式 **P = α·C·V²·f**（α: スイッチング率, C: 容量, V: 電圧, f: 周波数）を基礎に、DVFS・クロックゲーティング・パワーゲーティングがどの項を削るかを対応づける。
+- 動的消費電力の基礎式 **P = α·C·V²·f**（α: スイッチング率, C: 容量, V: 電圧, f: 周波数）[^chandrakasan][^weste]を基礎に、DVFS・クロックゲーティング・パワーゲーティングがどの項を削るかを対応づける。
 - 数値は一般的なモバイル／PC／サーバ世代の代表値であり、世代・プロセス・実装で大きく変動する。絶対値ではなく**桁感 (order of magnitude)** と相対関係を理解の基準とする。
 - 起動から省電力遷移までを1本の状態シーケンス（リセット解除 → クロック安定 → 通常動作 → スリープ → 復帰）として通し、各機構の協調を示す。
 
 ## 発見事項 (Findings)
 
 1. **クロックは「生成」と「分配」の2問題に分かれる。** 水晶発振器 (crystal oscillator) と PLL (Phase-Locked Loop) が周波数を作り、クロックツリー (clock tree) が広大なチップ全域へ**偏り (skew)** を抑えて配る。配るだけで電力の相当割合を消費するため、使わない枝を止める**クロックゲーティング (clock gating)** が基本戦術になる。
-2. **消費電力は動的成分と静的成分に分かれ、有効な対策が違う。** 動的電力は P = α·C·V²·f に従い、電圧 V の二乗に比例するため DVFS の主眼は電圧低減にある。一方、静的成分である**リーク電流 (leakage)** は微細化で増大し、周波数を下げても消えない。これを根絶するには**パワーゲーティング (power gating)**（電源そのものの遮断）しかない。
-3. **異なるクロックドメイン間の信号受け渡しは本質的に危険。** クロックドメインクロッシング (CDC, Clock Domain Crossing) は**準安定 (metastability)** を生み、同期化 (synchronizer) を怠ると間欠的・再現困難な故障になる。これはソフトのバグではなく物理現象である。
+2. **消費電力は動的成分と静的成分に分かれ、有効な対策が違う。** 動的電力は P = α·C·V²·f に従い、電圧 V の二乗に比例するため DVFS の主眼は電圧低減にある。一方、静的成分である**リーク電流 (leakage)** は微細化で増大し、周波数を下げても消えない。これを根絶するには**パワーゲーティング (power gating)**（電源そのものの遮断）しかない[^weste]。
+3. **異なるクロックドメイン間の信号受け渡しは本質的に危険。** クロックドメインクロッシング (CDC, Clock Domain Crossing) は**準安定 (metastability)** を生み、同期化 (synchronizer) を怠ると間欠的・再現困難な故障になる。これはソフトのバグではなく物理現象である[^ginosar]。
 4. **リセットは「いつ」と「順序」が正しさを決める。** パワーオンリセット (POR, Power-On Reset) は電源が安定するまでロジックを抑え、リセットドメイン (reset domain) ごとの解除順序を誤ると、未初期化のブロックが動き出して起動に失敗する。
-5. **すべての制御点は最終的にレジスタに落ちる。** クロック分周比、電圧レール選択、ゲート許可、Sx 状態遷移は、クロックコントローラ・**PMIC (Power Management IC)**・電源管理ユニットの MMIO/I²C レジスタへの書き込みで実行される。つまり電源・クロック管理は `mmio-dma-interrupts.md` のレジスタ制御の一適用例である。
+5. **すべての制御点は最終的にレジスタに落ちる。** クロック分周比、電圧レール選択、ゲート許可、Sx 状態遷移は、クロックコントローラ・**PMIC (Power Management IC)**・電源管理ユニットの MMIO/I²C レジスタへの書き込みで実行される。つまり電源・クロック管理は [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) のレジスタ制御の一適用例である。
 
 ## アーキテクチャ (Architecture)
 
@@ -50,8 +50,8 @@
 
 - **発振器 (oscillator)**: 水晶は高安定だが低速。これを PLL が逓倍して GHz 級を作る。リング発振器 (ring oscillator) は安価だが温度・電圧で揺れるため、計時より内部用途に使う。
 - **PLL / クロック逓倍**: 出力位相を基準にロックさせ、整数または分数逓倍で目的周波数を得る。**ロック時間 (lock time)** があり、周波数変更直後は出力が安定するまで使えない。これが DVFS の周波数切替に固有の遅延を生む。
-- **クロックツリーと skew**: 単一のクロックを数百万フリップフロップへ「同時に」届けるのは物理的に不可能なため、バランスの取れたバッファ木 (H-tree 等) で到達時刻のばらつき=**クロックスキュー (clock skew)** を最小化する。ツリーの駆動だけでチップ動的電力の十数〜数十%を占めうる。
-- **クロックゲーティング (clock gating)**: 使わないユニットへのクロックを論理ゲートで止め、α（スイッチング率）を実質ゼロにして動的電力を削る。最も低コストで有効な省電力策。停止中もリーク電流は残る点に注意。
+- **クロックツリーと skew**: 単一のクロックを数百万フリップフロップへ「同時に」届けるのは物理的に不可能なため、バランスの取れたバッファ木 (H-tree 等) で到達時刻のばらつき=**クロックスキュー (clock skew)** を最小化する。ツリーの駆動だけでチップ動的電力の十数〜数十%を占めうる（設計・世代により大きく変動する桁感）[^weste]。
+- **クロックゲーティング (clock gating)**: 使わないユニットへのクロックを論理ゲートで止め、α（スイッチング率）を実質ゼロにして動的電力を削る。最も低コストで有効な省電力策[^chandrakasan]。停止中もリーク電流は残る点に注意。
 
 ### クロックドメインとCDC (Clock Domain Crossing)
 
@@ -64,7 +64,7 @@
       clkA               clkB      準安定が収束する時間を稼ぐ
 ```
 
-互いに無関係な（または位相関係の不定な）クロック間で信号を渡すと、受け側 FF のセットアップ/ホールド条件を破り**準安定 (metastability)** に陥る。確率的に出力が不定値で漂い、稀に下流へ伝播して故障する。対策が複数段フリップフロップによる同期化、複数ビットには gray code やハンドシェイク、FIFO による安全な受け渡しである。
+互いに無関係な（または位相関係の不定な）クロック間で信号を渡すと、受け側 FF のセットアップ/ホールド条件を破り**準安定 (metastability)** に陥る。確率的に出力が不定値で漂い、稀に下流へ伝播して故障する。準安定からの脱出確率は時間に対して指数的に増すため、同期器の段数（=待ち時間）で MTBF を桁単位で稼ぐ[^ginosar]。対策が複数段フリップフロップによる同期化、複数ビットには gray code やハンドシェイク、FIFO による安全な受け渡しである[^cummings]。
 
 ### 電源ドメインとパワーゲーティング (Power Domains)
 
@@ -86,7 +86,7 @@
 ```
 
 - **電圧レール (voltage rail)**: 機能ブロックごとに別電圧を供給する。CPU/GPU/SoC ファブリック/I-O/常時オン (always-on) を分けると、各々を独立に電圧調整・遮断できる。
-- **パワーゲーティング (power gating)**: ドメインへの電源を MOSFET スイッチ（ヘッダ/フッタ）で物理遮断し、リーク電流をほぼゼロにする。代償は (a) 遮断中に状態が失われる（**リテンション (retention) セル**や状態退避が要る）、(b) 復帰に電源安定とリセット再シーケンスの時間がかかる、(c) ラッシュ電流 (inrush current) 対策が要る。
+- **パワーゲーティング (power gating)**: ドメインへの電源を MOSFET スイッチ（ヘッダ/フッタ）で物理遮断し、リーク電流をほぼゼロにする。代償は (a) 遮断中に状態が失われる（**リテンション (retention) セル**や状態退避が要る）、(b) 復帰に電源安定とリセット再シーケンスの時間がかかる、(c) ラッシュ電流 (inrush current) 対策が要る[^weste]。
 - **常時オンドメイン (always-on)**: 電源管理ユニット (PMU)、RTC、ウェイクアップ論理は他を切っても通電し続け、復帰の起点となる。
 
 ### リセットドメインと順序 (Reset Domains & Sequencing)
@@ -116,7 +116,7 @@ POR は電源が規定電圧に達するまで全ロジックをリセット状�
 | 電圧低減 (V↓, DVFS) | V² | **二乗で効く**最も強力 | 最大周波数も下がる・下限あり |
 | パワーゲーティング | I_leak | 静的電力を根絶 | 状態喪失・復帰遅延 |
 
-DVFS が強力なのは、周波数を下げると必要電圧も下げられ、**V² と f の積**で立方近くの削減になるからである。ただし電圧には回路が機能する下限（しきい値電圧依存）があり、際限なくは下げられない。
+DVFS が強力なのは、周波数を下げると必要電圧も下げられ、**V² と f の積**で立方近くの削減になるからである[^chandrakasan]。ただし電圧には回路が機能する下限（しきい値電圧依存）があり、際限なくは下げられない。
 
 ### 2. DVFS とガバナ (illustrative)
 
@@ -143,11 +143,11 @@ void governor_tick(unsigned util /* 0..100 */) {
 }
 ```
 
-**順序が機能上必須**な点は `mmio-dma-interrupts.md` の「設定してから開始ビット」と同型である。周波数を上げる前に電圧を確保しないと、高速動作に電圧が足りずタイミング違反で誤動作する。下げるときは逆。`clk_set_rate` は内部で PLL のロック時間を待つため瞬時ではない。
+**順序が機能上必須**な点は [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) の「設定してから開始ビット」と同型である。周波数を上げる前に電圧を確保しないと、高速動作に電圧が足りずタイミング違反で誤動作する。下げるときは逆。`clk_set_rate` は内部で PLL のロック時間を待つため瞬時ではない。
 
 ### 3. P-state と C-state（x86 を例に, illustrative）
 
-ACPI が定義する2系統の状態。混同しやすいが直交する。
+ACPI が定義する2系統の状態[^acpi]。混同しやすいが直交する。x86 では P-state 要求は MSR（`IA32_PERF_CTL` や HWP）、C-state 進入は `MWAIT` 命令のヒントで行われる[^sdm]。
 
 - **P-state (Performance state)**: コアが**動作中**の電圧・周波数の組（DVFS の離散動作点）。P0 が最高性能、番号が上がるほど低電力。
 - **C-state (Idle state)**: コアが**何もしていない**ときの停止深度。C0 が稼働、C1 でクロック停止 (halt)、より深い C-state でキャッシュフラッシュ・電圧降下・コア電源遮断まで進む。
@@ -159,7 +159,7 @@ ACPI が定義する2系統の状態。混同しやすいが直交する。
                                 深いほど復帰遅延 (wake latency) が増える
 ```
 
-深い C-state ほど省電力だが**復帰遅延 (exit latency)** が増え、頻繁な短い割り込みでは却って損になる。OS は予測残アイドル時間と各 C-state の損益分岐 (break-even) を比較して選ぶ。
+深い C-state ほど省電力だが**復帰遅延 (exit latency)** が増え、頻繁な短い割り込みでは却って損になる。OS は予測残アイドル時間と各 C-state の損益分岐 (break-even) を比較して選ぶ（Linux の cpuidle ガバナ。[`power-management.md`](../../software/operating-systems/power-management.md)）。
 
 ### 4. サーマルスロットリング (Thermal Throttling)
 
@@ -169,11 +169,11 @@ ACPI が定義する2系統の状態。混同しやすいが直交する。
         └────────────── 冷えたら復帰 ◀─────────────┘
 ```
 
-ダイ温度がしきい値を超えると、ハードウェアまたはファームウェアが周波数・電圧を強制的に下げて発熱を抑える。性能の上限が冷却能力で決まることを意味し、ピーク性能 (ターボ/ブースト) は熱バジェットを使い切るまでの一時的なものである。これは「周波数 ≠ 実効性能」を示す好例で、`../cpu/pipeline-superscalar-ooo.md` の IPC と合わせて実効スループットが決まる。
+ダイ温度がしきい値を超えると、ハードウェアまたはファームウェアが周波数・電圧を強制的に下げて発熱を抑える。性能の上限が冷却能力で決まることを意味し、ピーク性能 (ターボ/ブースト) は熱バジェットを使い切るまでの一時的なものである。これは「周波数 ≠ 実効性能」を示す好例で、[`pipeline-superscalar-ooo.md`](../cpu/pipeline-superscalar-ooo.md) の IPC と合わせて実効スループットが決まる。
 
 ### 5. 省電力状態と ACPI Sx（システム全体, illustrative）
 
-コア単位の C-state に対し、システム全体のスリープ深度が ACPI の **Sx 状態**。
+コア単位の C-state に対し、システム全体のスリープ深度が ACPI の **Sx 状態**[^acpi]。Arm 系では OS からファームウェアへの CPU 電源状態要求を PSCI (`CPU_SUSPEND` / `CPU_OFF` / `SYSTEM_SUSPEND`) で標準化している[^psci]。
 
 | 状態 | 通称 | 内容 | 復帰起点 |
 |---|---|---|---|
@@ -202,11 +202,11 @@ ACPI が定義する2系統の状態。混同しやすいが直交する。
 
 ## セキュリティ考察 (Security Considerations)
 
-電源・クロックの制御点はソフトから書けるレジスタであるため、それ自体が攻撃面になる。性能機構が情報漏洩・改竄の経路になる点は、`../cpu/cache-memory-hierarchy.md` のキャッシュサイドチャネルと同じ構図である。
+電源・クロックの制御点はソフトから書けるレジスタであるため、それ自体が攻撃面になる。性能機構が情報漏洩・改竄の経路になる点は、[`cache-memory-hierarchy.md`](../cpu/cache-memory-hierarchy.md) のキャッシュサイドチャネルと同じ構図であり、物理攻撃全般は [`side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) で扱う。
 
-- **CLKSCREW 系（周波数/電圧の過剰操作によるフォールト注入）**: DVFS レジスタは多くの環境で特権ソフトから書ける。意図的に電圧を下げすぎる／周波数を上げすぎると、タイミング違反で計算結果にビット反転 (fault) を誘発できる。これを悪用し、TrustZone 等の隔離越しに署名検証を狂わせたり鍵を漏らす攻撃が CLKSCREW として報告された。**対策**は、DVFS 制御の特権分離、信頼ドメイン実行中の動作点固定、動作点の範囲制限（安全マージン外を拒否）。
-- **Plundervolt / Undervolting 系**: 動的電圧スケーリングのソフト制御インタフェース (例: x86 の電圧オフセット MSR) を使い、SGX のような隔離実行中に電圧を下げてフォールトを注入し、秘密を漏らす攻撃。**対策**はアンダーボルティング・インタフェースの無効化／施錠（マイクロコード更新で対応された）。
-- **電力サイドチャネル (power side channel)**: 消費電力や周波数の変動は処理内容に依存して漏れる。オンチップの電力/周波数センサ（例: RAPL 等のテレメトリ）を高い分解能で読めると、秘密依存の電力波形からデータを推定しうる。**対策**はテレメトリ分解能の制限・アクセス制御、定数電力/定数時間実装。
+- **CLKSCREW 系（周波数/電圧の過剰操作によるフォールト注入）**: DVFS レジスタは多くの環境で特権ソフトから書ける。意図的に電圧を下げすぎる／周波数を上げすぎると、タイミング違反で計算結果にビット反転 (fault) を誘発できる。これを悪用し、TrustZone 等の隔離越しに署名検証を狂わせたり鍵を漏らす攻撃が CLKSCREW として報告された[^clkscrew]。**対策**は、DVFS 制御の特権分離、信頼ドメイン実行中の動作点固定、動作点の範囲制限（安全マージン外を拒否）。
+- **Plundervolt / Undervolting 系**: 動的電圧スケーリングのソフト制御インタフェース (例: x86 の電圧オフセット MSR) を使い、SGX のような隔離実行中に電圧を下げてフォールトを注入し、秘密を漏らす攻撃。**対策**はアンダーボルティング・インタフェースの無効化／施錠（マイクロコード更新で対応された）[^plundervolt]。
+- **電力サイドチャネル (power side channel)**: 消費電力や周波数の変動は処理内容に依存して漏れる。オンチップの電力/周波数センサ（例: RAPL 等のテレメトリ）を高い分解能で読めると、秘密依存の電力波形からデータを推定しうる。非特権での RAPL 読み出しから SGX 内の AES-NI 鍵や KASLR を漏らした PLATYPUS が実例である[^platypus]。**対策**はテレメトリ分解能の制限・アクセス制御、定数電力/定数時間実装。
 - **リセット/グリッチ攻撃**: 電源・クロックに物理的グリッチ (glitch) を注入してセキュアブートやフューズ読み出しを飛ばす攻撃。**対策**は電圧/クロック異常検出器 (brown-out/glitch detector)、冗長チェック、安全側へ倒すリセット設計。
 - **ウォッチドッグの悪用/無効化**: ウォッチドッグを止められると、ハングや改竄状態が検出されず固定化する。設定レジスタを施錠（一度有効化したら無効化不可）する構成が望ましい。
 
@@ -218,22 +218,39 @@ ACPI が定義する2系統の状態。混同しやすいが直交する。
 - 消費電力は動的 (P=α·C·V²·f) と静的 (リーク) に分かれ、DVFS は V² への依存を利用して動的電力を、パワーゲーティングは電源遮断で静的電力を削る。両者は代償（性能低下／状態喪失・復帰遅延）が異なる。
 - P-state（動作中の動作点）と C-state（アイドル深度）は直交し、Sx でシステム全体のスリープ深度が決まる。深いほど省電力だが復帰遅延が増える損益関係にある。
 - リセットは「いつ解除するか」の順序が正しさを決め、ウォッチドッグが自動復旧の最後の砦となる。
-- これら全制御点は最終的にクロックコントローラ・PMIC・PMU のレジスタ書き込みに帰着し、`mmio-dma-interrupts.md` のレジスタ制御の一適用例である。同時に、それらのつまみは CLKSCREW/Plundervolt 系のフォールト注入や電力サイドチャネルの攻撃面でもあり、特権分離と範囲制限で守る必要がある。
+- これら全制御点は最終的にクロックコントローラ・PMIC・PMU のレジスタ書き込みに帰着し、[`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) のレジスタ制御の一適用例である。同時に、それらのつまみは CLKSCREW/Plundervolt 系のフォールト注入や電力サイドチャネルの攻撃面でもあり、特権分離と範囲制限で守る必要がある。
 
 ### 次の接続先 (Related Topics)
 
-- `mmio-dma-interrupts.md` — 電源・クロック制御も MMIO/PMIC レジスタ経由で行われる（レジスタ制御の同型例）。
-- `../cpu/pipeline-superscalar-ooo.md` — 周波数と実効性能（IPC）の関係。サーマルスロットリングが性能上限を決める文脈。
-- `../cpu/cache-memory-hierarchy.md` — 性能機構がサイドチャネルになる構図の対照例。
+- [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) — 電源・クロック制御も MMIO/PMIC レジスタ経由で行われる（レジスタ制御の同型例）。
+- [`boot-initialization.md`](boot-initialization.md) — 電源シーケンス・PLL ロック・リセット解除がブートの最初の段になる。
+- [`pipeline-superscalar-ooo.md`](../cpu/pipeline-superscalar-ooo.md) — 周波数と実効性能（IPC）の関係。サーマルスロットリングが性能上限を決める文脈。
+- [`cache-memory-hierarchy.md`](../cpu/cache-memory-hierarchy.md) — 性能機構がサイドチャネルになる構図の対照例。
+- [`power-management.md`](../../software/operating-systems/power-management.md) — cpufreq/cpuidle ガバナ、サスペンド/ハイバネートの OS 実装。
+- [`mosfet-cmos.md`](../../foundations/physics/quantum-solid-state/mosfet-cmos.md) — 動的電力とリーク電流のデバイス物理。
 
 ## 参考文献 (References)
 
-**一次資料 (Primary — 仕様・教科書)**
+**一次資料 (Primary — 仕様・論文・教科書)**
 
-- UEFI Forum. *ACPI Specification* — P-state / C-state / S-state の規範。 — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。
-- Arm. *Power State Coordination Interface (PSCI)* (DEN 0022). — [developer.arm.com](https://developer.arm.com/documentation/den0022/latest) — Accessed: 2026-07-02。マルチコアの電源状態遷移をファームウェアに委譲する標準インタフェース。
-- Weste, N. H. E., & Harris, D. M. (2011). *CMOS VLSI Design* (4th ed.). Addison-Wesley. — 動的/静的消費電力の物理と低電力設計の標準教科書。
+[^acpi]: UEFI Forum. *ACPI Specification* — P-state / C-state / S-state の規範。 — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。
+
+[^psci]: Arm. *Power State Coordination Interface (PSCI)* (DEN 0022). — [developer.arm.com](https://developer.arm.com/documentation/den0022/latest) — Accessed: 2026-07-02。マルチコアの電源状態遷移をファームウェアに委譲する標準インタフェース。
+
+[^sdm]: Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3B（Power and Thermal Management: EIST/HWP、MWAIT による C-state）. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-10-04。
+
+[^chandrakasan]: Chandrakasan, A. P., Sheng, S., & Brodersen, R. W. (1992). Low-Power CMOS Digital Design. *IEEE Journal of Solid-State Circuits*, 27(4), 473–484. DOI: 10.1109/4.126534 — 動的電力 α·C·V²·f と電圧スケーリングによる低電力化の古典。
+
+[^weste]: Weste, N. H. E., & Harris, D. M. (2011). *CMOS VLSI Design: A Circuits and Systems Perspective* (4th ed.). Addison-Wesley. — 動的/静的消費電力の物理、クロック分配、パワーゲーティングの標準教科書。
+
+[^ginosar]: Ginosar, R. (2011). Metastability and Synchronizers: A Tutorial. *IEEE Design & Test of Computers*, 28(5), 23–35. DOI: 10.1109/MDT.2011.113 — 準安定の確率モデルと同期器 MTBF の解説。
+
+[^clkscrew]: Tang, A., Sethumadhavan, S., & Stolfo, S. (2017). CLKSCREW: Exposing the Perils of Security-Oblivious Energy Management. *Proc. 26th USENIX Security Symposium*, 1057–1074. — DVFS 制御を悪用した TrustZone へのフォールト注入。
+
+[^plundervolt]: Murdock, K., Oswald, D., Garcia, F. D., Van Bulck, J., Gruss, D., & Piessens, F. (2020). Plundervolt: Software-based Fault Injection Attacks against Intel SGX. *Proc. IEEE Symposium on Security and Privacy 2020*, 1466–1482. DOI: 10.1109/SP40000.2020.00057 — 未文書化の電圧オフセット MSR による SGX へのフォールト注入。
+
+[^platypus]: Lipp, M., Kogler, A., Oswald, D., Schwarz, M., Easdon, C., Canella, C., & Gruss, D. (2021). PLATYPUS: Software-based Power Side-Channel Attacks on x86. *Proc. IEEE Symposium on Security and Privacy 2021*, 355–371. DOI: 10.1109/SP40001.2021.00063 — RAPL 経由の電力サイドチャネル。
 
 **二次資料 (Secondary)**
 
-- Cummings, C. E. (2008). *Clock Domain Crossing (CDC) Design & Verification Techniques Using SystemVerilog*. SNUG Boston. — [PDF](http://www.sunburst-design.com/papers/CummingsSNUG2008Boston_CDC.pdf) — Accessed: 2026-07-02。CDC・シンクロナイザ設計の定番解説。
+[^cummings]: Cummings, C. E. (2008). *Clock Domain Crossing (CDC) Design & Verification Techniques Using SystemVerilog*. SNUG Boston. — [PDF](http://www.sunburst-design.com/papers/CummingsSNUG2008Boston_CDC.pdf) — Accessed: 2026-07-02。CDC・シンクロナイザ設計の定番解説。

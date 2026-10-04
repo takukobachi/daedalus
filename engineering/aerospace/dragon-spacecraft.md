@@ -4,9 +4,11 @@
 
 **Dragon** は、SpaceX が NASA の商業輸送プログラムのもとで開発した宇宙船である。貨物型 (Dragon 1, 2010–2020) は民間機として初めて軌道からの回収に成功し、**Crew Dragon (Dragon 2)** は 2020年5月の Demo-2 で**民間開発機として史上初の有人軌道飛行**を達成、以後 ISS への定期有人輸送を担っている[^nasa-ccp]。
 
+> **運用状況 (as of 2026-10)**: 2026年10月1日に Crew-13 が打ち上げられ（Crew Dragon の21回目の有人軌道飛行、ドッキングまで約7時間55分）、Crew-12 は10月7日以降の離脱・翌日の着水が予定されている[^crew13][^crew12]。2026年1月には Crew-11 が ISS 初の医療上の理由による早期帰還を行った[^crew11]。貨物型では CRS-34（2026年5〜6月）で同一カプセルの6回目の飛行という記録を作った[^crs34]。NASA は2026年9月に Crew-15〜17 を追加発注し（$946M、契約総額 $5.92B、運用は2030年まで）[^crew17]、一方で SpaceX は ISS 退役後の2030年以降に Crew Dragon / Falcon 9 の有人運用を終える方針を NASA 等に伝えたと報じられている（二次報道、未確認）[^dragon-2030]。
+
 ロケット（Falcon 9 / Starship）が「質量を軌道に運ぶ機械」だとすれば、宇宙船は「**人間を生かして往復させる機械**」であり、要求の質が変わる。具体的には、生命維持 (ECLSS)、全飛行域での脱出 (abort)、確実な帰還（熱防護・パラシュート）、そして有人認定 (human-rating) という検証の重さである。本ドキュメントは、Dragon 2 のハードウェアを **SuperDraco による pusher 型アボート**、**自律ドッキング**、**パラシュート系**、**タッチスクリーン化されたコックピット**の設計判断を軸に分析し、2019年の地上爆発事故（SuperDraco 系の逆流着火）から有人機の故障解析を学ぶ。分析深度は Level 3。
 
-> 関連: 熱シールド PICA-X は `reentry-thermal-protection.md`、冗長計算機の設計原理は `avionics-gnc.md`、ハイパーゴリック推進剤の一般論は `spacex-rocket-engines.md` の対極として本書で扱う。
+> 関連: 熱シールド PICA-X は [`reentry-thermal-protection.md`](reentry-thermal-protection.md)、冗長計算機の設計原理は [`avionics-gnc.md`](avionics-gnc.md)、ハイパーゴリック推進剤の一般論は [`spacex-rocket-engines.md`](spacex-rocket-engines.md) の対極として本書で扱う。
 
 ## 方法論 (Methodology)
 
@@ -78,7 +80,7 @@
 
 - **要求**: アボートは「失敗しつつある巨大ロケットから、1秒を争って十分な距離を取る」機能である。要求は (1) **着火の絶対確実性**、(2) **即応**（コンマ秒での全推力）、(3) 深いスロットリング（軌道離脱用 Draco と共通の推進剤系で成立させる）。
 - **解**: 自己着火性 (hypergolic) の四酸化二窒素/モノメチルヒドラジン (NTO/MMH) を採用した。点火器不要で接触即燃焼、常温貯蔵可能で長期待機に向く。8基で計 ~570 kN を発生し、カプセルを数秒で射点から km 級に運ぶ[^superdraco]。
-- **製造**: 燃焼室はインコネル系超合金の**金属積層造形 (DMLS)**。複雑な冷却流路を一体成形でき、2014年時点で「印刷したエンジンで人を運ぶ」判断をした先駆例（Raptor 3 の AM 多用の伏線。`spacex-rocket-engines.md`）。
+- **製造**: 燃焼室はインコネル系超合金の**金属積層造形 (DMLS)**。複雑な冷却流路を一体成形でき、2014年時点で「印刷したエンジンで人を運ぶ」判断をした先駆例（Raptor 3 の AM 多用の伏線。[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）。
 - **代償**: ハイパーゴリック推進剤は毒性・腐食性が強く、地上作業の防護・後処理が重い。「性能の Isp」ではなく「確実性と即応」で推進剤を選んだ、エンジン編とは逆向きの最適化である。
 
 ### 2019年地上爆発 — 逆流と titanium fire (The 2019 Anomaly)
@@ -87,25 +89,25 @@
 
 - **機構**: SuperDraco 点火の約100ミリ秒前、加圧系ヘリウムの起動時に、**逆止弁 (check valve) を透過して配管に漏れ出ていた液体 NTO のスラグ**が高圧で弁へ叩き込まれ、チタン製部品に高速衝突。高圧酸化剤環境下でチタンが発火し（titanium fire。チタンは高圧 NTO 中で衝撃着火しうる）、系全体の爆発に至った[^anomaly2019]。
 - **対策**: 逆止弁を**バーストディスク (burst disk)** に置換。破裂板は開くまで完全密封であり、「漏れる可能性のある可動弁」を「漏れが物理的にありえない受動部品」に変えた。あわせて手順・検証を強化[^anomaly2019]。
-- **教訓**: (1) 「逆止弁は逆流させない」というカタログ上の機能を、有人系では**物理的不可能性**まで格上げする、(2) 材料適合性（チタン×高圧 NTO）は静的な相性表ではなく**動的条件（衝撃・圧力）込み**で評価する、(3) 事故が地上試験で起きたこと自体が、飛行前に故障モードを洗い出す試験戦略の成果でもある。これは AMOS-6・CRS-7（`rocket-structures-tanks.md`）と並ぶ、SpaceX の「高価な授業」の三例目である。
+- **教訓**: (1) 「逆止弁は逆流させない」というカタログ上の機能を、有人系では**物理的不可能性**まで格上げする、(2) 材料適合性（チタン×高圧 NTO）は静的な相性表ではなく**動的条件（衝撃・圧力）込み**で評価する、(3) 事故が地上試験で起きたこと自体が、飛行前に故障モードを洗い出す試験戦略の成果でもある。これは AMOS-6・CRS-7（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）と並ぶ、SpaceX の「高価な授業」の三例目である。
 
 ### パラシュートと帰還 (Parachutes & Recovery)
 
 - **構成**: ドローグ2傘で姿勢を安定・初期減速し、メイン4傘で着水速度まで落とす。メインは1傘喪失でも安全着水できる冗長設計。
 - **Mark 3 への改良**: 開発中の落下試験失敗を受け、リザーブライン材を強度に優れる Zylon へ変え、縫製・荷重配分を再設計した **Mark 3** に更新。NASA と共同で数十回規模の試験を重ねて認定した。「枯れた技術」と見られがちなパラシュートが、実は認定の最難関の一つだった[^parachute]。
-- **海上回収**: 着水後は回収船が捕捉。当初構想の推進着陸（SuperDraco で陸上へ）は、認定検証の負荷と熱シールド貫通部（脚）のリスクを嫌って断念された[^propulsive]。これは Starship の動力着陸（`spacex-starship-superheavy.md`）とは逆の判断であり、「有人認定の重さ」が技術選択を曲げる実例である。
+- **海上回収**: 着水後は回収船が捕捉。当初構想の推進着陸（SuperDraco で陸上へ）は、認定検証の負荷と熱シールド貫通部（脚）のリスクを嫌って断念された[^propulsive]。これは Starship の動力着陸（[`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)）とは逆の判断であり、「有人認定の重さ」が技術選択を曲げる実例である。
 
 ### ECLSS とコックピット (Life Support & Cockpit)
 
 - **ECLSS (Environmental Control and Life Support System)**: 与圧維持（N₂/O₂）、CO₂ 除去、温湿度制御、火災検知・消火、与圧服インタフェース（急減圧時は服が個別のバックアップ与圧を担う）。ISS 往復（数日〜半年係留）の規模では、再生型（水・酸素の再利用）ではなく**消耗品ベース**で成立させ、複雑さを避けている。
-- **コックピット**: 3面の大型タッチスクリーンに飛行情報・操作を集約し、**アボート起動・消火など生死に直結する操作は物理スイッチ**として独立させる。飛行は原則自律（打ち上げ〜ドッキング〜帰還まで乗員操作なしで完結可能）で、手動操縦は縮退モードとする。これは「人間は監視者であり最後のバックアップ」という設計思想である[^cockpit]。`avionics-gnc.md` の冗長計算機構成（民生部品×多数決）は Dragon にも通底する。
+- **コックピット**: 3面の大型タッチスクリーンに飛行情報・操作を集約し、**アボート起動・消火など生死に直結する操作は物理スイッチ**として独立させる。飛行は原則自律（打ち上げ〜ドッキング〜帰還まで乗員操作なしで完結可能）で、手動操縦は縮退モードとする。これは「人間は監視者であり最後のバックアップ」という設計思想である[^cockpit]。[`avionics-gnc.md`](avionics-gnc.md) の冗長計算機構成（民生部品×多数決）は Dragon にも通底する。
 
 ## 安全考察 (Safety Considerations)
 
 > 有人機では「セキュリティ考察」は文字どおり**乗員安全 (crew safety)** である。
 
 - **確率要求と設計の対応**: NASA の商業乗員輸送は、ミッション喪失・乗員喪失確率 (LOC) の定量要求を課す（ISS ミッションで 1/270 級とされる）。アボートの全域カバー、パラシュート冗長、自律離脱能力は、この数値要求を満たすための独立の防護層 (layers of protection) として積まれている[^nasa-ccp]。
-- **「使われない系」の検証**: アボートもバーストディスクも、正常飛行では一度も働かない。働かない系の信頼性は試験でしか作れず、Pad Abort・In-Flight Abort・パラシュート数十回という試験群が実質的な認定根拠になった。「試験で安全を買う」構図は FTS (`range-safety-fts.md`) と同型である。
+- **「使われない系」の検証**: アボートもバーストディスクも、正常飛行では一度も働かない。働かない系の信頼性は試験でしか作れず、Pad Abort・In-Flight Abort・パラシュート数十回という試験群が実質的な認定根拠になった。「試験で安全を買う」構図は FTS ([`range-safety-fts.md`](range-safety-fts.md)) と同型である。
 - **毒性推進剤の地上安全**: ハイパーゴリック系は回収・整備時の残留推進剤処理が乗員・作業員双方のハザードになる。着水回収後の機体セーフ化手順は、設計段階から運用安全と一体で決まる。
 
 ## 結論 (Conclusions)
@@ -123,6 +125,18 @@ Dragon 2 は「ロケットの上に載る貨物」ではなく、**それ自体
 **一次資料 (Primary — 公式)**
 
 [^nasa-ccp]: [NASA — Commercial Crew Program](https://www.nasa.gov/commercial-crew-program/) — Demo-2 (2020-05-30) による民間機初の有人軌道飛行、有人認定要求（LOC 確率、full-envelope abort）、運用体制。Accessed: 2026-07-26.
+
+[^crew13]: [Spaceflight Now (2026-10-01). Live coverage: NASA, SpaceX to launch next crewed mission to the International Space Station](https://spaceflightnow.com/2026/10/01/live-coverage-nasa-spacex-to-launch-next-crewed-mission-to-the-international-space-station/) ／ [SpaceX Crew-13 — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Crew-13)（21回目の有人飛行という通算の索引）— Crew-13 の打ち上げ（SLC-40、B1101、Dragon Grace）と約7時間55分でのドッキング。Accessed: 2026-10-04.
+
+[^crew12]: [NASA (2026-10-03). NASA, SpaceX Set No Earlier Than Oct. 7 for Crew-12 Departure](https://www.nasa.gov/blogs/commercialcrew/2026/10/03/nasa-spacex-set-no-earlier-than-oct-7-for-crew-12-departure/) — 離脱 NET 2026-10-07 01:05 EDT、着水は10月8日カリフォルニア沖の予定。Accessed: 2026-10-04.
+
+[^crew11]: [Spaceflight Now (2026-01-15). Crew-11 safely splashes down after shortened mission](https://spaceflightnow.com/2026/01/15/crew-11-safely-splashes-down-after-shortened-mission/) — 医療上の理由による約1か月の早期帰還。Accessed: 2026-10-04.
+
+[^crs34]: [SpaceX CRS-34 — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_CRS-34) ／ [NASA (2026-05-17). SpaceX Dragon Docks to Station](https://www.nasa.gov/blogs/spacestation/2026/05/17/spacex-dragon-docks-to-station-filled-with-new-science-experiments/) — CRS-34 の運用と、貨物カプセルの6回目の飛行という記録（記録の記述は索引側）。Accessed: 2026-10-04.
+
+[^crew17]: [The Register (2026-09-21). NASA gives SpaceX a billion reasons to keep flying Crew Dragon](https://www.theregister.com/offbeat/2026/09/21/nasa-gives-spacex-a-billion-reasons-to-keep-flying-crew-dragon/5297705) — NASA の発表に基づく Crew-15/16/17 追加（$946M、CCtCap 総額 $5.92B、2027〜2028年に準備、2030年まで）。Accessed: 2026-10-04.
+
+[^dragon-2030]: [Digital Today (2026-09-30). SpaceX moves to withdraw Dragon/Falcon 9 crewed missions after 2030](https://www.digitaltoday.co.kr/en/view/108922/spacex-moves-to-withdraw-dragon-falcon-9-crewed-missions-after-2030-widening-nasa-low-earth-orbit-gap) — Ars Technica（2026-09-29）の報道を引く二次報道。原典は未確認のため、確定情報ではなく報道として扱う。Accessed: 2026-10-04.
 
 [^superdraco]: [SpaceX — Dragon（公式車両ページ）](https://www.spacex.com/vehicles/dragon/) — SuperDraco ×8（約 71 kN/基）、Draco ×16、pusher 型アボート、DMLS 積層造形燃焼室。Accessed: 2026-07-26.
 
@@ -142,6 +156,6 @@ Dragon 2 は「ロケットの上に載る貨物」ではなく、**それ自体
 
 **本リポジトリ内参照**
 
-- `reentry-thermal-protection.md` — PICA-X 熱シールド
-- `avionics-gnc.md` — 冗長計算機・fail-safe 設計
-- `rocket-structures-tanks.md` — CRS-7 / AMOS-6（高圧流体系の故障解析の姉妹例）
+- [`reentry-thermal-protection.md`](reentry-thermal-protection.md) — PICA-X 熱シールド
+- [`avionics-gnc.md`](avionics-gnc.md) — 冗長計算機・fail-safe 設計
+- [`rocket-structures-tanks.md`](rocket-structures-tanks.md) — CRS-7 / AMOS-6（高圧流体系の故障解析の姉妹例）

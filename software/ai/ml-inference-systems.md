@@ -4,23 +4,25 @@
 
 学習済みモデルは静的な**データフローグラフ (dataflow graph)** であり、数学的には行列積の列にすぎない。しかし、それを本番サービスとして**提供 (serving)** することは、まったく別種の問題である。すなわち、レイテンシ SLO (Service Level Objective) の制約下で行う**スケジューリング・メモリ管理・バッチング**というシステム問題であり、その構造は OS のプロセススケジューラや仮想記憶の設計と驚くほど相似形をなす。
 
-とりわけ LLM (Large Language Model) の自己回帰 (autoregressive) 生成は、「1リクエストが可変長で、1トークンずつ逐次生成され、途中で終わるかもしれない」という、従来のバッチ推論の前提を全て壊すワークロードである。本ドキュメントは、対をなすハードウェア側の分析 `../../hardware/accelerators/gpu-simt-architecture.md`（SIMT 実行、メモリ階層、Tensor Core、roofline）を前提に、その**上に立つソフトウェア層**として、CUDA 実行モデルの使い方、KV cache 管理、バッチング戦略、attention カーネル、量子化、投機的実行、そして推論ランタイムの設計空間を整理する。
+とりわけ LLM (Large Language Model) の自己回帰 (autoregressive) 生成は、「1リクエストが可変長で、1トークンずつ逐次生成され、途中で終わるかもしれない」という、従来のバッチ推論の前提を全て壊すワークロードである。本ドキュメントは、対をなすハードウェア側の分析 [`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md)（SIMT 実行、メモリ階層、Tensor Core、roofline）を前提に、その**上に立つソフトウェア層**として、CUDA 実行モデルの使い方、KV cache 管理、バッチング戦略、attention カーネル、量子化、投機的実行、そして推論ランタイムの設計空間を整理する。
 
 サービングを支配する指標は3つある。**TTFT (Time To First Token)**（リクエスト受理から最初のトークンまで）、**TPOT / ITL (Time Per Output Token / Inter-Token Latency)**（トークン間隔）、そして**グッドプット (goodput)**（SLO を満たしたリクエストのスループット）である。生スループット (raw throughput) を最大化しても、SLO 違反のリクエストはユーザにとって無価値であり、goodput こそが最適化の真の目的関数になる。
 
 ## 方法論 (Methodology)
 
-- ハードウェアの詳細（SM 構成、warp スケジューリング、HBM 帯域、Tensor Core、roofline モデルの導出）は `../../hardware/accelerators/gpu-simt-architecture.md` に委ね、本ドキュメントは**ソフトウェアから見た GPU**（ホスト・デバイス間の非同期パイプライン、カーネル起動、メモリ確保）に限定する。
+- ハードウェアの詳細（SM 構成、warp スケジューリング、HBM 帯域、Tensor Core、roofline モデルの導出）は [`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md) に委ね、本ドキュメントは**ソフトウェアから見た GPU**（ホスト・デバイス間の非同期パイプライン、カーネル起動、メモリ確保）に限定する。
 - LLM 推論を **prefill（入力処理）と decode（逐次生成）の二相**に分解し、各機構が「どちらの相の、どの律速を解くか」で位置づける。演算強度 (arithmetic intensity) を共通の物差しとする。
 - 数値は桁感 (order of magnitude) にとどめ、世代・モデル・実装依存であることを常に明記する。絶対値のベンチマークは提示せず、**式と比率**で議論する。
 - サービング機構を OS の古典機構（仮想記憶、プリエンプティブスケジューリング、投機的実行）との**アナロジー**で読み解く。これは修辞ではなく、実際に vLLM・Orca・speculative decoding の原論文が明示的に採用した設計の系譜である。
 - 評価軸は終始 **goodput**。個々の最適化がスループットを上げても TTFT/TPOT の分布を悪化させるなら、それはサービングとしては改悪でありうる。
+- **時点の明示**: ランタイムの機能・版数（vLLM / SGLang / TensorRT-LLM / llama.cpp）は数週間単位で変わるため、「2026-10 時点」と明記し、各プロジェクトのリリースノートと公式ドキュメント（Accessed: 2026-10-04）で確認した事実のみを記す。構造的な議論（律速の非対称、仮想記憶との同型性）は版数に依存しない。
+- **理論的背景**: attention と KV cache の会計（パラメータ・FLOPs・KV 容量の式）は [`../../foundations/machine-learning/transformer-architecture.md`](../../foundations/machine-learning/transformer-architecture.md) の §7、待ち行列としてのスケジューラ（到着率・サービス率・リトルの法則）は [`../../foundations/mathematics/probability-statistics/markov-chains-queueing.md`](../../foundations/mathematics/probability-statistics/markov-chains-queueing.md) を前提とする。
 
 ## 発見事項 (Findings)
 
-1. **LLM 推論は prefill と decode で計算特性が正反対であり、この非対称性がサービング設計空間の全てを駆動する。** prefill は入力全トークンを一括処理する**計算律速 (compute-bound)** の GEMM であり、decode は1トークンずつの**メモリ帯域律速 (memory-bound)** の GEMV である。decode の演算強度はバッチなしで概ね O(1) FLOP/byte（重み1バイトを読んで数演算）であり、roofline の左端に張り付く（`../../hardware/accelerators/gpu-simt-architecture.md` の roofline 議論参照）。バッチング・量子化・投機的デコーディングは、いずれもこの「decode で演算器が遊んでいる」事実への異なる応答である。
+1. **LLM 推論は prefill と decode で計算特性が正反対であり、この非対称性がサービング設計空間の全てを駆動する。** prefill は入力全トークンを一括処理する**計算律速 (compute-bound)** の GEMM であり、decode は1トークンずつの**メモリ帯域律速 (memory-bound)** の GEMV である。decode の演算強度はバッチなしで概ね O(1) FLOP/byte（重み1バイトを読んで数演算）であり、roofline の左端に張り付く（[`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md) の roofline 議論参照）。バッチング・量子化・投機的デコーディングは、いずれもこの「decode で演算器が遊んでいる」事実への異なる応答である。
 
-2. **KV cache がボトルネックの主役であり、その管理は仮想記憶の再発明に行き着いた。** attention は過去全トークンの Key/Value を参照するため、それをキャッシュすると容量はシーケンス長×バッチサイズに比例して成長する。連続確保では断片化 (fragmentation) で実効容量が大きく損なわれ、vLLM の **PagedAttention** は KV cache を固定長ブロックに分割し、OS のページング (`../../hardware/cpu/virtual-memory-mmu.md`) と同型の「論理ブロック→物理ブロック」間接参照で断片化をほぼ消した。同じ問題は同じ解に至る。
+2. **KV cache がボトルネックの主役であり、その管理は仮想記憶の再発明に行き着いた。** attention は過去全トークンの Key/Value を参照するため、それをキャッシュすると容量はシーケンス長×バッチサイズに比例して成長する。連続確保では断片化 (fragmentation) で実効容量が大きく損なわれ、vLLM の **PagedAttention** は KV cache を固定長ブロックに分割し、OS のページング ([`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md)) と同型の「論理ブロック→物理ブロック」間接参照で断片化をほぼ消した。同じ問題は同じ解に至る。
 
 3. **連続バッチング (continuous batching) は decode のメモリ帯域浪費をスループットに変換する、サービング側最大の発明である。** 1回の重み読み出し（帯域コスト）を B 系列で共有すれば、演算強度は約 B 倍になる。Orca が導入した**反復レベルスケジューリング (iteration-level scheduling)** は、リクエスト単位ではなくトークン生成1反復単位でバッチを組み替え、静的バッチングの「最長系列を全員で待つ」バブルを消した。
 
@@ -81,6 +83,28 @@ OS とのアナロジーで言えば、Scheduler/Batcher がプロセススケ�
 
 decode の1ステップは「全パラメータ + KV cache を HBM から1回読み、各バイトに対し高々数 FLOP」であり、バッチサイズ1では GPU の演算器は roofline 上ほとんど遊ぶ。この非対称が、以降の全機構（バッチングで decode の演算強度を稼ぐ、量子化で読むバイトを減らす、投機で余った演算を使う、そして両相を別 GPU に分離する）の存在理由である。
 
+### 分離サービング (prefill/decode disaggregation) のデータフロー
+
+二相の非対称を物理配置まで押し進めたのが分離サービングである。2026-10 時点では vLLM（NIXL / Mooncake 等の KV コネクタ）、SGLang（PD 分離）、TensorRT-LLM（`trtllm-serve` のコンテキスト／生成サーバ分離）がいずれもこの構成を実装し、NVIDIA Dynamo のような上位オーケストレータが KV 局所性を考慮したルーティングを担う（各公式ドキュメント、技術詳細 §3 参照）。
+
+```mermaid
+flowchart LR
+    client["クライアント<br/>(prompt, SLO)"] --> router["ルータ / フロントエンド<br/>(KV 局所性・負荷を考慮)"]
+    router -->|"新規リクエスト"| prefill
+    router -.->|"短い入力は分離を省略"| decode
+    subgraph prefill["prefill プール (計算律速 → TTFT)"]
+        p1["GPU: 入力 L トークンを一括 GEMM<br/>KV cache を生成"]
+    end
+    subgraph decode["decode プール (帯域律速 → TPOT)"]
+        d1["GPU: 連続バッチングで<br/>1 トークンずつ GEMV"]
+    end
+    p1 ==>|"KV ブロック転送<br/>(NIXL: RDMA / NVLink)"| d1
+    d1 -->|"トークンをストリーム"| client
+    kvstore[("階層 KV ストア<br/>(ホストメモリ / SSD)")] <-.->|"prefix 再利用"| p1
+```
+
+凡例: 実線は要求・応答の流れ、太線は KV cache の GPU 間転送（分離構成で新たに生じる帯域コスト）、点線は条件付きの経路（短い要求のバイパス、prefix cache の退避・再利用）を表す。prefill プールと decode プールを独立にスケールできることが TTFT と TPOT の SLO を分けて満たす根拠であり、その代価が太線の転送帯域とルータの判断である。
+
 ## 技術詳細 (Technical Details)
 
 ### 1. CUDA 実行モデル — ソフトウェア側から
@@ -120,7 +144,7 @@ KV cache サイズ [bytes]
 
 **断片化問題と PagedAttention**: 素朴な実装は「リクエストの最大長ぶんを連続領域で確保」する。しかし実際の生成長は事前に分からず、(a) 予約したが使わない内部断片化、(b) 可変長の確保・解放が繰り返された後の外部断片化、の両方で実効容量が大きく失われる。vLLM の **PagedAttention** (Kwon et al., 2023) は KV cache を固定長ブロック（例: 16 トークン分）に分割し、リクエストごとの**ブロックテーブル (block table)**（実質ページテーブル）で論理位置→物理ブロックを引く。
 
-- 内部断片化は高々1ブロック未満、外部断片化は消滅する。これは `../../hardware/cpu/virtual-memory-mmu.md` のページングが連続物理メモリの断片化を解いたのと**同一の構図を1段上の層で反復した**ものである。
+- 内部断片化は高々1ブロック未満、外部断片化は消滅する。これは [`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md) のページングが連続物理メモリの断片化を解いたのと**同一の構図を1段上の層で反復した**ものである。
 - 副産物として、ブロック単位の**共有**が可能になる。同一プロンプトの並列サンプリングやシステムプロンプトの prefix caching は、copy-on-write 相当の参照カウントで KV ブロックを共有する。これも仮想記憶の語彙そのままである。
 - メモリ逼迫時はリクエスト単位で**プリエンプション**（ブロックを解放して後で再計算、またはホストメモリへスワップ）し、スケジューラの admission control と連動する。
 
@@ -165,7 +189,8 @@ loop every iteration:                       // トークン生成1反復ごと�
 // PagedAttention の容量効率化が、そのまま同時実行数=スループットに直結する。
 ```
 
-- **prefill/decode 干渉と分離サービング (disaggregated serving)**: 連続バッチングの残る問題は、計算律速の prefill（1回で数百 ms もありうる）が同じ GPU 上の decode 反復を遅延させ、他リクエストの ITL にスパイクを与えることである。緩和として prefill を分割して decode 反復に混ぜる **chunked prefill** があり、さらに進んで **prefill 専用 GPU と decode 専用 GPU を分離**し、KV cache を相互接続経由で転送する構成 (prefill-decode disaggregation) が現在の最前線である。TTFT と TPOT の SLO を独立にスケールできる代わりに、KV 転送帯域とルーティングが新たな設計変数になる。goodput を目的関数に置いたとき、この分離が有利になる領域が広いことが示されつつある。
+- **prefill/decode 干渉と分離サービング (disaggregated serving)**: 連続バッチングの残る問題は、計算律速の prefill（1回で数百 ms もありうる）が同じ GPU 上の decode 反復を遅延させ、他リクエストの ITL にスパイクを与えることである。緩和として prefill を分割して decode 反復に混ぜる **chunked prefill**（Sarathi-Serve; Agrawal et al., 2024 の stall-free スケジューリング）があり、さらに進んで **prefill 専用 GPU と decode 専用 GPU を分離**し、KV cache を相互接続経由で転送する構成 (prefill-decode disaggregation) がある。DistServe (Zhong et al., 2024) は goodput を目的関数に置き、二相を別 GPU に割り当てて各相の並列化戦略を個別に最適化することで、同一 SLO 下でより多くのリクエストを捌けることを示した。TTFT と TPOT の SLO を独立にスケールできる代わりに、KV 転送帯域とルーティングが新たな設計変数になる。
+- **2026-10 時点の実装状況**: 分離は研究段階を過ぎ、主要ランタイムの標準機能になった。KV 転送は NVIDIA の NIXL (NVIDIA Inference Xfer Library) が複数ランタイムに共通する転送層として採用され、vLLM の KV コネクタ（NIXL / Mooncake）、TensorRT-LLM の `cache_transceiver_config: backend: NIXL`、Dynamo のルータがこれを使う。SGLang v0.5.21（2026-10-02）では PD インスタンスが再起動なしに prefill/decode の役割を切り替えられるようになり、Dynamo v1.5.0（2026-09-21）は短い要求を decode に直送する条件付きバイパスを持つ。つまり「常に分離」ではなく、**要求ごとに分離するか否かを判断する**方向へ進んでいる。この判断は短い入力では KV 転送のコストが prefill 干渉の回避益を上回るという、上記トレードオフの直接の帰結である。
 
 ### 4. attention カーネル — FlashAttention
 
@@ -175,13 +200,14 @@ loop every iteration:                       // トークン生成1反復ごと�
 
 - FLOPs はむしろ微増するが、HBM トラフィックが O(N²) → O(N²/M)（M は SRAM に載るタイル規模）に減り、実行時間は大きく短縮される。「**計算量ではなくメモリアクセス量を最適化する**」という、GPU 時代のアルゴリズム設計の教科書的事例。
 - 副次効果として N×N を持たないためメモリ使用量が O(N) になり、長文脈が実用化した。decode 専用には、長い KV を複数ブロックに割って並列処理する FlashDecoding 系の変種が続く。
-- これは `../../hardware/cpu/simd-vector.md` で見た「実効性能は帯域で頭打ちになる」原則への、アルゴリズム側からの回答であり、メモリ階層の詳細は対の GPU ドキュメントに依る。
+- これは [`../../hardware/cpu/simd-vector.md`](../../hardware/cpu/simd-vector.md) で見た「実効性能は帯域で頭打ちになる」原則への、アルゴリズム側からの回答であり、メモリ階層の詳細は対の GPU ドキュメントに依る。
 
 ### 5. 量子化 — 推論のための数値表現
 
 - **weight-only 量子化 (INT8 / INT4)**: 重みだけを低ビット化し、演算は FP16/BF16 に逆量子化 (dequantize) して行う。**GPTQ**（二次情報を使う逐次丸め）や **AWQ**（活性値分布から重要チャネルを保護する）はこのクラスの代表。decode は重み読み出し帯域が律速なので、読むバイトが 1/2〜1/4 になれば TPOT がほぼ比例して改善する。演算形式が FP16 のままでも、である。
 - **活性値量子化の困難**: LLM の活性値には少数チャネルに極端な**外れ値 (outlier)** が現れ、一様なスケールで量子化すると精度が崩壊する。SmoothQuant のように外れ値の大きさを重み側へ「移す」変換や、外れ値チャネルだけ高精度で扱う混合精度が必要になる。weight-only が先に普及したのはこの難易度差による。
 - **FP8**: 近年の GPU 世代がハードウェアサポートする浮動小数フォーマット (E4M3/E5M2)。整数と違い動的レンジを指数部で持つため活性値にも適用しやすく、計算律速の prefill で Tensor Core スループットを引き上げる。Tensor Core の形式サポートは対の GPU ドキュメント参照。
+- **FP4（ブロックスケーリング形式）**: さらに 1 段下の 4 ビット浮動小数 E2M1（表現範囲はおよそ ±6）は、単独では動的レンジが足りないため、小ブロックごとに共有スケールを持たせて使う。OCP の **MXFP4** は 32 要素ごとに 2 の冪のスケール (E8M0) を 1 つ持ち、NVIDIA Blackwell 世代の **NVFP4** は 16 要素ごとに FP8 (E4M3) スケールを持ち、さらにテンソル単位の FP32 スケールを重ねる 2 段構成である。ブロックを細かくし、スケールを 2 の冪に限らないことで局所的なレンジに追従しやすくしている（NVIDIA は FP16 比で約 3.5 倍、FP8 比で約 1.8 倍のメモリ削減と主張する; ベンダ主張値）。2026-10 時点で vLLM v0.30.0 は SM100/103 で NVFP4 の重み 4 ビット・活性値 16 ビット (W4A16) カーネルを既定に採用し、KV cache 自体も FP8 / MXFP8 で格納するモデル対応が進んでいる。KV cache の低精度化は、重みと同じく decode の読み出しバイトを減らす帯域対策である。
 - まとめると: **decode の利得は帯域（weight-only で十分）、prefill の利得は演算（FP8 等の計算形式が必要）**。どの相が律速かで打ち手が変わる。精度への影響はモデル・タスク依存であり、量子化は常に精度評価とセットで導入する。
 
 ### 6. 投機的デコーディング (speculative decoding)
@@ -190,21 +216,24 @@ decode では演算器が余っている（発見事項 1）。**投機的デコ
 
 - **draft-verify 構造**: 小さな**ドラフトモデル (draft model)** が k トークンを安価に先読み生成し、本体モデルが k+1 トークン分を**1回の並列フォワード**で検証する。棄却サンプリングにより、出力分布は本体モデル単独と**数学的に同一**に保たれる。これが単なる近似手法との決定的な違いである。
 - 検証の1フォワードは k 系列分をまとめて処理するため、演算量は増えるが（帯域律速の decode では）所要時間は1トークン分とほぼ変わらない。受理された分だけ「1反復で複数トークン」が進む。CPU の投機的実行が「空いたパイプラインで先の命令を走らせ、外れたら捨てる」のと同じ賭けの構造である。
-- 利得は**受理率 (acceptance rate)** に全面依存する。ドラフトと本体の分布が近い（定型文・コード等）ほど伸び、乖離すると検証コストとドラフトコストだけ払って進まない。ドラフトモデルの別建てを嫌い、本体の一部層や追加ヘッドで下書きする自己投機 (self-speculative / Medusa 系) の変種が続く。
+- 利得は**受理率 (acceptance rate)** に全面依存する。ドラフトと本体の分布が近い（定型文・コード等）ほど伸び、乖離すると検証コストとドラフトコストだけ払って進まない。ドラフトモデルの別建てを嫌い、本体の一部層や追加ヘッドで下書きする自己投機 (self-speculative / Medusa 系) の変種が続く。本体の隠れ状態 (hidden states) を入力に取る軽量ドラフタ **EAGLE** 系 (Li et al., 2024)、学習時から複数トークン予測ヘッドを持つモデルの **MTP (Multi-Token Prediction)** ヘッド流用、ドラフトモデル不要の n-gram（プロンプトや履歴の一致から先読み）も実用化している。
+- **2026-10 時点の対応状況**: 投機は主要ランタイムの標準機能になった。vLLM v0.30.0 は EAGLE3 / MTP / DFlash / DSpark 系をパイプライン並列下でも動かし、オンラインの受理率推定で検証長を適応的に変える。llama.cpp の `llama-server` も `--spec-type` で draft モデル、EAGLE-3、MTP、DFlash、各種 n-gram 方式を選べる。受理率に応じて投機の深さを動的に調整する機構が入ってきたことは、次項の「負荷・受理率依存」という性質への実装側の応答である。
 - なお投機はレイテンシ（TPOT）を買う技術であり、システム全体のスループットはむしろ下がりうる。大バッチで演算器が既に埋まっている高負荷時には利得が消えるため、負荷に応じて有効/無効を切り替えるのが実務的である。
 
 ### 7. 推論ランタイムの設計空間
 
-| | vLLM | TensorRT-LLM | llama.cpp | ONNX Runtime |
-|---|---|---|---|---|
-| 主対象ハード | NVIDIA 中心 + AMD 等へ拡大 | NVIDIA 専用 | CPU / Apple Silicon / 民生 GPU | CPU / GPU / NPU 横断 |
-| バッチング | 連続バッチング（本家） | 連続バッチング (in-flight batching) | 逐次〜小規模並列が主 | 動的バッチング（サーバ併用時） |
-| KV 管理 | PagedAttention（本家） | ページド KV cache | 連続確保 + 文脈管理 | 実装/EP 依存 |
-| 量子化 | GPTQ/AWQ/FP8 等を取込み | INT8/FP8/INT4 (専用最適化) | GGUF 独自形式 (k-quants 等) が中核 | INT8 (静的/動的) が中心 |
-| 最適化の主軸 | スケジューラとメモリ管理 | カーネル最適化・グラフコンパイル | 移植性と省メモリ | フォーマット互換と EP 抽象 |
-| 典型ニッチ | OSS の高スループットサービング | NVIDIA 上の最高性能追求 | ローカル/エッジ実行 | 既存 ML 資産の汎用デプロイ |
+| | vLLM | SGLang | TensorRT-LLM | llama.cpp | ONNX Runtime |
+|---|---|---|---|---|---|
+| 版数（2026-10-04 時点） | v0.30.0（2026-09-22） | v0.5.21（2026-10-02） | 安定版 v1.2.1（2026-04-20）、v1.3.0 は RC 系列 | 日次ビルド (b11382 等) | — |
+| 主対象ハード | NVIDIA 中心 + AMD ROCm / Intel XPU / CPU | NVIDIA + AMD (MI355X 等) | NVIDIA 専用 | CPU / Apple Silicon / 民生 GPU | CPU / GPU / NPU 横断 |
+| バッチング | 連続バッチング（本家） | 連続バッチング + 低オーバヘッドスケジューラ | 連続バッチング (in-flight batching) | `llama-server` で連続バッチング（既定有効）+ 並列スロット | 動的バッチング（サーバ併用時） |
+| KV 管理 | PagedAttention（本家）+ prefix caching + 階層 KV（ホスト退避） | RadixAttention（基数木による prefix 共有）+ HiCache | ページド KV cache + KV 再利用 | 全スロット共有の統合 KV バッファ (`--kv-unified`)、KV 量子化 (`-ctk`) | 実装/EP 依存 |
+| 分離サービング | KV コネクタ (NIXL / Mooncake) | PD 分離（役割の動的切替） | コンテキスト／生成サーバ分離 (NIXL) | 対象外（単一ノード） | 対象外 |
+| 量子化 | GPTQ/AWQ/FP8/NVFP4 等を取込み | FP8 / MXFP4 / NVFP4 等 | INT8/FP8/INT4/NVFP4（専用最適化） | GGUF 独自形式 (k-quants 等) が中核 | INT8 (静的/動的) が中心 |
+| 最適化の主軸 | スケジューラとメモリ管理 | prefix 共有と構造化生成 | カーネル最適化・グラフコンパイル | 移植性と省メモリ | フォーマット互換と EP 抽象 |
+| 典型ニッチ | OSS の高スループットサービング | prefix 共有の多いエージェント・RL 系ワークロード | NVIDIA 上の最高性能追求 | ローカル/エッジ実行 | 既存 ML 資産の汎用デプロイ |
 
-設計思想の対比として読む: vLLM は「スケジューリングとメモリ管理」というシステム層の発明で勝ち、TensorRT-LLM は「ハードに密着したカーネルとコンパイル」で勝ち、llama.cpp は「量子化フォーマットと依存ゼロの移植性」で勝つ。どの層に賭けるかがそのままプロダクトの性格になっている（各プロジェクトは活発に開発中であり、機能差は 2026-07 時点の概況）。
+設計思想の対比として読む: vLLM は「スケジューリングとメモリ管理」というシステム層の発明で勝ち、SGLang は「prefix を基数木で共有する」KV 再利用の発明で勝ち (Zheng et al., 2024)、TensorRT-LLM は「ハードに密着したカーネルとコンパイル」で勝ち、llama.cpp は「量子化フォーマットと依存ゼロの移植性」で勝つ。どの層に賭けるかがそのままプロダクトの性格になっている。ただし 2026-10 時点では、連続バッチング・ページド KV・投機的デコーディング・FP8/FP4 量子化・分離サービングが上位ランタイムの共通装備になり、差は機能の有無から「新モデル対応の速さ」と「特定ハード上のカーネル品質」へ移っている（版数と機能は各リリースノート、Accessed: 2026-10-04。各プロジェクトは週単位で変化する）。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -227,11 +256,14 @@ decode では演算器が余っている（発見事項 1）。**投機的デコ
 
 ### 次の接続先 (Related Topics)
 
-- `../../hardware/accelerators/gpu-simt-architecture.md` — 本ドキュメントの前提。SIMT 実行モデル、GPU メモリ階層、Tensor Core、roofline モデル。ここでの「帯域律速」の議論は全てこのハードウェア特性に根ざす。
-- `../../hardware/cpu/virtual-memory-mmu.md` — ページング・ページテーブル・断片化。PagedAttention はこの機構の1段上の層での反復。
-- `../../hardware/cpu/simd-vector.md` — データ並列とメモリ帯域律速の原型。SIMD → SIMT → サービングと、同じ律速が層を跨いで現れる。
-- `../operating-systems/` — スケジューリングと admission control。連続バッチングは反復粒度のプリエンプティブスケジューラとして読める。
-- `../distributed-systems/` — 分離サービング (prefill/decode disaggregation) やレプリカ間ルーティングが持ち込む、複製・負荷分散・部分故障の問題系。
+- [`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md) — 本ドキュメントの前提。SIMT 実行モデル、GPU メモリ階層、Tensor Core、roofline モデル。ここでの「帯域律速」の議論は全てこのハードウェア特性に根ざす。
+- [`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md) — ページング・ページテーブル・断片化。PagedAttention はこの機構の1段上の層での反復。
+- [`../../hardware/cpu/simd-vector.md`](../../hardware/cpu/simd-vector.md) — データ並列とメモリ帯域律速の原型。SIMD → SIMT → サービングと、同じ律速が層を跨いで現れる。
+- [`../operating-systems/`](../operating-systems/) — スケジューリングと admission control。連続バッチングは反復粒度のプリエンプティブスケジューラとして読める。
+- [`../../foundations/machine-learning/transformer-architecture.md`](../../foundations/machine-learning/transformer-architecture.md) — attention の導出と KV cache 容量・FLOPs の会計。本ドキュメントの KV cache 式と GQA/MQA の効果はここから出る。
+- [`../../foundations/mathematics/probability-statistics/markov-chains-queueing.md`](../../foundations/mathematics/probability-statistics/markov-chains-queueing.md) — 待ち行列とリトルの法則。admission control と同時実行数（KV 容量が上限）・レイテンシの関係を定量化する道具。
+- [`ml-training-systems.md`](ml-training-systems.md) — 学習側の並列化・低精度演算。FP8/FP4 形式と通信の議論は推論と共有される。
+- [`../distributed-systems/`](../distributed-systems/) — 分離サービング (prefill/decode disaggregation) やレプリカ間ルーティングが持ち込む、複製・負荷分散・部分故障の問題系。
 
 ## 参考文献 (References)
 
@@ -242,9 +274,20 @@ decode では演算器が余っている（発見事項 1）。**投機的デコ
 - Dao, T., Fu, D. Y., Ermon, S., Rudra, A., & Ré, C. (2022). FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. *NeurIPS 2022*. — IO-aware attention。タイリングとオンライン softmax による HBM トラフィック削減。
 - Leviathan, Y., Kalman, M., & Matias, Y. (2023). Fast Inference from Transformers via Speculative Decoding. *ICML 2023*. — 投機的デコーディングの原典。棄却サンプリングによる分布保存の証明。
 - Pope, R., Douglas, S., Chowdhery, A., Devlin, J., Bradbury, J., Levskaya, A., Heek, J., Xiao, K., Agrawal, S., & Dean, J. (2023). Efficiently Scaling Transformer Inference. *MLSys 2023*. — 推論の演算強度分析と分割戦略。prefill/decode 律速の定式化。
+- Zhong, Y., Liu, S., Chen, J., Hu, J., Zhu, Y., Liu, X., Jin, X., & Zhang, H. (2024). DistServe: Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving. *OSDI '24*. arXiv:2401.09670 — prefill/decode 分離と goodput 最適化の原典。
+- Agrawal, A., Kedia, N., Panwar, A., Mohan, J., Kwatra, N., Gulavani, B. S., Tumanov, A., & Ramjee, R. (2024). Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve. *OSDI '24*. — chunked prefill と stall-free スケジューリング。
+- Zheng, L., Yin, L., Xie, Z., Sun, C., Huang, J., Yu, C. H., Cao, S., Kozyrakis, C., Stoica, I., Gonzalez, J. E., Barrett, C., & Sheng, Y. (2024). SGLang: Efficient Execution of Structured Language Model Programs. *NeurIPS 2024*. arXiv:2312.07104 — RadixAttention による prefix 共有。
+- Li, Y., Wei, F., Zhang, C., & Zhang, H. (2024). EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty. *ICML 2024*. arXiv:2401.15077 — 隠れ状態を入力とするドラフタ。
+- Rouhani, B. D., Zhao, R., More, A., Hall, M., Khodamoradi, A., et al. (2023). Microscaling Data Formats for Deep Learning. arXiv:2310.10537 — OCP MX 形式（ブロック単位の共有スケール + 狭幅浮動小数）の提案と評価。
 
 **二次資料 (Secondary)**
 
-- [vLLM Documentation](https://docs.vllm.ai/) — Accessed: 2026-07-04。PagedAttention・連続バッチング・prefix caching の実装解説。
-- [NVIDIA CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) — Accessed: 2026-07-04。ストリーム・CUDA Graphs・非同期実行モデルの一次的リファレンス（ベンダ資料）。
-- [safetensors (Hugging Face)](https://github.com/huggingface/safetensors) — Accessed: 2026-07-04。pickle デシリアライズリスクの排除を目的とした重みフォーマット。
+- [vLLM Documentation](https://docs.vllm.ai/) — Accessed: 2026-10-04。PagedAttention・連続バッチング・prefix caching の実装解説。
+- [NVIDIA CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) — Accessed: 2026-10-04。ストリーム・CUDA Graphs・非同期実行モデルの一次的リファレンス（ベンダ資料）。
+- [safetensors (Hugging Face)](https://github.com/huggingface/safetensors) — Accessed: 2026-10-04。pickle デシリアライズリスクの排除を目的とした重みフォーマット。
+- [vLLM v0.30.0 Release Notes](https://github.com/vllm-project/vllm/releases/tag/v0.30.0) — Accessed: 2026-10-04。Model Runner V2、投機的デコーディング（EAGLE3/MTP/DFlash/DSpark、適応的検証）、NVFP4 W4A16 既定化、KV コネクタ。
+- [SGLang v0.5.21 Release Notes](https://github.com/sgl-project/sglang/releases/tag/v0.5.21) — Accessed: 2026-10-04。PD インスタンスの役割動的切替、prefix cache の Rust コア化。
+- [TensorRT-LLM Disaggregated Serving](https://nvidia.github.io/TensorRT-LLM/features/disagg-serving.html) — Accessed: 2026-10-04。NIXL による KV 転送、`trtllm-serve` の構成。版数は [Releases](https://github.com/NVIDIA/TensorRT-LLM/releases) で確認。
+- [NVIDIA Dynamo v1.5.0 Release Notes](https://github.com/ai-dynamo/dynamo/releases/tag/v1.5.0) — Accessed: 2026-10-04。ルータの選択ポリシー、条件付き分離バイパス、階層 KV インデックス。
+- [llama.cpp: Speculative Decoding](https://github.com/ggml-org/llama.cpp/blob/master/docs/speculative.md) / [llama-server README](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md) — Accessed: 2026-10-04。`--spec-type`、連続バッチング既定有効、`--kv-unified`。
+- [Introducing NVFP4 for Efficient and Accurate Low-Precision Inference](https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference/) — NVIDIA Technical Blog (2025-06-24). Accessed: 2026-10-04。NVFP4 と MXFP4 のブロック構成（ベンダ資料）。

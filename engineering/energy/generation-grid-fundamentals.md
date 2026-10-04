@@ -53,7 +53,7 @@
  (solar)    (photovoltaic)   (inverter)
 ```
 
-- **火力・原子力 (thermal / nuclear)**: 燃料燃焼または核分裂で水を蒸気にし、蒸気タービンを回す。**ランキンサイクル (Rankine cycle)** に従い、熱効率は概ね 33〜45%（最新の超々臨界圧やコンバインドサイクルで 60% 超）。大きな回転質量を持ち、慣性源として重要。
+- **火力・原子力 (thermal / nuclear)**: 燃料燃焼または核分裂で水を蒸気にし、蒸気タービンを回す。**ランキンサイクル (Rankine cycle)** に従い、熱効率は概ね 33〜45%（最新の超々臨界圧やコンバインドサイクルで 60% 超）。上限がカルノー効率で抑えられる理由は [`laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) を参照。大きな回転質量を持ち、慣性源として重要。
 - **水力 (hydro)**: 落差（位置エネルギー）で水車を回す。効率は 85〜90% 超と高く、出力変更が速いため調整力として価値が高い。揚水式は事実上の大規模蓄電。
 - **風力 (wind)**: 風の運動エネルギーで翼を回す。理論上限は **ベッツ限界 (Betz limit) ≈ 59.3%**。現代の大型機は可変速運転＋電力変換器を介して接続されるため、回転していても系統慣性には直接寄与しない。
 - **太陽光 (solar PV)**: 光起電力効果で直流を生成し、インバータで交流へ変換。回転部を持たず、慣性ゼロ。
@@ -76,7 +76,7 @@
                            (AVR: 自動電圧調整器)
 ```
 
-回転子の運動方程式（**動揺方程式 / swing equation**）が、機械入力と電気出力の不均衡を回転速度（=周波数）の変化へ結びつける。
+回転子の運動方程式（**動揺方程式 / swing equation**）が、機械入力と電気出力の不均衡を回転速度（=周波数）の変化へ結びつける。これは回転体のニュートン方程式（[`newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)）を電力単位で書き直した 2 階の常微分方程式であり、振動・減衰・安定性の読み方は [`ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) に対応する。
 
 ```
    2H     dΔf
@@ -127,7 +127,7 @@ graph LR
 
 ### 有効電力・無効電力と電圧 (Active / Reactive Power & Voltage)
 
-交流系統では電力は複素量として扱われ、**有効電力 P（W）が周波数**を、**無効電力 Q（var）が電圧**を主に支配するという近似的な分離（decoupling）が成り立つ。
+交流系統では電力は複素量（フェーザ。[`circuit-theory.md`](../../foundations/physics/electromagnetism/circuit-theory.md)）として扱われ、**有効電力 P（W）が周波数**を、**無効電力 Q（var）が電圧**を主に支配するという近似的な分離（decoupling）が成り立つ。
 
 | 量 | 単位 | 主な制御対象 | 主な調整手段 |
 |---|---|---|---|
@@ -136,7 +136,7 @@ graph LR
 | 皮相電力 S | VA | — | S² = P² + Q² |
 
 - **AVR (Automatic Voltage Regulator)**: 同期発電機の界磁電流 (field current) を制御し、端子電圧と無効電力出力を調整する。周波数制御（ガバナ）と電圧制御（AVR）は別系統のフィードバックループ。
-- 長距離送電で電圧を上げる（数百 kV）のは、同じ電力 P = V·I を低い電流 I で送り、**抵抗損失 I²R を電流の二乗で削る**ため。これが昇圧変圧器が必須な理由である。
+- 長距離送電で電圧を上げる（数百 kV）のは、同じ電力 P = V·I を低い電流 I で送り、**抵抗損失 I²R を電流の二乗で削る**ため。これが昇圧変圧器が必須な理由である（発電機・変圧器の原理であるファラデーの法則は [`induction-inductance.md`](../../foundations/physics/electromagnetism/induction-inductance.md)）。
 
 ### 系統安定度 (Power System Stability)
 

@@ -44,6 +44,34 @@
     kSigning で HMAC                  7. 実行 + 監査ログ (CloudTrail) へ記録
 ```
 
+### STS 一時資格情報から SigV4 検証までのシーケンス
+
+EC2 上のアプリが IMDSv2 でロールの一時資格情報を得て、SigV4 署名付き要求を送り、エンドポイントがステートレスに検証・評価するまでを時系列で示す（技術詳細 3 と上図の 1〜7 に対応）。サーバ側の検証にセッションストアの照会が現れないことが要点である。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant App as アプリ (EC2 上)
+    participant IMDS as IMDSv2 (169.254.169.254)
+    participant STS as STS
+    participant EP as AWS API エンドポイント
+    participant CT as CloudTrail
+    App->>IMDS: PUT トークン要求 (TTL 最大 6h, ホップ制限 1)
+    IMDS-->>App: セッショントークン
+    App->>IMDS: GET ロール資格情報 (トークンをヘッダに添付)
+    IMDS-->>App: 一時資格情報 (AccessKeyId, Secret, SessionToken)
+    opt 別ロールへの切り替え
+        App->>STS: sts:AssumeRole (現行資格情報で署名)
+        STS-->>App: 短命の資格情報 (trust policy が許す場合)
+    end
+    App->>App: 正規リクエスト構築 → kSigning 導出 → HMAC 署名
+    App->>EP: SigV4 署名付きリクエスト
+    EP->>EP: 同じ導出を再現して照合 (時刻窓 15 分)
+    EP->>EP: 文脈組立て → ポリシー評価 (Deny 優先 / 積の柵 / 和の許可)
+    EP-->>App: 実行結果 または AccessDenied
+    EP->>CT: 監査ログ記録
+```
+
 ### 評価論理 — 和・積・拒否
 
 ```

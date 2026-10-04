@@ -49,6 +49,37 @@
   常時調停 (K8s/GitOps) は ①〜⑤ を高頻度自動化した特殊解 — 誤収束が安い対象に限る
 ```
 
+### plan → apply のシーケンスと TOCTOU の窓
+
+上の三体問題を Terraform の 1 回の変更として時系列に並べる。plan と apply の間に「現実」が動くと計画が古くなる（技術詳細の TOCTOU 競合）。state のロックと計画ファイルの受け渡しが、その窓を狭める緩和策である。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Dev as 人間 (レビュー担当)
+    participant TF as Terraform
+    participant Lock as state ロック
+    participant State as state file (顧客管理)
+    participant Cloud as クラウド API
+    Dev->>TF: plan
+    TF->>Lock: ロック取得
+    TF->>Cloud: ① refresh (現実を読む)
+    TF->>State: 記録を更新
+    TF->>TF: ② diff → ③ compile → ④ 依存 DAG で順序付け
+    TF->>Lock: ロック解放
+    TF-->>Dev: 実行計画ファイル
+    Note over Dev,Cloud: TOCTOU の窓: 手作業や他の自動化が現実を変えうる (drift)
+    Dev->>TF: 承認して apply (計画ファイルを渡す)
+    TF->>Lock: ロック再取得
+    TF->>Cloud: ⑤ Create / Update / Delete / Replace をトポロジカル順に実行
+    alt 計画と現実が乖離
+        TF-->>Dev: apply 失敗 (再 plan が必要)
+    else 成功
+        TF->>State: 新しい記録を書き込み
+    end
+    TF->>Lock: ロック解放
+```
+
 ### 設計空間の比較
 
 | 軸 | Terraform | CloudFormation | Kubernetes/GitOps |

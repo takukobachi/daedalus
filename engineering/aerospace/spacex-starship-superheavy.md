@@ -4,13 +4,13 @@
 
 **Starship**（上段）と **Super Heavy**（下段ブースタ）から成る2段式ロケットは、SpaceX が「**両段・完全再使用 (fully reusable)**」を目標に開発する、史上最大・最強の打ち上げ機である。全高はおよそ **121〜124 m**、離陸推力は **約 74〜80 MN（1,800万 lbf 超）** に達し、Saturn V のほぼ2倍で、人類が飛ばした最も強力なロケットである[^scientificamerican][^starship-official]。Super Heavy は **33基の Raptor**、Starship 上段は **6基の Raptor**（海面3＋真空3）を搭載し、推進剤は液体メタン／液体酸素（methalox）。機体は**ステンレス鋼**製で、LEO へ **100 t 超（再使用構成）** のペイロードを目標とする[^starship-official][^satnews]。
 
-本ドキュメントは、Starship を「**Falcon 9 の部分再使用を、両段・全機へ徹底した到達点**」として捉える（前章 `spacex-reusability.md` の延長）。完全再使用がもたらす設計判断（ステンレス鋼、33基クラスタ、**射点アームでのブースタ空中キャッチ (Mechazilla)**、ホットステージング、耐熱タイル）と、それを「飛ばして壊して直す」反復で詰めてきた飛行試験の歴史を、Level 3 で分析する。
+本ドキュメントは、Starship を「**Falcon 9 の部分再使用を、両段・全機へ徹底した到達点**」として捉える（前章 [`spacex-reusability.md`](spacex-reusability.md) の延長）。完全再使用がもたらす設計判断（ステンレス鋼、33基クラスタ、**射点アームでのブースタ空中キャッチ (Mechazilla)**、ホットステージング、耐熱タイル）と、それを「飛ばして壊して直す」反復で詰めてきた飛行試験の歴史を、Level 3 で分析する。
 
 ## 方法論 (Methodology)
 
 - Starship を要求（完全再使用・低コスト・大ペイロード・火星）から逆算し、各設計判断が**どの要求に応える妥協か**を読み解く。
 - Falcon 9 との差分（部分→完全再使用、過熱に耐える材料、キャッチ着陸）を対比軸に据える。
-- 飛行試験 (IFT-1 〜 Flight 12) を**反復開発 (iterative, hardware-rich development)** のサイクルとして時系列で追い、各回の「狙いと学び」を整理する。
+- 飛行試験 (IFT-1 〜 Flight 14, as of 2026-10) を**反復開発 (iterative, hardware-rich development)** のサイクルとして時系列で追い、各回の「狙いと学び」を整理する。
 - 数値・経緯は SpaceX 公式（車両ページ・飛行試験ページ）と一次に近い報道・FAA 文書に基づき、典拠を脚注に付す。最新の飛行試験は流動的なため、確定値と暫定値を区別する。
 
 ## 発見事項 (Findings)
@@ -18,10 +18,10 @@
 1. **完全再使用が全設計を駆動する。** 「両段とも無傷で戻し、最小整備で再飛行する」という要求が、材料・形状・着陸方式・エンジン数のすべてを規定する。Falcon 9 が残した「使い捨ての第2段」を無くすのが核心。
 2. **ステンレス鋼という逆張り。** 航空宇宙の常識（軽量なアルミ／複合材）に反し、SpaceX は**ステンレス鋼**を選んだ。低温で強度が増し、高温（再突入）にも耐え、安価で溶接でき、量産に向くためである。比強度より「広い温度域での総合性能とコスト」を取った判断。
 3. **33基クラスタは「数による推力と冗長」。** Super Heavy は Raptor を33基束ねて巨大推力を得つつ、複数基喪失への耐性を確保する。製造可能な中型エンジンを大量に並べる思想（Falcon 9 の9基の極大化）。
-4. **着陸は「脚」から「キャッチ」へ。** ブースタに着陸脚を付けず、**射点タワーのアーム (chopsticks) で空中キャッチ (Mechazilla)** する。脚の重量を排し、整備性と再飛行速度を上げる過激な最適化。実飛行で複数回成功している[^sfn-catch]。
+4. **着陸は「脚」から「キャッチ」へ。** ブースタに着陸脚を付けず、**射点タワーのアーム (chopsticks) で空中キャッチ (Mechazilla)** する。脚の重量を排し、整備性と再飛行速度を上げる過激な最適化。実飛行では Flight 5・7・8 の計3回成功している（as of 2026-10。最後の成功は2025年3月の Flight 8 で、Block 3 ブースタのキャッチは未実証）[^sfn-catch][^sh-list]。
 5. **ホットステージング。** 上段エンジンを下段がまだ燃焼中に点火して分離する方式を採用し、段間の性能損失を抑える。
 6. **再突入は耐熱タイルで凌ぐ。** 上段 Starship は軌道速度からの再突入時の空力加熱を、機体下面の**耐熱タイル (TPS)** で防護する。ここが上段再使用の最大の技術的難所。
-7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年）の V3 初飛行まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた。直近の Flight 12 ではブースタが不具合を起こし FAA 調査対象となるなど、開発は依然として途上にある[^sfn-faa][^mynews-faa]。
+7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年5月）の V3 初飛行、Flight 14（2026年9月28日）の**初の軌道到達と Starlink V3 26基の実運用放出**まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた（as of 2026-10 で統合飛行は計14回）[^sflight14][^wiki-ft]。一方で Block 3 ブースタは Flight 12・13 で着水前に喪失し、Flight 14 でも上昇中に Raptor 1基が早期停止するなど、Raptor 3 の信頼性は依然として開発途上にある[^sfn-faa][^mynews-faa][^sflight13]。
 
 ## アーキテクチャ (Architecture)
 
@@ -55,6 +55,29 @@
 | ペイロード（LEO, 再使用） | 100 t 超（V3 目標、使い捨て構成で更に増） | [^satnews] |
 | 再使用 | 両段・完全再使用を目標 | [^starship-official] |
 
+### ミッションプロファイルと実証状況 (Mission Profile & Demonstration Status)
+
+完全再使用の飛行は、両段がそれぞれ別の帰還経路をたどる。下図は Starlink 展開ミッションを例に、各フェーズの実証状況（as of 2026-10）を示す。
+
+```mermaid
+flowchart TD
+    LO["離昇<br/>Raptor ×33"] --> HS["ホットステージング<br/>上段点火後に分離"]
+    HS --> BB["Super Heavy:<br/>ブーストバック燃焼"]
+    BB --> BL{"着陸燃焼"}
+    BL -- "実証済み 3回<br/>(Flight 5/7/8)" --> CATCH["タワーで空中キャッチ<br/>(Mechazilla)"]
+    BL -- "Block 3 は未実証" --> SPL1["洋上着水 / 喪失"]
+    HS --> ORB["Starship:<br/>軌道投入"]
+    ORB -- "Flight 14 で初到達" --> DEP["ペイロード放出<br/>(Starlink V3)"]
+    DEP --> RE["再突入<br/>耐熱タイル + フラップ"]
+    RE --> SL{"着陸フリップ・燃焼"}
+    SL -- "実証済み" --> SPL2["洋上での制御着水"]
+    SL -- "未実証<br/>Flight 15 で初挑戦予定" --> SCATCH["タワーで Ship キャッチ"]
+    CATCH --> REUSE["再スタック・再飛行"]
+    SCATCH --> REUSE
+```
+
+凡例: 四角は飛行フェーズ、菱形は帰還方式の分岐。矢印のラベルは as of 2026-10 の実証状況で、「未実証」「予定」は計画値である[^sflight14][^sh-list][^flight15]。
+
 ### Falcon 9 からの飛躍 (Leap from Falcon 9)
 
 | 観点 | Falcon 9 | Starship / Super Heavy |
@@ -81,7 +104,7 @@
 
 - Super Heavy は**着陸脚を持たない**。代わりに、降下してくるブースタを**射点タワーの2本のアーム（通称 chopsticks）で空中で挟んで捕捉**する。
 - 利点: (1) 着陸脚の重量を排して性能向上、(2) 機体を直接タワーへ戻すことで**整備・再スタックを高速化**（飛行機的な運用に近づく）。
-- 難所: ブースタを **数十 cm の精度でタワー位置へ誘導**する制御が要る。Falcon 9 のホバスラング（`spacex-reusability.md`）を、固定構造物への精密ランデブーへ先鋭化したもの。実飛行で複数回キャッチに成功している[^sfn-catch]。
+- 難所: ブースタを **数十 cm の精度でタワー位置へ誘導**する制御が要る。Falcon 9 のホバスラング（[`spacex-reusability.md`](spacex-reusability.md)）を、固定構造物への精密ランデブーへ先鋭化したもの。誘導の数学（凸最適化）は [`avionics-gnc.md`](avionics-gnc.md) と [`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md) で扱う。キャッチは計3回成功している（Flight 5・7・8）。Ship 側のタワーキャッチは as of 2026-10 で未実証で、Flight 15（NET 2026-10-19）で初挑戦が計画されている[^sfn-catch][^sh-list][^flight15]。
 
 ## 技術詳細 (Technical Details)
 
@@ -97,18 +120,18 @@
 | 製造性 | **溶接で大型構造を作れる**。複合材のオートクレーブ不要、屋外で量産可能 |
 | 代償 | 比強度はアルミに劣り**重い**——が、上記の総合利得で相殺と判断 |
 
-これは「比強度で材料を選ぶ」航空機の発想（`aircraft-engineering-fundamentals.md` の材料節）への意図的な逆張りで、**広い温度域での性能 × コスト × 製造性**を総合最適化した結果である。
+これは「比強度で材料を選ぶ」航空機の発想（[`aircraft-engineering-fundamentals.md`](aircraft-engineering-fundamentals.md) の材料節）への意図的な逆張りで、**広い温度域での性能 × コスト × 製造性**を総合最適化した結果である。
 
 ### ホットステージング (Hot-Staging)
 
-段分離時、**上段 Starship のエンジンを、下段 Super Heavy がまだ推力を出している間に点火**してから分離する方式。通常分離で生じる「分離後にエンジンが立ち上がるまでの推力空白（重力損失）」を避け、性能を稼ぐ。段間部に高温排気を逃がす構造（vented interstage）を設ける必要があり、Flight 2 から導入された。
+段分離時、**上段 Starship のエンジンを、下段 Super Heavy がまだ推力を出している間に点火**してから分離する方式。通常分離で生じる「分離後にエンジンが立ち上がるまでの推力空白（重力損失）」を避け、性能を稼ぐ。段間部に高温排気を逃がす構造（vented interstage）を設ける必要があり、Flight 2 から導入された。段分離の物理的背景（推力空白の間に重力が速度を奪う重力損失）は [`orbital-mechanics.md`](orbital-mechanics.md) を参照。
 
 ### 耐熱防護システム (TPS) — 上段再使用の難所
 
-上段 Starship は、軌道速度（~7.5 km/s 級）からの再突入で激しい**空力加熱**を受ける。これを機体下面に貼った**セラミック耐熱タイル (heat shield tiles)** で防ぐ。
+上段 Starship は、軌道速度（~7.5 km/s 級）からの再突入で激しい**空力加熱**を受ける（詳細は [`reentry-thermal-protection.md`](reentry-thermal-protection.md)、理論は [`../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md)）。これを機体下面に貼った**セラミック耐熱タイル (heat shield tiles)** で防ぐ。
 
 - 完全再使用の鍵は「タイルが再突入に耐え、かつ最小整備で再飛行できる」ことである。これは Space Shuttle が苦しんだ点であり、SpaceX の最大の技術課題である。
-- 直近の試験では、タイルの挙動を確認するため**ヒートシールドを撮像するカメラ**を搭載するなど、データ取得を重視している[^starship-official]。
+- 直近の試験では、タイルの挙動を確認するため**ヒートシールドを撮像するカメラ**を搭載するなど、データ取得を重視している。Flight 14 では放出した Starlink V3 のうち3基がカメラを搭載し、軌道上から Ship のヒートシールドを撮像する試みを行った[^starship-official][^sflight14]。
 
 ### 33基クラスタの制御 (33-Engine Cluster)
 
@@ -116,7 +139,7 @@ Super Heavy は中型エンジン Raptor を**33基**束ねて巨大推力を得
 
 - **数による推力**: 製造可能なサイズのエンジンを大量に並べ、単一巨大エンジンの開発リスクを避ける。
 - **冗長**: 複数基の喪失に耐える（ただし基数が増えるほど統合・配管・始動シーケンスの複雑さが増す）。
-- **難所**: 33基の同時始動・推力ベクタ制御・燃焼安定の協調。直近の Flight 12 ではブースタのブーストバック燃焼で計画した全基を点火できず、燃焼が早期終了して FAA の「事故 (mishap)」認定に至った[^sfn-faa][^mynews-faa]。これは多発化の統合難度が依然として開発の最前線にあることを示す。
+- **難所**: 33基の同時始動・推力ベクタ制御・燃焼安定の協調（燃焼不安定の側面は [`combustion-instability.md`](combustion-instability.md)）。Raptor 3 を積む Block 3 ブースタは、Flight 12 でブーストバック燃焼の全基点火に失敗し、着陸燃焼では1基しか点火できずに着水前に喪失、FAA の「事故 (mishap)」認定に至った[^sfn-faa][^mynews-faa]。Flight 13 でも着陸燃焼の再点火で複数基が不調となり硬着水（再点火できた基数は報道で「13基中10基」と「8基点火後に3基停止」の2説あり）、Flight 14 では上昇中に1基が早期停止した（着水は制御下で成功）[^sflight13][^sflight14]。これは多発化の統合難度が依然として開発の最前線にあることを示す。
 
 ## 信頼性・開発考察 (Reliability & Development)
 
@@ -133,17 +156,23 @@ SpaceX の開発は「**ハードウェア潤沢・高頻度試験 (hardware-ric
 | IFT-3〜4 | 2024 | 上段の再突入・着水へ前進、データ取得を拡大 |
 | **Flight 5** | 2024-10 | **史上初の Super Heavy 空中キャッチ成功 (Mechazilla)** |
 | Flight 7 | 2025-01 | ブースタはキャッチ成功、上段は喪失[^sfn-catch] |
-| 〜IFT-11 | 2025-10 | V2 機体での飛行を重ね、キャッチを反復実証（3回成功） |
-| **Flight 12** | 2026-05 | **初の Block 3 / V3・Raptor 3 飛行**。Starlink 模擬22基を放出。ブースタはブーストバック不調で FAA 事故認定→打ち上げ一時停止[^mynews-flight12][^sfn-faa] |
+| Flight 8 | 2025-03 | ブースタは3回目のキャッチ成功（as of 2026-10 で最後のキャッチ）、上段は喪失[^sh-list] |
+| Flight 9 | 2025-05 | 初のブースタ再飛行。ブースタは着陸燃焼中に喪失、上段は再突入中に分解[^wiki-ft] |
+| Flight 10〜11 | 2025-08 / 2025-10 | Block 2 最終盤。両段とも制御着水に成功（ブースタはメキシコ湾、上段はインド洋）。Flight 11 が Pad 1 の最終使用[^wiki-ft] |
+| **Flight 12** | 2026-05-22 (UTC) | **初の Block 3 / V3・Raptor 3 飛行、Pad 2 初使用**。Starlink 模擬22基を放出し上段はインド洋に着水。ブースタはブーストバック・着陸燃焼不調で喪失、FAA 事故認定→打ち上げ一時停止[^mynews-flight12][^sfn-faa] |
+| Flight 13 | 2026-07-24 | Starlink V3 20基を準軌道で放出、宇宙空間での Raptor 再点火、上段は無傷で軟着水。ブースタは再点火不調で硬着水[^sflight13] |
+| **Flight 14** | 2026-09-28 | **初の軌道到達**（約 262×275 km、傾斜 30.5°〜32°）。**Starlink V3 26基を実運用放出**。ブースタは制御着水（キャッチせず）、上段は早期の軌道離脱後ハワイ北方の太平洋に制御着水。計画 ~10 時間を約3時間に短縮[^sflight14][^wiki-ft] |
+| Flight 15（計画） | NET 2026-10-19 | **初の Ship タワーキャッチ挑戦**を計画（目標値・未実施）[^flight15] |
 
-- **成功と失敗が混在するのが正常**: 各回の「喪失」は設計反復の入力であり、Mechazilla キャッチ成功（Flight 5）や V3 初飛行（Flight 12）といったマイルストンと並走する。
-- **依然として開発途上**: Flight 12 の FAA 事故認定・打ち上げ一時停止が示すように、完全再使用（特に上段の再突入・両段の確実な回収）は未完であり、信頼性は飛行データの蓄積で詰めている段階[^sfn-faa]。
+- **成功と失敗が混在するのが正常**: 各回の「喪失」は設計反復の入力であり、Mechazilla キャッチ成功（Flight 5）、V3 初飛行（Flight 12）、初の軌道到達（Flight 14）といったマイルストンと並走する。
+- **依然として開発途上**: as of 2026-10 で、Block 3 ブースタの回収（キャッチ）、Ship のキャッチ、軌道からの再突入後の回収・再飛行はいずれも未実証である。完全再使用は未完であり、信頼性は飛行データの蓄積で詰めている段階[^sfn-faa][^sflight14]。
+- **射点の多重化**: Starbase Pad 2 が Flight 12 以降の主射点となり（Pad 1 は改修中）、フロリダでは LC-39A の Starship 射点が初打ち上げ（NET 2026-10-30 目標）に向けて仕上げ段階、SLC-37 が建設中である（as of 2026-09）[^nsf-pads]。
 
 ### Falcon 9 との信頼性プロセスの対比
 
 | 観点 | Falcon 9（成熟） | Starship（開発途上） |
 |---|---|---|
-| 着陸成功率 | Block 5 で 99% 級[^reuse-doc] | キャッチは複数回成功も、両段の確実回収は未確立 |
+| 着陸成功率 | Block 5 で 99% 級[^reuse-doc] | ブースタキャッチ3回（Block 2）、Block 3 と Ship の回収は未確立 |
 | 主たる学習源 | 大量の実運用飛行 | 高頻度の試験飛行（fly-fail-fix） |
 | 規制 | 定常運用 | FAA の事故調査・飛行許可がマイルストンを律速[^sfn-faa] |
 
@@ -151,14 +180,14 @@ SpaceX の開発は「**ハードウェア潤沢・高頻度試験 (hardware-ric
 
 Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両段・全機・最小整備**へ徹底した到達点である。完全再使用という一つの要求が、**ステンレス鋼**（広温度域×コスト×製造性）、**33基 Raptor クラスタ**（数による推力と冗長）、**Mechazilla 空中キャッチ**（脚を排した整備性）、**ホットステージング**（段間損失の回避）、**耐熱タイル**（上段再突入）という、相互に連関した設計判断を一斉に駆動している。
 
-同時に、Flight 12 の FAA 事故認定が示すように、完全再使用（とりわけ**上段の再突入と両段の確実な回収**）は依然として未完の工学であり、SpaceX は「飛ばして壊して直す」反復でそれを詰めている。
+同時に、Flight 14 で軌道到達と実ペイロード放出を果たした一方、Block 3 ブースタは3飛行連続でキャッチに至っておらず（as of 2026-10）、完全再使用（とりわけ**上段の再突入と両段の確実な回収**）は依然として未完の工学であり、SpaceX は「飛ばして壊して直す」反復でそれを詰めている。
 
 ### 3部作を貫くもの (The Thread)
 
 本ドキュメント群は、航空機の基礎工学（4つの力・重量との戦い）から出発し、SpaceX を3つの断面で見てきた。
 
-1. **エンジン (`spacex-rocket-engines.md`)** — Isp と推力重量比への執着。FFSC で効率の上限を、メタンで再使用と火星を狙う。
-2. **再使用性 (`spacex-reusability.md`)** — 帰還を制御工学に翻訳し、頻度の経済で「捨てるより安く」を成立させる。
+1. **エンジン ([`spacex-rocket-engines.md`](spacex-rocket-engines.md))** — Isp と推力重量比への執着。FFSC で効率の上限を、メタンで再使用と火星を狙う。
+2. **再使用性 ([`spacex-reusability.md`](spacex-reusability.md))** — 帰還を制御工学に翻訳し、頻度の経済で「捨てるより安く」を成立させる。
 3. **Starship（本書）** — その論理を完全再使用へ徹底し、材料・形状・着陸方式まで作り替える。
 
 貫くのは、航空工学と同じ枠組み、すなわち**推進・構造・制御を、重量とコストと引き換えに、システムとして最適化する**ことを、ロケットの過酷な熱・圧力・速度域で、かつ **「反復で素早く詰める」開発文化**とともに先鋭化する姿勢である。航空機が一世紀かけて型式証明という枠組みで信頼性を作り込んだのに対し、SpaceX は高頻度の飛行データでそれを加速しようとしている。その帰結は、これからの飛行試験が語る。
@@ -177,7 +206,15 @@ Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両�
 
 [^sfn-catch]: [SpaceX successfully catches Super Heavy booster, loses Starship upper stage during Flight 7 — Spaceflight Now (2025-01-17)](https://spaceflightnow.com/2025/01/17/spacex-successfully-catches-super-heavy-booster-loses-starship-upper-stage-during-flight-7/) — Mechazilla による Super Heavy 空中キャッチの実証、上段喪失。Accessed: 2026-06-30.
 
+[^flight15]: [Starship flight 15 — Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_15) ／ [Teslarati — SpaceX to attempt Starship catch](https://www.teslarati.com/spacex-catch-starship-launch-14-elon-musk/) — B22/S42、Pad 2、NET 2026-10-19、初の Ship タワーキャッチ挑戦の計画（目標値）。Accessed: 2026-10-04.
+
 **専門報道 (Specialist reporting)**
+
+[^sflight14]: [SpaceX Starship megarocket reaches orbit on Flight 14 — Space.com (2026-09-28)](https://www.space.com/space-exploration/launches-spacecraft/spacex-starship-megarocket-flight-14-orbital-launch-success) ／ [NASASpaceflight — Starship Flight 14 reaches orbit (2026-09)](https://www.nasaspaceflight.com/2026/09/starship-flight-14-orbit/) — 初の軌道到達（約 262×275 km）、Starlink V3 26基（うち3基はカメラ搭載）、ブースタ制御着水、Raptor 1基・RVac 1基の早期停止、飛行時間約3時間8分。軌道傾斜は 30.5°（Wikipedia 集計）と 32°（NSF）で報道に幅。Accessed: 2026-10-04.
+
+[^sflight13]: [Space.com — Starship makes the softest splashdown ever after launching next-gen Starlink satellites in Flight 13 (2026-07)](https://www.space.com/space-exploration/launches-spacecraft/spacexs-starship-megarocket-makes-the-softest-splashdown-ever-after-launching-next-gen-starlink-satellites-in-flight-13-test-video) ／ [NASASpaceflight — Starship Flight 13 (2026-07)](https://www.nasaspaceflight.com/2026/07/starship-flight-13-flight/) — Starlink V3 20基の準軌道放出、上段の軟着水、ブースタの再点火不調と硬着水。Accessed: 2026-10-04.
+
+[^nsf-pads]: [NASASpaceflight — Launch site and facility progress on the East Coast for Starship (2026-09)](https://www.nasaspaceflight.com/2026/09/launch-site-facility-progress-east-coast-starship/) — LC-39A（屋根補強・デリュージ試験、初打ち上げ NET 2026-10-30 目標）と SLC-37 の建設状況。Accessed: 2026-10-04.
 
 [^scientificamerican]: [Watch SpaceX launch Starship V3 — the tallest and most powerful rocket yet — Scientific American](https://www.scientificamerican.com/article/watch-spacex-launch-starship-v3-the-tallest-and-most-powerful-rocket-yet/) — V3 が史上最大・最強、Saturn V の約2倍の推力。Accessed: 2026-06-30.
 
@@ -187,6 +224,12 @@ Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両�
 
 [^mynews-faa]: [FAA grounds SpaceX's Starship after booster malfunction — Spectrum News 13 (2026-05-27)](https://mynews13.com/fl/orlando/space/2026/05/27/faa-grounds-spacexs-starship-after-booster-malfunction) — ブースタ不調による FAA の打ち上げ一時停止。Accessed: 2026-06-30.
 
+**集計・索引 (Tertiary — 発見用。一次は上記を優先)**
+
+[^wiki-ft]: [SpaceX Starship flight tests — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_flight_tests) — 統合飛行14回（as of 2026-09-28）の各回の結果一覧。Accessed: 2026-10-04.
+
+[^sh-list]: [List of Super Heavy boosters — Wikipedia](https://en.wikipedia.org/wiki/List_of_Super_Heavy_boosters) — キャッチ実績（B12/Flight 5、B14/Flight 7、B15/Flight 8）。なお同ページは B21（Flight 14）をキャッチと記載するが、Flight 14 の記事・報道は制御着水としており、本書は後者を採る。Accessed: 2026-10-04.
+
 **本リポジトリ内参照**
 
-[^reuse-doc]: 本リポジトリ `spacex-reusability.md`（Block 5 着陸成功率 99% 級、再使用の経済性）。
+[^reuse-doc]: 本リポジトリ [`spacex-reusability.md`](spacex-reusability.md)（Block 5 着陸成功率 99% 級、再使用の経済性）。

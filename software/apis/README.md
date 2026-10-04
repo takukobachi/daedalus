@@ -7,9 +7,12 @@ RFC を一次資料として API・データモデル・プロトコルフロー
 ## 構成
 
 - `stripe-connect-specification.md` — Stripe Connect：マルチパーティ決済の仕様
-  （アカウントタイプ, charge types, 資金フロー, Webhook, オンボーディング）
+  （コントローラープロパティと Accounts v2 による現行アカウントモデルとレガシーの
+  アカウントタイプ, charge types と資金フロー, 埋め込みコンポーネント, Webhook,
+  日本向け料金（2026-10 時点））
 - `authentication-tokens-specification.md` — 認証トークン (JWT / OAuth 2.0 / OIDC)：
-  トークン形式、署名検証、認可フロー、セキュリティ考察。
+  トークン形式 (RFC 9068)、認可コード + PKCE、PAR / RAR / トークン交換、
+  送信者制約 (DPoP / mTLS)、RFC 9700 準拠のセキュリティ考察と OAuth 2.1 ドラフトの状況。
   [`../networking/tls-internals.md`](../networking/tls-internals.md) が扱うトランスポート層
   セキュリティの上に立つ、アプリケーション層の認証・認可
 

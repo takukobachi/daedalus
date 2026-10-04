@@ -6,7 +6,7 @@
 
 本ドキュメントは、現代ストレージの中核である **NANDフラッシュ (NAND flash)** の物理的制約（消去前書き込み erase-before-write、摩耗 wear）と、それを隠蔽する **FTL (Flash Translation Layer)**、そして CPU・OS とストレージを繋ぐプロトコル（**SATA/AHCI**, **NVMe**, **eMMC/UFS**）とブロックデバイス抽象を整理する。さらに、DRAM とストレージの境界を侵食しつつある**永続メモリ (persistent memory)** にも触れる。なぜ SSD が「使ううちに遅くなる」のか、なぜ `fsync` が重いのか、なぜ「完全消去」が難しいのか、をハードウェアの観点から説明する。
 
-`../cpu/cache-memory-hierarchy.md` が「主記憶までの速度差」を扱ったのに対し、本稿はその下、ストレージ層の内部とインタフェースを扱う。
+[`../cpu/cache-memory-hierarchy.md`](../cpu/cache-memory-hierarchy.md) が「主記憶までの速度差」を扱ったのに対し、本稿はその下、ストレージ層の内部とインタフェースを扱う。OS 側のブロック I/O スタックは [`block-io-stack.md`](../../software/operating-systems/block-io-stack.md)、ファイルシステムは [`filesystems.md`](../../software/operating-systems/filesystems.md) が扱い、NAND セルの物理（浮遊ゲート・チャージトラップとトンネル効果）は [`tunneling-nonvolatile-memory.md`](../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md) が扱う。
 
 ## 方法論 (Methodology)
 
@@ -17,10 +17,10 @@
 
 ## 発見事項 (Findings)
 
-1. **NANDフラッシュは「書き換え (overwrite)」ができない。** 書き込みはページ (page) 単位だが、消去 (erase) はより大きなブロック (block) 単位でしか行えず、書き込みの前に必ず消去が要る（**erase-before-write**）。この非対称性が FTL の存在理由そのものである。
+1. **NANDフラッシュは「書き換え (overwrite)」ができない。** 書き込みはページ (page) 単位だが、消去 (erase) はより大きなブロック (block) 単位でしか行えず、書き込みの前に必ず消去が要る（**erase-before-write**）[^onfi][^gal-toledo]。この非対称性が FTL の存在理由そのものである。
 2. **FTL がランダムな論理アドレスを物理配置から切り離す。** OS が見る論理ブロックアドレス (LBA) と、NAND 上の物理位置の対応を FTL が動的に張り替える。ウェアレベリング (wear leveling)・ガベージコレクション (garbage collection) はすべてこの間接化の上で動く。
-3. **「使ううちに遅くなる」「書いた以上に摩耗する」は GC と書き込み増幅 (write amplification) の帰結。** 空きブロックが枯渇すると GC が有効データを退避してから消去するため、ホストの1書き込みが内部では複数書き込みになる。TRIM はこの圧力を下げる。
-4. **プロトコルの世代交代は「並列性」が主因。** SATA/AHCI は単一キュー・回転ディスク前提だが、NVMe は多数の深いキューを PCIe 上に持ち、フラッシュ本来の並列性とマルチコアを引き出す。
+3. **「使ううちに遅くなる」「書いた以上に摩耗する」は GC と書き込み増幅 (write amplification) の帰結。** 空きブロックが枯渇すると GC が有効データを退避してから消去するため、ホストの1書き込みが内部では複数書き込みになる[^hu-waf]。TRIM はこの圧力を下げる。
+4. **プロトコルの世代交代は「並列性」が主因。** SATA/AHCI は単一キュー・回転ディスク前提だが、NVMe は多数の深いキューを PCIe 上に持ち、フラッシュ本来の並列性とマルチコアを引き出す[^nvme][^agrawal]。
 5. **永続性 (durability) は「書いた」と「残った」の差で決まる。** 揮発キャッシュ (volatile cache) があるため、`FLUSH`/`FUA`/ライトバリア (write barrier) で順序と永続化を明示しないと、電源喪失でデータが消える・前後する。永続メモリ (PMEM) はこの境界をバイト単位へ押し下げる。
 
 ## アーキテクチャ (Architecture)
@@ -51,7 +51,7 @@
 
 ### NANDフラッシュの物理構造
 
-NAND は階層構造を持ち、操作の粒度が**読み/書き/消去で異なる**のが最大の特徴。
+NAND は階層構造を持ち、操作の粒度が**読み/書き/消去で異なる**のが最大の特徴[^onfi]。
 
 ```
    Device
@@ -62,10 +62,10 @@ NAND は階層構造を持ち、操作の粒度が**読み/書き/消去で異�
                     └─ Cell  ← 1セル=1〜4bit (SLC/MLC/TLC/QLC)
 ```
 
-- **読み出し (read)**: ページ単位。高速・低レイテンシ。ただし**リードディスターブ (read disturb)** — 同一ブロック内を繰り返し読むと隣接セルの電荷が乱れ、いずれ訂正不能になる。一定回数で予防的に再書き込み（リフレッシュ）する。
+- **読み出し (read)**: ページ単位。高速・低レイテンシ。ただし**リードディスターブ (read disturb)** — 同一ブロック内を繰り返し読むと隣接セルの電荷が乱れ、いずれ訂正不能になる。一定回数で予防的に再書き込み（リフレッシュ）する[^cai-errors]。
 - **書き込み (program)**: ページ単位。**すでに書かれたページを上書きできない**。同じ場所を書き換えるには、まずブロック全体を消去する必要がある。
 - **消去 (erase)**: ブロック単位（書き込みより桁で大きい）。時間も長い。
-- **P/E サイクルと摩耗 (wear)**: 消去 (Program/Erase) のたびにセルの絶縁膜が劣化する。耐久は世代依存で、概ね SLC > MLC > TLC > QLC の順（目安として SLC は数万回、QLC は数百〜数千回オーダ）。寿命を使い切ったブロックは退役 (retire) させる。
+- **P/E サイクルと摩耗 (wear)**: 消去 (Program/Erase) のたびにセルの絶縁膜が劣化する。耐久は世代依存で、概ね SLC > MLC > TLC > QLC の順（目安として SLC は数万回、QLC は数百〜数千回オーダ）[^cai-errors]。寿命を使い切ったブロックは退役 (retire) させる。
 - **セル多値化のトレードオフ**: 1セルに多ビット詰めるほど大容量・低コストだが、レイテンシ・耐久・信頼性が落ちる。多くの SSD は一部を擬似 SLC キャッシュ (SLC cache) として高速バッファに使い、空き時間に TLC/QLC へ移す。
 
 ### NVMe コマンド経路（キューと PCIe）
@@ -77,20 +77,20 @@ NVMe はホスト DRAM 上に **Submission Queue (SQ)** と **Completion Queue (
    ┌──────────────┐  ①コマンドをSQに書く        ┌──────────────┐
    │ Submission Q │ ─────────────────────────▶ │              │
    │   (ring)     │  ②Doorbell に MMIO write    │  処理 + DMA  │
-   └──────────────┘  (尾尾ポインタ通知) ────────▶│  (データ転送)│
+   └──────────────┘  (テールポインタ通知) ────────▶│  (データ転送)│
    ┌──────────────┐  ③完了をCQへ DMA write      │              │
    │ Completion Q │ ◀───────────────────────── │              │
    │   (ring)     │  ④MSI-X 割り込みで通知 ◀──── └──────────────┘
    └──────────────┘  ⑤ホストが CQ を処理し Doorbell 更新
 ```
 
-SATA/AHCI が事実上1キュー・キュー深度 32（NCQ）なのに対し、NVMe は最大 64K キュー × 各 64K エントリを規格上許す。**キューをコアごとに割り当て**ることでロック競合を避け、フラッシュの内部並列（複数 die）を飽和させられる。
+SATA/AHCI が事実上1キュー・キュー深度 32（NCQ）なのに対し、NVMe は最大 64K キュー × 各 64K エントリを規格上許す[^nvme]。**キューをコアごとに割り当て**ることでロック競合を避け、フラッシュの内部並列（複数 die）を飽和させられる。
 
 ## 技術詳細 (Technical Details)
 
 ### 1. FTL とアドレス間接化 (logical-to-physical mapping)
 
-FTL は LBA → 物理ページアドレス (PPA) の写像表を持ち、これを RAM（コントローラ内 DRAM や SRAM）に保持する。上書き要求が来ると、**元の場所を消さずに別の空きページへ書き、写像を新しい位置に張り替える**（out-of-place update / コピーオンライトに近い）。元ページは「無効 (invalid)」と印を付けるだけ。
+FTL は LBA → 物理ページアドレス (PPA) の写像表を持ち、これを RAM（コントローラ内 DRAM や SRAM）に保持する。上書き要求が来ると、**元の場所を消さずに別の空きページへ書き、写像を新しい位置に張り替える**（out-of-place update / コピーオンライトに近い）。元ページは「無効 (invalid)」と印を付けるだけ[^gal-toledo]。
 
 ```
 # 例示 (illustrative)。実FTLのデータ構造ではなく概念を示す疑似コード。
@@ -105,7 +105,7 @@ def write(lba, data):
         garbage_collect()               # 空き枯渇でGC起動
 ```
 
-- **写像粒度**: ページ単位マッピング（柔軟だが表が巨大）と、ブロック単位、両者の混成 (hybrid) がある。表が大きいほど DRAM を消費する（DRAM-less SSD は HMB でホスト DRAM を借りる）。
+- **写像粒度**: ページ単位マッピング（柔軟だが表が巨大）と、ブロック単位、両者の混成 (hybrid) がある[^gal-toledo][^agrawal]。表が大きいほど DRAM を消費する（DRAM-less SSD は HMB でホスト DRAM を借りる）。
 - **電源喪失と写像**: L2P 表は揮発 RAM 上にあるため、電源喪失で失うと全データを失いかねない。表のスナップショットとログを NAND に保存し、起動時に復元する。
 
 ### 2. ガベージコレクションと書き込み増幅 (Write Amplification)
@@ -119,9 +119,9 @@ def write(lba, data):
    └─┴─┴─┴─┴─┴─┴─┴─┘
 ```
 
-- **書き込み増幅率 (Write Amplification Factor, WAF)** = NAND への実書き込み量 / ホストが要求した書き込み量。理想は 1.0 だが、ランダム書き込み主体・空き容量が少ないほど悪化し、数倍に達することがある。
+- **書き込み増幅率 (Write Amplification Factor, WAF)** = NAND への実書き込み量 / ホストが要求した書き込み量。理想は 1.0 だが、ランダム書き込み主体・空き容量が少ないほど悪化し、数倍に達することがある[^hu-waf]。
 - **WAF の悪化は摩耗を早め、性能を落とす。** 同じ寿命 P/E 予算をGCコピーが消費し、書き込みレイテンシにGCが割り込む（テールレイテンシ増大）。
-- **オーバープロビジョニング (over-provisioning)**: ユーザに見せない予備容量を持つと、空きブロックに余裕ができ WAF が下がる。エンタープライズ SSD が公称容量を抑える理由。
+- **オーバープロビジョニング (over-provisioning)**: ユーザに見せない予備容量を持つと、空きブロックに余裕ができ WAF が下がる。エンタープライズ SSD が公称容量を抑える理由。Hu らはスペア容量と GC 方針から WAF を解析的に導き、予備容量の増加で WAF が下がることを示した[^hu-waf]。
 
 ### 3. ウェアレベリング (Wear Leveling)
 
@@ -132,14 +132,14 @@ def write(lba, data):
 
 ### 4. TRIM / discard
 
-ファイルシステムがファイルを削除しても、ブロック層が何も言わなければ SSD は「そのLBAはもう不要」と知れない。**TRIM (ATA) / Deallocate (NVMe) / discard (Linux block layer)** は「このLBA範囲は無効」とデバイスへ通知するコマンド。
+ファイルシステムがファイルを削除しても、ブロック層が何も言わなければ SSD は「そのLBAはもう不要」と知れない。**TRIM (ATA) / Deallocate (NVMe) / discard (Linux block layer)** は「このLBA範囲は無効」とデバイスへ通知するコマンド[^nvme]。
 
 - 効果: 無効と分かったページを GC が即「無効」と扱え、有効ページの退避コピーが減る → **WAF 低下・性能維持・摩耗低減**。
 - TRIM がないと、デバイスは削除済みデータを「有効」と誤認し、無駄に退避コピーし続ける。
 
 ### 5. 永続性: キャッシュ・FLUSH・FUA・バリア (Durability)
 
-デバイスには揮発ライトキャッシュ (volatile write cache) があり、「書き込み完了」を返した時点ではまだ NAND に届いていないことがある。永続化を保証するには明示が要る。
+デバイスには揮発ライトキャッシュ (volatile write cache) があり、「書き込み完了」を返した時点ではまだ NAND に届いていないことがある。永続化を保証するには明示が要る。Linux ブロック層はこれを `REQ_PREFLUSH`（先行 FLUSH）と `REQ_FUA` として表現する[^linux-wbc]。
 
 - **FLUSH (cache flush)**: それまでに受理した書き込みを不揮発メディアへ確実に落とす。`fsync()`/ジャーナルのコミットがこれを発行する。
 - **FUA (Force Unit Access)**: その書き込み「だけ」をキャッシュを経由せず（または完了前に）メディアへ確実に書く指定。
@@ -159,7 +159,7 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 | 規格 | 物理/トランスポート | キュー/並列性 | 主な用途 | レイテンシ感（世代依存） |
 |---|---|---|---|---|
 | SATA + AHCI | SATA | 1キュー, NCQ 深度32 | 旧来のHDD/SATA SSD | ~数十〜百 µs（SSD時） |
-| NVMe | PCIe (`bus-interconnect`) | 多数キュー×深いQD | 高性能 SSD | ~10 µs オーダ |
+| NVMe | PCIe ([`bus-interconnect.md`](bus-interconnect.md)) | 多数キュー×深いQD | 高性能 SSD | ~10 µs オーダ |
 | eMMC | 組込み（半二重バス） | 浅い | スマホ/組込み（旧） | 比較的高い |
 | UFS | M-PHY（全二重, シリアル） | コマンドキュー(深度) | スマホ/組込み（現） | eMMC より低レイテンシ |
 
@@ -173,26 +173,27 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 
 | 指標 | HDD | SATA SSD | NVMe SSD | 永続メモリ (PMEM) |
 |---|---|---|---|---|
-| ランダム読みレイテンシ | ~ミリ秒 (10^-3 s) | ~100 µs | ~10 µs | ~数百 ns |
+| ランダム読みレイテンシ | ~ミリ秒 (10^-3 s) | ~100 µs | ~10 µs | ~数百 ns（Optane 実測 ~300 ns[^yang-optane]） |
 | ランダム IOPS | ~100 | ~10^4–10^5 | ~10^5–10^6 | （バイトアクセス） |
-| 帯域 (シーケンシャル) | ~100–200 MB/s | ~500 MB/s | ~数 GB/s（PCIe世代依存） | ~10 GB/s 級 |
+| 帯域 (シーケンシャル) | ~100–200 MB/s | ~500 MB/s | ~数 GB/s（PCIe世代依存） | ~数 GB/s/DIMM（Optane 実測: 読み 6.6・書き 2.3 GB/s、インタリーブで加算[^yang-optane]） |
 
 - HDD は**シーク**が支配的でランダムが極端に遅い。SSD/フラッシュはシークが無く、ランダムとシーケンシャルの差が小さい。
 - それでも SSD でもシーケンシャル＞ランダム、リード＞ライトの傾向は残る（GC とプログラム時間のため）。
-- NVMe の帯域は PCIe のレーン数・世代に律速される（`bus-interconnect.md`）。
+- NVMe の帯域は PCIe のレーン数・世代に律速される（[`bus-interconnect.md`](bus-interconnect.md)）。
+- PMEM は読みと書きの非対称が大きく、書き帯域は読みの 1/3 程度にとどまる[^yang-optane]。DRAM 並みの対称性を仮定した設計は外れる。
 
 ### 8. 不揮発メモリ / 永続メモリ (NVDIMM, PMEM, CXL)
 
 ストレージとDRAMの中間を埋める層。**バイト単位アクセス可能で不揮発**という、ブロックデバイスと根本的に異なる性質を持つ。
 
 - **NVDIMM-N**: DRAM + フラッシュ + バックアップ電源（スーパーキャパシタ等）。通常は DRAM として動き、停電時に内容をフラッシュへ退避。速度は DRAM、容量は DRAM 並み。
-- **永続メモリ (persistent memory, PMEM)**: メモリバスに挿し、CPU のロード/ストアで直接アクセスできる不揮発メモリ。ブロック層 (FTL/LBA) を経ずに、`mmap` した領域へ直接書く **DAX (Direct Access)** が可能。`../cpu/virtual-memory-mmu.md` の `mmap` がそのまま永続データに繋がる。
-- **永続化の難所**: CPU のストアはキャッシュに留まる。永続を保証するには、キャッシュラインを書き戻す命令（`CLWB`/`CLFLUSHOPT`）＋順序付け (`SFENCE`) が要る。ブロックの FLUSH に相当する操作が、キャッシュライン粒度に降りてくる。
-- **CXL メモリ (CXL.mem)**: PCIe 物理層上の CXL で、メモリ（揮発/不揮発）をデバイスとして接続し、コヒーレントに共有・拡張する。メモリ階層とストレージ階層の境界をさらに曖昧にする方向。
+- **永続メモリ (persistent memory, PMEM)**: メモリバスに挿し、CPU のロード/ストアで直接アクセスできる不揮発メモリ。ブロック層 (FTL/LBA) を経ずに、`mmap` した領域へ直接書く **DAX (Direct Access)** が可能。[`../cpu/virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) の `mmap`（OS 側は [`virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md)）がそのまま永続データに繋がる。
+- **永続化の難所**: CPU のストアはキャッシュに留まる。永続を保証するには、キャッシュラインを書き戻す命令（`CLWB`/`CLFLUSHOPT`）＋順序付け (`SFENCE`) が要る[^intel-sdm][^yang-optane]。ブロックの FLUSH に相当する操作が、キャッシュライン粒度に降りてくる。
+- **CXL メモリ (CXL.mem)**: PCIe 物理層上の CXL で、メモリ（揮発/不揮発）をデバイスとして接続し、コヒーレントに共有・拡張する[^cxl]。メモリ階層とストレージ階層の境界をさらに曖昧にする方向。
 
 ### 典型シーケンス: NVMe ブロック読み出し
 
-`mmio-dma-interrupts.md` の「MMIO → DMA → 割り込み」の具体例として読める。
+[`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) の「MMIO → DMA → 割り込み」の具体例として読める。
 
 ```
 1. (Block層) ファイルシステムが LBA・長さ・転送先 DRAM を決定し bio を発行。
@@ -212,10 +213,10 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 
 ## セキュリティ考察 (Security Considerations)
 
-- **データ残留と完全消去の困難 (data remanence)**: FTL の out-of-place 更新ゆえ、ホストが「上書き」しても旧データは別の物理ページに残る。OS レベルの上書き (overwrite) では消えない領域（予備容量・退役ブロック）が生じる。HDD 時代の「同じセクタを上書きすれば消える」前提が成り立たない。
-- **サニタイズ (sanitize)**: 確実な消去にはデバイス自身のコマンドが要る。**ATA Secure Erase / NVMe Sanitize (Block Erase)** は物理ブロックを消去し、**Crypto Erase** は内部の暗号鍵を破棄してデータを瞬時に復号不能化する。後者は SED 前提だが最速・最確実。
-- **自己暗号化ドライブ (SED, Self-Encrypting Drive)**: コントローラが全データを透過的に暗号化 (AES) して保存する。利点は (1) Crypto Erase による瞬時無効化、(2) 鍵を解錠しない限りデータ無効。**TCG Opal** が標準。注意点として、認証・鍵管理の実装欠陥（鍵がパスワードに依存しない、ファームの解錠バイパス等）が過去に報告されており、SED 任せにせずソフト暗号 (dm-crypt/BitLocker) との多層化が堅い。
-- **ファームウェアと信頼境界**: ストレージコントローラは強力な DMA エンジンを持つ。悪意ある／脆弱なファームは DMA でホストメモリを侵せる。`mmio-dma-interrupts.md` の DMA 攻撃と同根で、IOMMU 隔離とファーム署名検証が前提。
+- **データ残留と完全消去の困難 (data remanence)**: FTL の out-of-place 更新ゆえ、ホストが「上書き」しても旧データは別の物理ページに残る。OS レベルの上書き (overwrite) では消えない領域（予備容量・退役ブロック）が生じる。HDD 時代の「同じセクタを上書きすれば消える」前提が成り立たない。Wei らの実測では、ファイル単位の上書き消去は SSD 上で大量のデータを残し、ドライブ組込みのサニタイズにも実装不備があった[^wei-erase]。
+- **サニタイズ (sanitize)**: 確実な消去にはデバイス自身のコマンドが要る。**ATA Secure Erase / NVMe Sanitize (Block Erase)** は物理ブロックを消去し、**Crypto Erase** は内部の暗号鍵を破棄してデータを瞬時に復号不能化する。後者は SED 前提だが最速・最確実[^nvme][^wei-erase]。
+- **自己暗号化ドライブ (SED, Self-Encrypting Drive)**: コントローラが全データを透過的に暗号化 (AES) して保存する。利点は (1) Crypto Erase による瞬時無効化、(2) 鍵を解錠しない限りデータ無効。**TCG Opal** が標準[^opal]。注意点として、認証・鍵管理の実装欠陥（鍵がパスワードに依存しない、ファームの解錠バイパス等）が過去に報告されており[^meijer-sed]、SED 任せにせずソフト暗号 (dm-crypt/BitLocker) との多層化が堅い。
+- **ファームウェアと信頼境界**: ストレージコントローラは強力な DMA エンジンを持つ。悪意ある／脆弱なファームは DMA でホストメモリを侵せる。[`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) の DMA 攻撃と同根で、IOMMU 隔離とファーム署名検証が前提。
 - **デバイス入力の検証**: 完了エントリやログ長など、デバイスから来る値は信頼できない入力として扱う（長さ取り違えはオーバーフローに直結）。
 
 ## 結論 (Conclusions)
@@ -229,15 +230,42 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 
 ### 次の接続先 (Related Topics)
 
-- `mmio-dma-interrupts.md` — NVMe の Doorbell(MMIO)・データ転送(DMA)・MSI-X 完了通知(割り込み)の機構。
-- `bus-interconnect.md` — NVMe が載る PCIe と、CXL の物理層。
-- `../cpu/cache-memory-hierarchy.md` — ストレージ階層の最下層としての位置づけ（速度・容量・コストの桁感）。
-- `../cpu/virtual-memory-mmu.md` — `mmap`/page cache と、PMEM の DAX 直接アクセス。
+- [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) — NVMe の Doorbell(MMIO)・データ転送(DMA)・MSI-X 完了通知(割り込み)の機構。
+- [`bus-interconnect.md`](bus-interconnect.md) — NVMe が載る PCIe と、CXL の物理層。
+- [`../cpu/cache-memory-hierarchy.md`](../cpu/cache-memory-hierarchy.md) — ストレージ階層の最下層としての位置づけ（速度・容量・コストの桁感）。
+- [`../cpu/virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) — `mmap`/page cache と、PMEM の DAX 直接アクセス。
+- [`../../software/operating-systems/block-io-stack.md`](../../software/operating-systems/block-io-stack.md) — bio・blk-mq・I/O スケジューラという OS 側の経路。
+- [`../../software/operating-systems/filesystems.md`](../../software/operating-systems/filesystems.md) — ジャーナリングと `fsync` の順序要求。
+- [`../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md`](../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md) — NAND セルの書込み・消去と摩耗の物理。
 
 ## 参考文献 (References)
 
-**一次資料 (Primary — 仕様・論文)**
+**一次資料 (Primary — 仕様)**
 
-- NVM Express, Inc. *NVM Express Base Specification*. — [nvmexpress.org/specifications](https://nvmexpress.org/specifications/) — Accessed: 2026-07-02。送信/完了キュー・コマンドセットの規範。
-- ONFI Workgroup. *Open NAND Flash Interface Specification*. — [onfi.org](https://onfi.org/) — Accessed: 2026-07-02。NAND デバイスインタフェースの規範。
-- Agrawal, N. et al. (2008). Design Tradeoffs for SSD Performance. *USENIX Annual Technical Conference*. — [PDF](https://www.usenix.org/legacy/event/usenix08/tech/full_papers/agrawal/agrawal.pdf) — Accessed: 2026-07-02。FTL・書き込み増幅・並列性のトレードオフを扱う代表的論文。
+[^nvme]: NVM Express, Inc. *NVM Express Base Specification*. — [nvmexpress.org/specifications](https://nvmexpress.org/specifications/) — Accessed: 2026-07-02。送信/完了キュー・コマンドセット（Deallocate、Sanitize を含む）の規範。
+
+[^onfi]: ONFI Workgroup. *Open NAND Flash Interface Specification*. — [onfi.org](https://onfi.org/) — Accessed: 2026-07-02。NAND デバイスインタフェース（ページ program・ブロック erase）の規範。
+
+[^opal]: Trusted Computing Group. *TCG Storage Security Subsystem Class: Opal*. — [trustedcomputinggroup.org](https://trustedcomputinggroup.org/resource/storage-work-group-storage-security-subsystem-class-opal/) — Accessed: 2026-10-04。自己暗号化ドライブの認証・ロック・鍵管理の規範。
+
+[^cxl]: CXL Consortium. *Compute Express Link Specification*. — [computeexpresslink.org](https://computeexpresslink.org/cxl-specification/) — Accessed: 2026-10-04。CXL.mem によるメモリ拡張の規範。
+
+[^intel-sdm]: Intel Corporation. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 2 (CLWB / CLFLUSHOPT / SFENCE). — [intel.com/sdm](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-10-04。キャッシュライン書き戻しとストア順序付け命令の規範。
+
+[^linux-wbc]: The Linux Kernel documentation. *Explicit volatile write back cache control*. — [docs.kernel.org](https://docs.kernel.org/block/writeback_cache_control.html) — Accessed: 2026-10-04。`REQ_PREFLUSH`/`REQ_FUA` によるデバイス揮発キャッシュ制御の意味論。
+
+**一次資料 (Primary — 論文)**
+
+[^agrawal]: Agrawal, N. et al. (2008). Design Tradeoffs for SSD Performance. *USENIX Annual Technical Conference*. — [PDF](https://www.usenix.org/legacy/event/usenix08/tech/full_papers/agrawal/agrawal.pdf) — Accessed: 2026-07-02。FTL・書き込み増幅・並列性のトレードオフを扱う代表的論文。
+
+[^gal-toledo]: Gal, E., & Toledo, S. (2005). Algorithms and Data Structures for Flash Memories. *ACM Computing Surveys*, 37(2), 138–163. DOI: 10.1145/1089733.1089735 — out-of-place 更新・写像・ウェアレベリングの体系的サーベイ。
+
+[^hu-waf]: Hu, X.-Y., Eleftheriou, E., Haas, R., Iliadis, I., & Pletka, R. (2009). Write Amplification Analysis in Flash-Based Solid State Drives. *Proc. SYSTOR 2009*, 10:1–10:9. DOI: 10.1145/1534530.1534544 — 書き込み増幅と予備容量・GC 方針の解析モデル。
+
+[^cai-errors]: Cai, Y., Ghose, S., Haratsch, E. F., Luo, Y., & Mutlu, O. (2017). Error Characterization, Mitigation, and Recovery in Flash-Memory-Based Solid-State Drives. *Proceedings of the IEEE*, 105(9), 1666–1704. DOI: 10.1109/JPROC.2017.2713127 — P/E 摩耗・リードディスターブ・保持エラーの実測と対策。
+
+[^wei-erase]: Wei, M., Grupp, L. M., Spada, F. E., & Swanson, S. (2011). Reliably Erasing Data from Flash-Based Solid State Drives. *Proc. 9th USENIX FAST*, 105–117. — [usenix.org](https://www.usenix.org/conference/fast11/reliably-erasing-data-flash-based-solid-state-drives) — Accessed: 2026-10-04。SSD のサニタイズ実装と上書き消去の失敗の実測。
+
+[^meijer-sed]: Meijer, C., & van Gastel, B. (2019). Self-Encrypting Deception: Weaknesses in the Encryption of Solid State Drives. *Proc. IEEE Symposium on Security and Privacy (SP 2019)*, 72–87. DOI: 10.1109/SP.2019.00088 — SED ファームウェアの鍵管理欠陥の解析。
+
+[^yang-optane]: Yang, J., Kim, J., Hoseinzadeh, M., Izraelevitz, J., & Swanson, S. (2020). An Empirical Guide to the Behavior and Use of Scalable Persistent Memory. *Proc. 18th USENIX FAST*, 169–182. — [usenix.org](https://www.usenix.org/conference/fast20/presentation/yang) — Accessed: 2026-10-04。Optane DIMM の実測（ランダム読み ~305 ns、単一 DIMM の最大帯域 読み 6.6 / 書き 2.3 GB/s）。
