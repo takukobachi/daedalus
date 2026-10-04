@@ -7,7 +7,7 @@
 
 スペクトラムの両隣は `../gpu-accelerators/` (GPU/TPU) が、FPGA の存在理由である
 NRE・マスク費用は `../semiconductor-manufacturing/` が、SmartNIC/DPU としての
-配備先は `../network-hardware/` がそれぞれ供給する。
+配備先は `../network-hardware/` がそれぞれ扱う。
 
 ## ドキュメント
 

@@ -2,7 +2,7 @@
 
 ストレージデバイスの物理と内部制御。[`../hw-sw-interface/storage-nvm-interface.md`](../hw-sw-interface/storage-nvm-interface.md)
 (NVMe・インタフェース層) の**下**の層にあたり、媒体の物理特性がインタフェース以上の
-全階層 (block 層・ファイルシステム・データベース) の設計をどう強制するかを扱う。
+全階層 (block 層・ファイルシステム・データベース) の設計にどのような制約を課すかを扱う。
 
 ## ドキュメント
 

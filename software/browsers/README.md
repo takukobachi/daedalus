@@ -1,6 +1,6 @@
 # Browsers
 
-ブラウザ内部 (browser internals) の分析。[`../android/`](../android/README.md)・[`../ios/`](../ios/README.md) に続く**第三のプラットフォーム分析**であり、最も敵対的な前提——署名もインストールもない任意コードの即時実行——の下で、プロセス隔離・IPC・実行系・グラフィックスがどう再設計されるかを読む。ハードウェアの投機実行 (Spectre) がプロセスモデルを書き換えたという意味で、hardware/software 両スタックを縦断する題材でもある。主対象は Chromium、対照として WebKit/Firefox。
+ブラウザ内部 (browser internals) の分析。[`../android/`](../android/README.md)・[`../ios/`](../ios/README.md) に続く**第三のプラットフォーム分析**であり、署名もインストールもない任意コードを即時に実行するという最も敵対的な前提の下で、プロセス隔離・IPC・実行系・グラフィックスがどう再設計されるかを読む。ハードウェアの投機実行 (Spectre) がプロセスモデルを書き換えたという意味で、hardware/software 両スタックを縦断する題材でもある。主対象は Chromium、対照として WebKit/Firefox。
 
 ## 構成
 

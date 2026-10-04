@@ -28,5 +28,5 @@
 - 逆伝播と最適化の実務 (backpropagation & optimizers) — 自動微分、Adam 系列、
   学習率スケジュール、損失地形。`../mathematics/optimization/` の非凸側への拡張
 - 強化学習の基礎 (reinforcement learning) — MDP、方策勾配、PPO。
-  RLHF (`../../software/ai-llm/llm-internals-prompting.md` §4) の理論的土台
+  RLHF (`../../software/ai-llm/llm-internals-prompting.md` §4) の理論的基礎
 - 汎化の理論 (generalization) — 二重降下、宝くじ仮説、暗黙の正則化

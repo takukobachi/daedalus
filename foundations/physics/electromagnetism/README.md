@@ -8,7 +8,7 @@
 
 1. [`charge-field-potential.md`](charge-field-potential.md) —
    電荷とクーロンの法則、電場とガウスの法則、電位、導体と静電遮蔽、
-   キャパシタンス。DRAM・NAND・CMOS 動的電力の物理的土台。シリーズの起点
+   キャパシタンス。DRAM・NAND・CMOS 動的電力の物理的基礎。シリーズの起点
 2. [`current-magnetostatics.md`](current-magnetostatics.md) —
    電流と電荷保存、オームの法則の微視的描像(ドルーデモデル)、ジュール熱、
    ローレンツ力、アンペールの法則。配線抵抗・IR ドロップ・
@@ -28,7 +28,7 @@
 6. [`transmission-lines-signal-integrity.md`](transmission-lines-signal-integrity.md) —
    電信方程式と分布定数、特性インピーダンス、反射と終端、表皮効果・
    誘電損失と符号間干渉 (ISI)、差動伝送とイコライゼーション (SerDes)。
-   高速シリアルリンク (PCIe/USB/Ethernet) の物理層の共通土台。シリーズ最終回
+   高速シリアルリンク (PCIe/USB/Ethernet) の物理層の共通基盤。シリーズ最終回
 
 当初計画した6本のシリーズはこれで完結。以降のテーマ(アンテナ工学の深掘り、
 導波路・光学など)は必要が生じた時点でロードマップを再開する。

@@ -1,6 +1,6 @@
 # ネットワークハードウェア (Network Hardware)
 
-NIC (network interface card) とスイッチ ASIC の内部分析。`../../software/networking/`（特に kernel-network-stack）の**物理側の対**であり、`../hw-sw-interface/`（MMIO・DMA・割り込み・PCIe）の部品がディスクリプタリングという一つの協定に組み上がる層。パケット単価（100GbE で 6.7 ns/パケット）という算術がすべての設計——オフロード・マルチキュー・固定パイプライン・RDMA・DPU——を強制する構造を読む。
+NIC (network interface card) とスイッチ ASIC の内部分析。`../../software/networking/`（特に kernel-network-stack）の**物理側の対**であり、`../hw-sw-interface/`（MMIO・DMA・割り込み・PCIe）の部品がディスクリプタリングという一つの協定に組み上がる層。パケット単価（100GbE で 6.7 ns/パケット）という算術が、オフロード・マルチキュー・固定パイプライン・RDMA・DPU の設計すべてを規定する構造を読む。
 
 ## ドキュメント
 

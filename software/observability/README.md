@@ -1,6 +1,6 @@
 # Observability
 
-可観測性 (observability) と性能工学 (performance engineering) の分析。「システムが今なにをしているかを、どうやって・いくらのコストで知るか」を扱う。[`../security/`](../security/README.md) に続く**第二の横串**であり、各分析ドキュメントが末尾に持つ「観測の入口」表——biolatency・SMART・Perfetto・ethtool——を、観測の単価階層（カウンタ→サンプリング→イベント記録）と「症状を下層の事実に接地させる」診断の縦糸として一般化する場である。
+可観測性 (observability) と性能工学 (performance engineering) の分析。「システムが今なにをしているかを、どうやって・いくらのコストで知るか」を扱う。[`../security/`](../security/README.md) に続く**第二の横串**である。各分析ドキュメントが末尾に持つ「観測の入口」表（biolatency・SMART・Perfetto・ethtool）を、観測の単価階層（カウンタ→サンプリング→イベント記録）と「症状を下層の事実に接地させる」診断の縦糸として一般化する場である。
 
 ## 構成
 

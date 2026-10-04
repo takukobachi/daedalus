@@ -1,7 +1,7 @@
 # コンパイラとランタイム (Compilers & Runtimes)
 
-言語処理系の実行時側の分析。ソースコードが「速く走る」までの機構——JIT コンパイル・
-ガベージコレクション・ランタイムの投機——を扱う。[`../toolchain/`](../toolchain/)
+言語処理系の実行時側の分析。ソースコードが「速く走る」までの機構として、JIT コンパイル・
+ガベージコレクション・ランタイムの投機を扱う。[`../toolchain/`](../toolchain/)
 (AOT コンパイル後の成果物がプロセスになるまで) の対になる「実行しながら翻訳する」側で、
 [`../android/art-runtime-internals.md`](../android/art-runtime-internals.md) (ART) や
 ブラウザの JS エンジンはこの層の実プロダクトである。
