@@ -22,7 +22,8 @@
   RTOS カーネル設計, PREEMPT_RT, AUTOSAR）。「平均を速くする」`operating-systems/` に
   対して「最悪を保証する」側の実行基盤。`engineering/automotive/`（ECU）・
   `engineering/robotics/`（制御計算機）と software 側を束ねる橋
-- `compilers-runtimes/` — コンパイラとランタイム（ELF・リンカ・ローダ, 階層型 JIT, 投機と deopt,
+- `compilers-runtimes/` — コンパイラとランタイム（コンパイラ中盤・バックエンド (SSA, 最適化パイプライン,
+  命令選択, レジスタ割り当て), ELF・リンカ・ローダ, 階層型 JIT, 投機と deopt,
   GC, 言語処理系の設計対比, WebAssembly）。コンパイル後の成果物がプロセスになるまで
   （`hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側）と、「実行しながら翻訳する」
   側の両方を扱い、`android/`・`ios/` のランタイム分析の一般論になる
