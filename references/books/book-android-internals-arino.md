@@ -41,7 +41,7 @@
 
 ## 読み替えガイド — 2016 年から古くなった点 (What Has Changed Since the Book)
 
-書籍の**設計思想と機構の骨格**はほぼ現在も有効である。古くなったのは主に「どのクラス・どの HAL・どのプロセスがそれを担うか」という実装の配置であり、ソースを読むときは次の読み替えが必要になる。根拠と導入バージョンの詳細は各ドキュメントの「Nougat → 現在」の表を参照。
+書籍の**設計思想と機構の基本構造**はほぼ現在も有効である。古くなったのは主に「どのクラス・どの HAL・どのプロセスがそれを担うか」という実装の配置であり、ソースを読むときは次の読み替えが必要になる。根拠と導入バージョンの詳細は各ドキュメントの「Nougat → 現在」の表を参照。
 
 | 書籍の記述 (Nougat) | 現在の読み替え | 詳細 |
 |---|---|---|
@@ -57,10 +57,10 @@
 | LK ブートローダー、boot / recovery パーティション、ramdisk が常にルート | ベンダ独自ブートローダー＋AVB、A/B・Virtual A/B・dynamic partitions (super)、fastbootd、GKI の boot / vendor_boot / init_boot、2 段階 init | [`boot-init-properties.md`](../../software/android/boot-init-properties.md) §8 |
 | View とレイアウト XML が UI の唯一の記述手段 | Jetpack Compose が主流の選択肢に (ComposeView として同じ ViewRootImpl 上で動く)。edge-to-edge の強制 (Android 15〜) | [`view-system-layout.md`](../../software/android/view-system-layout.md) §9 |
 
-**変わっていないもの**: UI スレッドの単一 Looper モデル、「記録は UI スレッド・発行は RenderThread」の二段構え、アプリ＝Linux ユーザーの UID サンドボックス、ActivityRecord 側に残る Bundle、Zygote による fork と COW 共有、init による epoll ループとサービス監視、「プロセスはいつ殺されてもよい」という契約。書籍が最も強調する、なぜそう設計されたかという議論は、ほぼそのまま現在の Android を理解する土台として使える。
+**変わっていないもの**: UI スレッドの単一 Looper モデル、「記録は UI スレッド・発行は RenderThread」の二段構え、アプリ＝Linux ユーザーの UID サンドボックス、ActivityRecord 側に残る Bundle、Zygote による fork と COW 共有、init による epoll ループとサービス監視、「プロセスはいつ殺されてもよい」という契約。書籍が最も強調する、なぜそう設計されたかという議論は、ほぼそのまま現在の Android を理解する基礎として使える。
 
 ## 読み方の提案 (How to Use These Notes)
 
-1. 書籍の章を読み、機構の骨格と設計意図をつかむ。
+1. 書籍の章を読み、機構の基本構造と設計意図をつかむ。
 2. 対応する Daedalus ドキュメントの「Nougat → 現在」の表で、クラス名・HAL・プロセス配置を現行版に読み替える。
 3. 実際のソースは cs.android.com で現行の配置 (上表の右列) を辿る。書籍のコードは疑似コードなので、行単位の照合には使わない。
