@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-Android アプリのほぼすべてのコード——ライフサイクルコールバック、タッチイベント、描画 (measure/layout/draw)、アニメーション、`Handler.post()` した Runnable、Kotlin の `Dispatchers.Main` 上のコルーチン——は、**メインスレッド (UI スレッド) 上の 1 本のメッセージループ**で直列に実行される。このループの実体が **Looper**(ループ本体)・**MessageQueue**(時刻順のキューと、epoll によるスレッドの眠りと起床)・**Handler**(キューへの投入口であると同時に、取り出されたメッセージの処理者)の三つ組である。
+Android アプリのほぼすべてのコードは、**メインスレッド (UI スレッド) 上の 1 本のメッセージループ**で直列に実行される。ライフサイクルコールバック、タッチイベント、描画 (measure/layout/draw)、アニメーション、`Handler.post()` した Runnable、Kotlin の `Dispatchers.Main` 上のコルーチンがすべてこれに当たる。このループの実体が **Looper**(ループ本体)・**MessageQueue**(時刻順のキューと、epoll によるスレッドの眠りと起床)・**Handler**(キューへの投入口であると同時に、取り出されたメッセージの処理者)の三つ組である。
 
 本ドキュメントはこの三つ組を、Java 層のキュー操作から native 層の `epoll` + `eventfd` まで降りて追い、その上に載る優先制御(同期バリアと非同期メッセージ)、アイドル処理 (IdleHandler)、システムとの接点 (ActivityThread の `H` と Binder スレッド)、監視 (ANR・StrictMode・slow dispatch ログ・Perfetto) を積み上げる。
 
@@ -18,8 +18,8 @@ Android アプリのほぼすべてのコード——ライフサイクルコー
 ## 発見事項 (Findings)
 
 1. **UI の単一スレッド性は制約ではなく設計判断である。** View 階層・レイアウト状態・描画記録はロックなしで一貫性を保つ必要があり、入力(下から上)と状態変更(上から下)が逆向きのロック順序を要求する GUI では、細粒度ロックはデッドロックと性能劣化を招く。Android は他の主要ツールキット(Win32・WPF・Swing)と同じくUI 状態には 1 スレッドだけが触れ、他スレッドはメッセージで処理を頼むという方式を選び、`ViewRootImpl` の `CalledFromWrongThreadException` でそれを強制する(有野 2017 Ⅰ巻 3.1)。
-2. **Looper は「スレッドにキューを 1 つ与える」TLS の仕掛けである。** `Looper.prepare()` は Looper を `ThreadLocal` に格納し、`Looper.myLooper()` はそれを引くだけ——static メソッドなのにスレッドごとに違う結果を返す(同 3.2.2)。`new Handler()` が引数なしで「今のスレッドの Looper」に結び付くのもこの TLS のためで、**Handler で重要なのは「どのスレッドで post するか」ではなく「どのスレッドで new したか」** である(同 3.3.3)。この暗黙性は事故の元となり、Android 11 (API 30) で引数なし `Handler()` は非推奨になった。
-3. **待機の実体は `epoll_wait` であり、起床の実体は `eventfd` への 8 バイトの write である。** `MessageQueue.next()` は「次のメッセージの時刻まで」を timeout にして native の `Looper::pollOnce` に入り、他スレッドからの `enqueueMessage` が先頭を差し替えたときだけ `nativeWake` → `eventfd` に 1 を書いて起こす。キューが空の UI スレッドは CPU を一切消費せずカーネル内で眠る——**電池を食わない待機**が GUI 常駐の前提条件である。
+2. **Looper は「スレッドにキューを 1 つ与える」TLS の仕掛けである。** `Looper.prepare()` は Looper を `ThreadLocal` に格納し、`Looper.myLooper()` はそれを引くだけである。そのため static メソッドなのにスレッドごとに違う結果を返す(同 3.2.2)。`new Handler()` が引数なしで「今のスレッドの Looper」に結び付くのもこの TLS のためで、**Handler で重要なのは「どのスレッドで post するか」ではなく「どのスレッドで new したか」** である(同 3.3.3)。この暗黙性は事故の元となり、Android 11 (API 30) で引数なし `Handler()` は非推奨になった。
+3. **待機の実体は `epoll_wait` であり、起床の実体は `eventfd` への 8 バイトの write である。** `MessageQueue.next()` は「次のメッセージの時刻まで」を timeout にして native の `Looper::pollOnce` に入り、他スレッドからの `enqueueMessage` が先頭を差し替えたときだけ `nativeWake` → `eventfd` に 1 を書いて起こす。キューが空の UI スレッドは CPU を一切消費せずカーネル内で眠る。**電池を消費しない待機**が GUI 常駐の前提条件である。
 4. **同じ epoll が「メッセージ以外のイベント源」も待つ。** native Looper は任意の fd を監視でき(`addFd`)、入力イベント(InputChannel のソケット)と VSYNC(DisplayEventReceiver)はこの経路で UI スレッドに届く。つまり UI スレッドは「Java のキュー」と「カーネルからのイベント」を**1 つの `epoll_wait` で多重化**しており、入力・描画・アプリの post が同じ待ち点を共有する。
 5. **フレームは同期バリアで他の仕事を追い越す。** `ViewRootImpl.scheduleTraversals()` はキューに**同期バリア**(target が null の特殊メッセージ)を置き、以後の通常 (synchronous) メッセージを堰き止める。Choreographer の VSYNC 駆動メッセージ (`MSG_DO_FRAME` 等) は**非同期 (asynchronous) メッセージ**としてバリアをすり抜け、フレーム処理が終わるとバリアが外される。FIFO を崩さずに「描画だけ優先レーン」を作る、キュー 1 本での優先度制御である。書籍 Ⅰ巻 3 章はこの機構に触れておらず、本書の中心的な補完点である。
 6. **ライフサイクルは「Binder スレッド → Handler → UI スレッド」の乗り換えである。** system_server からの呼び出しは、アプリの **Binder スレッドプール**上で `ApplicationThread` のメソッドとして届き、それ自体は何も処理せず `H`(ActivityThread の Handler)にメッセージを投げるだけ(有野 2017 Ⅱ巻 5.4.2)。Nougat では `scheduleDestroyActivity` → `DESTROY_ACTIVITY` のように 1 RPC = 1 メッセージ種だったが、Android 9 以降は `scheduleTransaction` → `EXECUTE_TRANSACTION` の 1 種に集約された([`app-components-lifecycle.md`](app-components-lifecycle.md))。乗り換えの構造自体は不変である。
@@ -84,34 +84,34 @@ sequenceDiagram
 ```
 
 - `Choreographer` はスレッドごと(`ThreadLocal`)に存在し、コールバックを input → animation → insets animation → traversal → commit の固定順で実行する(`Choreographer.doFrame`)。描画パイプラインの後段(RenderThread・SurfaceFlinger)は [`graphics-pipeline.md`](graphics-pipeline.md) を参照。
-- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ——「フレームを要求した時点からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
+- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ。「フレームを要求した時点からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
 
 ## 技術詳細 (Technical Details)
 
 ### 1. Looper — TLS とループ本体
 
-- **準備**: `Looper.prepare()` は `sThreadLocal` に Looper が既にあれば例外(1 スレッド 1 Looper)、なければ生成して格納する。メインスレッドでは ActivityThread の `main()` が `Looper.prepareMainLooper()` を呼び、`sMainLooper` として全スレッドから参照可能にする(有野 2017 Ⅱ巻 5.4.1)。native 側の Looper も `thread_local static sp<Looper> gThreadLocalLooper`(`libutils/Looper.cpp`)でスレッドに結び付く——Java と C++ の両層で「スレッド = Looper」の対応が TLS で表現されている。
-- **ループ**: `Looper.loop()` は `loopOnce()` を無限に呼ぶ。`loopOnce()` は (1) `MessageQueue.next()` で次のメッセージを得る(`null` なら quit)、(2) Observer 通知・`Trace.traceBegin`・Printer ログ、(3) `msg.target.dispatchMessage(msg)`、(4) slow dispatch/delivery 判定、(5) `msg.recycleUnchecked()` でプールへ返却、の順に進む。ActivityThread・SystemServer の `main()` は `Looper.loop()` の後に `throw new RuntimeException("Main thread loop unexpectedly exited")` を置く——**メインスレッドのループが戻ることはプロセスの異常終了と同義**である。
+- **準備**: `Looper.prepare()` は `sThreadLocal` に Looper が既にあれば例外(1 スレッド 1 Looper)、なければ生成して格納する。メインスレッドでは ActivityThread の `main()` が `Looper.prepareMainLooper()` を呼び、`sMainLooper` として全スレッドから参照可能にする(有野 2017 Ⅱ巻 5.4.1)。native 側の Looper も `thread_local static sp<Looper> gThreadLocalLooper`(`libutils/Looper.cpp`)でスレッドに結び付く。つまり、Java と C++ の両層で「スレッド = Looper」の対応が TLS で表現されている。
+- **ループ**: `Looper.loop()` は `loopOnce()` を無限に呼ぶ。`loopOnce()` は (1) `MessageQueue.next()` で次のメッセージを得る(`null` なら quit)、(2) Observer 通知・`Trace.traceBegin`・Printer ログ、(3) `msg.target.dispatchMessage(msg)`、(4) slow dispatch/delivery 判定、(5) `msg.recycleUnchecked()` でプールへ返却、の順に進む。ActivityThread・SystemServer の `main()` は `Looper.loop()` の後に `throw new RuntimeException("Main thread loop unexpectedly exited")` を置く。つまり、**メインスレッドのループが戻ることはプロセスの異常終了と同義**である。
 - **Message のプール**: `Message.obtain()` はグローバルな free list から再利用する(有野 2017 Ⅰ巻 3.3.4)。1 フレームに数十〜数百生成される小オブジェクトの GC 圧を下げるためで、[`art-runtime-internals.md`](art-runtime-internals.md) の「フレーム予算内で GC を起こさない」工夫の一例である。
 
 ### 2. MessageQueue.next() と native 層 — epoll + eventfd
 
-- **時刻順キュー**: 各 Message は `when`(`SystemClock.uptimeMillis()` 基準の発火時刻)を持ち、`next()` は「発火時刻が最も早いもの」を返す。`postDelayed(r, 500)` は `when = now + 500` の挿入にすぎず、タイマ専用の機構はない(同 3.2.3)。`uptimeMillis` はディープスリープ中に進まないため、**端末が眠っている間は遅延も止まる**——長時間の予約に `AlarmManager` を使う理由がここにある。
+- **時刻順キュー**: 各 Message は `when`(`SystemClock.uptimeMillis()` 基準の発火時刻)を持ち、`next()` は「発火時刻が最も早いもの」を返す。`postDelayed(r, 500)` は `when = now + 500` の挿入にすぎず、タイマ専用の機構はない(同 3.2.3)。`uptimeMillis` はディープスリープ中に進まないため、**端末が眠っている間は遅延も止まる**。長時間の予約に `AlarmManager` を使う理由がここにある。
 - **待機の組み立て**: `next()` は先頭メッセージの `when` までの差を timeout として `nativePollOnce(ptr, timeoutMillis)` を呼ぶ(キューが空なら -1 = 無期限)。JNI 側 `NativeMessageQueue`(`frameworks/base/core/jni/android_os_MessageQueue.cpp`)を経て `Looper::pollOnce` → `pollInner` → `epoll_wait(epollFd, eventItems, EPOLL_MAX_EVENTS=16, timeoutMillis)` に至る。
 - **起床**: 起床用 fd は `eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)`、epoll は `epoll_create1(EPOLL_CLOEXEC)` で作られ、`Looper::wake()` は eventfd に `uint64_t` の 1 を write する。受け側 `awoken()` が読み出してカウンタを戻す。`enqueueMessage` は「新メッセージが先頭になり、かつ Looper がブロック中」のときだけ wake を呼ぶので、無駄なシステムコールは発生しない。
-- **fd 監視**: `Looper::addFd(fd, ident, events, callback)` で登録された fd は同じ epoll に載る。Java からは `MessageQueue.addOnFileDescriptorEventListener`(API 23)として公開される。入力の InputChannel(socketpair の片側、`ViewRootImpl.setView` で登録——有野 2017 Ⅰ巻 3.2.3 注5)と VSYNC の DisplayEventReceiver がこの経路の最大の利用者で、詳細は [`input-pipeline.md`](input-pipeline.md) を参照。
-- **設計の理由**: pipe/eventfd + epoll は Linux の標準的な「セルフパイプ・トリック」の発展形であり、`select` と違い監視 fd 数に対してスケールし、eventfd は pipe より fd を 1 本節約してカウンタとして書き込みを合流できる。割り込み駆動の一般論は [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) の「ポーリングではなく割り込みで起きる」と同型で、asyncio・Tokio のイベントループ([`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md))とも同じ骨格である。
+- **fd 監視**: `Looper::addFd(fd, ident, events, callback)` で登録された fd は同じ epoll に載る。Java からは `MessageQueue.addOnFileDescriptorEventListener`(API 23)として公開される。入力の InputChannel(socketpair の片側、`ViewRootImpl.setView` で登録。有野 2017 Ⅰ巻 3.2.3 注5)と VSYNC の DisplayEventReceiver がこの経路の最大の利用者で、詳細は [`input-pipeline.md`](input-pipeline.md) を参照。
+- **設計の理由**: pipe/eventfd + epoll は Linux の標準的な「セルフパイプ・トリック」の発展形であり、`select` と違い監視 fd 数に対してスケールし、eventfd は pipe より fd を 1 本節約してカウンタとして書き込みを合流できる。割り込み駆動の一般論は [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) の「ポーリングではなく割り込みで起きる」と同型で、asyncio・Tokio のイベントループ([`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md))とも同じ構造である。
 
 ### 3. Handler — 投入口と処理者の二役
 
-- **投入**: `post(Runnable)` は `Message.obtain()` に `callback = r` を詰め、`sendMessage(Message)` は `what`/`arg1`/`obj` を詰めた Message をそのまま使う。いずれも `enqueueMessage` で `msg.target = this`(自分自身)を埋め込み、非同期 Handler なら `msg.setAsynchronous(true)` を付けてキューへ入れる(`Handler.java`)。**Handler はメッセージに自分を埋め込んで Looper に投げ、Looper はそれを埋め込まれた Handler に返す**——投げるスレッドと処理するスレッドが違うことだけが要点である(有野 2017 Ⅰ巻 3.3.1)。
+- **投入**: `post(Runnable)` は `Message.obtain()` に `callback = r` を詰め、`sendMessage(Message)` は `what`/`arg1`/`obj` を詰めた Message をそのまま使う。いずれも `enqueueMessage` で `msg.target = this`(自分自身)を埋め込み、非同期 Handler なら `msg.setAsynchronous(true)` を付けてキューへ入れる(`Handler.java`)。**Handler はメッセージに自分を埋め込んで Looper に投げ、Looper はそれを埋め込まれた Handler に返す**。投げるスレッドと処理するスレッドが違うことだけが要点である(有野 2017 Ⅰ巻 3.3.1)。
 - **処理**: `dispatchMessage` は (1) `msg.callback` があればその `run()`、(2) コンストラクタで渡した `Handler.Callback` があればそれ、(3) なければ `handleMessage()` の順に分岐する。`post` 系は (1)、`sendMessage` 系は (3) に落ちる(同 3.3.6–3.3.7)。
 - **API の変遷**: 引数なし `Handler()`/`Handler(Callback)` は「Looper の暗黙選択は、タスクの消失・Looper のないスレッドでのクラッシュ・競合を招く」として Android 11 (API 30) で非推奨。明示的な `new Handler(Looper.getMainLooper())` か、`Handler.createAsync(Looper)`(API 28)を使う。createAsync の Javadoc は、非同期 Handler のメッセージは「display vsync のような同期バリア」を迂回し、他 Handler のメッセージとの順序は保証しないと明記する。
 - **メモリリーク**: 非 static 内部クラスの Handler は外側の Activity を参照し、遅延メッセージがキューに残る限り Activity を GC から守ってしまう(`FIND_POTENTIAL_LEAKS` 警告の由来)。`MessageQueue` → `Message` → `Handler` → `Activity` の参照鎖が、キューの寿命(プロセスと同じ)と Activity の寿命のずれを顕在化させる。
 
 ### 4. 同期バリア・非同期メッセージ・IdleHandler
 
-- **バリアの実装**: `MessageQueue.postSyncBarrier()` は `target == null` の Message を時刻順の位置に挿入し、トークン(`arg1`)を返す。`next()` は先頭がバリアなら、その後ろから `isAsynchronous()` のメッセージだけを探して返す。`removeSyncBarrier(token)` で外れ、必要なら wake する。API は `@hide`(フレームワーク専用)であり、アプリが直接バリアを立てることはできない——**優先レーンの開閉権はフレームワークが独占する**。
+- **バリアの実装**: `MessageQueue.postSyncBarrier()` は `target == null` の Message を時刻順の位置に挿入し、トークン(`arg1`)を返す。`next()` は先頭がバリアなら、その後ろから `isAsynchronous()` のメッセージだけを探して返す。`removeSyncBarrier(token)` で外れ、必要なら wake する。API は `@hide`(フレームワーク専用)であり、アプリが直接バリアを立てることはできない。つまり、**優先レーンの開閉権はフレームワークが独占する**。
 - **非同期メッセージの利用者**: Choreographer は `MSG_DO_FRAME`・`MSG_DO_SCHEDULE_VSYNC`・`MSG_DO_SCHEDULE_CALLBACK` を `setAsynchronous(true)` で送り、`FrameDisplayEventReceiver.onVsync` も非同期メッセージを投げる(`Choreographer.java`)。アプリ側は `Message.setAsynchronous`(API 22)・`Handler.createAsync`(API 28)で非同期にできるが、バリアを立てる権限がないので、効果は「フレーム処理中でも待たされない」ことに限られる。
 - **バリアの取り残し**: バリアを立てたまま外し忘れると、以後の同期メッセージが永遠に配送されずアプリが固まる(典型的には ANR として観測される)。`ViewRootImpl` の `unscheduleTraversals` が必ず対で外すのはこのためである。（`core/java/android/view/ViewRootImpl.java` lines 2980-3003 @ aosp-mirror 2025-11: `scheduleTraversals()` が `postSyncBarrier()` の直後に `Choreographer.CALLBACK_TRAVERSAL` を登録し、`unscheduleTraversals()` と `doTraversal()` が `removeSyncBarrier()` で外す）
 - **IdleHandler**: `Looper.myQueue().addIdleHandler()` で登録したコールバックは、`next()` が「今すぐ配送できるメッセージがない」と判断して眠る直前に呼ばれ、`false` を返すと自動解除される。ActivityThread は `Idler` で「起動後にキューが落ち着いた」ことを検知して system_server に `activityIdle` を報告し([`app-components-lifecycle.md`](app-components-lifecycle.md) の起動完了報告)、`GC_WHEN_IDLE` のような「暇なときにやる」仕事もこの枠に置く。idle の定義が「キューが空」ではなく「期限の来たメッセージがない」である点に注意(遅延メッセージがあっても idle になりうる)。
@@ -144,7 +144,7 @@ sequenceDiagram
 | 観測 | Printer ログ(`setMessageLogging`)と systrace | slow dispatch/delivery、`Looper.Observer`/LooperStats、Perfetto `mq` フロー、LooperDoctor | ジャンクの原因を「どのメッセージか」まで特定する需要 |
 | UI スレッドへの委譲の主流 | `Handler.post`・`AsyncTask`・`CursorLoader`(Ⅰ巻 3.1.3) | `AsyncTask` は API 30 で非推奨、Kotlin コルーチン `Dispatchers.Main`(内部は非同期 Handler)が主流 | 構造化並行性とキャンセルの一元管理 |
 
-- **DeliQueue の要点**: 投入はどのスレッドからも CAS 1 回で終わり、ロックを持ったまま眠る者がいないので優先度逆転が起きない。取り出しは Looper スレッドだけが行い、スタックからヒープへ一括移送して `when`(同時刻は挿入順 `insertSeq`)で並べる。`removeMessages` は Message の `removed` フラグを CAS で立てる論理削除で、物理的な除去は Looper スレッドが後で行う——**並行性の難所を「単一消費者」という制約で消す**古典的設計である。比較関数を分岐なし(`Long.signum` の合成)にして 5 倍速くしたこと、ARMv8.1 LSE のアトミック命令の利用も報告されている。
+- **DeliQueue の要点**: 投入はどのスレッドからも CAS 1 回で終わり、ロックを持ったまま眠る者がいないので優先度逆転が起きない。取り出しは Looper スレッドだけが行い、スタックからヒープへ一括移送して `when`(同時刻は挿入順 `insertSeq`)で並べる。`removeMessages` は Message の `removed` フラグを CAS で立てる論理削除で、物理的な除去は Looper スレッドが後で行う。これは**並行性の難所を「単一消費者」という制約で消す**古典的設計である。比較関数を分岐なし(`Long.signum` の合成)にして 5 倍速くしたこと、ARMv8.1 LSE のアトミック命令の利用も報告されている。
 - **互換性の代償**: 新実装でも `mMessages` フィールドは残るが**常に null**。Espresso は 3.7.0 以上、Robolectric は 4.17 以上(`@LooperMode(LEGACY)` は廃止)への更新が必要で、アイドル判定は公開 API の `MessageQueue.isIdle()` と `TestLooperManager`(Android 16 で拡張)に寄せる。`adb shell am compat enable/disable USE_NEW_MESSAGEQUEUE <pkg>` で targetSdk と独立に切り替えて検証できる。
 - **不確かな点**: AOSP `main`(公開ミラー)には、DeliQueue 以前の `ConcurrentMessageQueue`(`ConcurrentSkipListSet` による lock-free 版、SystemUI 等のシステムプロセスに限定)系列の実装も残っており、Android 15〜16 期にどの範囲で出荷されたかは公開資料から確定できなかった。性能数値(挿入最大 5,000 倍、main thread のロック競合時間 15% 減、アプリ missed frame 4% 減、System UI 7.7% 減、p95 初フレーム 9.1% 短縮)はいずれも Google 社内ベータの自社測定であり、2026-09-27 時点で独立検証は見当たらない。
 
@@ -171,7 +171,7 @@ sequenceDiagram
 - [`app-components-lifecycle.md`](app-components-lifecycle.md) — `EXECUTE_TRANSACTION` で UI スレッドに届くライフサイクル指示と ANR。
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — `ActivityThread.main()` の `prepareMainLooper` から最初のフレームまでの時系列。
 - [`binder-internals.md`](binder-internals.md) — ApplicationThread が乗る Binder スレッドプールと oneway の意味論。
-- [`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md) — 同じ「epoll + タスクキュー」骨格を持つ汎用イベントループとの比較。
+- [`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md) — 同じ「epoll + タスクキュー」構造を持つ汎用イベントループとの比較。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — UI スレッド/RenderThread の優先度と、優先度逆転の一般論。
 - [`process-thread-model.md`](process-thread-model.md) — UI スレッド/RenderThread/Binder スレッドの Linux スレッドとしての姿。
 - [`system-server-services.md`](system-server-services.md) — system_server の Looper 群・Watchdog・LooperStats。

@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-Android を下から読むとき、最初に押さえるべき層は「アプリは Linux から見て何か」である。答えは短い: **アプリは Linux ユーザ (UID) であり、その実行は Zygote から fork された Linux プロセスであり、アプリの Java スレッドは 1 本ずつカーネルの `task_struct` である**。Android 固有の仕組み——Binder、ActivityManager、ライフサイクル、lmkd——はすべて、この素の Linux の実体の上に「どの UID で・どのプロセスに・どのスレッドを・どの cgroup に置くか」を決める方針層として載っている。
+Android を下から読むとき、最初に押さえるべき層は「アプリは Linux から見て何か」である。答えは短い: **アプリは Linux ユーザ (UID) であり、その実行は Zygote から fork された Linux プロセスであり、アプリの Java スレッドは 1 本ずつカーネルの `task_struct` である**。Android 固有の仕組み (Binder、ActivityManager、ライフサイクル、lmkd) はすべて、この素の Linux の実体の上に「どの UID で・どのプロセスに・どのスレッドを・どの cgroup に置くか」を決める方針層として載っている。
 
 本ドキュメントは Android の読み進め順 (Linux プロセス/スレッド → Binder → AIDL → system_server → Zygote/ART → Activity/Task → Looper/Handler → Window/Input/Graphics) の**第一層**として、次の写像を Level 3 で整理する。
 
@@ -24,7 +24,7 @@ Android を下から読むとき、最初に押さえるべき層は「アプリ
 
 1. **Android のプロセスモデルに新しいカーネル抽象はほぼ無い。** 身元は UID/GID、隔離は UID＋SELinux＋seccomp、実行単位は `clone(2)` で作られるタスク、資源配分は cgroup と nice。Android が足したのは Binder ドライバを除けば **「方針を決めて既存のノブを回す」ユーザ空間の層**(ActivityManager・libprocessgroup・lmkd)である。したがって Linux の `ps`・`/proc`・`top`・Perfetto の語彙で Android の挙動をほぼ全部説明できる。
 2. **UID は「アプリ × ユーザ」の直積で、隔離の粒度に応じてレンジが分かれる。** 通常アプリの appId は `FIRST_APPLICATION_UID = 10000`〜`LAST_APPLICATION_UID = 19999`、実 UID は `userId × 100000 + appId`。隔離プロセスは `FIRST_ISOLATED_UID = 99000`〜`LAST_ISOLATED_UID = 99999`、app zygote 由来の隔離は `90000`〜`98999` を `NUM_UIDS_PER_APP_ZYGOTE = 100` 単位で切り出し、SDK サンドボックスは `FIRST_SDK_SANDBOX_UID = 20000` から (`Process.java`)。**「権限を持たない他人」を安価に作れること**が、ブラウザのレンダラや信頼しない SDK を同じアプリ内で隔離する基盤になっている。
-3. **アプリのプロセスは exec されず、fork されるだけである。** Zygote の子は `execve` を経ないので、`/proc/<pid>/exe` は `app_process64` を指し、プロセス名は specialize 時に `--nice-name` で書き換えた argv[0] と `comm` にすぎない。1 つのアプリは `android:process` で**複数プロセス**に分かれられ、各プロセスは独立した ART インスタンス・独立した `Application.onCreate()`・独立した static 領域を持つ——「アプリ＝プロセス」は既定値であって等式ではない。
+3. **アプリのプロセスは exec されず、fork されるだけである。** Zygote の子は `execve` を経ないので、`/proc/<pid>/exe` は `app_process64` を指し、プロセス名は specialize 時に `--nice-name` で書き換えた argv[0] と `comm` にすぎない。1 つのアプリは `android:process` で**複数プロセス**に分かれられ、各プロセスは独立した ART インスタンス・独立した `Application.onCreate()`・独立した static 領域を持つ。つまり「アプリ＝プロセス」は既定値であって等式ではない。
 4. **Java スレッドは 1:1 でカーネルタスクになる。** ART の `java.lang.Thread` は bionic の `pthread_create` → `clone(CLONE_VM|CLONE_THREAD|…)` で作られ、`/proc/<pid>/task/<tid>` に 1 行ずつ現れる。M:N の軽量スレッドは無く、Kotlin コルーチンもこの上の糖衣である ([`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の 1:1 モデル)。ゆえに**アプリのスレッド数はそのまま `task_struct` 数・カーネルスタック数**であり、無制限な生成は OOM や RLIMIT 超過として顕在化する。
 5. **典型的なアプリプロセスは、アプリが 1 本もスレッドを作らなくても 15〜20 本前後のスレッドを持つ。** メイン (UI) スレッド、RenderThread、Binder プール (`binder:<pid>_<N>`)、ART の GC・参照処理・finalizer 監視 (`HeapTaskDaemon`・`ReferenceQueueDaemon`・`FinalizerDaemon`・`FinalizerWatchdogDaemon`)、`Signal Catcher`、JIT・プロファイル保存、HWUI のワーカ (`hwuiTask*`) などである。**「メインスレッドが暇なのに遅い」問題の多くは、これら同居スレッドとの CPU・ロック競合として読める**。
 6. **前面/背面の差は、procstate から task profile を経て cgroup に落ちる 4 段の写像である。** ActivityManager がプロセスごとに `PROCESS_STATE_*` (0〜20) と `SCHED_GROUP_*` を計算し、`Process.setProcessGroup` → libprocessgroup の `SetTaskProfiles` が `task_profiles.json` の集約プロファイル (`CPUSET_SP_TOP_APP` 等) を適用する。1 つの集約プロファイルは cpuset (使えるコア)・cpu (uclamp による周波数/配置のヒント)・blkio (I/O 優先度)・timer slack (背面は 40ms、通常は 50µs) を**同時に**切り替える。「前面が速い」は一つの設定ではなく、この束の効果である。
@@ -63,7 +63,7 @@ flowchart TB
 
 凡例: 実線矢印は設定・生成の流れ、`---` はプロセスとスレッド (タスク) の包含。subgraph はプロセス/特権の境界。
 
-- **三つの写像は別々の台帳から来る。** 身元 (UID・seinfo) はパッケージ台帳から fork 時に一度だけ確定し、以後プロセスが死ぬまで変わらない。資源配分 (cgroup・adj) は ActivityManager が状態変化のたびに**何度でも**書き換える。つまり UID は「誰か」、cgroup は「今どれだけ大事か」を表し、前者は不変・後者は可変という非対称がモデルの骨格である。
+- **三つの写像は別々の台帳から来る。** 身元 (UID・seinfo) はパッケージ台帳から fork 時に一度だけ確定し、以後プロセスが死ぬまで変わらない。資源配分 (cgroup・adj) は ActivityManager が状態変化のたびに**何度でも**書き換える。つまり UID は「誰か」、cgroup は「今どれだけ大事か」を表し、前者は不変・後者は可変という非対称がモデルの基本構造である。
 - **ProcessRecord は Linux プロセスの影である。** system_server はアプリプロセスごとに `ProcessRecord` を持ち、Binder の `linkToDeath` でその死を知る。カーネル側の実体と framework 側の台帳の二重管理であり、両者の食い違い (fork 直後でまだ attach していない、死んだがまだ通知が来ていない) を `startSeq` 照合などで埋めている ([`app-launch-end-to-end.md`](app-launch-end-to-end.md) §3)。
 
 ### 重要度から cgroup までの 4 段
@@ -94,7 +94,7 @@ flowchart LR
 
 ### 2. 実行単位 — Zygote fork、プロセス名、マルチプロセス
 
-- **fork であって exec ではない**: 子は Zygote のアドレス空間 (preload 済みクラス・boot image・共有ライブラリ) を COW で引き継ぎ、`forkAndSpecialize` で UID/GID・補助グループ・capabilities・マウント名前空間・SELinux コンテキスト・seccomp・rlimit・nice-name を確定させる。手順の詳細は [`app-launch-end-to-end.md`](app-launch-end-to-end.md) §2、COW 共有のメモリ効果は [`memory-lmkd.md`](memory-lmkd.md) §1。**exec しないので ELF のロードも動的リンクもやり直さない**——これが起動速度の源泉であると同時に、ASLR の配置が全アプリで共通になるという代償でもある (セキュリティ考察)。
+- **fork であって exec ではない**: 子は Zygote のアドレス空間 (preload 済みクラス・boot image・共有ライブラリ) を COW で引き継ぎ、`forkAndSpecialize` で UID/GID・補助グループ・capabilities・マウント名前空間・SELinux コンテキスト・seccomp・rlimit・nice-name を確定させる。手順の詳細は [`app-launch-end-to-end.md`](app-launch-end-to-end.md) §2、COW 共有のメモリ効果は [`memory-lmkd.md`](memory-lmkd.md) §1。**exec しないので ELF のロードも動的リンクもやり直さない**。これが起動速度の源泉であると同時に、ASLR の配置が全アプリで共通になるという代償でもある (セキュリティ考察)。
 - **プロセス名**: `--nice-name` はプロセス名 (`/proc/<pid>/cmdline` の argv[0]) になり、`comm` は 15 文字に切り詰められる。`ps -A` の NAME 列がパッケージ名に見えるのはこの書き換えのためで、実行ファイルはあくまで `app_process64` である。
 - **`android:process`**: 既定では全コンポーネントがパッケージ名と同名の 1 プロセスで動く。`:` で始まる名前はアプリ専用の新プロセス、小文字で始まる名前は「権限があれば」他アプリと共有できるグローバルプロセスになる (developer.android.com の `<service>`/processes-and-threads)。共有には同一 UID (`sharedUserId`、非推奨) と同一署名が要る。
 - **マルチプロセスの帰結**: 各プロセスで `Application.onCreate()` が走り、シングルトン・static・メモリキャッシュ・SharedPreferences のインメモリ状態は共有されない。プロセス間の通信は Binder (AIDL・ContentProvider・Messenger) しかなく、これが次の層 [`binder-internals.md`](binder-internals.md) への入口になる。メモリ面では各プロセスが別々の Java ヒープと ART ランタイムを持つため、分割は PSS を増やす。
@@ -103,7 +103,7 @@ flowchart LR
 
 - **生成経路**: `Thread.start()` → ART `Thread::CreateNativeThread` → bionic `pthread_create` → `clone()` (アドレス空間・fd 表・シグナルハンドラ・スレッドグループを共有するフラグ群)。カーネルから見るとスレッドは tgid を共有するタスクで、`/proc/<pid>/task/<tid>/` に現れる。tid はシステム全体で一意な PID 空間の番号であり、`Process.myTid()` がそれを返す。
 - **名前**: `Thread.setName()` は `prctl(PR_SET_NAME)` 相当でカーネルの `comm` (15 文字) に反映されるため、Perfetto・`top -H` でも同じ名前が見える。名前を付けないスレッドプールは `Thread-12` や `pool-3-thread-1` となり、トレース解析を難しくする。
-- **優先度の二系統**: Java の `Thread.setPriority(1..10)` は ART 内の表で nice 値に写像され、`android.os.Process.setThreadPriority(tid, prio)` は nice を直接設定する。後者の定数 (`Process.java`): `THREAD_PRIORITY_LOWEST = 19`、`BACKGROUND = 10`、`DEFAULT = 0`、`FOREGROUND = -2`、`DISPLAY = -4`、`URGENT_DISPLAY = -8`、`VIDEO = -10`、`AUDIO = -16`、`URGENT_AUDIO = -19`、`TOP_APP_BOOST = -10`。Javadoc は DISPLAY について「アプリは通常この優先度に変更できない」と明記する。nice が CFS/EEVDF の重みにどう効くかは [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) §4–5。
+- **優先度の二系統**: Java の `Thread.setPriority(1..10)` は ART 内の表で nice 値に写像され、`android.os.Process.setThreadPriority(tid, prio)` は nice を直接設定する。後者の定数 (`Process.java`): `THREAD_PRIORITY_LOWEST = 19`、`BACKGROUND = 10`、`DEFAULT = 0`、`FOREGROUND = -2`、`DISPLAY = -4`、`URGENT_DISPLAY = -8`、`VIDEO = -10`、`AUDIO = -16`、`URGENT_AUDIO = -19`、`TOP_APP_BOOST = -10`。Javadoc は DISPLAY について「アプリは通常この優先度に変更できない」と明記する。nice が CFS/EEVDF の重みにどう反映されるかは [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) §4–5。
 - **`SCHED_RESET_ON_FORK`**: `OomAdjuster` の `Injector.setThreadPriority` は、フラグ `resetOnForkEnabled` が有効なら SCHED_OTHER のスレッドに `SCHED_RESET_ON_FORK` を付けてから優先度を変える (main で確認)。**ブーストされた UI スレッドから生まれたワーカがブーストを継承しない**ようにするための措置である。
 
 ### 4. 典型的なアプリプロセスのスレッド一覧
@@ -121,7 +121,7 @@ flowchart LR
 | `hwuiTask*` | HWUI `CommonPool` | テクスチャ・パスの並列前処理 | ADPF セッションに含まれる (§7) |
 | `ADB-JDWP Connection Control` など | ART | debuggable/JDWP 構成でのみ | — |
 
-- **Binder プールの実態**: アプリ側は `RuntimeInit` の `onZygoteInit` → `ProcessState::startThreadPool()` で最初の 1 本を作り、以後はカーネルドライバが「待機中のスレッドが尽きた」ときに `BR_SPAWN_LOOPER` で増員を要求する。上限は libbinder の `DEFAULT_MAX_BINDER_THREADS = 15` で、`setThreadPoolMaxThreadCount` で変えられる (system_server は大きな値を設定する)。**15 本が同期呼び出しで埋まると以後の着信は待たされる**——Binder 呼び出しの処理を短く保つべき理由である。
+- **Binder プールの実態**: アプリ側は `RuntimeInit` の `onZygoteInit` → `ProcessState::startThreadPool()` で最初の 1 本を作り、以後はカーネルドライバが「待機中のスレッドが尽きた」ときに `BR_SPAWN_LOOPER` で増員を要求する。上限は libbinder の `DEFAULT_MAX_BINDER_THREADS = 15` で、`setThreadPoolMaxThreadCount` で変えられる (system_server は大きな値を設定する)。**15 本が同期呼び出しで埋まると以後の着信は待たされる**。これが Binder 呼び出しの処理を短く保つべき理由である。
 - **スレッドは「誰が作ったか」で責任が分かれる**: UI・Binder・ART daemon はランタイムの所有物で、アプリはその優先度や数を変えるべきではない。アプリが作るのは Executor・コルーチンの `Dispatchers.Default/IO` のワーカで、これらは既定で DEFAULT (nice 0) のまま UI スレッドと同じ cgroup で競合する。
 
 ### 5. procstate → cgroup — SchedPolicy から task profile へ
@@ -163,12 +163,12 @@ on_process_state_changed(proc):
 
 - **RenderThread**: HWUI は RenderThread 起動時に自ら `setpriority(PRIO_PROCESS, 0, PRIORITY_DISPLAY)` を呼ぶ (`RenderThread.cpp`, main)。さらに `ActivityManagerService` はアプリから通知された RenderThread の tid を記録し (`setRenderThread`)、前面化・背面化のたびに UI スレッドと対で扱う。
 - **前面の UI スレッド**: プロセスが top になると、ActivityManager は UI スレッド (= pid と同じ tid) と RenderThread を `THREAD_PRIORITY_TOP_APP_BOOST` (-10) に上げ、top を外れると元に戻す。`sys.use_fifo_ui` プロパティが有効な構成 (`mUseFifoUiScheduling`) では代わりに `scheduleAsFifoPriority` で **SCHED_FIFO** にし、`scheduleAsRegularPriority` で戻す。AOSP の jank 解説はこれを「UI クリティカルでないスレッドとの競合によるジャンクをほぼ消す」一方、「能力の低い端末では入力処理や背面の音楽再生が追いつかなくなりうる」ため検証を要する選択肢として位置づけている (source.android.com「Identify jitter-related jank」、要約経由)。
-- **なぜ UI と RenderThread の 2 本だけか**: フレームの締切 (60Hz で約 16.7ms、120Hz で約 8.3ms) を直接背負うのはこの 2 本で、他のスレッドを上げると上げた分だけ互いの競合が戻ってくる。RT クラスは CFS/EEVDF より常に優先されるため、暴走すると同じコアの通常タスクを飢えさせる——一般論の「RT は最悪ケースの問題」([`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) §6) がそのまま当てはまる。
+- **なぜ UI と RenderThread の 2 本だけか**: フレームの締切 (60Hz で約 16.7ms、120Hz で約 8.3ms) を直接背負うのはこの 2 本で、他のスレッドを上げると上げた分だけ互いの競合が戻ってくる。RT クラスは CFS/EEVDF より常に優先されるため、暴走すると同じコアの通常タスクを飢えさせる。一般論の「RT は最悪ケースの問題」([`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) §6) がそのまま当てはまる。
 
 ### 7. ADPF ヒントセッション — 優先度ではなく締切を申告する
 
 - **API**: `PerformanceHintManager.createHintSession(int[] tids, long targetDurationNanos)` (API 31) でセッションを作り、各フレーム (作業単位) の実績を `reportActualWorkDuration` で、目標変更を `updateTargetWorkDuration` で報告する。tids は呼び出しアプリのスレッドでなければならない。後続 API でスレッド集合の差し替え (`setThreads`) や省電力優先の指定も加わった。
-- **システム側の解釈**: 実績と目標の差から、PowerHAL がセッションに属するスレッドの uclamp やコア配置・周波数を調整する——**「このスレッドを速くしろ」ではなく「この仕事はこの締切に間に合わせたい」という情報**を渡すことで、ベンダ固有の最適化 (どのコアをどの周波数で使うか) を SoC 側に委ねる設計である。
+- **システム側の解釈**: 実績と目標の差から、PowerHAL がセッションに属するスレッドの uclamp やコア配置・周波数を調整する。**「このスレッドを速くしろ」ではなく「この仕事はこの締切に間に合わせたい」という情報**を渡すことで、ベンダ固有の最適化 (どのコアをどの周波数で使うか) を SoC 側に委ねる設計である。
 - **HWUI 自身が最大の利用者**: `HintSessionWrapper.cpp` (main) は UI スレッド・RenderThread・`CommonPool` (hwuiTask) の tid をまとめて 1 セッションにし、`APerformanceHint_reportActualWorkDuration` 等でフレームごとの実績を報告する。つまり一般アプリは何もしなくても描画スレッド群が ADPF の対象になり、ゲームエンジン等の独自描画スレッドは自前でセッションを作る必要がある。
 
 ### 8. 凍結・死・再起動の意味論
@@ -205,7 +205,7 @@ on_process_state_changed(proc):
 
 - Android のプロセスモデルは、**UID (誰か)・fork されたプロセス (どこで動くか)・1:1 のタスク (何が動くか)・cgroup と nice (どれだけ動けるか)** という Linux の既存抽象への写像として完全に記述できる。Android 固有なのは、その写像を状態変化のたびに更新する ActivityManager と libprocessgroup という方針層である。
 - 身元は fork 時に一度だけ確定して不変、資源配分は procState に応じて何度でも変わる。この非対称が「プロセスはキャッシュ」「前面だけが速い」という Android の体感的性質を生んでいる。
-- Nougat から現在までに、機構の骨格 (UID・Zygote・1:1 スレッド) は変わらず、**配分の表現**が変わった: 直接書き込む SchedPolicy から JSON で記述される task profile へ、ベンダ独自のブーストから mainline の uclamp と ADPF の締切申告へ、cached の放置から freezer による凍結へ。
+- Nougat から現在までに、機構の基本構造 (UID・Zygote・1:1 スレッド) は変わらず、**配分の表現**が変わった: 直接書き込む SchedPolicy から JSON で記述される task profile へ、ベンダ独自のブーストから mainline の uclamp と ADPF の締切申告へ、cached の放置から freezer による凍結へ。
 - アプリ開発者にとっての実践的な帰結は三つ: (1) 自分のプロセスに同居するスレッドの一覧を知り、名前を付けて観測可能にする。(2) UI スレッドと RenderThread の締切を守るため、ワーカの優先度は上げずに下げる (BACKGROUND)。(3) プロセスはいつ凍結・kill されてもよい前提で状態を保存する。
 
 ### 次の接続先 (Related Topics)
@@ -219,7 +219,7 @@ on_process_state_changed(proc):
 - [`looper-handler-message-loop.md`](looper-handler-message-loop.md) — メインスレッドの中で何が回っているか。
 - [`graphics-pipeline.md`](graphics-pipeline.md) — RenderThread と hwuiTask の仕事の中身。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — task_struct・1:1 モデル・CFS/EEVDF・RT クラス・cgroup の一般論。
-- [`../operating-systems/power-management.md`](../operating-systems/power-management.md) — uclamp・DVFS・timer slack が効く電力側の機構。
+- [`../operating-systems/power-management.md`](../operating-systems/power-management.md) — uclamp・DVFS・timer slack が作用する電力側の機構。
 
 ## 参考文献 (References)
 

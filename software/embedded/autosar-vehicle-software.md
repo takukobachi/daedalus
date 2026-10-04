@@ -2,9 +2,9 @@
 
 ## 概要 (Overview)
 
-自動車は「100 個の ECU で分散リアルタイムシステムを 20 年間・数千万台規模で運用する」という、組み込みソフトウェア最大級の産業実践である。**AUTOSAR (AUTomotive Open System ARchitecture)** は、この規模を可能にするために業界が合意した標準アーキテクチャであり、`rtos-architectures.md` で見た設計空間——静的構成の小型 RTOS からPOSIX ベースの動的プラットフォームまで——が、**Classic Platform** と **Adaptive Platform** という2つの標準として制度化されたものと読める。
+自動車は「100 個の ECU で分散リアルタイムシステムを 20 年間・数千万台規模で運用する」という、組み込みソフトウェア最大級の産業実践である。**AUTOSAR (AUTomotive Open System ARchitecture)** は、この規模を可能にするために業界が合意した標準アーキテクチャであり、`rtos-architectures.md` で見た設計空間（静的構成の小型 RTOS から POSIX ベースの動的プラットフォームまで）が、**Classic Platform** と **Adaptive Platform** という2つの標準として制度化されたものと読める。
 
-本ドキュメントは、OSEK/VDX から AUTOSAR Classic への系譜（静的・スケジュール表ベースの世界）、サービス指向へ舵を切った Adaptive Platform（POSIX・SOME/IP の世界）、両者を貫く安全機構（干渉からの自由・E2E 保護）、そして標準の外側で進む SDV (software-defined vehicle) と内製 Vehicle OS の潮流までを扱う。ハードウェア側の対応物は [`../../engineering/automotive/`](../../engineering/automotive/)（E/E アーキテクチャ・車載ネットワーク・機能安全）であり、本ドキュメントはそのソフトウェア側の合流点——hardware/software 両スタックを束ねる橋——である。
+本ドキュメントは、OSEK/VDX から AUTOSAR Classic への系譜（静的・スケジュール表ベースの世界）、サービス指向へ舵を切った Adaptive Platform（POSIX・SOME/IP の世界）、両者を貫く安全機構（干渉からの自由・E2E 保護）、そして標準の外側で進む SDV (software-defined vehicle) と内製 Vehicle OS の潮流までを扱う。ハードウェア側の対応物は [`../../engineering/automotive/`](../../engineering/automotive/)（E/E アーキテクチャ・車載ネットワーク・機能安全）であり、本ドキュメントはそのソフトウェア側の合流点、つまり hardware/software 両スタックを束ねる橋である。
 
 CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし、各主張には規格一次資料（AUTOSAR 仕様・ISO 規格）を典拠として付す。
 
@@ -17,12 +17,12 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 
 ## 発見事項 (Findings)
 
-1. **AUTOSAR の第一の目的は技術ではなく「分業の接続仕様」である。** OEM が車両機能を定義し、Tier-1 がコンポーネントを実装し、別のベンダがベーシックソフトウェアを供給し、それらが単一 ECU に統合される——この多社分業は、アプリケーションを実行基盤から切り離す標準層 (**RTE**, runtime environment) と、交換可能な構成記述 (ARXML) があって初めて成立する。アーキテクチャ図のすべての層は、契約の境界線として読むのが正しい。
+1. **AUTOSAR の第一の目的は技術ではなく「分業の接続仕様」である。** OEM が車両機能を定義し、Tier-1 がコンポーネントを実装し、別のベンダがベーシックソフトウェアを供給し、それらが単一 ECU に統合される。この多社分業は、アプリケーションを実行基盤から切り離す標準層 (**RTE**, runtime environment) と、交換可能な構成記述 (ARXML) があって初めて成立する。アーキテクチャ図のすべての層は、契約の境界線として読むのが正しい。
 2. **Classic Platform は「実行時に決めない」ことで保証を買う設計の極致である。** タスク・優先度・スケジュール表・通信信号・メモリ割当のすべてをビルド時に静的構成し、動的なタスク生成もヒープも持たない。OSEK OS（固定優先度 + 優先度シーリング内蔵）を核に、`realtime-fundamentals.md` の解析（応答時間・ブロッキング上界）が**構成ファイルから機械的に実施できる**世界を作っている[^osek][^autosar-cp]。
 3. **Adaptive Platform は「ECU の中にサーバを持ち込む」ための第二標準である。** ADAS・自動運転の要求（高性能 SoC、動的なアプリ配備、OTA、機械学習ワークロード）は静的世界と両立しないため、AUTOSAR は Classic を置き換えず、POSIX (PSE51) ベース・C++・**サービス指向通信 (SOME/IP)** の Adaptive Platform を並立させた[^autosar-ap]。実行管理・状態管理がアプリのライフサイクルを動的に扱う点で、`rtos-architectures.md` の「Linux/QNX 側の島」の車載標準化といえる。
-4. **通信は「信号」から「サービス」へ移行しつつ、車両内で二層共存する。** CAN 的な信号ベース通信（静的に割り付けられたビットフィールドの周期放送——`../../engineering/automotive/in-vehicle-networks.md`）と、SOME/IP によるサービス指向通信（発見・購読・RPC——`../networking/` の世界観）が、それぞれ制御系ドメインと知覚・計画系ドメインを担う。`../../engineering/automotive/automotive-ethernet-tsn.md` の車載 Ethernet がこの二層目の物理基盤である。
-5. **「干渉からの自由 (freedom from interference)」が混合 ASIL 統合の鍵概念である。** ISO 26262 は、異なる安全度 (ASIL) のソフトウェアを同居させる場合、低 ASIL 側が高 ASIL 側を**空間（メモリ）・時間（実行時間）・通信**の3面で妨害できないことの論証を要求する。実装機構は OS アプリケーション単位の MPU パーティショニング、実行時間バジェット監視、そして **E2E (end-to-end) 保護**——CRC・シーケンスカウンタ・タイムアウトをアプリ層で付け、経路上のどの層の故障も受信側で検出する——である[^autosar-cp]。`rtos-architectures.md` の ARINC 653 と同じ問題への、車載流の（より漸進的な）解といえる。
-6. **SDV の実体は「ECU の地理的統合」と「ソフトウェア更新の恒常化」である。** 機能別に散らばった 100 ECU を、ゾーン ECU（配線集約）+ 少数の HPC (high-performance computer) に集約し（`../../engineering/automotive/ee-architecture.md`）、HPC 上ではハイパーバイザ（`../virtualization/`）とコンテナで Classic 的な島と Adaptive/Linux 的な島を同居させ、OTA で継続更新する——Tesla が先行して示し（`../../engineering/automotive/ev/tesla-software-manufacturing.md`）、業界全体が追随している構図である。
+4. **通信は「信号」から「サービス」へ移行しつつ、車両内で二層共存する。** CAN 的な信号ベース通信（静的に割り付けられたビットフィールドの周期放送、`../../engineering/automotive/in-vehicle-networks.md` を参照）と、SOME/IP によるサービス指向通信（発見・購読・RPC、`../networking/` の世界観）が、それぞれ制御系ドメインと知覚・計画系ドメインを担う。`../../engineering/automotive/automotive-ethernet-tsn.md` の車載 Ethernet がこの二層目の物理基盤である。
+5. **「干渉からの自由 (freedom from interference)」が混合 ASIL 統合の鍵概念である。** ISO 26262 は、異なる安全度 (ASIL) のソフトウェアを同居させる場合、低 ASIL 側が高 ASIL 側を**空間（メモリ）・時間（実行時間）・通信**の3面で妨害できないことの論証を要求する。実装機構は OS アプリケーション単位の MPU パーティショニング、実行時間バジェット監視、そして **E2E (end-to-end) 保護**である。E2E 保護は CRC・シーケンスカウンタ・タイムアウトをアプリ層で付け、経路上のどの層の故障も受信側で検出する[^autosar-cp]。`rtos-architectures.md` の ARINC 653 と同じ問題への、車載流の（より漸進的な）解といえる。
+6. **SDV の実体は「ECU の地理的統合」と「ソフトウェア更新の恒常化」である。** 機能別に散らばった 100 ECU を、ゾーン ECU（配線集約）+ 少数の HPC (high-performance computer) に集約し（`../../engineering/automotive/ee-architecture.md`）、HPC 上ではハイパーバイザ（`../virtualization/`）とコンテナで Classic 的な島と Adaptive/Linux 的な島を同居させ、OTA で継続更新する。これは Tesla が先行して示し（`../../engineering/automotive/ev/tesla-software-manufacturing.md`）、業界全体が追随している構図である。
 7. **標準と内製のせめぎ合いが現在の主戦場である。** AUTOSAR は分業の接続仕様として成功したが、その分業構造自体が「ソフトウェアを競争力の中心に置く」戦略と衝突する。Tesla の完全内製、各 OEM の Vehicle OS 構想（成否は流動的）、車載 Linux・QNX・ハイパーバイザベンダの寡占化など、**「標準で作る部分」と「内製で差別化する部分」の線引き**が各社の戦略変数になっている。この対立軸は `../../engineering/robotics/humanoid-robots.md` の垂直統合の議論と同型である。
 
 ## アーキテクチャ (Architecture)
@@ -74,7 +74,7 @@ flowchart TB
 
 - OSEK/VDX（1990年代の欧州標準、ISO 17356 として国際規格化）が定めるのは、静的に宣言されたタスク（基本/拡張）、固定優先度スケジューリング、そして**優先度シーリングプロトコル内蔵のリソース**である[^osek]。`realtime-fundamentals.md` で「強い保証だが静的情報が要る」とした優先度シーリングが、ここでは**構成ファイルが静的情報そのものである**ため自然に成立する。
 - **スケジュール表 (schedule table)** と時間監視（OSEKtime / AUTOSAR OS のタイミング保護）により、タスクの起動時刻・実行時間バジェットを表として固定でき、時間の干渉からの自由（発見事項 5）の実装手段になる。
-- カウンタ・アラーム・フック（エラー処理）まで含め、**「実行時に構造が変わらない」ことが最大の機能**である——解析可能性・認証・再現性のすべてがそこから導かれる。
+- カウンタ・アラーム・フック（エラー処理）まで含め、**「実行時に構造が変わらない」ことが最大の機能**である。解析可能性・認証・再現性のすべてがそこから導かれる。
 
 ### 2. 通信スタックと E2E 保護 (Communication & End-to-End Protection)
 
@@ -93,8 +93,8 @@ E2E プロファイルの典型構成（送信側で付与 → 受信側で検�
 
 ### 3. Adaptive Platform の実行管理 (Adaptive: Execution & State Management)
 
-- **実行管理 (Execution Management)** がアプリケーション（Adaptive Application）のライフサイクル——起動依存関係・状態遷移（起動/更新/診断モード）——を管理し、**プラットフォーム健全性管理 (Platform Health Management)** が監視（生存・締切・論理シーケンス）を担う。静的なスケジュール表の代わりに、**監視 + 縮退**で時間的な安全性を論証する構造である[^autosar-ap]。
-- `ara::com` はサービスのプロキシ/スケルトンを生成する通信抽象で、トランスポート（SOME/IP・DDS・プロセス内）を差し替え可能にする——RTE が静的世界でやったこと（配置の遅延束縛）の動的世界版といえる。
+- **実行管理 (Execution Management)** がアプリケーション（Adaptive Application）のライフサイクル、すなわち起動依存関係と状態遷移（起動/更新/診断モード）を管理し、**プラットフォーム健全性管理 (Platform Health Management)** が監視（生存・締切・論理シーケンス）を担う。静的なスケジュール表の代わりに、**監視 + 縮退**で時間的な安全性を論証する構造である[^autosar-ap]。
+- `ara::com` はサービスのプロキシ/スケルトンを生成する通信抽象で、トランスポート（SOME/IP・DDS・プロセス内）を差し替え可能にする。これは、RTE が静的世界でやったこと（配置の遅延束縛）の動的世界版といえる。
 - OS は規定しない（POSIX PSE51 準拠を要求するのみ）。実務では安全系に QNX、情報系に Linux という `rtos-architectures.md` の分業がそのまま現れ、単一 SoC 上ではハイパーバイザで共存させる。
 
 ### 4. SDV — ゾーン・HPC・OTA (Software-Defined Vehicle)
@@ -105,7 +105,7 @@ E2E プロファイルの典型構成（送信側で付与 → 受信側で検�
 
 ## セキュリティ考察 (Security Considerations)
 
-- **信号ベース通信は認証を持たない。** CAN の設計には送信者認証がなく（`../../engineering/automotive/in-vehicle-networks.md`・`cybersecurity-iso21434.md`）、AUTOSAR は **SecOC (secure onboard communication)**——PDU への MAC (message authentication code) 付与と鮮度カウンタ——で後付けの認証を標準化した。E2E 保護が「偶発故障」を検出するのに対し、SecOC は「悪意ある注入」を検出する——**CRC は攻撃者に対して無力**であり、両者は代替関係にない点が設計上の要諦である。
+- **信号ベース通信は認証を持たない。** CAN の設計には送信者認証がなく（`../../engineering/automotive/in-vehicle-networks.md`・`cybersecurity-iso21434.md`）、AUTOSAR は **SecOC (secure onboard communication)** により、PDU への MAC (message authentication code) 付与と鮮度カウンタで後付けの認証を標準化した。E2E 保護が「偶発故障」を検出するのに対し、SecOC は「悪意ある注入」を検出する。**CRC は攻撃者に対して無力**であり、両者は代替関係にない点が設計上の要諦である。
 - **境界の多層化**: 外部接続（テレマティクス・コックピット）と制御ドメインの間にゲートウェイ・ファイアウォールを置き、ドメイン分離（ハイパーバイザ・ネットワークセグメント）で侵害の横展開を抑える。構図は `../../engineering/energy/plant-control-scada-security.md` の OT 分離、`../../engineering/robotics/control-systems.md` の安全独立経路と同型である。
 - **OTA は最大の特権経路**: 車両全体のコードを書き換えられる経路であるため、署名検証の信頼根（HSM: hardware security module、`../../hardware/security/side-channels-tee-secure-boot.md` の secure boot の車載版）、段階的ロールアウト、ロールバック保護（ダウングレード攻撃の防止）が必須要件になる。UN-R155/156 は、これらを型式認可の条件として制度化した。
 - **サプライチェーン**: 多社分業アーキテクチャは、そのままソフトウェアサプライチェーンの攻撃面でもある。BSW・MCAL・ツールチェーンの完全性、SBOM、ツール適格性 (tool qualification) は、`../security/`（ロードマップのサプライチェーン項目）の車載での実体化である。
@@ -114,7 +114,7 @@ E2E プロファイルの典型構成（送信側で付与 → 受信側で検�
 
 AUTOSAR は、`realtime-fundamentals.md` の理論と `rtos-architectures.md` の設計空間が、**産業の分業構造と安全認証の要求に合わせて制度化されたもの**である。Classic Platform は「実行時に決めない」ことで解析可能性と分業を同時に成立させ、Adaptive Platform は ADAS 時代の動的要求を POSIX + サービス指向で受け止め、両者は SDV の HPC 上で島として共存する。そして E2E 保護・SecOC・干渉からの自由といった機構は、いずれも「**下の層を信頼せず、境界で検証する**」という一つの原理の現れであり、これは本リポジトリが networking・security・分散システムで繰り返し見てきた原理の車載版にほかならない。
 
-これで `software/embedded/` の3本——理論・カーネル・産業実装——が揃い、`engineering/robotics/`・`engineering/automotive/`・`engineering/aerospace/` の各所から参照されてきた「リアルタイム実行基盤」の答えが software 側に整備された。残るテーマ候補（TSN ホスト実装、スケジューラビリティ解析の実務、省電力との両立）は README のロードマップに置く。
+これで `software/embedded/` の3本（理論・カーネル・産業実装）が揃い、`engineering/robotics/`・`engineering/automotive/`・`engineering/aerospace/` の各所から参照されてきた「リアルタイム実行基盤」の答えが software 側に整備された。残るテーマ候補（TSN ホスト実装、スケジューラビリティ解析の実務、省電力との両立）は README のロードマップに置く。
 
 ---
 

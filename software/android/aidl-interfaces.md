@@ -17,10 +17,10 @@ AIDL は「アプリが Service と話すための道具」として知られる
 
 ## 発見事項 (Findings)
 
-1. **AIDL の本質は「メソッド ↔ 整数コード」と「引数 ↔ Parcel 上の順序」の二つの対応表を、両端に同一に焼き込むことである。** 各メソッドは宣言順に `IBinder.FIRST_CALL_TRANSACTION`(= 1)からの連番を割り当てられ、引数は宣言順に書かれ同じ順に読まれる。Parcel 自体は自己記述的 (self-describing) ではないため、**両端の生成コードがずれた瞬間に、型検査なしで誤った値が読まれる**。互換性管理(stable AIDL)とセキュリティ(parcel mismatch)の問題は、どちらもこの一点から生じている。
+1. **AIDL の本質は「メソッド ↔ 整数コード」と「引数 ↔ Parcel 上の順序」の二つの対応表を、両端に同一に埋め込むことである。** 各メソッドは宣言順に `IBinder.FIRST_CALL_TRANSACTION`(= 1)からの連番を割り当てられ、引数は宣言順に書かれ同じ順に読まれる。Parcel 自体は自己記述的 (self-describing) ではないため、**両端の生成コードがずれると、その時点で型検査なしに誤った値が読まれる**。互換性管理(stable AIDL)とセキュリティ(parcel mismatch)の問題は、どちらもこの一点から生じている。
 2. **インタフェーストークン (DESCRIPTOR) は宛先確認であって認証ではない。** Proxy はすべての呼び出しの先頭に `writeInterfaceToken(DESCRIPTOR)` を書き、Stub は `enforceInterface(DESCRIPTOR)` で照合する。これは「このトランザクションは本当にこのインタフェース宛てか」を検査するだけで、トークンは誰でも書ける。**呼び出し元の正当性は `Binder.getCallingUid()` による権限検査でしか担保されない**。
-3. **`oneway` はインタフェースの形を決める設計判断である。** system_server がアプリを呼ぶ `IApplicationThread` やウィンドウへの通知 `IWindow` は `oneway interface` として定義され、system_server のスレッドが応答の遅いアプリに引きずられない。一方アプリ → system_server の `IActivityManager` 等は基本的に同期である。「特権側から非特権側へは oneway」という非対称が、Android の可用性設計の骨格を成す([`binder-internals.md`](binder-internals.md) §4)。
-4. **例外は Parcel の応答ヘッダとして運ばれ、許された型だけが境界を越える。** 応答 Parcel の先頭 int が 0 なら正常、負値なら例外コードで、`Parcel.writeException()` が文書化した型(`SecurityException`・`IllegalArgumentException`・`IllegalStateException`・`NullPointerException`・`BadParcelableException`・`NetworkOnMainThreadException` など)と `ServiceSpecificException`(サービス定義の int エラーコード)だけが呼び出し元で再構成される。任意の例外型は越えられない——**エラーもまた型付きの契約の一部**である。
+3. **`oneway` はインタフェースの形を決める設計判断である。** system_server がアプリを呼ぶ `IApplicationThread` やウィンドウへの通知 `IWindow` は `oneway interface` として定義され、system_server のスレッドが応答の遅いアプリに引きずられない。一方アプリ → system_server の `IActivityManager` 等は基本的に同期である。「特権側から非特権側へは oneway」という非対称が、Android の可用性設計の基本構造を成す([`binder-internals.md`](binder-internals.md) §4)。
+4. **例外は Parcel の応答ヘッダとして運ばれ、許された型だけが境界を越える。** 応答 Parcel の先頭 int が 0 なら正常、負値なら例外コードで、`Parcel.writeException()` が文書化した型(`SecurityException`・`IllegalArgumentException`・`IllegalStateException`・`NullPointerException`・`BadParcelableException`・`NetworkOnMainThreadException` など)と `ServiceSpecificException`(サービス定義の int エラーコード)だけが呼び出し元で再構成される。任意の例外型は越えられない。つまり、**エラーもまた型付きの契約の一部**である。
 5. **バックエンドは 4 系統あり、「安定かどうか」で使い分けが決まる。** Java、C++(`libbinder`)、NDK(`libbinder_ndk`、Android 10〜)、Rust(Android 12〜、`libbinder_ndk` の上に構築)。`libbinder` の C++ ABI はプラットフォーム内部用で安定ではないため、vendor パーティションや APEX など**プラットフォームと別に更新されるコードは NDK か Rust バックエンドを使う**。
 6. **Stable AIDL は「インタフェースの凍結とハッシュ」で system/vendor の独立更新を可能にした。** `aidl_interface` モジュールは API のスナップショットを `aidl_api/<name>/<version>/` に凍結し、以後の変更は追記のみに制限される。実行時には `getInterfaceVersion()`/`getInterfaceHash()` で相手の版を問い合わせられる。HIDL (Android 8.0〜) が担っていた HAL の安定インタフェースは Android 11 から AIDL でも書けるようになり、Android 13 で HIDL は非推奨になった。
 7. **Parcel 直列化の非対称性は、10 年以上続いた権限昇格の一大クラスである。** `writeToParcel` と `createFromParcel` が読み書きするバイト数が食い違う Parcelable が 1 つでもあると、system_server が検査した Bundle と、再直列化後に受信側が読む Bundle の中身が変わりうる(Bundle mismatch / "self-changing Bundle")。これが AccountManager 経由の LaunchAnyWhere 型攻撃を繰り返し成立させた。Android 13 の **LazyValue(遅延 Bundle)と型付き `getParcelable(key, Class)`** は個別修正ではなく根本原因への対策として導入されたが、2023 年にもその回避(CVE-2023-45777)が実証され、2025 年の査読研究は新たに 10 件の高深刻度脆弱性を報告している。
@@ -119,7 +119,7 @@ public interface IFoo extends android.os.IInterface {
 
 ### 2. 方向タグ `in`/`out`/`inout` と `oneway`
 
-- **方向タグ**: developer.android.com のガイドによれば、非プリミティブ引数には方向タグが必須で、プリミティブ・`String`・`IBinder`・AIDL インタフェースは `in` 固定である。`in` はリクエスト Parcel だけに書かれ、`out` はサーバ側で**新しいオブジェクト**を生成して応答 Parcel で書き戻し、`inout` は往復とも直列化する。ガイドは「直列化は高価なので必要最小限の方向に限れ」と勧める。`out` の値はクライアント側の既存オブジェクトに `readFromParcel` で上書きされる——Java の参照渡しの見かけを、2 回のコピーで模倣しているにすぎない。
+- **方向タグ**: developer.android.com のガイドによれば、非プリミティブ引数には方向タグが必須で、プリミティブ・`String`・`IBinder`・AIDL インタフェースは `in` 固定である。`in` はリクエスト Parcel だけに書かれ、`out` はサーバ側で**新しいオブジェクト**を生成して応答 Parcel で書き戻し、`inout` は往復とも直列化する。ガイドは「直列化は高価なので必要最小限の方向に限れ」と勧める。`out` の値はクライアント側の既存オブジェクトに `readFromParcel` で上書きされる。これは Java の参照渡しの見かけを、2 回のコピーで模倣しているにすぎない。
 - **`oneway`**: `oneway void notify(...)` またはインタフェース全体を `oneway interface` と宣言する。生成コードは `transact` に `IBinder.FLAG_ONEWAY` を立て、応答 Parcel を持たない。したがって **oneway メソッドは戻り値も `out`/`inout` も例外の伝搬も持てない**。ドライバ側の意味論(同一ノード宛ての FIFO、非同期バッファの半分という背圧)は [`binder-internals.md`](binder-internals.md) §4 に譲る。
 
 ### 3. Parcelable — 非構造化と構造化
@@ -151,7 +151,7 @@ public interface IFoo extends android.os.IInterface {
 
 - **サービス = Stub のサブクラス**: `ActivityManagerService extends IActivityManager.Stub`、`PackageManagerService` 系の `IPackageManager.Stub` 実装、`WindowManagerService extends IWindowManager.Stub` のように、system_server の主要サービスは生成 Stub を継承して `ServiceManager.addService("activity", ...)` で登録される。アプリ側は `ServiceManager.getService()` → `IXxx.Stub.asInterface()` で得た Proxy を `ActivityManager` などの SDK マネージャクラスで包んで使う。どのサービスがどの順で起動されるかは [`system-server-services.md`](system-server-services.md) を参照。
 - **逆向きのインタフェース**: system_server はアプリに `IApplicationThread`(ライフサイクル指示の受け口、`oneway interface`)を、ウィンドウに `IWindow`(リサイズ・フォーカス等の通知、`oneway interface`)を実装させて呼び返す。アプリ側ではこれらが Binder スレッドで届き、Handler で UI スレッドへ乗り換える([`looper-handler-message-loop.md`](looper-handler-message-loop.md) §5、[`app-components-lifecycle.md`](app-components-lifecycle.md))。
-- **`@hide` と非 SDK インタフェース**: `IActivityManager` 等の AIDL は SDK 非公開であり、アプリが反射で直接 Proxy を叩く行為は非 SDK インタフェース制限の対象である。公開契約は SDK マネージャクラスであって AIDL ではない——AIDL の自由な変更(メソッド追加・並べ替え)は、この非公開性によって可能になっている。
+- **`@hide` と非 SDK インタフェース**: `IActivityManager` 等の AIDL は SDK 非公開であり、アプリが反射で直接 Proxy を叩く行為は非 SDK インタフェース制限の対象である。公開契約は SDK マネージャクラスであって AIDL ではない。AIDL の自由な変更(メソッド追加・並べ替え)は、この非公開性によって可能になっている。
 
 ### 7. 例外の伝搬と権限検査の宣言
 
@@ -172,7 +172,7 @@ public interface IFoo extends android.os.IInterface {
 | 権限検査 | 実装内に手書き | `@EnforcePermission` による宣言と lint 検査 | 検査漏れの静的検出 |
 | Bundle/Parcel の読み出し | 型なしの `getParcelable(key)`、Bundle は一括デシリアライズ | LazyValue(遅延 Bundle)と型付き `getParcelable(key, Class)`・`readParcelable(ClassLoader, Class)`(API 33) | parcel mismatch クラスの根本対策 |
 
-- **不変の核**: 「両端の生成コードが同じ順序で読み書きする」という契約は 2016 年から変わっていない。変わったのは、その契約を**誰が、どの粒度で保証するか**——手書きから生成へ、同一ビルド前提から凍結とハッシュへ——である。
+- **不変の核**: 「両端の生成コードが同じ順序で読み書きする」という契約は 2016 年から変わっていない。変わったのは、その契約を**誰が、どの粒度で保証するか**である(手書きから生成へ、同一ビルド前提から凍結とハッシュへ)。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -185,8 +185,8 @@ public interface IFoo extends android.os.IInterface {
 
 ## 結論 (Conclusions)
 
-- AIDL は、型を知らない Binder ドライバの上に「メソッド ↔ コード」「引数 ↔ Parcel 上の順序」の対応表を両端へ同一に生成する層である。Proxy/Stub・DESCRIPTOR・`FIRST_CALL_TRANSACTION`・応答の例外ヘッダという骨格は Nougat から変わっておらず、Android のすべてのシステムサービスと HAL がこの一つの形式で話す。
-- その上に積まれた進化——構造化 parcelable、4 つのバックエンド、stable AIDL の凍結とハッシュ、`@VintfStability`、HIDL の置き換え——はいずれも、**「両端が同じ版の生成コードを持つ」という前提が system/vendor/APEX の独立更新で崩れた**ことへの応答である。
+- AIDL は、型を知らない Binder ドライバの上に「メソッド ↔ コード」「引数 ↔ Parcel 上の順序」の対応表を両端へ同一に生成する層である。Proxy/Stub・DESCRIPTOR・`FIRST_CALL_TRANSACTION`・応答の例外ヘッダという基本構造は Nougat から変わっておらず、Android のすべてのシステムサービスと HAL がこの一つの形式で話す。
+- その上に積まれた進化(構造化 parcelable、4 つのバックエンド、stable AIDL の凍結とハッシュ、`@VintfStability`、HIDL の置き換え)はいずれも、**「両端が同じ版の生成コードを持つ」という前提が system/vendor/APEX の独立更新で崩れた**ことへの応答である。
 - セキュリティ面では、AIDL の境界は「型付き API の見かけ」と「任意バイト列が届く現実」の差にある。Parcel mismatch の 10 年は、手書き直列化の非対称という小さな誤りが、検査と転送の分離によって権限昇格へ増幅されることを示した。生成コード・長さ前置・型付き読み出し・宣言的な権限検査・Rust 化は、いずれも**書き手の規律に頼る部分を機械に移す**方向の対策である。
 
 ### 次の接続先 (Related Topics)

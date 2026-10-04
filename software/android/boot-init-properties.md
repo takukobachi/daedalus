@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-電源投入から Zygote・system_server が立ち上がるまでの区間——**ブートチェーン (PBL → ブートローダ → カーネル) → init (PID 1) → プロパティサービス → init.rc が起動するサービス群**——を、Android 固有の設計判断として読み解く。この区間には Android の二重人格がもっとも濃く出る: 一方では「管理者のいない家電」として勝手に書き換えられず、落ちても自力で立ち直らねばならない（組込みの要件）。他方では OS 全体をあとから安全に差し替え続けねばならない（PC の要件）。有野 (2017) Ⅱ巻 6章はこの緊張を LK ブートローダと Nougat の init を題材に描いたが、以後の 10 年でこの区間は Android でもっとも大きく作り直された場所の一つになった——A/B と Virtual A/B、動的パーティション、GKI と `init_boot`、fastbootd、二段 init、プロパティの SELinux 分割、APEX である。
+電源投入から Zygote・system_server が立ち上がるまでの区間、すなわち**ブートチェーン (PBL → ブートローダ → カーネル) → init (PID 1) → プロパティサービス → init.rc が起動するサービス群**を、Android 固有の設計判断として読み解く。この区間には Android の二重人格がもっとも濃く出る: 一方では「管理者のいない家電」として勝手に書き換えられず、落ちても自力で立ち直らねばならない（組込みの要件）。他方では OS 全体をあとから安全に差し替え続けねばならない（PC の要件）。有野 (2017) Ⅱ巻 6章はこの緊張を LK ブートローダと Nougat の init を題材に描いたが、以後の 10 年でこの区間は Android でもっとも大きく作り直された場所の一つになった。具体的には、A/B と Virtual A/B、動的パーティション、GKI と `init_boot`、fastbootd、二段 init、プロパティの SELinux 分割、APEX である。
 
 本ドキュメントが答える問い: なぜブートローダは「署名検証器」であり、アンロックはなぜ全消去を伴うのか。なぜ fastboot の半分はユーザ空間 (fastbootd) に引っ越したのか。なぜ init は二段に割れたのか。なぜ init は systemd ではなく独自の宣言言語 (Android Init Language) とシングルスレッドの epoll ループで作られているのか。プロパティはなぜ「共有メモリ＋単一書き手」なのか。そして Zygote と system_server はどの行から生まれるのか。分析深度は Level 3。
 
@@ -15,11 +15,11 @@
 
 ## 発見事項 (Findings)
 
-1. **ブートローダの本職は「読み込み」ではなく「拒否」である。** 書籍 (Ⅱ巻 6.2.2) は LK の仕事を HW 初期化、署名検証、カーネル/DT/RAM ディスクのロードとして整理し、アンロックとは署名検査を外すことだと述べる。この骨格は不変だが、現在の署名検証は AVB の vbmeta 連鎖に一般化され、ブートローダは検証結果（green/yellow/orange）を**カーネル以降と鍵アテステーションに申告する**立場になった。アンロックが**必ず工場出荷状態へのリセットを伴う**のは、「署名検査を外した者」が「既存データの持ち主」とは限らないからで、仕様は RAM の残存内容の消去まで要求する。
+1. **ブートローダの本職は「読み込み」ではなく「拒否」である。** 書籍 (Ⅱ巻 6.2.2) は LK の仕事を HW 初期化、署名検証、カーネル/DT/RAM ディスクのロードとして整理し、アンロックとは署名検査を外すことだと述べる。この基本構造は不変だが、現在の署名検証は AVB の vbmeta 連鎖に一般化され、ブートローダは検証結果（green/yellow/orange）を**カーネル以降と鍵アテステーションに申告する**立場になった。アンロックが**必ず工場出荷状態へのリセットを伴う**のは、「署名検査を外した者」が「既存データの持ち主」とは限らないからで、仕様は RAM の残存内容の消去まで要求する。
 2. **fastboot の半分がユーザ空間へ移ったのは、パーティションが「論理」になったからである。** Android 10 の動的パーティションで system/vendor/product 等は `super` 上の dm-linear 論理デバイスになり、ブートローダはそのメタデータ (liblp) を解釈しない。そこで書き込みは recovery 内の **fastbootd** が担い、ブートローダは bootloader・radio・boot/recovery 系の物理パーティションだけを扱い、動的パーティションへの書き込みは**拒否しなければならない**。「ブートローダは小さく検証に専念、複雑な処理はテスト可能な共通ユーザ空間へ」という分業である。
 3. **init は二段に割れ、第一段の仕事は「本物の init を検証済みストレージから連れてくること」になった。** Nougat の init は RAM ディスクをルートとして最後まで使い、単一の `main()` が mount・プロパティ・init.rc を順に処理した。現在は ramdisk（Android 13〜は `init_boot` の汎用 ramdisk）上の**第一段 init** が `/dev`・`/proc` 等を用意し、カーネルモジュールを載せ、`super` から system/vendor を**early mount**（dm-verity 付き）して switch root し、`/system/bin/init selinux_setup` → SELinux ポリシー読み込み → **第二段 init** と exec し直す。カーネルが論理パーティションを読めない以上、ルートを組み立てるのはユーザ空間しかない。
 4. **init のメインループは書籍の時代から「単一スレッド・epoll・一回に一コマンド」のまま**である。変わったのは周辺: SIGCHLD は書籍の socketpair 自己パイプ方式から **signalfd** に置き換わり、`ReapAnyOutstandingChildren` が epoll の**最優先コールバック**として登録される（死んだ子を回収してから他のイベントを処理する順序保証）。プロパティサービスは init 本体から**別スレッドに切り出され**、ctl. メッセージだけがキュー経由で本体ループに渡る。
-5. **プロパティは「全員が読める共有メモリ、書くのは init だけ」という単一書き手の設計で、現在は SELinux ラベルごとに領域が分割されている。** 書籍は `/dev/__properties__` を単一ファイルとして mmap する姿を描くが、実際には書籍が準拠する Android 7.0 の時点で既にこれが**ディレクトリ**になっており（bionic `libc/bionic/system_properties.cpp` @ android-7.0.0_r6: `context_node::open` (lines 748-770) が `"%s/%s"` で `property_filename`/コンテキスト名のファイルを開き、`/property_contexts` を読む `initialize_properties()` (line 944) を持つ。android-6.0.1_r1 の同ファイルにはこの仕組みが無い）、`property_contexts` のラベルごとに別の prop_area ファイルがあり、各プロセスは読む権限のある領域だけを read-only で mmap する。書き込みは `/dev/socket/property_service` への要求を init が `selinux_check_access` で検査して反映する。**読みは速く（システムコールなし）、書きは中央集権で監査可能**——読み書き比が極端に偏ったデータに対する最適な割り切りである。
+5. **プロパティは「全員が読める共有メモリ、書くのは init だけ」という単一書き手の設計で、現在は SELinux ラベルごとに領域が分割されている。** 書籍は `/dev/__properties__` を単一ファイルとして mmap する姿を描くが、実際には書籍が準拠する Android 7.0 の時点で既にこれが**ディレクトリ**になっており（bionic `libc/bionic/system_properties.cpp` @ android-7.0.0_r6: `context_node::open` (lines 748-770) が `"%s/%s"` で `property_filename`/コンテキスト名のファイルを開き、`/property_contexts` を読む `initialize_properties()` (line 944) を持つ。android-6.0.1_r1 の同ファイルにはこの仕組みが無い）、`property_contexts` のラベルごとに別の prop_area ファイルがあり、各プロセスは読む権限のある領域だけを read-only で mmap する。書き込みは `/dev/socket/property_service` への要求を init が `selinux_check_access` で検査して反映する。**読みは速く（システムコールなし）、書きは中央集権で監査可能**。これは読み書き比が極端に偏ったデータに対する最適な割り切りである。
 6. **Treble はプロパティと init.rc を「パーティションの持ち物」に分けた。** init.rc は `/system/etc/init/hw/init.rc` を起点に `/system/etc/init`・`/system_ext`・`/vendor`・`/odm`・`/product` の各 `etc/init/` と APEX の `/apex/*/etc/` に分散し、プロパティも `vendor.`/`ro.vendor.` 等の名前空間と partition 別 `property_contexts` で所有者が分かれ、**sysprop** がパーティション境界をまたぐものに型付き API を与える。書籍が Nougat の新機能として紹介した .rc ファイルの分割読み込み (Ⅱ巻 1.5.1, 6.5.1) は、Treble の前夜に置かれた最初の一手だった。
 7. **init は Android の「管理者」であり、その哲学は 10 年間変わっていない。** 書籍 (Ⅱ巻 6.5.5) が強調するように、ソケットと依存再起動 (onrestart) を init が一元管理するため各デーモンは自分の仕事だけに集中でき、OOM Killer に殺されても系全体が自己修復する、という設計は現行 `init.zygote64.rc` にもそのまま残る。変化は**失敗時の行き先**で、critical サービスの連続クラッシュ時の再起動先は書籍時点の recovery から既定で **bootloader** になり、さらに A/B 端末では「起動に成功しないスロットは使わない」ブートカウンタ（boot control HAL）がもう一段外側の自己修復になった。
 
@@ -75,7 +75,7 @@ sequenceDiagram
 ### 1. ブートチェーンとブートローダの世代交代
 
 - **PBL**（SoC 内 Boot ROM）は書き換え不能な信頼の起点で、eFuse の公開鍵ハッシュで次段を検証する（一般論は [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md)）。
-- 書籍は Nexus 系の **LK (Little Kernel)** を、署名付きイメージのロード、Device Tree、fastboot の 3 機能を持つ Android ブートローダのリファレンスとして扱う（Ⅱ巻 6.2.1）。以後 Qualcomm 系は Snapdragon 835 世代前後から **XBL (UEFI ファームウェア) ＋ ABL**（EDK II 上の EFI アプリ LinuxLoader。fastboot と Linux ローダを含む）へ移行した（二次資料による。確度: 中〜高）。他 SoC ベンダは U-Boot 派生や独自実装で、**ブートローダの実装は依然ベンダ依存**である。統一されたのは実装ではなく**契約**——AVB の検証手順、boot image ヘッダ形式、A/B の boot control、fastboot プロトコル、ロック状態の意味論——である。
+- 書籍は Nexus 系の **LK (Little Kernel)** を、署名付きイメージのロード、Device Tree、fastboot の 3 機能を持つ Android ブートローダのリファレンスとして扱う（Ⅱ巻 6.2.1）。以後 Qualcomm 系は Snapdragon 835 世代前後から **XBL (UEFI ファームウェア) ＋ ABL**（EDK II 上の EFI アプリ LinuxLoader。fastboot と Linux ローダを含む）へ移行した（二次資料による。確度: 中〜高）。他 SoC ベンダは U-Boot 派生や独自実装で、**ブートローダの実装は依然ベンダ依存**である。統一されたのは実装ではなく**契約**（AVB の検証手順、boot image ヘッダ形式、A/B の boot control、fastboot プロトコル、ロック状態の意味論）である。
 - 以前はカーネルで行っていたことの多くがブートローダ側に移っている、と書籍 (Ⅱ巻 6.2.4) が観察した傾向は、GKI で逆向きの力を受けた: カーネルを汎用化するため、**機種差はブートローダが渡す DTB/DTBO・bootconfig とベンダモジュールに押し出され**、カーネル本体は機種非依存になった。
 
 ### 2. A/B・Virtual A/B・動的パーティション — 「更新」を起動系に組み込む
@@ -116,7 +116,7 @@ sequenceDiagram
 - **一回に一コマンド**の設計は書籍時点から不変で、長い action が他のイベント（子の死・プロパティ変化）を飢えさせないための協調的スケジューリングである。代償として `exec`/`wait_for_prop` のような同期コマンドはループ全体を待たせるため、`exec_start`・`wait_for_prop` の使用箇所（apexd-bootstrap、odsign 検証待ち）は**起動時間のクリティカルパス**として意識的に配置されている。
 - **SIGCHLD**: 書籍 (Ⅱ巻 6.3.4) はシグナルハンドラが socketpair に 1 バイト書き、epoll 側で読み捨てて `ReapAnyOutstandingChildren` を呼ぶ「自己パイプ」方式を説明する。現在は signalfd で同じ目的（非同期シグナルを同期イベントに変換）をより素直に達成し、さらに **reap を他の epoll イベントより先に**行う。これは「死んだデーモンの再起動要求が、死亡の回収より先に処理される」競合を防ぐためと AOSP のコメントが明記している。
 - **サービスの死と再起動**: `Service::Reap` は（oneshot でなければ）プロセスグループを kill し、ソケットを片付け、`onrestart` を実行し、`SVC_RESTARTING` を立てる。実際の再起動はメインループが `restart_period`（既定 5 秒）後に行う。critical サービスは「fatal crash window（既定 4 分）内、または `sys.boot_completed` 前に 4 回超」の終了で端末を再起動し（`system/core/init/service.cpp` lines 356-383、窓の既定値は `service.h` line 189 `fatal_crash_window_ = 4min`; aosp-mirror snapshot (2025-11) の main）、行き先はサービスの `target=` 指定が無ければ `system/core/init/reboot_utils.cpp` line 40 の既定値 `init_fatal_reboot_target = "bootloader"`（カーネルコマンドライン/bootconfig の `androidboot.init_fatal_reboot_target` で上書き可, lines 65-78）。書籍時点のコード（`service.cpp` @ android-7.0.0_r6 lines 43-44, 136）は `CRITICAL_CRASH_THRESHOLD 4`／`CRITICAL_CRASH_WINDOW (4*60)` で `android_reboot(..., "recovery")` だった。なお現行は 24 時間以内に同理由の再起動済みなら再起動しない抑制 (`persist.init.svc.last_fatal_reboot_epoch`) も持つ。`init.zygote64.rc` は zygote 自身に `critical window=... target=zygote-fatal` を指定し、行き先をさらに細かく制御する。
-- **ueventd**: 同じ init バイナリの別エントリで、カーネルの uevent を受けて `/dev` ノードを作り、`ueventd.rc` に従い権限と SELinux ラベルを付け、ファームウェア読み込み要求に応える。起動直後は既存デバイスの uevent を再生させる **coldboot** を行い、init は `wait_for_coldboot_done` でその完了を待つ——書籍のコード (Ⅱ巻 6.3.2) にも現れる同期点である。
+- **ueventd**: 同じ init バイナリの別エントリで、カーネルの uevent を受けて `/dev` ノードを作り、`ueventd.rc` に従い権限と SELinux ラベルを付け、ファームウェア読み込み要求に応える。起動直後は既存デバイスの uevent を再生させる **coldboot** を行い、init は `wait_for_coldboot_done` でその完了を待つ。これは書籍のコード (Ⅱ巻 6.3.2) にも現れる同期点である。
 
 ### 6. Android Init Language — 宣言的な依存記述
 
@@ -142,7 +142,7 @@ sequenceDiagram
 
 ### 7. プロパティサービス — 共有メモリと単一書き手
 
-- **格納**: `/dev/__properties__/` 配下に `property_contexts` のラベル（例: `u:object_r:vendor_default_prop:s0`）ごとの prop_area ファイルと、名前→ラベルの対応表 (`property_info`) を置く。bionic の読み手は必要な領域を read-only で mmap し、名前をトライで引く。更新は serial（上位 8 ビットに値長、dirty ビット）と acquire/release 順序で整合を取り、`__system_property_wait` は serial 上の **futex** で変更を待つ——書籍 (Ⅱ巻 6.4.3) の「listener」の現在の下回りである。
+- **格納**: `/dev/__properties__/` 配下に `property_contexts` のラベル（例: `u:object_r:vendor_default_prop:s0`）ごとの prop_area ファイルと、名前→ラベルの対応表 (`property_info`) を置く。bionic の読み手は必要な領域を read-only で mmap し、名前をトライで引く。更新は serial（上位 8 ビットに値長、dirty ビット）と acquire/release 順序で整合を取り、`__system_property_wait` は serial 上の **futex** で変更を待つ。これが書籍 (Ⅱ巻 6.4.3) の「listener」の現在の下回りである。
 - **書き込み**: クライアント（`setprop`、`SystemProperties.set`、libc の `__system_property_set`）は `/dev/socket/property_service` に名前と値を送る。init のプロパティスレッドは送信元の資格情報 (SO_PEERCRED/SELinux コンテキスト) で `CheckMacPerms`（`selinux_check_access`）を行い、`ro.` は**既に設定済みなら拒否**、`ctl.` は値を持たず init 本体への制御メッセージ（`CheckControlPropertyPerms` で対象サービスごとの権限も検査）、`persist.` は `/data/property/persistent_properties`（protobuf）に書き出す。現行コードは system_server 用の専用ソケットも別に持つ。
 - **名前空間の意味論**: `ro.*` は一度きり（書籍の説明どおり）。ただし `ro.` は PROP_VALUE_MAX (92 バイト) の制限を免除され長い値を持てる（旧 API `__system_property_get` では読めない）。`persist.*` は再起動を越える。`ctl.start/stop/restart` は書籍が詳述した start/stop コマンドの実体（Ⅱ巻 6.4.2）で、現在は `ctl.` による任意サービス操作に SELinux の `start`/`stop` 権限が要る。
 - **Treble と sysprop**: vendor 側は `vendor.`・`ro.vendor.`・`persist.vendor.`・`ro.odm.` 等の接頭辞に閉じ、system/vendor の `property_contexts` は別ファイルで管理される。パーティションをまたいで読まれるプロパティは `.sysprop` 記述から型付き API（Java/C++）を生成し、**文字列キーの暗黙契約を ABI 化**する（Android 10 で導入: 生成ツール `system/tools/sysprop` は android-10.0.0_r1 タグに存在し、android-9.0.0_r1 タグは存在しない）。
@@ -170,13 +170,13 @@ sequenceDiagram
 - **第一段 init と ramdisk は検証境界の内側にある。** GKI で汎用 ramdisk が `init_boot` に分かれたことで、第一段 init は Google/AOSP 側の署名単位になり、vendor_boot のベンダ ramdisk とは別の vbmeta 記述子で検証される。early mount は dm-verity を張った状態で行われ、「**検証されていないブロックを一度も読まずにルートを組む**」ことが二段 init の安全上の意味である。書籍の root 化手順（system に setuid の su を置く）は、dm-verity と system の読み取り専用・検証済みマウントにより、ロック状態のままでは成立しない。
 - **プロパティは権限境界であり、情報源でもある。** 書籍 (Ⅱ巻 6.5.4) が紹介した、root 権限の action をプロパティトリガで公開して低権限アプリから操作させる手法は、現在では SELinux の `set` 権限でプロパティごとに書き手を限定しなければ権限昇格経路になる。読み取り側でも、ラベル別 prop_area と `property_contexts` によりアプリは許可されたプロパティしか mmap できず、端末識別子等の漏えい面が縮小された。`ctl.` はサービス停止＝可用性攻撃の入口なので、対象サービス単位で権限検査される。
 - **init は最大の単一障害点かつ最高権限である。** PID 1 の異常はカーネルパニックに直結し、init の解析器（.rc、プロパティ値、uevent）は外部入力を受ける。第二段以降を SELinux ドメイン `init` に閉じ、プロパティ処理を別スレッド化し、`.rc` の読み込み元を固定のパーティション別ディレクトリに限定したのは、この攻撃面を縮める一連の措置と読める。
-- **可用性（自己修復）とセキュリティは緊張する。** critical サービスのクラッシュループが bootloader/recovery に落ちる設計は、攻撃者がサービスを繰り返し殺せば端末を DoS できることも意味する。A/B のスロットロールバックは可用性を高めるが、ロールバック保護（AVB のロールバックインデックス）がなければ脆弱な旧版に戻す攻撃になりうる——両者が必ず対で実装されるのはこのためである。
+- **可用性（自己修復）とセキュリティは緊張する。** critical サービスのクラッシュループが bootloader/recovery に落ちる設計は、攻撃者がサービスを繰り返し殺せば端末を DoS できることも意味する。A/B のスロットロールバックは可用性を高めるが、ロールバック保護（AVB のロールバックインデックス）がなければ脆弱な旧版に戻す攻撃になりうる。両者が必ず対で実装されるのはこのためである。
 
 ## 結論 (Conclusions)
 
 - ブートと init は、書籍が描いた、PC のように柔軟でありながら家電のように壊れないという二律背反を解くための機構であり、その**哲学（ブートローダは拒否する、init はすべてのデーモンの管理者である、設定は単一書き手の共有メモリに置く）は Nougat から変わっていない**。
 - 変わったのは、それを実装する**単位と境界**である: パーティションは物理から論理へ（動的パーティション・Virtual A/B）、イメージは署名者ごとに（GKI・`vendor_boot`・`init_boot`）、init は制約の順序どおりに二段へ、.rc とプロパティは Treble・Mainline の所有境界ごとに分割された。いずれも「**OS をあとから安全に差し替え続ける**」要件が、起動系の構造そのものに浸透した結果である。
-- 書籍の知識は機構の骨格（epoll ループ、Reap と onrestart、action/trigger、ctl. と prop_area）として現在も有効で、差分はほぼすべて「検証可能性」と「更新可能性」の二語で説明できる。
+- 書籍の知識は機構の基本構造（epoll ループ、Reap と onrestart、action/trigger、ctl. と prop_area）として現在も有効で、差分はほぼすべて「検証可能性」と「更新可能性」の二語で説明できる。
 
 ### 次の接続先 (Related Topics)
 

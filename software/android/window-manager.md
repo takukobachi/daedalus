@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-Android の画面に並ぶ「窓」——Activity の窓、ダイアログ、ステータスバー、ナビゲーションバー、IME、トースト、他アプリのオーバーレイ——の**配置・重なり順 (z-order)・大きさ・フォーカス・可視性**を一元的に決めるのが、system_server 内の **WindowManagerService (WMS)** である。WMS 自身は画素を 1 つも描かない。アプリ側の ViewRootImpl が窓の中身を描き([`view-system-layout.md`](view-system-layout.md))、SurfaceFlinger が合成し([`graphics-pipeline.md`](graphics-pipeline.md))、InputDispatcher が入力を配る([`input-pipeline.md`](input-pipeline.md))。WMS はその三者に「どの窓が、どこに、どの順で、どの状態で存在するか」という**唯一の真実 (single source of truth)** を供給する制御面 (control plane) である。
+Android の画面に並ぶ「窓」(Activity の窓、ダイアログ、ステータスバー、ナビゲーションバー、IME、トースト、他アプリのオーバーレイ)の**配置・重なり順 (z-order)・大きさ・フォーカス・可視性**を一元的に決めるのが、system_server 内の **WindowManagerService (WMS)** である。WMS 自身は画素を 1 つも描かない。アプリ側の ViewRootImpl が窓の中身を描き([`view-system-layout.md`](view-system-layout.md))、SurfaceFlinger が合成し([`graphics-pipeline.md`](graphics-pipeline.md))、InputDispatcher が入力を配る([`input-pipeline.md`](input-pipeline.md))。WMS はその三者に「どの窓が、どこに、どの順で、どの状態で存在するか」という**唯一の真実 (single source of truth)** を供給する制御面 (control plane) である。
 
 本ドキュメントは、WMS を中心にシステム側の窓管理を追う: `WindowContainer` の木構造(RootWindowContainer → DisplayContent → DisplayArea → Task → TaskFragment → ActivityRecord → WindowState)、窓の種類と z-order の決め方、`addWindow` の検査列、relayout と SurfaceControl の割り当て、フォーカスと入力への窓情報の供給、インセット、回転と構成変更、Shell Transitions、そしてマルチウィンドウ・Activity embedding・デスクトップウィンドウイングまで。
 
@@ -170,7 +170,7 @@ sequenceDiagram
 
 - WMS は「どの窓が、どこに、どの順で、どの状態で存在するか」の唯一の真実を持つ制御面であり、画素は描かず、SurfaceControl の木を操作し、その木から SurfaceFlinger が合成と入力のヒットテストを同時に計算する。ViewRootImpl・SurfaceFlinger・InputDispatcher の三者は、WMS の木を共通の座標系として結ばれている。
 - 2016 年の Nougat からの最大の変化は、窓・タスク・ディスプレイを**単一の `WindowContainer` 木**に統合し、z-order を整数の層番号から**木の中の位置**へ、アニメーションを全窓の毎フレーム書き換えから**リーシュ**へ、遷移の演出を system_server から **WM Shell** へ移したことである。いずれも大画面・折りたたみ・マルチウィンドウ・デスクトップウィンドウイングで「部分木ごとに、原子的に、プロセス外から」窓を動かす要求への答えである。
-- 一方で、`IWindowSession`/`IWindow` の契約、型の三区分、トークンによる認可という骨格は書籍の時代から変わっていない。セキュリティ上は、窓の追加をトークンと型で縛る認可モデルの上に、オーバーレイの型の一本化・untrusted touch 遮断・オーバーレイの能動的排除が積み重ねられ、「画面は最後の攻撃面」への対策が WMS と入力系の協調で強化され続けている。
+- 一方で、`IWindowSession`/`IWindow` の契約、型の三区分、トークンによる認可という基本構造は書籍の時代から変わっていない。セキュリティ上は、窓の追加をトークンと型で縛る認可モデルの上に、オーバーレイの型の一本化・untrusted touch 遮断・オーバーレイの能動的排除が積み重ねられ、「画面は最後の攻撃面」への対策が WMS と入力系の協調で強化され続けている。
 
 ### 次の接続先 (Related Topics)
 
