@@ -4,7 +4,7 @@
 
 `in-vehicle-networks.md` は車載ネットワークの中核である **CAN (Controller Area Network)** を軸に扱った。しかし ADAS・自動運転・**ゾーン型 E/E アーキテクチャ (zonal architecture)** の進展で、車載通信の要求は「数 kbps のスイッチ信号」から「Gbps 級のカメラ/LiDAR 映像」へと桁が変わった。CAN（最大 1 Mbps、CAN FD でも ~8 Mbps）では帯域が根本的に足りない。
 
-本ドキュメントは、CAN の「外側」——**Automotive Ethernet** と **TSN (Time-Sensitive Networking, 時間高感度ネットワーク)** を主役に、FlexRay・LIN・CAN FD/XL を含む非 CAN プロトコル群を整理する。なぜ 1 台に複数のネットワークが共存し続け、なぜゾーン型のバックボーンが Ethernet + TSN に収束していくのかを、ソフトウェアと物理（帯域・タイミング・冗長）の接点として明らかにする。
+本ドキュメントは、CAN の「外側」を扱う。**Automotive Ethernet** と **TSN (Time-Sensitive Networking, 時間高感度ネットワーク)** を主役に、FlexRay・LIN・CAN FD/XL を含む非 CAN プロトコル群を整理する。なぜ 1 台に複数のネットワークが共存し続け、なぜゾーン型のバックボーンが Ethernet + TSN に収束していくのかを、ソフトウェアと物理（帯域・タイミング・冗長）の接点として明らかにする。
 
 ## 方法論 (Methodology)
 
@@ -20,7 +20,7 @@
 3. **物理層がオフィス Ethernet と別物。** 車載は **Single Pair Ethernet (SPE, 1 対線)** ＋電力重畳 (PoDL) で軽く安く敷く。100/1000/10BASE-T1 は 1 対で全二重を実現する専用 PHY。
 4. **FlexRay は決定論の先駆だが置換されつつある。** TDMA と二重チャネル冗長で X-by-wire を支えたが、高コスト・10 Mbps 頭打ちのため、TSN 付き Ethernet が同等機能を高帯域で代替する。
 5. **LIN は今も現役。** 数十円のボディ系アクチュエータには CAN すら過剰で、単線・マスタ従属の LIN が最安層を担う。**「万能バスは存在しない」は不変**で、階層化（Ethernet 幹＋ CAN/LIN 枝）が現実解。
-6. **通信が「信号ベース」から「サービスベース」へ。** CAN の周期ブロードキャストに対し、Ethernet 上では **SOME/IP** によるサービス指向通信が中心となり、SDV（Software-Defined Vehicle）の通信土台になる。
+6. **通信が「信号ベース」から「サービスベース」へ。** CAN の周期ブロードキャストに対し、Ethernet 上では **SOME/IP** によるサービス指向通信が中心となり、SDV（Software-Defined Vehicle）の通信基盤になる。
 
 ## アーキテクチャ (Architecture)
 
@@ -113,7 +113,7 @@ Ethernet 化が進んでも、実績と低コストゆえ CAN 系は残る。
 CAN の通信は「信号を周期的にブロードキャストする」信号ベースだが、Ethernet 上では **SOME/IP (Scalable service-Oriented MiddlewarE over IP)** による**サービス指向**が主流になる。
 
 - **サービスディスカバリ**で提供側と要求側を動的に結び、必要時のみ通信（要求/応答、イベント購読）。
-- **Adaptive AUTOSAR** や **DDS (Data Distribution Service)** と組み合わせ、機能を車全体で疎結合に配置できる。ECU をまたぐソフトウェア再配置（SDV）の通信土台であり、`../../hardware/cpu/` の分散・並行性の知見が直接効く領域。
+- **Adaptive AUTOSAR** や **DDS (Data Distribution Service)** と組み合わせ、機能を車全体で疎結合に配置できる。ECU をまたぐソフトウェア再配置（SDV）の通信基盤であり、`../../hardware/cpu/` の分散・並行性の知見が直接活きる領域。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -126,7 +126,7 @@ CAN の通信は「信号を周期的にブロードキャストする」信号�
 
 - 帯域と決定論の要求が桁で上がり、車載バックボーンは **Automotive Ethernet + TSN** に収束しつつある。SPE（1 対線＋ PoDL）で軽く安く敷き、TSN（gPTP・TAS・プリエンプション・FRER）で「時間を保証する Ethernet」に仕立てるのが核心。
 - **FlexRay の決定論・冗長は Ethernet + TSN が高帯域で代替**し、**LIN は最安ニッチで存続**、**CAN は FD/XL で延命しつつエッジへ**退く。幹＝ Ethernet、枝＝ CAN/LIN の**階層化**が現実解であり、「万能バスはない」は変わらない。
-- 通信は**信号ベースからサービスベース (SOME/IP)** へ移り、ゾーン型・SDV の通信土台となる。CPU アーキテクチャや HW・SW 境界の知見が直接効く領域へ車載ネットワークが接近している。
+- 通信は**信号ベースからサービスベース (SOME/IP)** へ移り、ゾーン型・SDV の通信基盤となる。CPU アーキテクチャや HW・SW 境界の知見が直接活きる領域へ車載ネットワークが接近している。
 - セキュリティは IT 型リスクを取り込み、**MACsec・ネットワーク分離・IDS** と、時刻同期の保護、**ISO 21434 / ISO 26262 の両立**が要となる。
 
 ### 次の接続先 (Related Topics)
