@@ -21,7 +21,7 @@
 
 - 数値最適化の実装各論 (numerical optimization) — 直線探索と信頼領域、
   L-BFGS、内点法の実装、疎性の搾取。`../linear-algebra/matrix-factorizations-numerical.md`
-  の解法側の続き（ロードマップ済みの数値解析と合流する）
+  の解法側の続き（`../numerical-analysis/` のロードマップと合流する）
 - 整数計画と組合せ最適化 (integer & combinatorial optimization) — 分枝限定法、
   緩和と近似、スケジューリング・配置問題。`../discrete-logic/graphs-trees-algorithms.md`
   との合流点

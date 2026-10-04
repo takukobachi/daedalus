@@ -40,12 +40,15 @@
   (`../../engineering/energy/electricity-markets-dispatch.md`)、
   ML 訓練 (`../../software/ai/`)、MPC (`../../engineering/robotics/control-systems.md`)
   の共通言語
+- `numerical-analysis/` — 数値解析(浮動小数点と誤差解析、条件数と安定性、
+  求根・反復線形ソルバ、ODE の数値積分と硬さ、シンプレクティック積分 …)。
+  SIMD・GPU の数値形式 (`../../hardware/cpu/simd-vector.md`,
+  `../../hardware/accelerators/`)、混合精度学習 (`../../software/ai/`)、
+  軌道伝播・ロボットのシミュレーション (`../../engineering/aerospace/`,
+  `../../engineering/robotics/`) の計算側の基礎。線形代数(数値線形代数)と
+  微分積分(常微分方程式)の続き
 
 ## 今後のテーマ候補
 
-優先度は「既存の分析ドキュメントとの相互参照が何本張れるか」を基準に付けている。
-
-### 優先度 低 (将来の拡張)
-
-- 数値解析 (numerical analysis) — 浮動小数点、誤差解析、反復法。
-  科学技術計算と機械学習の数値的基盤
+当初ロードマップに挙げた候補(数値解析を含む)はすべて着手済み。以降のテーマは、
+各サブディレクトリの README の「今後のテーマ候補」で管理する。
