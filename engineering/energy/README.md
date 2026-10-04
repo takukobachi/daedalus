@@ -11,6 +11,8 @@
 - [`electricity-markets-dispatch.md`](electricity-markets-dispatch.md) — 電力市場と経済的ディスパッチ (electricity markets & economic dispatch)。周波数制御の階層が市場商品（需給調整市場・スポット・容量市場）へ写像される構造
 - [`battery-energy-storage.md`](battery-energy-storage.md) — 系統用蓄電システム (battery energy storage, BESS)。セル〜PCS〜EMS の階層、LFP への収斂、レベニュースタッキング、Hornsdale / Moss Landing 事例
 - [`hvdc-interconnection.md`](hvdc-interconnection.md) — 直流送電と地域間連系 (HVDC & interconnection)。LCC/VSC、日本の周波数変換設備 (FC)・北本連系、市場分断との接続
+- [`power-electronics-grid-converters.md`](power-electronics-grid-converters.md) — 電力変換と系統連系インバータ (power electronics & grid-connected converters)。Si IGBT / SiC / GaN、2 レベル・NPC・MMC、PWM、損失と熱設計、IEEE 519、グリッドフォロイング/フォーミング制御、弱い系統
+- [`grid-stability-frequency-control.md`](grid-stability-frequency-control.md) — 系統安定度と周波数制御 (power system stability & frequency control)。動揺方程式・RoCoF・最下点、一次〜三次制御と AGC、IEEE/CIGRE 安定度分類、UFLS、5 大停電の比較、連鎖故障モデル
 
 ## 今後のテーマ候補
 
@@ -19,11 +21,6 @@
 ### 事業・市場との接点 (grid economics & operation)
 
 - 送配電網 (transmission & distribution) — 変電所、潮流計算、N-1 基準、系統混雑とノンファーム型接続、託送
-
-### 既存ロードマップの深掘り
-
-- 電力変換 (power electronics) — インバータ、PWM、IGBT/SiC デバイス、グリッドフォーミング/フォロイング制御
-- 系統安定度と周波数制御 (grid stability & frequency control) — 動揺方程式、RoCoF、AGC、連鎖故障の定量モデル
 
 ### 分散化・需要側 (DER & demand side)
 
