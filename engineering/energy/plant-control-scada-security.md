@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-[`generation-grid-fundamentals.md`](generation-grid-fundamentals.md) は、発電・系統の物理的な制御点（ガバナ、AGC、AVR、保護リレー）が最終的にソフトウェアへ集約されることを示した。本ドキュメントはその「集約先」— **発電所・電力系統を監視制御する制御システム (control system)** — を主題とする。
+[`generation-grid-fundamentals.md`](generation-grid-fundamentals.md) は、発電・系統の物理的な制御点（ガバナ、AGC、AVR、保護リレー）が最終的にソフトウェアへ集約されることを示した。本ドキュメントはその「集約先」、つまり**発電所・電力系統を監視制御する制御システム (control system)** を主題とする。
 
 電力の制御システムは典型的な **OT (Operational Technology)** であり、一般の IT とは設計思想が根本的に異なる。物理プロセスを止めないことが最優先であり、リアルタイム性・可用性・決定性 (determinism) が機密性より重視される。本ドキュメントは、(1) 制御システムの階層構造（フィールド機器 → PLC/RTU/IED → SCADA/DCS → EMS）、(2) それらを結ぶ通信プロトコル（Modbus、DNP3、IEC 60870-5-104、IEC 61850）、(3) リアルタイム要求と安全計装、(4) これらが「無認証・長寿命・物理直結」という特性ゆえに抱えるセキュリティ課題を、防御・教育の観点から整理する。
 
@@ -107,7 +107,7 @@ IEC 61850 は変電所自動化を標準化し、機器を**論理ノード (Log
 
 ### 広域監視と時刻同期 — PMU / シンクロフェーザ (WAMS)
 
-SCADA のポーリング（秒オーダ・タイムスタンプは粗い）では、系統の**動的な現象**——地域間振動、外乱直後の位相角の開き——は見えない。これを可視化するのが **PMU (Phasor Measurement Unit, IEEE/IEC 60255-118-1)** である。
+SCADA のポーリング（秒オーダ・タイムスタンプは粗い）では、系統の**動的な現象**（地域間振動、外乱直後の位相角の開き）は見えない。これを可視化するのが **PMU (Phasor Measurement Unit, IEEE/IEC 60255-118-1)** である。
 
 - 各変電所の PMU が電圧・電流の**フェーザ（振幅と位相角）** を毎秒 30〜60 サンプルで測定し、**GPS 同期のタイムスタンプ**を付けて中央 (PDC: Phasor Data Concentrator) へ送る。
 - 地理的に何百 km 離れた測定点の**位相角を直接比較できる**のは、全点がマイクロ秒精度で同じ時刻を共有しているからである。これにより系統の「動揺」がリアルタイムで見える（**WAMS: Wide Area Monitoring System**）。2025 年のイベリア半島大停電の調査で 0.2 Hz の地域間振動を跡付けたのはこの計測層である（[`generation-grid-fundamentals.md`](generation-grid-fundamentals.md) の事例参照）。
