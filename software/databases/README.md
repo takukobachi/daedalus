@@ -11,10 +11,12 @@
   WAL、バッファプール、ページレイアウト、圧縮・コンパクション）
 - `transactions-isolation.md` — トランザクションと分離レベル：異常カタログ (dirty read〜write skew)、
   ANSI 定義の批判、2PL/MVCC/SI/SSI、実 DB の挙動差 (PostgreSQL/MySQL/Oracle)、Hermitage 検証
+- `query-execution-optimization.md` — クエリ実行と最適化：System R/Volcano/Cascades、
+  カーディナリティ推定の失敗モード (JOB)、結合アルゴリズムと spilling (grace/hybrid hash)、
+  Volcano iterator vs ベクトル化 (X100/DuckDB) vs コンパイル (HyPer)、morsel 並列、適応実行
+- `distributed-databases.md` — 分散データベース：分割方式とホットスポット、2PC の阻塞と Paxos Commit、
+  Percolator/Spanner TrueTime/CockroachDB (HLC・parallel commits)/Calvin、分散クエリ、グローバル二次索引、失敗モード
 
 ## 今後のテーマ候補
 
-- クエリ実行 (query execution) — プランナ, join アルゴリズム, ベクトル化実行
 - インデックス設計 (indexing) — 複合インデックス, カバリング, 全文・空間索引
-- 分散データベース (distributed databases) — sharding, 分散トランザクション,
-  分散コミット（`../distributed-systems/consistency-models.md` の応用）
