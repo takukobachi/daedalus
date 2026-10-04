@@ -24,7 +24,7 @@ Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀�
 
 ## 発見事項 (Findings)
 
-1. **Android の回収戦略は「clean を増やし、shared を増やす」の一点に集約される。** スワップ先が無い世界では、カーネルが黙って捨てられるのはファイルと内容が一致する clean ページだけであり、anonymous な dirty ページはプロセスごと殺す以外に取り戻せない。DEX/OAT・`.so`・リソースを mmap して実行する設計と、Zygote からの fork による COW 共有は、この制約から逆算された必然である（有野 (2017) Ⅰ巻 7.3）。**メモリ効率の良し悪しはアロケーション量ではなく「private dirty の量」で決まる。**
+1. **Android の回収戦略は「clean を増やし、shared を増やす」の一点に集約される。** スワップ先が無い世界では、カーネルがプロセスに通知せず捨てられるのはファイルと内容が一致する clean ページだけであり、anonymous な dirty ページはプロセスごと殺す以外に取り戻せない。DEX/OAT・`.so`・リソースを mmap して実行する設計と、Zygote からの fork による COW 共有は、この制約から逆算された必然である（有野 (2017) Ⅰ巻 7.3）。**メモリ効率の良し悪しはアロケーション量ではなく「private dirty の量」で決まる。**
 2. **`oom_score_adj` は「カーネルに渡すアプリケーション知識」のチャネルである。** カーネルは各プロセスの意味（前面か、音楽再生中か、ホームか）を知らない。ActivityManagerService (AMS、[`system-server-services.md`](system-server-services.md)) がプロセス状態から重要度を計算し、特権デーモン lmkd に Unix ソケットで送り、lmkd が `/proc/<pid>/oom_score_adj` に書く。書籍が描く、スコアを付けるのは UI 側で殺すのはカーネル側という分業は現在も不変で、変わったのは**殺す主体がカーネルから lmkd に移った**ことだけである。
 3. **書籍の -17〜16 表は旧 `oom_adj` 表記であり、Nougat の実コードは既に oom_score_adj 単位だった。** `android-7.0.0_r6` の `ProcessList.java` は FOREGROUND 0 / VISIBLE 100 / … / CACHED 900〜906 と定義しており、外部インタフェースが旧 oom_adj のままだと書籍のコラムが述べている点は lowmemorykiller ドライバの `parameters/adj` 側の事情である。現在は CACHED が 900〜999 に拡張され、PERCEPTIBLE_LOW/MEDIUM 等の中間段が追加されて**階層が細分化**した。
 4. **lowmemorykiller ドライバは「shrinker の目的外使用」であり、それが廃止理由でもあった。** ディスクキャッシュ解放用の `register_shrinker()` コールバックでプロセスを殺す設計は、書籍が裏の Activity をキャッシュとみなす仕組みとして読み解いた通り巧妙だが、発動が回収経路の内側（ロック保持中・直接回収中）に縛られ、空きページ数の閾値 (minfree) しか見ないため、ファイルキャッシュが大きい負荷で誤判定した。Linux 4.12 で staging から削除され、userspace lmkd に一本化された。

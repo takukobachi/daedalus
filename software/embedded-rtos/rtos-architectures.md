@@ -141,7 +141,7 @@ RTOS の設計空間は、「**どれだけ強い保証を、どれだけ小さ�
 
 [^arinc653]: ARINC Specification 653: *Avionics Application Software Standard Interface* (Part 1: Required Services). SAE ITC / ARINC. — 時間・空間パーティショニングと APEX API の規格一次資料。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - [The Linux Foundation — PREEMPT_RT / Real-Time Linux プロジェクト文書](https://wiki.linuxfoundation.org/realtime/start) — Accessed: 2026-07-12. — スリープするスピンロック・スレッド化割り込みの公式解説。
 - [FreeRTOS Kernel Documentation](https://www.freertos.org/Documentation/RTOS_book.html) — Accessed: 2026-07-12. — フラット空間小型カーネルの代表実装の公式文書。

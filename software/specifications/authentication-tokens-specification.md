@@ -62,7 +62,7 @@ xxxxx.yyyyy.zzzzz
 | `iat` | Issued At | トークン発行時刻 |
 | `jti` | JWT ID | 一意識別子（リプレイ検出などに利用） |
 
-ペイロード例:
+ペイロード例を示す。
 
 ```json
 {
@@ -184,7 +184,7 @@ sequenceDiagram
 
 PKCE (Proof Key for Code Exchange, [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636)) は認可コードフローの拡張で、認可コードの横取り (interception) を防ぐ。現在は公開クライアントに限らず**すべてのクライアントに推奨**されており、OAuth 2.1 ドラフトでは必須化される方向である。
 
-手順:
+手順は次のとおりである。
 
 ```
 # 1. Generate a random code_verifier
@@ -426,7 +426,7 @@ Attack   (HS256): attacker signs with the public key (now used as HMAC secret)
 eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.POstGetfAytaZS82wHcjoTyoqhMyxXiWdR7Nn7A29DNSl0EiXLdwJ6xC6AfgZWF1bOsS_TuYI3OG85AmiExREkrS6tDfTQ2B3WXlrr-wp5AokiRbz3_oB4OxG-W9KcEEbDRcZc0nH3L7LzYptiy1PtAylQGxHTWZXtGz4ht0bAecBgmpdgXMguEIcoqPJ1n3pIWk_dUZegpqx0Lka21H6XxUTxiy8OcaarA8zdnPUnV6AmNP3ecFawIFYdvJB_cm-GvpCSbr8G8y_Mllj8f4x9nBH8pQux89_6gUY618iYv7tuPWBFfEbLxtF2pZS6YC1aSfLQxeNe8djT9YjpvRZA
 ```
 
-デコードされたヘッダー:
+デコードされたヘッダーは次のとおりである。
 
 ```json
 {
@@ -435,7 +435,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 }
 ```
 
-デコードされたペイロード:
+デコードされたペイロードは次のとおりである。
 
 ```json
 {
@@ -462,7 +462,7 @@ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4
 
 ## 付録 B: セキュリティインシデント対応 (Appendix B: Security Incident Response)
 
-トークン漏洩時の対応手順:
+トークン漏洩時の対応手順は次のとおりである。
 
 1. 漏洩したトークンを直ちに失効させる（OAuth の場合は失効エンドポイント）
 2. 署名用秘密鍵が漏洩した場合は署名鍵をローテーションする（JWT は鍵の失効 = 全トークンの失効になる点に注意）

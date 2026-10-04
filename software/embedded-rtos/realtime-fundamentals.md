@@ -103,7 +103,7 @@ L がロック取得 → H が起床しロック待ち → M が起床し L を�
 
 ### 3. レイテンシの解剖 (Anatomy of Latency)
 
-割り込み発生からユーザタスクの応答までの遅延は、次の層の和になる:
+割り込み発生からユーザタスクの応答までの遅延は、次の層の和になる。
 
 | 層 | 内容 | 典型的な支配要因 |
 |---|---|---|
@@ -156,7 +156,7 @@ L がロック取得 → H が起床しロック待ち → M が起床し L を�
 
 [^wilhelm]: Wilhelm, R. et al. (2008). The Worst-Case Execution-Time Problem — Overview of Methods and Survey of Tools. *ACM Transactions on Embedded Computing Systems*, 7(3), 1–53. DOI: 10.1145/1347375.1347389 — WCET 解析の標準サーベイ。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - Buttazzo, G. C. (2011). *Hard Real-Time Computing Systems: Predictable Scheduling Algorithms and Applications* (3rd ed.). Springer. — 応答時間解析・EDF・過負荷制御を含む標準教科書。
 - Audsley, N., Burns, A., Richardson, M., Tindell, K. & Wellings, A. (1993). Applying New Scheduling Theory to Static Priority Pre-emptive Scheduling. *Software Engineering Journal*, 8(5), 284–292. — 応答時間解析の定式化。

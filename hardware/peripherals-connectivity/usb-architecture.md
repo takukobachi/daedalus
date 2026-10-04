@@ -100,14 +100,14 @@ xHCI はコマンドリング・転送リング・イベントリングという
 
 ### USB-C と Power Delivery — ピン資源の交渉
 
-USB-C は上下対称24ピンのコネクタで、以下が同居する:
+USB-C は上下対称24ピンのコネクタで、以下が同居する。
 
 - **USB 2.0 ペア (D+/D-)** と **SuperSpeed ペア ×4**
 - **CC (Configuration Channel) ×2** — 接続検出・ケーブルの向き・役割 (ソース/シンク) の決定、そして PD 通信路
 - **VBUS/GND** — 電力。既定は 5 V だが PD で引き上げ
 - **SBU ×2** — Alt Mode 用の補助線
 
-**USB PD (Power Delivery)** は CC 線上の低速通信 (BMC 符号化) で電源契約を交渉するプロトコルである:
+**USB PD (Power Delivery)** は CC 線上の低速通信 (BMC 符号化) で電源契約を交渉するプロトコルである。
 
 ```text
 1. ソースが供給可能な電圧/電流の一覧 (PDO) を広告 (例: 5V3A, 9V3A, 20V5A)
@@ -121,7 +121,7 @@ USB-C は上下対称24ピンのコネクタで、以下が同居する:
 
 ## セキュリティ考察 (Security Considerations)
 
-- **BadUSB — 申告は詐称できる。** 列挙の全情報はデバイスの自己申告であり、ファームウェアを書き換えた USB メモリが「キーボード」を追加申告すれば、挿した瞬間から入力を注入できる (Nohl & Lell, Black Hat 2014)。複合デバイスが正当に多用される以上「ストレージなのに HID を名乗る」を機械的に弾くのは難しく、対策は新規 HID の承認 UI・USB デバイス許可リスト・ポート物理管理に寄る（`input-devices-hid.md` の HID 注入の根はここ）。
+- **BadUSB — 申告は詐称できる。** 列挙の全情報はデバイスの自己申告であり、ファームウェアを書き換えた USB メモリが「キーボード」を追加申告すれば、挿した直後から入力を注入できる (Nohl & Lell, Black Hat 2014)。複合デバイスが正当に多用される以上「ストレージなのに HID を名乗る」を機械的に弾くのは難しく、対策は新規 HID の承認 UI・USB デバイス許可リスト・ポート物理管理に寄る（`input-devices-hid.md` の HID 注入の根はここ）。
 - **DMA 攻撃 — USB4/Thunderbolt は PCIe を外に出した。** PCIe トンネルは外部デバイスにバスマスタ DMA を与えうる。Thunderclap (Markettos et al., NDSS 2019) は IOMMU があっても窓の張り方次第で攻撃可能なことを示した。対策は IOMMU の常時有効化と接続時認可（OS の Kernel DMA Protection 等）。`../hw-sw-interface/mmio-dma-interrupts.md` の IOMMU の議論が「コネクタの外」に拡張された形。
 - **列挙パーサは無線スタック同様の攻撃面。** ディスクリプタは信頼できない入力であり、細工したデバイスでホスト側パーサの脆弱性を突くツール (Facedancer 等) は確立している。`bluetooth-pairing-protocol.md` の BlueBorne と同型の「常時リッスンする巨大パーサ」問題の有線版。
 - **電力もプロトコルである以上、攻撃面になる。** 公共充電ポートでのデータ線接続 (juice jacking) への古典的対策がデータ線を切った充電専用アダプタなら、PD 時代にはPDコントローラのファームウェア脆弱性や不正な高電圧契約という新しい面が加わる。USB-IF は PD の**暗号認証仕様 (USB Authentication)** を用意しているが、普及は限定的（as of 2026）。

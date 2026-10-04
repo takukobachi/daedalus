@@ -78,7 +78,7 @@ flowchart TB
 
 ### 2. 通信スタックと E2E 保護 (Communication & End-to-End Protection)
 
-- 信号ベース通信では、送信側 SWC の書き込みが COM 層で PDU (protocol data unit) にパックされ、周期送信される。受信側ではアンパックされ RTE 経由で届く。この経路は多層のソフトウェアを通るため、**個々の層を高 ASIL に上げる代わりに、経路全体を末端で検証する**のが E2E 保護である:
+- 信号ベース通信では、送信側 SWC の書き込みが COM 層で PDU (protocol data unit) にパックされ、周期送信される。受信側ではアンパックされ RTE 経由で届く。この経路は多層のソフトウェアを通るため、**個々の層を高 ASIL に上げる代わりに、経路全体を末端で検証する**のが E2E 保護である。
 
 ```
 E2E プロファイルの典型構成（送信側で付与 → 受信側で検査）:
@@ -126,7 +126,7 @@ AUTOSAR は、`realtime-fundamentals.md` の理論と `rtos-architectures.md` �
 
 [^autosar-ap]: AUTOSAR. *Adaptive Platform Release Documentation*（Explanation of Adaptive Platform Design, Specification of Execution Management, Specification of Communication Management ほか）. https://www.autosar.org/standards/adaptive-platform — Accessed: 2026-07-12. — POSIX 基盤・ara::com・実行管理の規格一次資料。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - ISO 26262:2018. *Road vehicles — Functional safety*（特に Part 6: ソフトウェア開発、Part 9: ASIL 指向・安全指向解析）. — 干渉からの自由の要求元。
 - ISO/SAE 21434:2021. *Road vehicles — Cybersecurity engineering*. — SecOC・OTA セキュリティの上位枠組み。

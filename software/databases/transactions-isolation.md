@@ -98,7 +98,7 @@
 
 **SI**: 各トランザクションは開始時点のスナップショットを読み、コミット時に「自分の書いた行を、並行トランザクションも書いていないか」だけ検証する (first-committer-wins)。write-write 衝突は防がれるが、**read-write の絡み**は素通りする。
 
-古典例——当直医師制約「常に1人以上が当直」:
+古典例——当直医師制約「常に1人以上が当直」を示す。
 
 ```
 初期状態: Alice, Bob とも on-call
@@ -111,7 +111,7 @@ Tx2 (Bob):   当直者数を読む → 2人 → 自分を off に更新
 
 ### 5. SSI — 危険な構造の実行時検出
 
-理論的基礎: SI 下で非直列化可能な履歴には、先行グラフ上で**連続する2本の rw 反依存辺**（Tᵢ が読んだものを Tⱼ が書き、Tⱼ が読んだものを Tₖ が書く）を持つ「危険な構造」が必ず現れる (Fekete et al.)。**SSI (Serializable Snapshot Isolation)** はこの必要条件を実行時に監視する:
+理論的基礎: SI 下で非直列化可能な履歴には、先行グラフ上で**連続する2本の rw 反依存辺**（Tᵢ が読んだものを Tⱼ が書き、Tⱼ が読んだものを Tₖ が書く）を持つ「危険な構造」が必ず現れる (Fekete et al.)。**SSI (Serializable Snapshot Isolation)** はこの必要条件を実行時に監視する。
 
 - 各トランザクションの読みを SIREAD ロック（ブロックしない目印）として記録し、rw 反依存の入り辺・出り辺を追跡。
 - 両方の辺が揃った瞬間、関与するどれかを**中断**してサイクルの可能性を断つ（偽陽性はある——必要条件なので、実際には直列化可能な履歴も落としうる）。
@@ -138,7 +138,7 @@ Tx2 (Bob):   当直者数を読む → 2人 → 自分を off に更新
 ## セキュリティ考察 (Security Considerations)
 
 - **分離異常は攻撃者が誘発できる**: lost update / write skew は偶然を待たなくても、**リクエストを並行に投げるだけ**で意図的に起こせる。残高チェック→引き出しの並行実行によるダブルスペンド、クーポンの多重適用、在庫の過剰引当は、いずれも「弱い分離レベル＋検査してから使う」パターンの帰結で、**TOCTOU（[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md)）のデータベース版**である。対策も同型——検査と使用を同一の原子単位（SERIALIZABLE、FOR UPDATE、一意制約）に入れる。
-- **決済・資金移動は serializable 側に倒す**: [`../specifications/stripe-connect-specification.md`](../specifications/stripe-connect-specification.md) が扱う資金整合は、この異常クラスを冪等キーと台帳突合で多層防御する実務例。
+- **決済・資金移動は serializable を選ぶ**: [`../specifications/stripe-connect-specification.md`](../specifications/stripe-connect-specification.md) が扱う資金整合は、この異常クラスを冪等キーと台帳突合で多層防御する実務例。
 - **ロックは DoS の道具になる**: 長い明示ロックや巨大トランザクションで他者を待たせる・デッドロックを量産する攻撃面がある。タイムアウト (`lock_timeout` 等) と権限分離で bound する。
 - **バージョンは情報を残す**: MVCC の旧バージョンは回収まで物理的に残る（[`storage-engines.md`](storage-engines.md) の data remanence と同根）。削除の即時性を仮定しない。
 

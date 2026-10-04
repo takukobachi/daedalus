@@ -106,7 +106,7 @@
 
 [^golden-age]: Hennessy, J. L. & Patterson, D. A. (2019). A New Golden Age for Computer Architecture. *Communications of the ACM*, 62(2), 48–60. DOI: 10.1145/3282307 — Dennard 終焉と DSA への転換の総説（Turing 賞講演）。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Sze, V., Chen, Y.-H., Yang, T.-J. & Emer, J. (2020). *Efficient Processing of Deep Neural Networks*. Morgan & Claypool. — DNN アクセラレータ設計の体系的教科書。
 - Williams, S., Waterman, A. & Patterson, D. (2009). Roofline: An Insightful Visual Performance Model for Multicore Architectures. *Communications of the ACM*, 52(4), 65–76. DOI: 10.1145/1498765.1498785 — ルーフラインモデルの原典。

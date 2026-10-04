@@ -108,7 +108,7 @@ decode の1ステップは「全パラメータ + KV cache を HBM から1回読
 
 attention は各生成ステップで**過去全トークンの Key/Value ベクトル**を参照する。これを毎回再計算すると生成が O(L²) の再計算になるため、一度計算した K, V を層ごとに保持する——これが **KV cache** である。decode が「軽い」のは、この再計算を容量と引き換えに消しているからにほかならない。
 
-容量は次式で決まる（Multi-Head Attention の場合）:
+容量は次式で決まる（Multi-Head Attention の場合）。
 
 ```
 KV cache サイズ [bytes]

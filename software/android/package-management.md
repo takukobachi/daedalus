@@ -6,7 +6,7 @@ Android の「アプリをインストールする」という操作は、Linux 
 
 本ドキュメントは、有野 (2017) Ⅱ巻 第2章 (Nougat, AOSP android-7.0.0_r6) が描いた「UID 払い出し → installd → packages.xml → resolveIntent」の骨格を機構の基準線とし、そこから現在 (Android 16 / 17 世代, 2026) までに**何が変わり、何が変わっていないか**を明示する。署名スキーム・パーミッション・SELinux の詳細は [`security-model.md`](security-model.md)、dexopt とコンパイルフィルタは [`art-runtime-internals.md`](art-runtime-internals.md) に委ね、本書は「台帳 (ledger) とその書き手・読み手」に集中する。分析深度は Level 3。
 
-本ドキュメントが答える問い:
+本ドキュメントが答える問いは次のとおりである。
 
 - なぜ Android はアプリを Linux ユーザに見立てたのか。UID はどう払い出され、マルチユーザ時代にどう拡張されたか。
 - インストールは何段階の処理で、どこまでが非特権 (system_server) で、どこからが特権 (installd/artd) か。

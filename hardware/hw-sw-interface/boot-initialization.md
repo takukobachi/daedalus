@@ -156,7 +156,7 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 
 主ローダはカーネルを DRAM に展開し、**規約に従ってエントリへジャンプ**する。引数規約は ABI（`abi-syscalls.md`）の延長で、特定レジスタに DT/ACPI のポインタやブート引数を載せる（例: Arm64 Linux は x0 に DTB 物理アドレス）。
 
-ここまで動いているのは **BSP (Bootstrap Processor)** 一つだけである。残りのコア **AP (Application Processor)** はリセット状態で待機している。**SMP bring-up** は、BSP が各 AP を一つずつ起こす手順:
+ここまで動いているのは **BSP (Bootstrap Processor)** 一つだけである。残りのコア **AP (Application Processor)** はリセット状態で待機している。**SMP bring-up** は、BSP が各 AP を一つずつ起こす手順である。
 
 ```
 1. BSP がカーネルを初期化（メモリ管理・スケジューラの土台）。

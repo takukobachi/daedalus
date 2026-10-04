@@ -115,7 +115,7 @@ flowchart LR
 
 [^repro]: Reproducible Builds Project. *Documentation — Achieving Reproducibility*. https://reproducible-builds.org/docs/ — Accessed: 2026-07-13. — 非決定性の分類と対策の実務集成。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - Ohm, M., Plate, H., Sykosch, A. & Meier, M. (2020). Backstabber's Knife Collection: A Review of Open Source Software Supply Chain Attacks. *Proc. DIMVA 2020*, 23–43. DOI: 10.1007/978-3-030-52683-2_2 — 攻撃事例の体系的サーベイ。
 - in-toto. *Specification*. https://in-toto.io/ — Accessed: 2026-07-13. — パイプライン手順の証明フレームワーク。

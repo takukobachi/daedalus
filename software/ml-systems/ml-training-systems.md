@@ -123,7 +123,7 @@ flowchart TB
 
 [^llama3]: Grattafiori, A. et al. (2024). The Llama 3 Herd of Models. arXiv:2407.21783 — 16,384 GPU・54 日・419 中断・78% ハードウェア起因、90% 超の実効稼働時間の一次報告。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - NVIDIA. *NCCL Documentation*. https://docs.nvidia.com/deeplearning/nccl/ — Accessed: 2026-07-13. — 集合通信の実装・重畳の一次資料。
 - Jiang, Z. et al. (2024). MegaScale: Scaling Large Language Model Training to More Than 10,000 GPUs. *Proc. NSDI 2024*. — 万台規模運用（診断・ストラグラー対策）の一次報告。

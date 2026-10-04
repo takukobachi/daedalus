@@ -78,7 +78,7 @@ flowchart LR
 
 ### 2. 計算トルク法 (Computed Torque / Inverse Dynamics Control)
 
-運動方程式そのものを制御則に使い、非線形系を線形系に変換する（フィードバック線形化）:
+運動方程式そのものを制御則に使い、非線形系を線形系に変換する（フィードバック線形化）。
 
 ```
 τ = M(q)·(q̈_d + K_d·ė + K_p·e) + C(q,q̇)·q̇ + g(q)
@@ -89,7 +89,7 @@ flowchart LR
 
 ### 3. 状態空間制御と LQR (State-Space Control & LQR)
 
-線形化した状態方程式 `ẋ = Ax + Bu` に対し、二次コストを最小化する:
+線形化した状態方程式 `ẋ = Ax + Bu` に対し、二次コストを最小化する。
 
 ```
 J = ∫₀^∞ (xᵀQx + uᵀRu) dt   →   u = −Kx,  K は代数 Riccati 方程式の解から
@@ -101,7 +101,7 @@ J = ∫₀^∞ (xᵀQx + uᵀRu) dt   →   u = −Kx,  K は代数 Riccati 方�
 
 ### 4. モデル予測制御 (Model Predictive Control, MPC)
 
-毎制御周期、現在状態から有限ホライズン `N` 手先までの最適化問題を解き、最初の1手だけ適用して繰り返す:
+毎制御周期、現在状態から有限ホライズン `N` 手先までの最適化問題を解き、最初の1手だけ適用して繰り返す。
 
 ```
 min  Σ_{k=0}^{N-1} (x_kᵀQx_k + u_kᵀRu_k) + x_NᵀPx_N
@@ -117,7 +117,7 @@ s.t. x_{k+1} = A·x_k + B·u_k          （予測モデル）
 
 ### 5. 力制御とインピーダンス制御 (Force & Impedance Control)
 
-接触作業では「位置を指定する」ことをやめ、**位置と力の動的関係**を指定する:
+接触作業では「位置を指定する」ことをやめ、**位置と力の動的関係**を指定する。
 
 ```
 F = M_d·(ẍ − ẍ_d) + B_d·(ẋ − ẋ_d) + K_d·(x − x_d)
@@ -165,7 +165,7 @@ F = M_d·(ẍ − ẍ_d) + B_d·(ẋ − ẋ_d) + K_d·(x − x_d)
 
 [^ethercat]: EtherCAT Technology Group. *EtherCAT — The Ethernet Fieldbus* (ETG.1000 series specifications). https://www.ethercat.org/ — Accessed: 2026-07-12. — processing on the fly・分散クロックの一次仕様。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Rawlings, J. B., Mayne, D. Q. & Diehl, M. (2017). *Model Predictive Control: Theory, Computation, and Design* (2nd ed.). Nob Hill Publishing. — MPC の理論と実装。
 - IEC 61800-5-2:2016. *Adjustable speed electrical power drive systems — Safety requirements — Functional*. — STO/SS1/SLS 等ドライブ安全機能の定義。

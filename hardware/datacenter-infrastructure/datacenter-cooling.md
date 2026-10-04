@@ -96,7 +96,7 @@ T_junction = T_ambient + Σ (R_i × Q)     R: 各区間の熱抵抗 [K/W], Q: �
 
 [^wue]: The Green Grid. *Water Usage Effectiveness (WUE): A Green Grid Data Center Sustainability Metric* (White Paper #35). — WUE の定義と PUE との交換関係の一次資料。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Barroso, L. A., Hölzle, U. & Ranganathan, P. (2018). *The Datacenter as a Computer* (3rd ed.). Morgan & Claypool. — 冷却方式・エコノマイザ・TCO の体系的整理。
 - ASHRAE TC 9.9 (2019–). *Water-Cooled Servers — Common Designs, Components, and Processes* ほか液冷ガイドライン系列. — D2C・水質・CDU の実務標準。

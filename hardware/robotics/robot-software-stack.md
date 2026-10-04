@@ -139,7 +139,7 @@ flowchart TB
 
 [^rudin]: Rudin, N., Hoeller, D., Reist, P. & Hutter, M. (2022). Learning to Walk in Minutes Using Massively Parallel Deep Reinforcement Learning. *Proc. CoRL 2021*, PMLR 164, 91–100. — GPU 並列シミュレーションによる脚式 RL の代表的実証。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - [ROS 2 Documentation](https://docs.ros.org/en/rolling/) — Accessed: 2026-07-12. — 概念・QoS・エグゼキュータの公式文書。
 - [ros2_control documentation](https://control.ros.org/) — Accessed: 2026-07-12. — コントローラマネージャとハードウェアインターフェースの公式文書。

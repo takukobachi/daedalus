@@ -87,7 +87,7 @@ flowchart LR
 
 - **JIT は実戦で最も突かれる攻撃面である。** 実際に悪用されるブラウザ脆弱性の相当数が V8 起因であり、型混同（IC・投機・map 無効化の縁のバグ）が主役を占める——投機体系の複雑さがそのまま攻撃面になっている。`../compilers-runtimes/` の一般論で述べた JIT 型混同の、最大の実例がここである。
 - **防御は 4 層で読む**（`../security/` の枠組み）: 見つける——文法認識ファザー Fuzzilli 等による継続的ファジング; exploit させない——Torque による builtins の型安全化、ヒープの隔離・強化; 閉じ込める——V8 sandbox → プロセスサンドボックス → サイト分離の三重の檻 (`../security/sandbox-architectures.md`); 出所——ソース信頼性はそもそも仮定しない（Web の前提）。
-- **JIT を捨てる選択肢**: 高保証環境向けの JIT-less モード（インタプリタ+baseline のみ）や、iOS の JIT 禁止 (`../ios/security-architecture.md`) は、「投機体系の攻撃面」対「性能」のトレードオフを反対側に倒した解であり、本ドキュメントの体系全体が**性能のために引き受けたリスク**であることを照らし返す。
+- **JIT を捨てる選択肢**: 高保証環境向けの JIT-less モード（インタプリタ+baseline のみ）や、iOS の JIT 禁止 (`../ios/security-architecture.md`) は、「投機体系の攻撃面」対「性能」のトレードオフで性能よりも攻撃面の縮小を優先した解であり、本ドキュメントの体系全体が**性能のために引き受けたリスク**であることを照らし返す。
 
 ## 結論 (Conclusions)
 
@@ -115,7 +115,7 @@ V8 は「動的言語の実行時の規則性」に対する投機の体系で�
 
 [^v8-sandbox]: V8 project. *The V8 Sandbox*. https://v8.dev/blog/sandbox — Accessed: 2026-07-13. — 外部ポインタ表・ケージ設計の一次資料。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - Aycock, J. (2003). A Brief History of Just-In-Time. *ACM Computing Surveys*, 35(2), 97–113. DOI: 10.1145/857076.857077 — JIT の系譜の総説。
 - Jones, R., Hosking, A. & Moss, E. (2011). *The Garbage Collection Handbook*. Chapman & Hall/CRC. — 世代別・並行 GC の理論的典拠。

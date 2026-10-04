@@ -56,7 +56,7 @@ flowchart TB
 
 ### 1. 車輪移動と非ホロノミック拘束 (Wheeled Locomotion)
 
-差動二輪 (differential drive) の運動学:
+差動二輪 (differential drive) の運動学は次式で表される。
 
 ```
 v = r·(ω_R + ω_L)/2        （前進速度）
@@ -71,7 +71,7 @@ v = r·(ω_R + ω_L)/2        （前進速度）
 
 **ZMP (zero-moment point)** は、床反力の合力が水平軸まわりのモーメントを持たない床上の点である。ZMP が支持多角形の内部にある限り、足裏は床から剥がれない（=転倒モーメントが生じない）[^vukobratovic]。
 
-**線形倒立振子モデル (LIPM)**: 全質量を高さ `z_c` 一定の質点に集約すると、重心の水平運動 `x` と ZMP `p` の関係は:
+**線形倒立振子モデル (LIPM)**: 全質量を高さ `z_c` 一定の質点に集約すると、重心の水平運動 `x` と ZMP `p` の関係は次式になる。
 
 ```
 ẍ = (g / z_c) · (x − p)      （g: 重力加速度 — 線形 2 階 ODE）
@@ -94,7 +94,7 @@ v = r·(ω_R + ω_L)/2        （前進速度）
 
 ### 4. 把持 (Grasping)
 
-接触点集合が物体を拘束できるかは、各接触の摩擦錐 (friction cone) が張るレンチ（力+モーメント）の集合で判定する:
+接触点集合が物体を拘束できるかは、各接触の摩擦錐 (friction cone) が張るレンチ（力+モーメント）の集合で判定する。
 
 ```
 フォームクロージャ: 摩擦に頼らず幾何拘束のみで全方向を拘束（例: 治具・チャック）
@@ -143,7 +143,7 @@ v = r·(ω_R + ω_L)/2        （前進速度）
 
 [^murray]: Murray, R. M., Li, Z. & Sastry, S. S. (1994). *A Mathematical Introduction to Robotic Manipulation*. CRC Press. — 摩擦錐・フォーム/フォースクロージャ・把持の数学の標準的典拠。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Siciliano, B. & Khatib, O. (Eds.) (2016). *Springer Handbook of Robotics* (2nd ed.). Springer. — 歩行・把持・計画の各章のリファレンス。
 - Mason, M. T. (2001). *Mechanics of Robotic Manipulation*. MIT Press. — 接触力学・押し操作 (pushing) の理論。

@@ -84,7 +84,7 @@ sequenceDiagram
 ```
 
 - `Choreographer` はスレッドごと(`ThreadLocal`)に存在し、コールバックを input → animation → insets animation → traversal → commit の固定順で実行する(`Choreographer.doFrame`)。描画パイプラインの後段(RenderThread・SurfaceFlinger)は [`graphics-pipeline.md`](graphics-pipeline.md) を参照。
-- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ——「フレームを要求した瞬間からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
+- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ——「フレームを要求した時点からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
 
 ## 技術詳細 (Technical Details)
 

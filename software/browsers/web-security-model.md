@@ -116,7 +116,7 @@ COEP: require-corp … 自文書が読み込む全サブリソースに CORS か
 
 [^csp-eval]: Weichselbaum, L., Spagnuolo, M., Lekies, S. & Janc, A. (2016). CSP Is Dead, Long Live CSP! On the Insecurity of Whitelists and the Future of Content Security Policy. *Proc. ACM CCS 2016*, 1376–1387. DOI: 10.1145/2976749.2978363 — 許可リスト型 CSP の体系的迂回と nonce/strict-dynamic の提案。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - W3C. *Content Security Policy Level 3*. https://www.w3.org/TR/CSP3/ — Accessed: 2026-07-13.
 - WHATWG. *Fetch Standard*（CORS・ORB を含む）. https://fetch.spec.whatwg.org/ — Accessed: 2026-07-13.

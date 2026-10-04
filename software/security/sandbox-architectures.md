@@ -112,7 +112,7 @@ Web コンテンツ（最も敵対的な入力）
 
 [^wasm]: Haas, A. et al. (2017). Bringing the Web up to Speed with WebAssembly. *Proc. ACM PLDI 2017*, 185–200. DOI: 10.1145/3062341.3062363 — 線形メモリ・構造化制御フロー・型検証による SFI の設計原典。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - Barth, A., Jackson, C., Reis, C. & the Google Chrome Team (2008). *The Security Architecture of the Chromium Browser*. Stanford Technical Report. — 特権分離ブラウザの原型。
 - Linux Kernel Documentation. *Seccomp BPF (SECure COMPuting with filters)*. https://www.kernel.org/doc/html/latest/userspace-api/seccomp_filter.html — Accessed: 2026-07-13.

@@ -6,7 +6,7 @@
 「第四のプラットフォーム」——データセンターというコンピュータ——の内部分析であり、
 AWS を主要な走る事例 (running example) として、標準・論文・オープン実装と相互検証する。
 
-既存スタックとの関係:
+既存スタックとの関係は次のとおりである。
 
 - 実行基盤は [`../virtualization/`](../virtualization/)（Firecracker, コンテナ in VM）の真上
 - ネットワークは [`../networking/virtual-networks-overlay.md`](../networking/virtual-networks-overlay.md)（VPC, Nitro オフロード）と対で読む

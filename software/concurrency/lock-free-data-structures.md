@@ -101,7 +101,7 @@ std::optional<T> pop() {
  結果: head → B —— とっくに外れて free 済みの B を指す。構造破壊・use-after-free
 ```
 
-対策は3系統:
+対策は3系統ある。
 
 - **タグ付きポインタ (versioned pointer)**: ポインタに更新カウンタを併置し、ダブル幅 CAS（x86 の `cmpxchg16b`）で「番地＋世代」を比較する。世代が回り切る理論的隙は残るが実用上十分なことが多い。
 - **LL/SC**: ARM 等の load-linked/store-conditional は「番地への介入があったか」自体を検出するので原理的に ABA がない（[`../../hardware/cpu-architecture/memory-ordering-atomics.md`](../../hardware/cpu-architecture/memory-ordering-atomics.md)）。ただし偽失敗があり、C++ からは抽象の下に隠れる。
