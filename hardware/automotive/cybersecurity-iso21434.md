@@ -71,7 +71,7 @@ ISO/SAE 21434 の中核手法。**資産 (asset)** の特定 → **損害シナ�
 
 AUTOSAR の SecOC は、車載バスの**リアルタイム制約**に合わせた認証機構。
 
-- **暗号化しない**——バス上の周期トラフィックに暗号化はコスト過大。代わりに **truncated MAC（切り詰めた認証コード）**をフレームに付与し、**送信元の真正性 (authenticity) と完全性 (integrity)** を検証する。
+- **暗号化しない**——バス上の周期トラフィックに暗号化はコスト過大。代わりに **truncated MAC（切り詰めた認証コード）** をフレームに付与し、**送信元の真正性 (authenticity) と完全性 (integrity)** を検証する。
 - **フレッシュネス値 (freshness value, カウンタ)** で**再送 (replay) 攻撃**を防ぐ（AUTOSAR 4.3 の SecOC Profile 3 でカウンタベースを導入）。
 - 暗号処理は **CSM (Crypto Service Manager) → HSM** に委譲。CAN/CAN-FD/Ethernet 共通で使える。帯域とレイテンシの制約から MAC を切り詰める点が設計判断。
 

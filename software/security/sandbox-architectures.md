@@ -4,11 +4,11 @@
 
 サンドボックス (sandbox) とは、**「このコードは侵害されうる、あるいは最初から悪意がある」という前提**の下で、そのコードが到達できる資源と API を最小に絞り込む隔離機構である。`memory-safety-exploit-mitigations.md` が「バグを exploit にさせない」層だとすれば、サンドボックスは「exploit が成立しても被害をその区画に閉じ込める」次の層であり、現代のプラットフォーム防御は必ずこの二層を重ねる。
 
-本リポジトリではサンドボックスが各所に断片的に現れてきた——ブラウザのレンダラ隔離 (`../browsers/browser-architecture.md`)、Android の per-UID アプリ隔離 (`../android/security-model.md`)、iOS のコンテナと entitlements (`../ios/security-architecture.md`)、コンテナと gVisor・microVM (`../virtualization/hardware-virtualization-containers.md`)、eBPF 検証器 (`../ebpf/ebpf-kernel-programmability.md`)。本ドキュメントはそれらを**「隔離境界をどこに引くか」という一つの設計変数**で束ね直し、同一プロセス内の SFI (WASM) からプロセス + システムコールフィルタ (seccomp)、ユーザ空間カーネル (gVisor)、microVM (Firecracker) までを、信頼計算基盤 (TCB)・攻撃面・脱出の意味・性能コストの4軸で比較する。防御的観点に徹し、分析深度は Level 3。
+本リポジトリではサンドボックスが各所に断片的に現れてきた——ブラウザのレンダラ隔離 (`../browsers/browser-architecture.md`)、Android の per-UID アプリ隔離 (`../android/security-model.md`)、iOS のコンテナと entitlements (`../ios/security-architecture.md`)、コンテナと gVisor・microVM (`../virtualization/hardware-virtualization-containers.md`)、eBPF 検証器 (`../ebpf/ebpf-kernel-programmability.md`)。本ドキュメントはそれらを **「隔離境界をどこに引くか」という一つの設計変数**で束ね直し、同一プロセス内の SFI (WASM) からプロセス + システムコールフィルタ (seccomp)、ユーザ空間カーネル (gVisor)、microVM (Firecracker) までを、信頼計算基盤 (TCB)・攻撃面・脱出の意味・性能コストの4軸で比較する。防御的観点に徹し、分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
-- すべての方式を**「サンドボックス内コードから見える攻撃面はどこか」**で規格化する。隔離の強さは壁の厚さではなく、壁に開いた**窓（API 面）の広さと質**で決まる、という観点を貫く。
+- すべての方式を「**サンドボックス内コードから見える攻撃面はどこか**」で規格化する。隔離の強さは壁の厚さではなく、壁に開いた**窓（API 面）の広さと質**で決まる、という観点を貫く。
 - 各方式に (1) 隔離境界の位置、(2) TCB（何が壊れたら全崩壊か）、(3) 脱出 (escape) が意味するもの、(4) 性能・互換性コスト、を対で付す。
 - 実プラットフォーム（Chrome・Android・iOS・クラウドのマルチテナント基盤）を「複数方式の積層」として読み、単一方式の優劣比較で終わらせない。
 - ハードウェア起因の境界破り（Spectre 系）は境界設計を変えた事件として扱い、詳細は `../../hardware/hardware-security/side-channels-tee-secure-boot.md` に委ねる。

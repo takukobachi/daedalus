@@ -93,7 +93,7 @@ sequenceDiagram
 ### 4. init 第一段 — ルートを組み立てる
 
 - `system/core/init/first_stage_init.cpp` の `FirstStageMain` は、tmpfs `/dev`・proc・sysfs・selinuxfs を mount し、`LoadKernelModules` で ramdisk 内のベンダモジュールを読み込み、`DoFirstStageMount` で fstab（DT もしくは ramdisk 内）に従い system/vendor 等を early mount する。最後に `/system/bin/init` を `selinux_setup` 引数で exec し、SELinux ポリシーを（system と vendor の分割ポリシーから）読み込んだうえで第二段として再 exec する。
-- **system-as-root との関係**: Android 9 までの A/B 端末ではカーネルが system を直接ルートとして mount した。Android 10 でルートファイルシステムは ramdisk から system.img に統合され（system-as-root が全端末の既定に）、しかし論理パーティションはカーネルが読めないため、**「ramdisk の第一段 init が system を mount し、switch root する」**形に落ち着いた。RAM ディスクが最後までルートであり続けるという、書籍 (Ⅱ巻 6.1.3) が Android の特徴として挙げた点は、現在は成り立たない。
+- **system-as-root との関係**: Android 9 までの A/B 端末ではカーネルが system を直接ルートとして mount した。Android 10 でルートファイルシステムは ramdisk から system.img に統合され（system-as-root が全端末の既定に）、しかし論理パーティションはカーネルが読めないため、「**ramdisk の第一段 init が system を mount し、switch root する**」形に落ち着いた。RAM ディスクが最後までルートであり続けるという、書籍 (Ⅱ巻 6.1.3) が Android の特徴として挙げた点は、現在は成り立たない。
 - なぜこの順序か: SELinux ポリシーは system と vendor の両方にまたがるため、**両方が mount されるまでポリシーを確定できない**。一方、第二段以降のすべての exec はドメイン遷移を伴うべきである。そこで「最小限の mount → ポリシー読込 → ラベル付き世界で第二段を開始」という三段階が必然になる。
 
 ### 5. init 第二段 — epoll ループ・SIGCHLD・サービス管理
@@ -167,7 +167,7 @@ sequenceDiagram
 ## セキュリティ考察 (Security Considerations)
 
 - **ロック状態は信頼の鎖の「スイッチ」である。** unlocked（orange）では AVB が改変イメージの起動を許すため、以後の SELinux・dm-verity・Keystore の保証はすべて「攻撃者が書いたカーネル」の善意に依存する。だから (a) 状態遷移は全消去を伴い、(b) Keymint/鍵アテステーションは Verified Boot 状態を証明書に刻み、リモートが unlocked を検出できる（[`security-model.md`](security-model.md)）。critical 領域の解除に物理操作を要するのは、**リモート攻撃が状態遷移を自動化できない**ようにするためである。
-- **第一段 init と ramdisk は検証境界の内側にある。** GKI で汎用 ramdisk が `init_boot` に分かれたことで、第一段 init は Google/AOSP 側の署名単位になり、vendor_boot のベンダ ramdisk とは別の vbmeta 記述子で検証される。early mount は dm-verity を張った状態で行われ、**「検証されていないブロックを一度も読まずにルートを組む」**ことが二段 init の安全上の意味である。書籍の root 化手順（system に setuid の su を置く）は、dm-verity と system の読み取り専用・検証済みマウントにより、ロック状態のままでは成立しない。
+- **第一段 init と ramdisk は検証境界の内側にある。** GKI で汎用 ramdisk が `init_boot` に分かれたことで、第一段 init は Google/AOSP 側の署名単位になり、vendor_boot のベンダ ramdisk とは別の vbmeta 記述子で検証される。early mount は dm-verity を張った状態で行われ、「**検証されていないブロックを一度も読まずにルートを組む**」ことが二段 init の安全上の意味である。書籍の root 化手順（system に setuid の su を置く）は、dm-verity と system の読み取り専用・検証済みマウントにより、ロック状態のままでは成立しない。
 - **プロパティは権限境界であり、情報源でもある。** 書籍 (Ⅱ巻 6.5.4) が紹介した、root 権限の action をプロパティトリガで公開して低権限アプリから操作させる手法は、現在では SELinux の `set` 権限でプロパティごとに書き手を限定しなければ権限昇格経路になる。読み取り側でも、ラベル別 prop_area と `property_contexts` によりアプリは許可されたプロパティしか mmap できず、端末識別子等の漏えい面が縮小された。`ctl.` はサービス停止＝可用性攻撃の入口なので、対象サービス単位で権限検査される。
 - **init は最大の単一障害点かつ最高権限である。** PID 1 の異常はカーネルパニックに直結し、init の解析器（.rc、プロパティ値、uevent）は外部入力を受ける。第二段以降を SELinux ドメイン `init` に閉じ、プロパティ処理を別スレッド化し、`.rc` の読み込み元を固定のパーティション別ディレクトリに限定したのは、この攻撃面を縮める一連の措置と読める。
 - **可用性（自己修復）とセキュリティは緊張する。** critical サービスのクラッシュループが bootloader/recovery に落ちる設計は、攻撃者がサービスを繰り返し殺せば端末を DoS できることも意味する。A/B のスロットロールバックは可用性を高めるが、ロールバック保護（AVB のロールバックインデックス）がなければ脆弱な旧版に戻す攻撃になりうる——両者が必ず対で実装されるのはこのためである。

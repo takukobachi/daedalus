@@ -88,7 +88,7 @@ E2E プロファイルの典型構成（送信側で付与 → 受信側で検�
   タイムアウト   — 鮮度（古い値の使い回し）の検出
 ```
 
-- 検出後の挙動（代替値・縮退・安全状態遷移）は受信側アプリケーションの安全設計に属する。**「通信路を信頼せず、受信側で品質を判定する」**という構図は、`../networking/tls-internals.md` のエンドツーエンド原則の機能安全版である。
+- 検出後の挙動（代替値・縮退・安全状態遷移）は受信側アプリケーションの安全設計に属する。「**通信路を信頼せず、受信側で品質を判定する**」という構図は、`../networking/tls-internals.md` のエンドツーエンド原則の機能安全版である。
 - SOME/IP はサービス発見 (SOME/IP-SD)・メソッド呼び出し・イベント購読を提供する車載特化のサービスプロトコルで、`../../hardware/automotive/automotive-ethernet-tsn.md` の上に載る。Adaptive では DDS（`../../hardware/robotics/robot-software-stack.md` の ROS 2 と同じ規格）もバインディングとして選択でき、ロボットと車載のミドルウェアが同じ規格に合流しつつある点は示唆的である。
 
 ### 3. Adaptive Platform の実行管理 (Adaptive: Execution & State Management)

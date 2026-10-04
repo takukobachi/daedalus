@@ -114,7 +114,7 @@ flowchart TD
 ## セキュリティ考察 (Security Considerations)
 
 - **典型的な攻撃連鎖は「レンダラ RCE → サンドボックス脱出 → カーネル」の 3 段**である。初段は JIT の型混同や DOM の use-after-free、二段目は Mojo インタフェースの検証漏れやブローカのポリシー穴、三段目は OS カーネル ([`../security/memory-safety-exploit-mitigations.md`](../security/memory-safety-exploit-mitigations.md) の緩和技術が各段に効く)。防御の投資配分もこの連鎖に沿う——初段は潰しきれない前提で、二段目の表面 (レンダラから見える特権インタフェース) の最小化に価値が集中する。
-- **サイト分離後の残余リスク**: プロセス分離は「レンダラ内の他サイトデータ」を消すが、タイミング系のサイドチャネル (キャッシュ・`SharedArrayBuffer` の高精度時計) は残る。`SharedArrayBuffer` が Spectre 後に一時無効化され、cross-origin isolation (COOP/COEP) を宣言したページだけに戻された経緯は、**「高精度時計は能力である」**という認識の制度化である。
+- **サイト分離後の残余リスク**: プロセス分離は「レンダラ内の他サイトデータ」を消すが、タイミング系のサイドチャネル (キャッシュ・`SharedArrayBuffer` の高精度時計) は残る。`SharedArrayBuffer` が Spectre 後に一時無効化され、cross-origin isolation (COOP/COEP) を宣言したページだけに戻された経緯は、「**高精度時計は能力である**」という認識の制度化である。
 - **メモリ安全対策の積層** (as of 2026): PartitionAlloc (型/パーティション分離)・MiraclePtr (BackupRefPtr による UAF の非搾取化)・Oilpan・V8 sandbox (ヒープ内 40bit オフセット化で「V8 内の任意読み書き」をヒープ内に封じる)・CFI・新規コードの Rust。単一の銀弾ではなく、[`../security/memory-safety-exploit-mitigations.md`](../security/memory-safety-exploit-mitigations.md) の軍拡競争の最前線として読める。
 - **ウェブ固有の応用層攻撃** (XSS・CSRF・クリックジャッキング) と同一生成元ポリシーの意味論は、本書の機構層とは別の層として今後のウェブセキュリティ分析 ([`../security/`](../security/README.md) 候補) に委ねる。機構側の含意だけ述べれば——**同一生成元ポリシーはレンダラ内のソフトウェア検査からプロセス境界へ、20 年かけて「降格」された**。論理的強制は投機実行の前に敗れたからである。
 

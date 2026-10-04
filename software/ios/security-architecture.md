@@ -4,7 +4,7 @@
 
 [`platform-architecture.md`](platform-architecture.md) は iOS のセキュリティを「配布時に閉じる」設計として一段上から眺めた。本ドキュメントはその実装——**ブートチェーンとパーソナライズ署名、Secure Enclave (SEP) の内部構造、Data Protection の鍵階層と Keychain、コード署名の強制機構 (AMFI・トラストキャッシュ・エンタイトルメント)、サンドボックスと TCC、エクスプロイト緩和の積層 (PAC → PPL → SPTM → MIE)**——に降りる。
 
-iOS のセキュリティを貫く一本の糸は、**「検証の根と強制の主体を、侵害されうる層の外へ置き続ける」**という運動である: 署名検証の根は Boot ROM に、鍵は SEP に、ページテーブルの支配権はカーネルの外 (SPTM) に、メモリ安全はシリコン (MIE) に。カーネルすら信頼リストの一員でしかない縦深構造を、攻撃史（Pegasus・checkm8・FORCEDENTRY）との応答関係として読み解く。分析深度は Level 3。
+iOS のセキュリティを貫く一本の糸は、「**検証の根と強制の主体を、侵害されうる層の外へ置き続ける**」という運動である: 署名検証の根は Boot ROM に、鍵は SEP に、ページテーブルの支配権はカーネルの外 (SPTM) に、メモリ安全はシリコン (MIE) に。カーネルすら信頼リストの一員でしかない縦深構造を、攻撃史（Pegasus・checkm8・FORCEDENTRY）との応答関係として読み解く。分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
@@ -43,7 +43,7 @@ iOS のセキュリティを貫く一本の糸は、**「検証の根と強制�
                    強制者: ハードウェア — ソフトウェア全損でも残る底
 ```
 
-- Android の対応構造（[`../android/security-model.md`](../android/security-model.md) の三層図）と比べると、iOS は**「カーネルとハードウェアの間」に独自の層を増設**している点が特徴的である（Android 側の対応物は TEE/pKVM が担いつつある）。
+- Android の対応構造（[`../android/security-model.md`](../android/security-model.md) の三層図）と比べると、iOS は **「カーネルとハードウェアの間」に独自の層を増設**している点が特徴的である（Android 側の対応物は TEE/pKVM が担いつつある）。
 
 ### ブートチェーンとパーソナライズ
 
@@ -75,7 +75,7 @@ iOS のセキュリティを貫く一本の糸は、**「検証の根と強制�
 | No Protection | 常時 (UID でのみ包む) | ロック前に要る構成情報 |
 
 - ファイル鍵 ← クラス鍵 ← (パスコード導出鍵 × UID) の階層で、**Effaceable Storage** の鍵を消すだけで全データが瞬時に復号不能になる (リモートワイプの実体)。Android FBE の CE/DE が「ユーザ×2 状態」なのに対し、iOS は**4 クラス＋非対称の書き込み専用状態**を持つ、より細粒度の状態機械である。
-- **Keychain** は同じ文法の資格情報版で、項目ごとにクラス（`WhenUnlocked` 等）と **ACL（生体必須・この端末のみ `ThisDeviceOnly`）**を持ち、検査は SEP と securityd が分担する。
+- **Keychain** は同じ文法の資格情報版で、項目ごとにクラス（`WhenUnlocked` 等）と **ACL（生体必須・この端末のみ `ThisDeviceOnly`）** を持ち、検査は SEP と securityd が分担する。
 - **キーバッグ**: ユーザ・デバイス・バックアップ・エスクロー (MDM)・iCloud の各キーバッグがクラス鍵の束を文脈別に管理する。「バックアップに含まれるか」「新端末へ移行できるか」はキーバッグ設計の帰結として決まる。
 
 ### 3. コード署名の強制機構
@@ -89,7 +89,7 @@ iOS のセキュリティを貫く一本の糸は、**「検証の根と強制�
 
 - **Sandbox.kext** は TrustedBSD MAC フックに載ったポリシエンジンで、プロファイル（SBPL を編纂したもの）がファイル・Mach サービス名 lookup・IOKit クラス・syscall の許可を列挙する。サードパーティアプリは全員同一の `container` プロファイル＋ UUID コンテナパスで走る。**bootstrap 名の lookup 制限**が実質の IPC 到達性制御である点は SELinux の ServiceManager 制限と正確に対応する（[`mach-ipc-xpc.md`](mach-ipc-xpc.md)）。
 - **TCC**: 「OS の権限」ではなく「ユーザの同意の台帳」であり、tccd が管理しダイアログの文言・頻度・リセット（不使用アプリの権限失効, iOS 17+ 相当機能）まで含めて設計される。Android の実行時権限と完全に収斂した領域。
-- **システム側の隔離**: メディア解析 (BlastDoor)・Web コンテンツ (WebContent プロセス)・ドライバ (DriverKit) と、**「不信入力のパーサを最小権限の別プロセスへ」**が横展開されている。Stagefright 後の Android と同じ処方であり、プラットフォーム横断の定石。
+- **システム側の隔離**: メディア解析 (BlastDoor)・Web コンテンツ (WebContent プロセス)・ドライバ (DriverKit) と、「**不信入力のパーサを最小権限の別プロセスへ**」が横展開されている。Stagefright 後の Android と同じ処方であり、プラットフォーム横断の定石。
 
 ### 5. 緩和の積層 — PAC から MIE へ
 

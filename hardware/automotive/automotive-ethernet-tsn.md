@@ -89,7 +89,7 @@ TSN は Ethernet を置き換えるのではなく、IEEE 802.1 の一連の拡�
 
 FlexRay は Ethernet 普及前に**決定論と冗長**を実現した高安全バス（ISO 17458）。
 
-- **通信サイクル**は固定長で、**static セグメント（TDMA スロット、時刻で予約）**＋**dynamic セグメント（mini-slot、イベント駆動）**から成る。static 部が決定論を、dynamic 部が柔軟性を担う。
+- **通信サイクル**は固定長で、**static セグメント（TDMA スロット、時刻で予約）** ＋**dynamic セグメント（mini-slot、イベント駆動）** から成る。static 部が決定論を、dynamic 部が柔軟性を担う。
 - **二重チャネル (dual channel)** で冗長化し、片系故障でも通信を継続。X-by-wire（steer/brake-by-wire）等の高安全用途を想定。
 - **なぜ置換されるか**: トランシーバ・配線コストが高く、帯域も 10 Mbps で頭打ち。TSN 付き Ethernet が「時刻同期・スケジュール・冗長」を**より高帯域で**提供するため、新規設計では Ethernet + TSN が選ばれつつある。
 

@@ -72,7 +72,7 @@ flowchart LR
 | DisplayPort 2.1 | PC 外部モニタ | 4 レーン、128b/132b（効率 ~96.7%） | UHBR20 で 80 Gbps（実効 ~77.4 Gbps） | パケットベース、MST で数珠繋ぎ、USB-C Alt Mode |
 | HDMI 2.1 | TV・民生機器 | FRL 4 レーン、16b/18b（~88.9%）。2.0 以前は TMDS 8b/10b | FRL 48 Gbps（実効 ~42.6 Gbps）、TMDS は 18 Gbps | CEC・ARC/eARC・音声多重化、コンテンツ保護と強く結合 |
 
-注：帯域の数値は各規格の**上限（spec 値）**であり、実機はケーブル・実装の認証レベルに依存する。
+注：帯域の数値は各規格の**上限（spec 値）** であり、実機はケーブル・実装の認証レベルに依存する。
 
 ### 圧縮 — DSC と VDC-M
 

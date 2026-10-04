@@ -103,7 +103,7 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 
 - **ClassLinker** が DEX からのクラス解決・リンク・初期化を担う。ロード済みクラスはクラステーブルに入り、boot image のクラスは**最初から解決済み**の状態で mmap される。
 - **検証 (verification)**: バイトコードの型健全性検査。結果は VDEX へ永続化され、OTA 更新時は boot classpath の変化に応じて要否が再判定される。「検証をいつ払うか」が install/boot/初回実行のレイテンシ配分を決める。
-- **ClassLoader 階層**: boot → system → アプリ (PathClassLoader) の委譲連鎖。dynamic feature / shared library は子ローダとして接がれ、**「どの DEX がどの名前空間に見えるか」**を階層が規定する。ネイティブライブラリ側にも対応する linker namespace があり、system/vendor の境界 (Treble) はクラスパスとリンカ名前空間の双方で貫かれる。
+- **ClassLoader 階層**: boot → system → アプリ (PathClassLoader) の委譲連鎖。dynamic feature / shared library は子ローダとして接がれ、「**どの DEX がどの名前空間に見えるか**」を階層が規定する。ネイティブライブラリ側にも対応する linker namespace があり、system/vendor の境界 (Treble) はクラスパスとリンカ名前空間の双方で貫かれる。
 
 ### 5. JNI — 境界のコスト構造
 

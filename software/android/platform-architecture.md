@@ -16,7 +16,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 ## 発見事項 (Findings)
 
 1. **Android のサンドボックス単位は「Linux ユーザ」である。** アプリごとに一意の UID を割り当て、カーネルの由緒ある UID 分離をアプリ間の壁として使う。上に SELinux (MAC)・seccomp・権限モデルを重ねる多層構造で、**最も古い機構が最も土台**にある。
-2. **アプリの起動が速いのは Zygote の COW 分岐だから。** 起動時に VM・コアライブラリ・共有リソースをプリロードした Zygote プロセスを常駐させ、全アプリを**そこから `fork`**する。ページは copy-on-write で共有され、起動コストとメモリの両方を節約する——[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の COW の、プラットフォーム設計レベルでの活用。
+2. **アプリの起動が速いのは Zygote の COW 分岐だから。** 起動時に VM・コアライブラリ・共有リソースをプリロードした Zygote プロセスを常駐させ、全アプリを**そこから `fork`** する。ページは copy-on-write で共有され、起動コストとメモリの両方を節約する——[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の COW の、プラットフォーム設計レベルでの活用。
 3. **Binder は「ファイルディスクリプタ的なケイパビリティ」を渡せる RPC である。** Binder ハンドルは偽造できない参照＝権限そのもので、カーネルドライバが送信元 UID/PID を保証する。「誰から来たか」をカーネルが証明する IPC が、権限チェックとサンドボックスの通用門になっている。
 4. **ART は「測ってからコンパイルする」。** インストール時全 AOT（初期）→ インタープリタ＋JIT＋**プロファイル誘導の充電時 AOT**（Android 7+）へと進化した。ホットパスだけを最適化する判断をランタイムの実測に委ねる設計で、JIT/AOT の古典的トレードオフに対する運用込みの答えである。
 5. **swap の代わりにプロセスを殺す。** ディスク swap は行わず（zram による圧縮 RAM swap は併用）、メモリ逼迫時は **lmkd** が重要度の低いプロセスから SIGKILL する。アプリのライフサイクル（onCreate/onStop…）が「いつ殺されてもよい」前提で設計されているため、**プロセスはキャッシュ**として扱える——`onDestroy` は保証されない、はこの帰結。

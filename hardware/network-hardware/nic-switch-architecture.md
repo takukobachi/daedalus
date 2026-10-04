@@ -21,11 +21,11 @@
 
 1. **パケット単価の算術が全設計を支配する。** 100GbE の最小フレームはプリアンブル・IFG 込みで 84B = 672 bit、毎秒約 1 億 4880 万パケット (148.8 Mpps)、間隔 6.7 ns。DRAM 1 アクセス (約 100 ns) の間に 15 パケット届く。よって「1 パケットごとに何かする」設計は物理的に成立せず、**一括化 (batching)・専用化 (offload)・並列化 (multi-queue) 以外の選択肢がない**——ソフト側で見た NAPI・GRO・io_uring と同じ結論に、ハードは物理から到達する。
 2. **NIC と CPU の界面は「共有メモリ上の lock-free リングプロトコル」である。** ドライバはディスクリプタ (パケットバッファへのポインタ+メタデータ) をメモリ上のリングに書き、doorbell レジスタ (MMIO) で NIC を突く。NIC は DMA でディスクリプタとパケットを読み書きし、完了を書き戻し、割り込みで通知する——[`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) の三要素がここで一つの協定に組み上がる。割り込みモデレーション・doorbell の間引き・完了の一括書き戻しは、すべて「界面イベントの単価×頻度」を下げる同型の工夫である。
-3. **オフロードとは「パケット単位の仕事をバイト単位・フロー単位に変換する」ことである。** チェックサム計算はバイト単位の仕事なので NIC の配線に吸わせる。TSO は「64KB の塊を渡せば NIC が MTU に刻む」ことで、ホストのパケット単価をフロー単価に変える (受信側の LRO/GRO はその逆)。RSS はフローハッシュでキューを選び、パケット並列をコア並列に写像する。**NIC は「ディスクリプタ形式を ISA とするコプロセッサ」**であり、オフロードの各項目はその命令セットの拡張である。
+3. **オフロードとは「パケット単位の仕事をバイト単位・フロー単位に変換する」ことである。** チェックサム計算はバイト単位の仕事なので NIC の配線に吸わせる。TSO は「64KB の塊を渡せば NIC が MTU に刻む」ことで、ホストのパケット単価をフロー単価に変える (受信側の LRO/GRO はその逆)。RSS はフローハッシュでキューを選び、パケット並列をコア並列に写像する。**NIC は「ディスクリプタ形式を ISA とするコプロセッサ」** であり、オフロードの各項目はその命令セットの拡張である。
 4. **RDMA は「カーネルもリモート CPU も呼ばない」ことで単価をゼロに近づける——代償はネットワークへの要求。** InfiniBand 由来の verbs モデル (QP: queue pair) では、アプリが NIC に直接 work request を書き、NIC 同士がリモートメモリを読み書きする。往復にどちらの OS も介在しない。これを Ethernet に載せた RoCEv2 はロスレス動作を前提に設計され、PFC (priority flow control) による無損失化が**輻輳の伝播・デッドロック・head-of-line blocking** という新種の障害を持ち込んだ (Microsoft の大規模運用報告 Guo et al. 2016 が代表的記録)。「取りこぼさない網」は「詰まりが伝染する網」でもある——[`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) がロスを信号として使ったのと正反対の設計であり、AI クラスタの collective 通信 ([`../gpu-accelerators/`](../gpu-accelerators/README.md) ロードマップ) はこの網の上に立つ。
 5. **スイッチ ASIC は「転送表をプログラムとする固定周波数の専用計算機」である。** 数十 Tbps 級のスイッチチップは、パース → マッチ+アクション (match-action) の多段パイプラインを全ポート line rate で回す。表引き (宛先 MAC/IP → 出力ポート) は SRAM/TCAM、パケット本体は共有バッファに置き、トラフィックマネージャがキューイングと QoS を裁く。P4 とプログラマブルパイプライン (RMT) は「パイプラインの段は固定、段の意味を再定義可能」という折衷で、GPU が示した「専用化スペクトラム」のネットワーク版である。
 6. **バッファは小さすぎても大きすぎても病気になる。** スイッチの共有バッファは µs 級のバースト (特に incast: 多対一の同時応答) を吸収する保険だが、深すぎるバッファは [`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) のバッファブロートを再演する。現代のデータセンタは「浅いバッファ + ECN マーキングで早期に混雑を申告」(DCTCP 系) へ収斂し、輻輳制御の一部がスイッチの閾値設定に移った——**輻輳制御はもはやエンドホストだけの仕事ではない**。
-7. **境界は「NIC にインフラ全体を移す」ところまで動いた (DPU)。** SR-IOV は NIC 内の埋め込みスイッチ (eSwitch) で VM に仮想 NIC を直結し ([`../../software/virtualization/`](../../software/virtualization/README.md))、Azure は仮想スイッチの転送表を FPGA に (Firestone et al. 2018)、AWS Nitro はハイパーバイザ・ストレージ・ネットワークの全インフラを専用カードに移した。ホスト CPU を「テナントに 100% 売る」ためにインフラを別の計算機に追い出す——**NIC はもはや周辺機器ではなく、ホストと対等な「もう一台のサーバ」**である。
+7. **境界は「NIC にインフラ全体を移す」ところまで動いた (DPU)。** SR-IOV は NIC 内の埋め込みスイッチ (eSwitch) で VM に仮想 NIC を直結し ([`../../software/virtualization/`](../../software/virtualization/README.md))、Azure は仮想スイッチの転送表を FPGA に (Firestone et al. 2018)、AWS Nitro はハイパーバイザ・ストレージ・ネットワークの全インフラを専用カードに移した。ホスト CPU を「テナントに 100% 売る」ためにインフラを別の計算機に追い出す——**NIC はもはや周辺機器ではなく、ホストと対等な「もう一台のサーバ」** である。
 
 ## アーキテクチャ (Architecture)
 
@@ -88,7 +88,7 @@ flowchart LR
 
 - **モデル**: アプリは QP (送受のワークキュー対) に work request を post し、NIC が DMA で直接ユーザメモリを読み書きする (メモリ登録とピン留めが前提)。one-sided (READ/WRITE: リモート CPU 不関与) と two-sided (SEND/RECV) があり、レイテンシは µs 級、CPU 使用は桁で減る。
 - **RoCEv2 と PFC**: Ethernet は本来ロスを許す網であり、RDMA (再送が弱い) のために PFC で「詰まったら上流を止める」無損失化を行う。停止は連鎖するため、(a) 輻輳が無関係なフローを巻き込む、(b) 循環依存でデッドロックが起きうる、(c) 誤動作 NIC が網全体を止める (PFC storm)、という運用上の難所が実務報告に揃っている (Guo et al. 2016)。緩和として ECN ベースの輻輳制御 (DCQCN) が NIC に実装され、PFC は「最後の安全弁」に格下げするのが定石になった。
-- **用途**: AI 学習クラスタの collective 通信 (NCCL over IB/RoCE)、ストレージ (NVMe-oF)、分散 DB。**「ネットワークがメモリバスの延長になる」**ことで、[`../../software/distributed-systems/`](../../software/distributed-systems/README.md) の前提レイテンシが一桁変わる。
+- **用途**: AI 学習クラスタの collective 通信 (NCCL over IB/RoCE)、ストレージ (NVMe-oF)、分散 DB。「**ネットワークがメモリバスの延長になる**」ことで、[`../../software/distributed-systems/`](../../software/distributed-systems/README.md) の前提レイテンシが一桁変わる。
 
 ### 4. スイッチ ASIC — 表・バッファ・プログラマビリティ
 
@@ -100,7 +100,7 @@ flowchart LR
 ### 5. SmartNIC / DPU — インフラの引越し先
 
 - **SR-IOV / eSwitch**: NIC が PF/VF (物理/仮想機能) を提供し、VM が VF を直接叩く。VF 間・VF-外部間の転送は NIC 内蔵の eSwitch が裁き、ハイパーバイザはデータパスから消える ([`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) の SR-IOV/vDPA 議論の実体)。ライブマイグレーションとの相性問題は、状態が NIC 内に住むことの直接の帰結である。
-- **Azure AccelNet**: 仮想スイッチのポリシー適用を「初回パケットはソフトで判定、フローの転送規則を FPGA に流し込む」方式でオフロード (Firestone et al. 2018)。**「遅い経路が規則を作り、速い経路が規則を回す」**という分業は、JIT ([`../../software/compilers-runtimes/`](../../software/compilers-runtimes/README.md)) と同型の構造である。
+- **Azure AccelNet**: 仮想スイッチのポリシー適用を「初回パケットはソフトで判定、フローの転送規則を FPGA に流し込む」方式でオフロード (Firestone et al. 2018)。「**遅い経路が規則を作り、速い経路が規則を回す**」という分業は、JIT ([`../../software/compilers-runtimes/`](../../software/compilers-runtimes/README.md)) と同型の構造である。
 - **AWS Nitro / DPU**: 汎用 Arm コア + アクセラレータを積んだカードがハイパーバイザ・ストレージ・VPC 処理・セキュリティ (計測ブート) を引き取り、ホストは「顧客の計算だけをする箱」になる。信頼の起点がホストから DPU へ移る点で、[`../hardware-security/side-channels-tee-secure-boot.md`](../hardware-security/side-channels-tee-secure-boot.md) の root of trust 議論の新しい主役でもある。
 
 ### 6. 観測の入口 (Observability)
@@ -118,7 +118,7 @@ flowchart LR
 ## セキュリティ考察 (Security Considerations)
 
 - **DMA できる装置は事実上メモリ全権を持つ。** NIC は DMA エンジンの塊であり、悪意ある/侵害されたデバイスや誤設定のディスクリプタは任意メモリ読み書きに直結する。IOMMU ([`../hw-sw-interface/`](../hw-sw-interface/README.md) ロードマップ) による装置別アドレス空間の強制が防御線で、SR-IOV では VF ごとの分離が正しく効いているかがテナント境界そのものになる。
-- **ファームウェアと DPU は「ホストより下」の攻撃面。** NIC/DPU は独立した CPU・OS・更新経路を持つ計算機であり、侵害されればホストの全トラフィックとストレージを透過的に触れる位置にいる。署名付きファームウェア・計測ブート・ベンダの供給網管理 ([`../semiconductor-manufacturing/semiconductor-fabrication.md`](../semiconductor-manufacturing/semiconductor-fabrication.md) のサプライチェーン議論) がそのまま適用される。逆に Nitro のように**「DPU 側を信頼の起点にしてホストを信頼しない」**構成は、この非対称を防御に転用した設計である。
+- **ファームウェアと DPU は「ホストより下」の攻撃面。** NIC/DPU は独立した CPU・OS・更新経路を持つ計算機であり、侵害されればホストの全トラフィックとストレージを透過的に触れる位置にいる。署名付きファームウェア・計測ブート・ベンダの供給網管理 ([`../semiconductor-manufacturing/semiconductor-fabrication.md`](../semiconductor-manufacturing/semiconductor-fabrication.md) のサプライチェーン議論) がそのまま適用される。逆に Nitro のように「**DPU 側を信頼の起点にしてホストを信頼しない**」構成は、この非対称を防御に転用した設計である。
 - **ロスレス網は DoS の増幅器になりうる。** PFC は「1 台の異常が網を止める」性質を構造的に持ち、悪意ある pause 送出や ECN/CNP の偽装は帯域を安価に奪う。RDMA は歴史的に認証・暗号を持たず (閉域網前提)、マルチテナント環境では PSP/IPsec 系のライン暗号オフロードとテナント分離が必須になる。
 - **スイッチの表は資源枯渇攻撃の対象。** MAC 学習表の洪水 (flooding 化を誘発)、TCAM の規則枯渇、ハッシュ衝突の誘発はいずれも古典だが、共有バッファ・共有表という構造がある限り消えない。制御プレーン (BGP 等) の保護は [`../../software/networking/`](../../software/networking/README.md) のルーティング候補に委ねる。
 - **オフロードは検査の死角を作る。** NIC 内で完結する VF 間トラフィックはホストの tcpdump に映らない。eSwitch のミラーリング・カウンタを観測経路に組み込まない限り、「見えない経路」が監視の穴になる。

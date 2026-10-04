@@ -6,7 +6,7 @@
 
 `../../hardware/hw-sw-interface/storage-nvm-interface.md` は、その下のハードウェア——NANDフラッシュの erase-before-write、書き込み増幅 (write amplification, WAF)、FTL、`fsync` が重い理由——を扱った。本ドキュメントはその**真上の層**である。ストレージエンジンが解く問題は、ハードウェアの非対称性に直接根ざしている。すなわち (1) シーケンシャルアクセスはランダムアクセスより桁で速い、(2) SSD では書き込みが摩耗と WAF を生み、消去はブロック単位、(3) `fsync` は高価で、しかも「書いた」と「残った」は別物。ストレージエンジンの設計選択は、ほぼすべてこの3つの不等式への応答として読める。
 
-本ドキュメントは、ストレージエンジンの2大系譜——**B+tree（in-place update, 読み最適化）**と**LSM-tree（out-of-place/append, 書き込み最適化）**——を、read/write/space amplification の三つ巴トレードオフ (RUM conjecture) を中心に Level 3 で整理する。さらに、両者に共通する永続性の土台——**先行書き込みログ (write-ahead log, WAL)**、バッファプール (buffer pool)、チェックポイント (checkpoint)、ARIES——と、ページレイアウト・並行制御・セキュリティへ繋ぐ。並行制御 (concurrency control) とトランザクション分離 (isolation) の詳細は概観に留め、今後の transactions ドキュメントへ譲る。
+本ドキュメントは、ストレージエンジンの2大系譜——**B+tree（in-place update, 読み最適化）** と**LSM-tree（out-of-place/append, 書き込み最適化）**——を、read/write/space amplification の三つ巴トレードオフ (RUM conjecture) を中心に Level 3 で整理する。さらに、両者に共通する永続性の土台——**先行書き込みログ (write-ahead log, WAL)**、バッファプール (buffer pool)、チェックポイント (checkpoint)、ARIES——と、ページレイアウト・並行制御・セキュリティへ繋ぐ。並行制御 (concurrency control) とトランザクション分離 (isolation) の詳細は概観に留め、今後の transactions ドキュメントへ譲る。
 
 ## 方法論 (Methodology)
 
@@ -263,7 +263,7 @@ WAL があっても守れない別の障害。DB のページ（例 16 KiB）は
   - **ラッチ**は、データ構造（B+tree のノード、バッファプールのフレーム）を**物理的な破壊から守る**短命な相互排他。保持はマイクロ秒オーダ、デッドロック検出はせず（取得順序の規律で回避）、回復の対象外。これは `../concurrency/memory-models-and-synchronization.md` の**ユーザ空間ロック（mutex/spinlock）そのもの**——CPU のアトミック命令とメモリバリアの上に立つ。B-link tree の latch crabbing はこのラッチの取り回しの話。
   - **ロック**は、トランザクションの**論理的な分離 (isolation)** を守る長命な論理ロック。トランザクション境界まで保持し、デッドロック検出を行い、分離レベル (isolation level) を実現する。回復の対象。
   - 「latch は構造を、lock は論理を守る」「latch は短く規律で、lock は長くデッドロック検出で」が区別の核。
-- **MVCC（多版型同時実行制御, Multi-Version Concurrency Control）**は、書き込みが読み手をブロックしないよう、**同一行の複数版 (version)** を保持する。版をストレージにどう置くかで2系統:
+- **MVCC（多版型同時実行制御, Multi-Version Concurrency Control）** は、書き込みが読み手をブロックしないよう、**同一行の複数版 (version)** を保持する。版をストレージにどう置くかで2系統:
   - **追記型 (append-only / in-place new version)**: PostgreSQL は新版を**テーブル内に新しいタプルとして追記**し、旧版に「いつまで有効か (xmin/xmax)」を刻む。読み手は自分のスナップショットで見える版を選ぶ。死んだ旧版は **VACUUM** が後で回収する——LSM の compaction や FTL の GC と同じ「追記して後で掃除」構造。
   - **undo log 型**: InnoDB は最新版を所定位置に置き、**旧版を undo log に退避**する。読み手は undo log を遡って自分の時点の版を再構成する。undo log は回復（未コミットの巻き戻し）とも共用される。
   - どちらも「読みと書きの衝突を、版を増やすことで回避する」点で共通し、その版をどこに積むか（テーブル本体か別ログか）がストレージ設計の分岐。詳細な可視性規則・分離レベル・SI/SSI は transactions ドキュメントへ。
@@ -290,7 +290,7 @@ WAL があっても守れない別の障害。DB のページ（例 16 KiB）は
 
 - ストレージエンジンは、揮発で速い DRAM と、不揮発で遅くブロック単位の SSD/HDD の間の溝を埋める層であり、その設計はほぼすべて `../../hardware/hw-sw-interface/storage-nvm-interface.md` のハードウェアの非対称性（シーケンシャル≫ランダム、書き込みコスト、`fsync` の重さ）への応答として読める。
 - 2大系譜は RUM conjecture の2つの極である。**B+tree** は整列と in-place 更新で読みを最適化し（書き込みとページ分割を犠牲に）、**LSM-tree** は追記と compaction で書き込みを最適化する（読みと領域を犠牲に、Bloom filter で読みを救う）。三辺すべては同時に立てられない。
-- 永続性は性能とは独立の正しさの軸であり、**WAL プロトコル（先行書き込み規則）**が土台、**ARIES**（repeating history redo + CLR つき undo + fuzzy checkpoint）がその標準的実現である。WAL のコミットは `fsync` を通じてハードの FLUSH に律速され、torn write は double-write/full-page write でハード粒度の不一致を補う。
+- 永続性は性能とは独立の正しさの軸であり、**WAL プロトコル（先行書き込み規則）** が土台、**ARIES**（repeating history redo + CLR つき undo + fuzzy checkpoint）がその標準的実現である。WAL のコミットは `fsync` を通じてハードの FLUSH に律速され、torn write は double-write/full-page write でハード粒度の不一致を補う。
 - バッファプールは `../../hardware/cpu-architecture/cache-memory-hierarchy.md` のキャッシュ階層に DB が明示管理するもう一段を足したものであり、ヒット率・置換ポリシ・dirty page 管理という同形の問題を持つ。LSM の compaction は FTL の GC と、MVCC の旧版回収（VACUUM）も含め「追記して後で掃除する」同じ構造の各レイヤでの反復である。
 - 並行制御では **latch（構造を守る短命なユーザ空間ロック, `../concurrency/memory-models-and-synchronization.md`）** と **lock（論理分離を守る長命な論理ロック）** を峻別し、MVCC は版をテーブル追記か undo log に置く。詳細は今後の transactions ドキュメントへ。
 - セキュリティ上、TDE は WAL・バックアップ・一時表まで境界を広げねば意味が薄く、削除は tombstone・slotted page・FTL の三段で物理に残留して GDPR と緊張し、`fsync` を欺く下層はコミットを失わせ、マルチテナントのバッファプールは side channel になる。永続性・残留性・隔離が、そのまま防御線である。

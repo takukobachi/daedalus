@@ -165,7 +165,7 @@ assert(data == 42);                                  // 必ず成立
 
 - **release フェンス**は「フェンスより前の全メモリ操作」を、フェンス後の任意の**ストア**より前に固定する（後方移動の禁止）。
 - **acquire フェンス**は「フェンスより後の全メモリ操作」を、フェンス前の任意の**ロード**より後に固定する（前方移動の禁止）。
-- ハードへの落ち方: release/acquire フェンスは ARM/POWER で `dmb ish` 等の**バリア命令**に翻訳される。x86 (TSO) では Store→Store / Load→Load が既に保たれるため acquire/release フェンスは**ノーオペ（コンパイラバリアのみ）**で済み、唯一 `seq_cst` フェンスだけが `mfence`（または `lock` 接頭辞付きダミー RMW）を要する。この非対称が `memory-ordering-atomics.md` の TSO/weak 差の直接の帰結である。
+- ハードへの落ち方: release/acquire フェンスは ARM/POWER で `dmb ish` 等の**バリア命令**に翻訳される。x86 (TSO) では Store→Store / Load→Load が既に保たれるため acquire/release フェンスは**ノーオペ（コンパイラバリアのみ）** で済み、唯一 `seq_cst` フェンスだけが `mfence`（または `lock` 接頭辞付きダミー RMW）を要する。この非対称が `memory-ordering-atomics.md` の TSO/weak 差の直接の帰結である。
 
 操作付き順序指定とフェンスは概ね等価だが、ループ内の複数 relaxed 操作を1つのフェンスで囲える点でフェンスが有利な場合がある（バリア命令の発行回数を減らせる）。
 

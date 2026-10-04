@@ -21,7 +21,7 @@
 4. **measure は「親→子の制約 (MeasureSpec)」と「子→親の申告 (setMeasuredDimension)」の 2 方向で、layout は位置を決めるだけである。** MeasureSpec はモード 2bit (UNSPECIFIED / EXACTLY / AT_MOST) とサイズ 30bit を 1 つの int に詰める。LinearLayout の weight・RelativeLayout・wrap_content 親の下の weight 子などは同じ子を**複数回 measure** し、それが入れ子になると回数が乗算される ("double taxation")。Compose はこれを**型システムと実行時例外で禁止**した (子の measure は 1 回、事前情報は intrinsics で問う)。
 5. **ViewRootImpl は View ではなく、ツリーとウィンドウシステムの間の「アダプタ兼ドライバ」である。** `WindowManagerGlobal.addView()` で生成され、`IWindowSession` (アプリ→WMS、同期) でウィンドウを登録・relayout し、`IWindow` (WMS→アプリ、**oneway**) でリサイズ・インセット変化を受ける。ツリーから見れば「親」だが、実体は Choreographer の TRAVERSAL コールバックで `performTraversals()` (measure → layout → draw) を回すスケジューラである。
 6. **`requestLayout()` / `invalidate()` は「親を辿って ViewRootImpl に届くフラグ」であり、即時には何もしない。** 各 View はフラグを立てて親に伝播し、根の ViewRootImpl が `scheduleTraversals()` で次の VSYNC に 1 回だけ走査を予約する。何度呼んでもフレームあたり 1 回にまとめられる (coalescing) のは、この「汚れ印 + 予約」設計による。同時に `checkThread()` がメインスレッド以外からの呼び出しを拒否する——単一スレッド UI モデルの関所である。
-7. **2016 年の骨格はほぼそのまま残り、変化は「上に載るもの」と「ウィンドウ境界の契約」に集中した。** MeasureSpec・2 パス・DecorView/`android:id/content`・ViewRootImpl・saveHierarchyState はそのままで、Compose も `ComposeView` という 1 個の View として ViewRootImpl の下に住む。一方、ウィンドウとアプリの境界では、edge-to-edge が API 35 で既定化・API 36 でオプトアウト不能となり、大画面では API 36/37 で向き・リサイズ制限が無視される——**「アプリは自分の矩形とインセットを動的に受け入れよ」**という契約の強化である。
+7. **2016 年の骨格はほぼそのまま残り、変化は「上に載るもの」と「ウィンドウ境界の契約」に集中した。** MeasureSpec・2 パス・DecorView/`android:id/content`・ViewRootImpl・saveHierarchyState はそのままで、Compose も `ComposeView` という 1 個の View として ViewRootImpl の下に住む。一方、ウィンドウとアプリの境界では、edge-to-edge が API 35 で既定化・API 36 でオプトアウト不能となり、大画面では API 36/37 で向き・リサイズ制限が無視される——「**アプリは自分の矩形とインセットを動的に受け入れよ**」という契約の強化である。
 
 ## アーキテクチャ (Architecture)
 
