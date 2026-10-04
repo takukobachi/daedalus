@@ -31,20 +31,15 @@ Conventions:
   subdirectory contains a `README.md` that states its scope and indexes the
   documents inside it. When adding a new document, update the nearest README's
   index. When creating a new subdirectory, add its `README.md` in the same change.
-- **Create subdirectories on demand**: e.g. `references/papers/`,
-  `references/books/`, `references/articles/` are created when the first item of
-  that kind is added — do not leave empty placeholder directories.
+- **Create subdirectories on demand**: only when the first item needs one — no
+  empty placeholder directories.
 - **Scope edits**: keep changes to the requested document and its closely related
   index files.
 
 ### File Naming
 
-| Type | Format | Example |
-|------|--------|---------|
-| Documents | `{category}-{description}.md` | `isa-riscv-intro.md` |
-| Diagrams | `{type}-{description}.{ext}` | `diagram-system-architecture.svg` |
-
-File names: English only, lowercase with hyphens.
+Documents are named `{category}-{description}.md` (e.g. `isa-riscv-intro.md`):
+English only, lowercase with hyphens.
 
 ---
 
@@ -54,7 +49,6 @@ File names: English only, lowercase with hyphens.
 - **Technical terms**: keep the English original alongside the Japanese on first
   use, e.g. `命令セット (ISA)`.
 - **Code comments**: English preferred.
-- **File names**: English only (see above).
 
 ---
 
@@ -157,18 +151,12 @@ than picking a single number.
   failure modes, security, and optimization.
 - No placeholder text (TODO, TBD); all required sections complete before delivery.
 - No sensitive information (API keys, tokens, passwords) — redact as `█████████`.
-- Every claim is backed by evidence.
 
 ---
 
 ## 7. Git Conventions
 
-Commit message format:
-
-```
-<type>(<scope>): <subject>
-```
-
+Commit messages: `<type>(<scope>): <subject>`.
 Types: `docs`, `analysis`, `spec`, `tools`, `refactor`, `fix`, `chore`.
 Use `docs(<area>)` for adding or updating documents, where `<area>` is the
 subdirectory name (e.g. `docs(compilers-runtimes)`, `docs(foundations)`);
