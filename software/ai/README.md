@@ -29,6 +29,11 @@
   パイプラインスケジュール (GPipe/1F1B) とバブル、混合精度と損失スケーリング、
   activation recomputation、チェックポイントと故障運用 (goodput)。
   `../../hardware/accelerators/interconnects-scaleout-training.md` と対で読む
+- `ml-compilers.md` — ML コンパイラ：グラフ捕捉 (TorchDynamo のガードとグラフブレーク、
+  JAX のトレーシング)、グラフ最適化（融合・レイアウト割当・CSE）、カーネル生成
+  (Triton のブロック単位モデル、Halide のアルゴリズム/スケジュール分離、TVM/Ansor の探索)、
+  MLIR の方言スタックと StableHLO、コンパイル時間と実行時性能、動的形状。
+  推論ドキュメントのカーネル融合議論の体系化
 
 ### モデルの上の層（エージェント）
 
@@ -48,18 +53,21 @@
   コンテキストエンジニアリング（compaction・context editing・プレフィックス安定性と
   プロンプトキャッシュ）、エラー処理と耐久性、human-in-the-loop ゲート、観測性。
   `agent-architectures.md` が「何を作るか」なら、こちらは「どう安定して動かすか」
+- `rag-system-architecture.md` — RAG システムアーキテクチャ：チャンキング戦略、
+  埋め込みモデル、ハイブリッド検索 (BM25 + 密検索、RRF)、再順位付け
+  (交差エンコーダ、ColBERT)、クエリ書き換え (HyDE)、長文脈との使い分け、GraphRAG、
+  2 層評価 (recall/nDCG と忠実性)、失敗モード、間接プロンプトインジェクションと検索時の認可。
+  `../search/vector-search-ann.md`（検索部品）の上に組み立てる側
+- `llm-evaluation-methodology.md` — LLM 評価の方法論：測定システムとしての評価
+  (妥当性・系統誤差・偶然誤差・過小評価)、ベンチマークの飽和と汚染検出、
+  LLM-as-a-judge のバイアス、Chatbot Arena と Bradley–Terry、エージェント評価の信頼性、
+  統計的厳密さ（標準誤差・対応のある比較・検出力）、能力評価と危険能力評価・
+  フロンティア安全フレームワーク
 
 ## 今後のテーマ候補
 
-- ML コンパイラ (ML compilers) — XLA / TVM / Triton, グラフ最適化とカーネル自動生成。
-  推論ドキュメントのカーネル融合 (kernel fusion) 議論の体系化
 - 量子化とスパース化の深掘り (quantization & sparsity) — PTQ/QAT, 構造化スパース性,
   ハードウェアサポート (INT4/FP8/2:4 sparsity) との共進化
-- RAG システムアーキテクチャ (retrieval-augmented generation) —
-  チャンキング、ハイブリッド検索、リランキング、評価。
-  `../search/vector-search-ann.md`（検索部品）との接続
-- LLM 評価 (evals) の方法論 — ベンチマーク設計、LLM-as-judge のバイアス、
-  能力評価と安全性評価の区別
 - LLM セキュリティの深掘り — プロンプトインジェクションの分類と防御設計、
   jailbreak、エージェントの権限モデル。`../security/` との横断
 - 学習パイプライン (training pipeline) — 事前学習 → SFT → RLHF/DPO の全体像。
