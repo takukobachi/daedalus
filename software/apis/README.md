@@ -12,10 +12,15 @@ RFC を一次資料として API・データモデル・プロトコルフロー
   トークン形式、署名検証、認可フロー、セキュリティ考察。
   [`../networking/tls-internals.md`](../networking/tls-internals.md) が扱うトランスポート層
   セキュリティの上に立つ、アプリケーション層の認証・認可
+- `webauthn-passkeys-specification.md` — WebAuthn / パスキー (passkeys)：
+  W3C WebAuthn Level 3（2026-08 勧告）と FIDO CTAP 2.2 の仕様分析。
+  登録・認証の儀式、RP ID とオリジン束縛によるフィッシング耐性、UP/UV、
+  発見可能な資格情報と条件付き UI、同期型パスキーと BE/BS フラグ、
+  hybrid トランスポート、アテステーションとプライバシー、アカウント回復、
+  脅威モデル。`authentication-tokens-specification.md` の手前に立つ
+  「最初の本人確認」の層
 
 ## 今後のテーマ候補
 
-- WebAuthn / パスキー (passkeys) — FIDO2/CTAP、公開鍵ベース認証への移行。
-  `authentication-tokens-specification.md` の共有シークレット型認証の後継となる様式
 - 決済ネットワークの下部構造 (payment networks) — カードネットワーク (ISO 8583)、
   3-D セキュア、清算と精算。`stripe-connect-specification.md` が抽象化している層

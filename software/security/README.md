@@ -35,17 +35,20 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   パイプライン上の攻撃分類（xz・SolarWinds・依存関係かく乱）、lockfile・
   再現可能ビルド・SLSA 来歴・Sigstore・SBOM を「答えられる問い」で対応づけ、
   理論的な底として Trusting Trust と多様二重コンパイル
+- `applied-cryptography.md` — 応用暗号工学（暗号を正しく使う層）。
+  AEAD (AES-GCM / ChaCha20-Poly1305 / AES-GCM-SIV)・HKDF・Argon2/scrypt・
+  Ed25519/ECDSA (RFC 6979)・X25519 の選択指針、nonce 再利用 (PS3・GCM)・
+  タイミングサイドチャネル (Lucky13・Minerva)・パディングオラクル
+  (Bleichenbacher・Vaudenay・ROBOT)・無効曲線攻撃・乱数の失敗 (Debian・
+  Mining Your Ps and Qs) という実装の落とし穴、誤用耐性 API (libsodium・Tink)、
+  鍵管理とローテーション、PKI/CT、耐量子移行 (FIPS 203/204/205・
+  X25519MLKEM768・暗号の俊敏性)。[`../networking/tls-internals.md`](../networking/tls-internals.md)
+  の TLS 各論を暗号プリミティブの一般論へ引き上げる
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
 → 出所を検証する (`software-supply-chain-security.md`)。四層で「単一の失敗で
 崩れない防御」を構成する。
-
-## 今後のテーマ候補
-
-- 応用暗号工学 (applied cryptographic engineering) — 鍵交換・AEAD・署名・
-  前方秘匿性・PKI の実装上の落とし穴（サイドチャネル・nonce 再利用・実装脆弱性）。
-  `../networking/tls-internals.md` の TLS 各論を暗号プリミティブの一般論へ引き上げる
 
 なお、ウェブ・アプリケーションセキュリティ（同一生成元ポリシー・XSS/CSRF・
 COOP/COEP・権限モデル）は [`../browsers/web-security-model.md`](../browsers/web-security-model.md)
