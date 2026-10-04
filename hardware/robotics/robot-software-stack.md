@@ -58,7 +58,7 @@ flowchart TB
     PER -.tf2 座標変換.- NAV
 ```
 
-- **tf2（座標変換ツリー）**が全ノードの空間的な共通言語である: 各センサ・リンク・地図の座標系の関係を時刻付きで管理し、`kinematics-dynamics.md` の同次変換をシステム全体に配る配管にあたる。
+- **tf2（座標変換ツリー）** が全ノードの空間的な共通言語である: 各センサ・リンク・地図の座標系の関係を時刻付きで管理し、`kinematics-dynamics.md` の同次変換をシステム全体に配る配管にあたる。
 - シミュレータはハードウェアインターフェースの差し替え先として同じトポロジに入る——「実機とシミュレーションで上位層を変えない」ことがアーキテクチャ上の要点である。
 
 ### 通信プリミティブと QoS
@@ -123,7 +123,7 @@ flowchart TB
 
 ## 結論 (Conclusions)
 
-ロボットソフトウェアスタックの設計は、一貫して**「決定性の島を、柔軟な分散システムの海の中にどう確保するか」**の問題である。ROS 2 + DDS は海の側——発見・QoS 契約・エコシステム——を標準化し、ros2_control とフィールドバスが島の側——1 kHz の決定的な制御ループ——を守る。本領域の物理・制御の文書群 (`robotics-fundamentals.md` から `locomotion-manipulation.md` まで) が「島の中身」だとすれば、本ドキュメントはその島と海の**境界の設計**を扱ったことになる。
+ロボットソフトウェアスタックの設計は、一貫して「**決定性の島を、柔軟な分散システムの海の中にどう確保するか**」の問題である。ROS 2 + DDS は海の側——発見・QoS 契約・エコシステム——を標準化し、ros2_control とフィールドバスが島の側——1 kHz の決定的な制御ループ——を守る。本領域の物理・制御の文書群 (`robotics-fundamentals.md` から `locomotion-manipulation.md` まで) が「島の中身」だとすれば、本ドキュメントはその島と海の**境界の設計**を扱ったことになる。
 
 これで `hardware/robotics/` の当初ロードマップ 7 本が完結した。機構 → 数学 → 制御 → 推定 → タスク → 事例 → ソフトウェア基盤という主脈が通り、hardware 側は `automotive/`・`aerospace/`・`power-generation/` の制御各論と、software 側は `networking/`・`concurrency/`・`virtualization/`・`ml-systems/` と相互参照で接続された。本ドキュメントが繰り返し参照した RTOS / PREEMPT_RT の各論は [`../../software/embedded-rtos/`](../../software/embedded-rtos/) が扱う。
 
@@ -139,7 +139,7 @@ flowchart TB
 
 [^rudin]: Rudin, N., Hoeller, D., Reist, P. & Hutter, M. (2022). Learning to Walk in Minutes Using Massively Parallel Deep Reinforcement Learning. *Proc. CoRL 2021*, PMLR 164, 91–100. — GPU 並列シミュレーションによる脚式 RL の代表的実証。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - [ROS 2 Documentation](https://docs.ros.org/en/rolling/) — Accessed: 2026-07-12. — 概念・QoS・エグゼキュータの公式文書。
 - [ros2_control documentation](https://control.ros.org/) — Accessed: 2026-07-12. — コントローラマネージャとハードウェアインターフェースの公式文書。

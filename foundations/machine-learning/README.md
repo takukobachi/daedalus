@@ -4,7 +4,7 @@
 続く 4 つ目の基礎理論系列であり、線形代数（行列積、低ランク）、確率・統計（最尤推定、
 交差エントロピー）、最適化（勾配法）、情報理論（符号長＝圧縮）の**合流点**にあたる。
 
-応用側との分担:
+応用側との分担は次のとおりである。
 
 - **`foundations/machine-learning/`（本ディレクトリ）** — 数理: なぜこの式か、
   どこから導出されるか
@@ -28,5 +28,5 @@
 - 逆伝播と最適化の実務 (backpropagation & optimizers) — 自動微分、Adam 系列、
   学習率スケジュール、損失地形。`../mathematics/optimization/` の非凸側への拡張
 - 強化学習の基礎 (reinforcement learning) — MDP、方策勾配、PPO。
-  RLHF (`../../software/ai-llm/llm-internals-prompting.md` §4) の理論的土台
+  RLHF (`../../software/ai-llm/llm-internals-prompting.md` §4) の理論的基礎
 - 汎化の理論 (generalization) — 二重降下、宝くじ仮説、暗黙の正則化

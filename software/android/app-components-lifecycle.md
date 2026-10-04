@@ -94,7 +94,7 @@ Activity は「画面を表す UI クラス」として説明されることが�
 
 ### 4. プロセス重要度との結合 — ライフサイクルは oom_adj の入力である
 
-- ATMS の台帳が更新されるたび、ProcessRecord の重要度(前面/可視/サービス/cached)が再計算され、lmkd の kill 順([`platform-architecture.md`](platform-architecture.md))と cgroup の CPU 配分([`process-thread-model.md`](process-thread-model.md)、[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))に反映される。**onStop はコールバックであると同時に「殺してよいリストへの登載通知」**であり、ライフサイクルの各点は開発者向け API とリソース管理の二重の意味を持つ。
+- ATMS の台帳が更新されるたび、ProcessRecord の重要度(前面/可視/サービス/cached)が再計算され、lmkd の kill 順([`platform-architecture.md`](platform-architecture.md))と cgroup の CPU 配分([`process-thread-model.md`](process-thread-model.md)、[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md))に反映される。**onStop はコールバックであると同時に「殺してよいリストへの登載通知」** であり、ライフサイクルの各点は開発者向け API とリソース管理の二重の意味を持つ。
 - プロセス側の死は Binder の死亡通知(linkToDeath)で ATMS に届き、台帳(ActivityRecord)は保存状態を抱えて生き残る——[`binder-internals.md`](binder-internals.md) の「看取りの機構」が、ユーザ体験(Recents からの完全復帰)に直結する経路がこれである。
 
 ### 5. ANR — 時間による同期の回復
@@ -104,7 +104,7 @@ Activity は「画面を表す UI クラス」として説明されることが�
 
 ### 6. Nougat (書籍) から現在への構造変化 — 台帳の担当者は変わり、契約は変わらない
 
-有野 (2017) Ⅱ巻 第4章は、Nougat の ActivityManagerService (AMS) と **ActivityStack**(タスクを束ねるスタック)を軸に、ライフサイクルを「ActivityStack の視点・Activity インスタンスの視点・AMS の視点」の三つから読み解く。同章の見取り図——**真実の状態はシステム側の ActivityRecord にあり、アプリ側の Activity はその一時的な実体にすぎない**——は本書の「二重の台帳」と同じ構図であり、現在もそのまま通用する。変わったのは台帳を持つクラスの配置である。
+有野 (2017) Ⅱ巻 第4章は、Nougat の ActivityManagerService (AMS) と **ActivityStack**(タスクを束ねるスタック)を軸に、ライフサイクルを ActivityStack・Activity インスタンス・AMS という三つの視点から読み解く。同章の見取り図——**真実の状態はシステム側の ActivityRecord にあり、アプリ側の Activity はその一時的な実体にすぎない**——は本書の「二重の台帳」と同じ構図であり、現在もそのまま通用する。変わったのは台帳を持つクラスの配置である。
 
 | 機構 | Nougat (有野 2017 Ⅱ巻 4 章) | 現在 | 変化の理由 |
 |---|---|---|---|

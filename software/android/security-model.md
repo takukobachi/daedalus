@@ -55,7 +55,7 @@
 
 - **保護レベル**: `normal`（インストールで自動付与・低リスク）／`dangerous`（実行時ダイアログ, Android 6+）／`signature`（同一署名鍵のみ・プラットフォーム連携の背骨）／special access（SYSTEM_ALERT_WINDOW 等、設定画面での明示付与）。
 - **縮小の系譜**: 権限グループ単位の付与 → 一回限り (one-time) 許可・使用中のみ (while-in-use) の位置情報 (Android 10–11) → **不使用アプリの権限自動失効** (Android 11+) → 近似位置の選択・写真の部分選択 (Android 13–14)。方向は一貫して「**付与を状態ではなくイベントに近づける**」であり、iOS の TCC と収斂している。
-- **confused deputy の定番と対策**: (a) exported コンポーネントへの外部 Intent——Android 12+ で `android:exported` の明示が必須化。(b) PendingIntent の身元借用——mutability (`FLAG_IMMUTABLE`) の明示必須化。(c) UID→パッケージの曖昧さ (sharedUserId)——非推奨化。**「暗黙の既定が穴になる」→「明示を必須化する」**が API 進化の反復パターンである。
+- **confused deputy の定番と対策**: (a) exported コンポーネントへの外部 Intent——Android 12+ で `android:exported` の明示が必須化。(b) PendingIntent の身元借用——mutability (`FLAG_IMMUTABLE`) の明示必須化。(c) UID→パッケージの曖昧さ (sharedUserId)——非推奨化。**「暗黙の既定が穴になる」→「明示を必須化する」** が API 進化の反復パターンである。
 
 ### 2. アプリ署名 — v1 から v4、鍵の運用
 

@@ -8,7 +8,7 @@ system_server は UID `system` で動く単一の Java プロセスで、Activit
 
 ## 方法論 (Methodology)
 
-- 機構の基準線 (baseline) には有野 (2017) Ⅰ巻 1.3(Activity・ActivityThread・Binder・SystemServer・Zygote の速習、Android 7.0 Nougat 基準)と Ⅱ巻 5 章(Zygote と ActivityThread)を用いる。書籍は system_server を「サービスの入れ物」として速習するに留まるため、内部構造は現行 AOSP で再構成する。
+- 機構の基準線 (baseline) には有野 (2017) Ⅰ巻 1.3(Activity・ActivityThread・Binder・SystemServer・Zygote の速習、Android 7.0 Nougat 基準)と Ⅱ巻 5 章(Zygote と ActivityThread)を用いる。書籍は system_server をサービスの入れ物として速習するに留まるため、内部構造は現行 AOSP で再構成する。
 - 現在の姿は AOSP `frameworks/base` の `main` ブランチ(GitHub ミラー `aosp-mirror/platform_frameworks_base`、2026-09-27 参照)で確認した: `services/java/com/android/server/SystemServer.java`、`services/core/java/com/android/server/{SystemService,SystemServiceManager,Watchdog,DisplayThread,UiThread}.java`、`core/java/com/android/internal/os/BackgroundThread.java`、`services/core/java/com/android/server/wm/WindowManagerGlobalLock.java`、`services/core/java/com/android/server/pm/PackageManagerService.java`、`core/jni/com_android_internal_os_Zygote.cpp`、および `system/core/rootdir/init.zygote64.rc`。行番号は改訂で動くため、クラス・メソッド・定数名で参照する。
 - 各機構について「制約(単一プロセス・起動時間・可用性)→ 設計」の対応を取り、Nougat からの差分は技術詳細 §11 の表に集約する。導入バージョンを公開資料で確定できなかったものは本文で「確度」を明記する。
 - Binder の下回り(binder_proc・スレッドプール・oneway)は [`binder-internals.md`](binder-internals.md)、権限モデル全体は [`security-model.md`](security-model.md)、メッセージループの内部は [`looper-handler-message-loop.md`](looper-handler-message-loop.md) に委ねる。
@@ -20,7 +20,7 @@ system_server は UID `system` で動く単一の Java プロセスで、Activit
 3. **公開には二系統ある: Binder と LocalServices。** `publishBinderService()` は `ServiceManager.addService(name, binder, allowIsolated, dumpPriority)` で servicemanager に登録し、アプリから `getSystemService()` 経由で到達可能にする。`publishLocalService()` は `LocalServices.addService(Class, impl)`——プロセス内の型→実装マップ——に登録するだけで、**Binder を経由しない・権限検査を持たない・プロセス外から見えない**内部 API(`ActivityManagerInternal`、`PackageManagerInternal` 等)を提供する。system_server の「サービス間は普通のメソッド呼び出し」という性質は、この二系統の使い分けで成り立つ。
 4. **system_server の内部は「共有シングルトンスレッド」と「31 本の Binder プール」の二層である。** メインスレッドのほか、`android.fg`(FgThread)・`android.ui`(UiThread)・`android.io`(IoThread)・`android.display`(DisplayThread)・`android.anim`(AnimationThread)・`android.bg`(BackgroundThread)など、用途と優先度の異なる Looper スレッドがプロセス内で共有される。外部からの呼び出しは `BinderInternal.setMaxThreads(sMaxBinderThreads)`(`sMaxBinderThreads = 31`)で上限付けされた Binder スレッドが受ける。**Binder スレッドは短く受けてロックを取るか Handler に回す**のが原則で、この規律が破れると全アプリの呼び出しが詰まる。
 5. **最大の設計負債は「少数の大きなロック」である。** ActivityManagerService 自身のモニタ(いわゆる AMS lock)、ActivityTaskManagerService と WindowManagerService が共有する `WindowManagerGlobalLock`、PackageManagerService の `mLock`/`mInstallLock`/`mSnapshotLock` が、プロセス内の多数のコードパスを直列化する。PMS はロック順序をコメントで規定し(`mInstallLock` は `mLock` を保持したまま取ってはならない)、メソッド名の接尾辞 `LI`/`LIF`/`LPr`/`LPw` で「呼ぶ前に持つべきロック」を型のように表す。近年の改善は、ロックを細かく割るのではなく**読み取りをロックの外に出す**方向(PMS の `Computer`/snapshot)で進んでいる。
-6. **Watchdog は system_server の「自殺装置」であり、その先には Zygote の道連れがある。** `Watchdog` は各共有スレッドに `HandlerChecker` を置き、`postAtFrontOfQueue` で空の確認メッセージを先頭に積んで応答を測り、モニタスレッド上では登録された `Monitor.monitor()`(実質「このロックを取れるか」)を順に呼ぶ。既定タイムアウトは 60 秒(`DEFAULT_TIMEOUT`、デバッグビルドは 10 秒)で、その 1/4 経過時点(`PRE_WATCHDOG_TIMEOUT_RATIO = 4`)で全スレッドのスタックを採取し、期限切れで `Process.killProcess(Process.myPid())` → `System.exit(10)` する。Zygote の SIGCHLD ハンドラは system_server の死を検知すると `"Exit zygote because system server (pid %d) has terminated"` を記録して自らを `SIGKILL` し、init が Zygote を再起動する。結果は**カーネルを再起動しない「ランタイム再起動 (soft reboot)」**である。
+6. **Watchdog は system_server の「自殺装置」であり、その先には Zygote の道連れがある。** `Watchdog` は各共有スレッドに `HandlerChecker` を置き、`postAtFrontOfQueue` で空の確認メッセージを先頭に積んで応答を測り、モニタスレッド上では登録された `Monitor.monitor()`(実質「このロックを取れるか」)を順に呼ぶ。既定タイムアウトは 60 秒(`DEFAULT_TIMEOUT`、デバッグビルドは 10 秒)で、その 1/4 経過時点(`PRE_WATCHDOG_TIMEOUT_RATIO = 4`)で全スレッドのスタックを採取し、期限切れで `Process.killProcess(Process.myPid())` → `System.exit(10)` する。Zygote の SIGCHLD ハンドラは system_server の死を検知すると `"Exit zygote because system server (pid %d) has terminated"` を記録して自らを `SIGKILL` し、init が Zygote を再起動する。結果は**カーネルを再起動しない「ランタイム再起動 (soft reboot)」** である。
 7. **ネイティブサービスの多くは system_server の外にある——が、全部ではない。** surfaceflinger・servicemanager・installd・vold・netd・audioserver・cameraserver 等は init が起動する独立プロセスで、system_server が死んでも生き残る(Zygote の `onrestart` で再起動されるものを除く)。一方、`libandroid_servers` を通じて system_server 内に載るネイティブ部品(InputReader/InputDispatcher、SensorService 等)もあり、**「Java のサービス = system_server、ネイティブ = 別プロセス」という単純な対応は成り立たない**。
 
 ## アーキテクチャ (Architecture)
@@ -151,7 +151,7 @@ sequenceDiagram
 | InputManagerService | other | 入力(ネイティブの InputReader/InputDispatcher を同一プロセスに持つ) | [`input-pipeline.md`](input-pipeline.md) |
 | Mainline のサービス(Wi-Fi、Bluetooth 等) | apex | APEX 内 `service-*.jar` | [`package-management.md`](package-management.md) |
 
-- **Installer は最初期に起動される**: `startBootstrapServices` の冒頭で installd への接続を確立し、PMS が起動時の走査でディレクトリ作成・権限設定を installd に頼めるようにする。書籍 Ⅱ巻 2 章の「特権操作は installd、判断は PMS」という分業は現在も同じである。
+- **Installer は最初期に起動される**: `startBootstrapServices` の冒頭で installd への接続を確立し、PMS が起動時の走査でディレクトリ作成・権限設定を installd に頼めるようにする。特権操作は installd、判断は PMS という書籍 Ⅱ巻 2 章の分業は現在も同じである。
 
 ### 6. スレッドモデル — 共有 Looper スレッドと Binder プール
 

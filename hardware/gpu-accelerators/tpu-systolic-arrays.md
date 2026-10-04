@@ -10,7 +10,7 @@
 
 - 出発点をエネルギーの算術（演算 vs データ移動のピコジュール比較）に置き、すべての設計判断をそこから導出する。ベンダの語る「TOPS」ではなく **TOPS/W と実効利用率**を軸にする。
 - 一次資料は TPU の査読論文（v1: ISCA 2017、v4: ISCA 2023）[^tpu-v1][^tpu-v4]を基点とし、ベンダ発表の目標値と論文の実測値を区別する。
-- GPU との比較は優劣ではなく**「何を固定し、何を汎用に残したか」の選択の違い**として整理し、両者が現在収斂しつつある点を明示する。
+- GPU との比較は優劣ではなく **「何を固定し、何を汎用に残したか」の選択の違い**として整理し、両者が現在収斂しつつある点を明示する。
 - データフローの分類（weight-stationary 等）は Eyeriss の分類法[^eyeriss]に従う。
 
 ## 発見事項 (Findings)
@@ -106,7 +106,7 @@
 
 [^golden-age]: Hennessy, J. L. & Patterson, D. A. (2019). A New Golden Age for Computer Architecture. *Communications of the ACM*, 62(2), 48–60. DOI: 10.1145/3282307 — Dennard 終焉と DSA への転換の総説（Turing 賞講演）。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Sze, V., Chen, Y.-H., Yang, T.-J. & Emer, J. (2020). *Efficient Processing of Deep Neural Networks*. Morgan & Claypool. — DNN アクセラレータ設計の体系的教科書。
 - Williams, S., Waterman, A. & Patterson, D. (2009). Roofline: An Insightful Visual Performance Model for Multicore Architectures. *Communications of the ACM*, 52(4), 65–76. DOI: 10.1145/1498765.1498785 — ルーフラインモデルの原典。

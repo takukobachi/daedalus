@@ -21,7 +21,7 @@
 4. **suspend は SIGSTOP 的な凍結であり、アプリには「時間の欠落」として見える。** 背面遷移から数秒で全スレッドが止まり、CPU 時間は完全にゼロになる。復帰時はスレッドがそのまま再開する——プロセス死と違い**メモリ上の状態は無傷**で、大半の「アプリ切り替え」はこの凍結解除である。Android が cached プロセスを走行可能なまま置いた歴史に対し、iOS は初日から凍結を既定にした。そして Android 11+ の **cached apps freezer** (cgroup freezer) は同じ答えへの合流である——15 年越しの収斂。
 5. **バックグラウンド処理は「アプリが続ける」のではなく「OS に委譲する」。** 大型ダウンロードは NSURLSession background セッションとして **nsurlsessiond デーモンに引き渡され**、アプリは殺されてよい(完了時に再起動されて通知を受ける)。VoIP 着信は PushKit、位置追跡は locationd と、**継続性が要る仕事は該当デーモンが肩代わり**する。Android の ForegroundService(アプリ自身が通知を掲げて走り続ける)との最大の構造差で、「誰の CPU 時間として会計されるか」ごと OS 側に移る。
 6. **BGTaskScheduler の裏には機械学習スケジューラ (DAS) がいる。** BGAppRefreshTask の実行時機は、ユーザの利用パターン・充電状態・ネットワーク・熱状態を入力とする Duet Activity Scheduler (dasd) が決める。「よく朝 7 時に開くアプリは 6 時台に refresh される」——**利用予測が実行権の割当に直結**する設計で、Android の App Standby Buckets(利用頻度によるクォータ階層)と同じ問題への、より予測駆動な解である。
-7. **ウォッチドッグは ANR の兄弟だが、対話の余地なく殺す。** 起動・resume・suspend 遷移でメインスレッドが締切(起動 ~20 秒等)を超えると、システムは即座にプロセスを kill する(クラッシュログの例外コード 0x8badf00d)。Android の ANR がダイアログでユーザに委ねるのに対し、iOS は問答無用——**「遅いアプリはいないのと同じ」**という規範の差がここにも出る。両者とも根は同じで、遠隔操縦されるメインスレッドが応答しない事態を時間で検出するしかない([`../android/app-components-lifecycle.md`](../android/app-components-lifecycle.md) の発見事項 7)。
+7. **ウォッチドッグは ANR の兄弟だが、対話の余地なく殺す。** 起動・resume・suspend 遷移でメインスレッドが締切(起動 ~20 秒等)を超えると、システムは即座にプロセスを kill する(クラッシュログの例外コード 0x8badf00d)。Android の ANR がダイアログでユーザに委ねるのに対し、iOS は問答無用——「**遅いアプリはいないのと同じ**」という規範の差がここにも出る。両者とも根は同じで、遠隔操縦されるメインスレッドが応答しない事態を時間で検出するしかない([`../android/app-components-lifecycle.md`](../android/app-components-lifecycle.md) の発見事項 7)。
 
 ## アーキテクチャ (Architecture)
 

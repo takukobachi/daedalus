@@ -84,14 +84,14 @@ Lamport の定義: 全プロセッサの操作が、各プロセッサ内の順�
 ### 1. アトミック操作の種類
 
 - **ロード / ストア (load / store)**: 単一の読み／書きを破れない単位で行う。
-- **Read-Modify-Write (RMW)**: 読み・更新・書きを不可分に行う。代表例:
+- **Read-Modify-Write (RMW)**: 読み・更新・書きを不可分に行う。代表例を次に示す。
   - `fetch_add` / `fetch_sub` / `fetch_or` …
   - **CAS (Compare-And-Swap)** / `compare_exchange`: 「期待値と一致すれば新値に差し替える」。ロックフリー構造の基本部品。
   - x86 では `lock` プレフィックス (`lock xadd`, `lock cmpxchg`) で実現。ARM では LL/SC (`ldxr`/`stxr`) ループ。
 
 ### 2. C++ の抽象と ISA 命令の対応
 
-`memory_order` はコンパイル時に各 ISA の命令へ落ちる。対応を見ると「どのモデルで何がタダか」が分かる:
+`memory_order` はコンパイル時に各 ISA の命令へ落ちる。対応を見ると「どのモデルで何がタダか」が分かる。
 
 | 概念 | x86-64 (TSO) | ARMv8 | RISC-V (RVWMO) |
 |---|---|---|---|
@@ -101,7 +101,7 @@ Lamport の定義: 全プロセッサの操作が、各プロセッサ内の順�
 | フルバリア | `mfence` / `lock` 付き RMW | `dmb ish` | `fence rw,rw` |
 | アトミック RMW | `lock xadd` / `lock cmpxchg` | `ldxr`/`stxr` ループ（v8.1 LSE: `ldadd` 等の単命令） | `amoadd.d` / `lr`+`sc`（`.aq`/`.rl` ビット付き） |
 
-読み取れること:
+ここから次のことが読み取れる。
 - **x86 では acquire/release が実質無料**（通常のロード/ストアが既にその強さを持つ）。コストが乗るのは seq_cst ストアと RMW だけ。
 - **ARM/RISC-V は順序が欲しい箇所にだけ明示的に払う**。acquire/release 専用命令（`ldar`/`stlr`、`.aq`/`.rl`）は、フルバリアより弱く安い——`memory_order` を正しく最小に指定する意味は、弱順序 ISA でこそ大きい。
 - ARMv8 が acquire/release を**命令として**持つのは、C++11 メモリモデルの普及後に設計されたため。言語モデルが ISA 設計へ逆流した例である。

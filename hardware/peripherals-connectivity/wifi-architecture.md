@@ -43,7 +43,7 @@ flowchart TB
     APP --> NET --> M80211 --> DRV --> BUS --> FW --> PHY --> RF
 ```
 
-MAC 処理の分割線が2流儀ある:
+MAC 処理の分割線が2流儀ある。
 
 | | soft-MAC | full-MAC |
 |---|---|---|

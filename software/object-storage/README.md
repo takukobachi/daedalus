@@ -1,8 +1,8 @@
 # Object Storage
 
 オブジェクトストレージ (object storage) の分析。フラットなキー空間と不変オブジェクトの
-全体 PUT/GET という貧しい抽象が、いかにして惑星規模のスケールと「11 ナイン」の
-耐久性を買ったかを扱う。メタデータ層（索引）は `../distributed-systems/consensus.md` の
+全体 PUT/GET という貧しい抽象と引き換えに、どのようにして惑星規模のスケールと
+「11 ナイン」の耐久性を得たかを扱う。メタデータ層（索引）は `../distributed-systems/consensus.md` の
 合意と `../databases/storage-engines.md` の LSM/WAL がそのまま再利用される場であり、
 データ層（倉庫）はイレイジャーコーディングと背景修復による「ドルあたり耐久性」の
 経済工学である。一貫性の語彙は `../distributed-systems/consistency-models.md`、

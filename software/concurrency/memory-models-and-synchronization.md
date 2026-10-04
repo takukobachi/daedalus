@@ -165,7 +165,7 @@ assert(data == 42);                                  // 必ず成立
 
 - **release フェンス**は「フェンスより前の全メモリ操作」を、フェンス後の任意の**ストア**より前に固定する（後方移動の禁止）。
 - **acquire フェンス**は「フェンスより後の全メモリ操作」を、フェンス前の任意の**ロード**より後に固定する（前方移動の禁止）。
-- ハードへの落ち方: release/acquire フェンスは ARM/POWER で `dmb ish` 等の**バリア命令**に翻訳される。x86 (TSO) では Store→Store / Load→Load が既に保たれるため acquire/release フェンスは**ノーオペ（コンパイラバリアのみ）**で済み、唯一 `seq_cst` フェンスだけが `mfence`（または `lock` 接頭辞付きダミー RMW）を要する。この非対称が `memory-ordering-atomics.md` の TSO/weak 差の直接の帰結である。
+- ハードへの落ち方: release/acquire フェンスは ARM/POWER で `dmb ish` 等の**バリア命令**に翻訳される。x86 (TSO) では Store→Store / Load→Load が既に保たれるため acquire/release フェンスは**ノーオペ（コンパイラバリアのみ）** で済み、唯一 `seq_cst` フェンスだけが `mfence`（または `lock` 接頭辞付きダミー RMW）を要する。この非対称が `memory-ordering-atomics.md` の TSO/weak 差の直接の帰結である。
 
 操作付き順序指定とフェンスは概ね等価だが、ループ内の複数 relaxed 操作を1つのフェンスで囲える点でフェンスが有利な場合がある（バリア命令の発行回数を減らせる）。
 
@@ -246,7 +246,7 @@ class Broken {
 }
 ```
 
-`inst = new Singleton()` は概念上「メモリ確保 → コンストラクタ実行 → `inst` へ代入」だが、JIT/CPU は**確保 → `inst` 代入 → コンストラクタ実行**へ並べ替えてよい。別スレッドが①の `inst == null` を「非 null」と観測した瞬間、コンストラクタはまだ走っておらず、**半構築のオブジェクト**を掴む。修正は `inst` を `volatile` にすること——③の代入が release となり、構築完了が代入より後ろへ漏れず、④の読み（acquire）が完全構築を保証する。あるいは `static` ホルダクラス（クラス初期化ロックに委ねる）や `final` フィールドで安全公開する。
+`inst = new Singleton()` は概念上「メモリ確保 → コンストラクタ実行 → `inst` へ代入」だが、JIT/CPU は**確保 → `inst` 代入 → コンストラクタ実行**へ並べ替えてよい。別スレッドが①の `inst == null` を「非 null」と観測した時点で、コンストラクタはまだ走っておらず、**半構築のオブジェクト**を掴む。修正は `inst` を `volatile` にすること——③の代入が release となり、構築完了が代入より後ろへ漏れず、④の読み（acquire）が完全構築を保証する。あるいは `static` ホルダクラス（クラス初期化ロックに委ねる）や `final` フィールドで安全公開する。
 
 #### piggybacking（半同期イディオム）
 
@@ -263,7 +263,7 @@ bool CAS(addr, expected, desired):
     else:                 expected = *addr; return false   // 現値を返す
 ```
 
-ハードウェアへの落ち方は ISA で異なる（`memory-ordering-atomics.md`・`cache-coherence.md` 参照）：
+ハードウェアへの落ち方は ISA で異なる（`memory-ordering-atomics.md`・`cache-coherence.md` 参照）。
 
 - **x86**: `lock cmpxchg`。対象キャッシュラインを排他所有 (M 状態) してから RMW を局所化する (cache locking)。
 - **ARM/POWER**: **LL/SC** (`ldxr`/`stxr`) ループ。LL でラインを reservation 登録し、SC は「その間ラインへの他コア書き込み（=コヒーレンス無効化）が無かった場合のみ」成功。

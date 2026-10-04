@@ -24,10 +24,10 @@ Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀�
 
 ## 発見事項 (Findings)
 
-1. **Android の回収戦略は「clean を増やし、shared を増やす」の一点に集約される。** スワップ先が無い世界では、カーネルが黙って捨てられるのはファイルと内容が一致する clean ページだけであり、anonymous な dirty ページはプロセスごと殺す以外に取り戻せない。DEX/OAT・`.so`・リソースを mmap して実行する設計と、Zygote からの fork による COW 共有は、この制約から逆算された必然である（有野 (2017) Ⅰ巻 7.3）。**メモリ効率の良し悪しはアロケーション量ではなく「private dirty の量」で決まる。**
-2. **`oom_score_adj` は「カーネルに渡すアプリケーション知識」のチャネルである。** カーネルは各プロセスの意味（前面か、音楽再生中か、ホームか）を知らない。ActivityManagerService (AMS、[`system-server-services.md`](system-server-services.md)) がプロセス状態から重要度を計算し、特権デーモン lmkd に Unix ソケットで送り、lmkd が `/proc/<pid>/oom_score_adj` に書く。書籍の「スコアを付けるのは UI 側、殺すのはカーネル側」という分業は現在も不変で、変わったのは**殺す主体がカーネルから lmkd に移った**ことだけである。
-3. **書籍の -17〜16 表は旧 `oom_adj` 表記であり、Nougat の実コードは既に oom_score_adj 単位だった。** `android-7.0.0_r6` の `ProcessList.java` は FOREGROUND 0 / VISIBLE 100 / … / CACHED 900〜906 と定義しており、書籍のコラムが述べる「外部インタフェースが旧 oom_adj のまま」は lowmemorykiller ドライバの `parameters/adj` 側の事情である。現在は CACHED が 900〜999 に拡張され、PERCEPTIBLE_LOW/MEDIUM 等の中間段が追加されて**階層が細分化**した。
-4. **lowmemorykiller ドライバは「shrinker の目的外使用」であり、それが廃止理由でもあった。** ディスクキャッシュ解放用の `register_shrinker()` コールバックでプロセスを殺す設計は、書籍が「裏の Activity をキャッシュとみなす」と読み解いた通り巧妙だが、発動が回収経路の内側（ロック保持中・直接回収中）に縛られ、空きページ数の閾値 (minfree) しか見ないため、ファイルキャッシュが大きい負荷で誤判定した。Linux 4.12 で staging から削除され、userspace lmkd に一本化された。
+1. **Android の回収戦略は「clean を増やし、shared を増やす」の一点に集約される。** スワップ先が無い世界では、カーネルがプロセスに通知せず捨てられるのはファイルと内容が一致する clean ページだけであり、anonymous な dirty ページはプロセスごと殺す以外に取り戻せない。DEX/OAT・`.so`・リソースを mmap して実行する設計と、Zygote からの fork による COW 共有は、この制約から逆算された必然である（有野 (2017) Ⅰ巻 7.3）。**メモリ効率の良し悪しはアロケーション量ではなく「private dirty の量」で決まる。**
+2. **`oom_score_adj` は「カーネルに渡すアプリケーション知識」のチャネルである。** カーネルは各プロセスの意味（前面か、音楽再生中か、ホームか）を知らない。ActivityManagerService (AMS、[`system-server-services.md`](system-server-services.md)) がプロセス状態から重要度を計算し、特権デーモン lmkd に Unix ソケットで送り、lmkd が `/proc/<pid>/oom_score_adj` に書く。書籍が描く、スコアを付けるのは UI 側で殺すのはカーネル側という分業は現在も不変で、変わったのは**殺す主体がカーネルから lmkd に移った**ことだけである。
+3. **書籍の -17〜16 表は旧 `oom_adj` 表記であり、Nougat の実コードは既に oom_score_adj 単位だった。** `android-7.0.0_r6` の `ProcessList.java` は FOREGROUND 0 / VISIBLE 100 / … / CACHED 900〜906 と定義しており、外部インタフェースが旧 oom_adj のままだと書籍のコラムが述べている点は lowmemorykiller ドライバの `parameters/adj` 側の事情である。現在は CACHED が 900〜999 に拡張され、PERCEPTIBLE_LOW/MEDIUM 等の中間段が追加されて**階層が細分化**した。
+4. **lowmemorykiller ドライバは「shrinker の目的外使用」であり、それが廃止理由でもあった。** ディスクキャッシュ解放用の `register_shrinker()` コールバックでプロセスを殺す設計は、書籍が裏の Activity をキャッシュとみなす仕組みとして読み解いた通り巧妙だが、発動が回収経路の内側（ロック保持中・直接回収中）に縛られ、空きページ数の閾値 (minfree) しか見ないため、ファイルキャッシュが大きい負荷で誤判定した。Linux 4.12 で staging から削除され、userspace lmkd に一本化された。
 5. **逼迫の尺度が「空き量」から「停滞時間」へ移った。** lmkd は vmpressure イベント（誤検知が多い）を経て、Android 10 から PSI (Pressure Stall Information) の `some`/`full` 停滞時間で逼迫を測る。「空きが何 MB あるか」ではなく「回収待ちで何 ms 止まったか」を見ることで、大きなページキャッシュを抱えた端末でも**ユーザが体感する遅延そのもの**を閾値にできるようになった。
 6. **cached プロセスは「殺す」前に「凍らせる」段が加わった。** Android 11 で導入された cached apps freezer は cgroup v2 freezer（[`process-thread-model.md`](process-thread-model.md)）で cached プロセスの実行を止め、Android 14 では（有効な端末で）cached 化から 10 秒後に凍結する。有効化の既定は端末依存である（Pixel 等は有効、§4 参照）。メモリは解放しないが CPU・電力・予期しない dirty 化を止め、zram への退避を安定させる。**プロセス＝キャッシュの「キャッシュ」が文字通り不活性データになった**。
 7. **2026 年の Android 17 で、殺す基準に「プロセス単体の上限」が加わった。** Memory Limiter は cgroup v2 の `memory.high` / `memory.swap.max` で端末 RAM 階層ごとの per-app 上限を課し、超過すると当該 cgroup に回収を集中させ、zram も尽きれば kill する（`ApplicationExitInfo` の説明に `MemoryLimiter:AnonSwap`）。**システム全体の逼迫に反応する lmkd と、個別アプリの暴走を封じ込める Memory Limiter の二層**が現在の姿である。
@@ -100,7 +100,7 @@ flowchart TB
 
 - **回収は確保と対応しない。** プロセス A の割当が回収を誘発しても、回収されるのは無関係なプロセス B の古いページでありうる。回収はゾーンの水位 (watermark) を契機に、(a) 割当経路の直接回収 (direct reclaim) と (b) バックグラウンドの kswapd で起こる（有野 (2017) Ⅱ巻 3.2.2、一般論は [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) §3）。direct reclaim は割当スレッド——UI スレッドかもしれない——を止めるため、**ジャンクの直接原因**になる。
 - **ページの 4 分類とスワップの有無。** 書籍の分類（同期可能＝ファイル一致の clean、破棄可能＝未使用キャッシュ、回収不能＝anon dirty、スワップ可能）で言えば、ディスクスワップの無い Android では anon dirty は回収不能である。ゆえに「コードを mmap で clean にする」「Zygote で shared にする」が Android の省メモリ設計の二本柱になった（Ⅰ巻 7.3.2〜7.3.4）。
-- **zram による部分的な解禁。** 書籍のコラムが触れた「メモリ上の圧縮領域へのスワップ」が現在の標準 zram である。anon ページを RAM 内で圧縮して保持するため、ディスクスワップの欠点（書込寿命・レイテンシ・電力。フラッシュの消去単位と書込回数制限は [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md)）を避けつつ、anon dirty を「一部回収可能」にした。ただし 2 次記憶の容量は増えないので、**zram は kill を遅らせる装置であって無くす装置ではない**——書籍のコラムの結論は現在も有効である。
+- **zram による部分的な解禁。** 書籍のコラムが触れた、メモリ上の圧縮領域へスワップする方式が現在の標準 zram である。anon ページを RAM 内で圧縮して保持するため、ディスクスワップの欠点（書込寿命・レイテンシ・電力。フラッシュの消去単位と書込回数制限は [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md)）を避けつつ、anon dirty を「一部回収可能」にした。ただし 2 次記憶の容量は増えないので、**zram は kill を遅らせる装置であって無くす装置ではない**——書籍のコラムの結論は現在も有効である。
 - **MGLRU (Multi-Gen LRU)。** active/inactive の 2 リストでは「最近使われたか」の粒度が粗く、kswapd がページテーブル走査に CPU を費やしていた。MGLRU（Linux 6.1 で mainline）はページを世代で管理し、Android 14 の GKI カーネル (android14-5.15/6.1) で既定有効化された。Google は Pixel 6 での評価としてアプリ起動時間 約 6.6% 短縮、バックグラウンド kill 約 8% 減、kswapd CPU 約 54% 減を報告している（first-party 計測・二次報道経由、独立再現は未確認）。
 
 ### 2. `oom_score_adj` と AMS の重要度計算
@@ -120,7 +120,7 @@ flowchart TB
 | -12 / -16 / -17 | 永続・システム・ネイティブ | PERSISTENT_PROC -800 / SYSTEM -900 / NATIVE -1000 | 同左＋PERSISTENT_SERVICE -700 |
 
 - 書籍の -17〜16 は、lowmemorykiller ドライバが外部に公開していた旧 `oom_adj` 単位（6 スロット）で説明したもので（Ⅱ巻 3.3.3 コラム）、AMS 自体は Nougat 時点で oom_score_adj 単位を扱っていた。**機構の理解としては書籍の説明で正しく、数値だけを現行単位で読み替えればよい。**
-- **重要度はグラフ計算である。** Activity の可視性（Ⅱ巻 4.2.2 の「B を積むと A は 0 → 7」）だけでなく、bindService・ContentProvider の接続で「重要なクライアントに使われているサーバは重要」という依存が伝播する。旧 `OomAdjuster` は再帰で計算し、循環（A が B を bind し B が A を bind）と入力順依存に弱かった。`OomAdjusterModernImpl` は procState/adj を**スロット（バケット）に並べて重要度順に接続を辿る**非再帰アルゴリズムで、変更に到達しうるプロセスだけを再計算する部分更新 (`partialUpdateLSP`) を持つ（AOSP `services/core/java/com/android/server/am/OomAdjusterModernImpl.java`。同ファイルは android-14.0.0_r1 に無く android-15.0.0_r1 に初出。切替は `ActivityManagerConstants.java` の `DEFAULT_ENABLE_NEW_OOM_ADJ = Flags.oomadjusterCorrectnessRewrite()` (android-15.0.0_r1 line 255; DeviceConfig `enable_new_oom_adj` で上書き可) で、aconfig フラグ `com.android.server.am.oomadjuster_correctness_rewrite` は AOSP `build/release` の Android 15 リリース構成 `ap3a` と Android 16 の `bp1a` で `state: ENABLED`（`aconfig/<config>/com.android.server.am/oomadjuster_correctness_rewrite_flag_values.textproto`, main ブランチ, Accessed: 2026-09-27）。すなわち **AOSP 既定では Android 15 から有効**。ベンダ構成で異なりうる）。
+- **重要度はグラフ計算である。** Activity の可視性（Ⅱ巻 4.2.2 の、B を積むと A が 0 から 7 になる例）だけでなく、bindService・ContentProvider の接続で「重要なクライアントに使われているサーバは重要」という依存が伝播する。旧 `OomAdjuster` は再帰で計算し、循環（A が B を bind し B が A を bind）と入力順依存に弱かった。`OomAdjusterModernImpl` は procState/adj を**スロット（バケット）に並べて重要度順に接続を辿る**非再帰アルゴリズムで、変更に到達しうるプロセスだけを再計算する部分更新 (`partialUpdateLSP`) を持つ（AOSP `services/core/java/com/android/server/am/OomAdjusterModernImpl.java`。同ファイルは android-14.0.0_r1 に無く android-15.0.0_r1 に初出。切替は `ActivityManagerConstants.java` の `DEFAULT_ENABLE_NEW_OOM_ADJ = Flags.oomadjusterCorrectnessRewrite()` (android-15.0.0_r1 line 255; DeviceConfig `enable_new_oom_adj` で上書き可) で、aconfig フラグ `com.android.server.am.oomadjuster_correctness_rewrite` は AOSP `build/release` の Android 15 リリース構成 `ap3a` と Android 16 の `bp1a` で `state: ENABLED`（`aconfig/<config>/com.android.server.am/oomadjuster_correctness_rewrite_flag_values.textproto`, main ブランチ, Accessed: 2026-09-27）。すなわち **AOSP 既定では Android 15 から有効**。ベンダ構成で異なりうる）。
 - **伝達は差分バッチ化された。** Nougat の lmkd プロトコルは `LMK_TARGET`（minfree/adj 表設定）と `LMK_PROCPRIO`（1 プロセスの adj 設定）の 2 コマンドだった（Ⅱ巻 3.3.4）。現在の `ProcessList` は `LMK_PROCREMOVE` / `LMK_SUBSCRIBE` / `LMK_PROCKILL` / `LMK_KILL_OCCURRED` / `LMK_START_MONITORING` / `LMK_BOOT_COMPLETED` / `LMK_PROCS_PRIO`（一括更新）など 12 種に増え、**一方向の設定チャネルから双方向の協調プロトコル**に変わった。
 
 ### 3. lowmemorykiller ドライバから userspace lmkd へ
@@ -149,7 +149,7 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 ```
 
 - **kill の高速化**: pidfd による PID 再利用レースの回避と、`process_mrelease()`（Linux 5.15）による「プロセス終了を待たずにアドレス空間を即時回収」が、kill → メモリ回復のレイテンシを縮めた。lmkd は専用の reaper スレッドで kill を非同期化している。
-- **設計の含意**: 判断材料（PSI・vmstat）はカーネルの汎用機構、方針（どこまで殺すか）は userspace という分担は、書籍のコラム「Low Memory Killer の変遷」が予見した「Android 独自処理を汎用機構に置き換え、外の lmkd に移す」流れの完成形である。
+- **設計の含意**: 判断材料（PSI・vmstat）はカーネルの汎用機構、方針（どこまで殺すか）は userspace という分担は、書籍のコラム「Low Memory Killer の変遷」が予見した、Android 独自処理を汎用機構に置き換えて外の lmkd に移す流れの完成形である。
 
 ### 4. cached app freezer・圧縮・trim callback
 
@@ -165,7 +165,7 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 
 ### 6. 16 KB ページと Android 17 Memory Limiter
 
-- **16 KB ページ (Android 15〜)**: ページが大きいと TLB 到達範囲が広がり、ページフォルトとページテーブル操作が減る。Google 公表値でアプリ起動 平均 3.16% 短縮、起動時電力 4.56% 減、システム起動 約 8%（約 950ms）短縮、その代償は「平均してやや多いメモリ使用」（内部断片化: 4 KB 単位なら 1 ページで済む小さなマッピングが 16 KB を占有）。ネイティブライブラリは ELF LOAD セグメントの 16 KB 整列が必須。lmkd の minfree・zram・PSS のように「ページ数」で語られる量はすべて単位が 4 倍になる点に注意（書籍注 5 の「1 ページ 4K」は前提が変わる）。Google Play の対応必須期限は、2025-05 の告知では 2025-11-01（延長申請で 2026-05-31）、2026-09-27 時点の developer.android.com では「2027-02-01 以降、非対応の更新はリリース不可」と記載されており、**期限は告知ごとに変動している**。
+- **16 KB ページ (Android 15〜)**: ページが大きいと TLB 到達範囲が広がり、ページフォルトとページテーブル操作が減る。Google 公表値でアプリ起動 平均 3.16% 短縮、起動時電力 4.56% 減、システム起動 約 8%（約 950ms）短縮、その代償は「平均してやや多いメモリ使用」（内部断片化: 4 KB 単位なら 1 ページで済む小さなマッピングが 16 KB を占有）。ネイティブライブラリは ELF LOAD セグメントの 16 KB 整列が必須。lmkd の minfree・zram・PSS のように「ページ数」で語られる量はすべて単位が 4 倍になる点に注意（書籍注 5 が置く 1 ページ 4K という前提は変わる）。Google Play の対応必須期限は、2025-05 の告知では 2025-11-01（延長申請で 2026-05-31）、2026-09-27 時点の developer.android.com では「2027-02-01 以降、非対応の更新はリリース不可」と記載されており、**期限は告知ごとに変動している**。
 - **Memory Limiter (Android 17〜)**: UID ≥ 10000 のアプリプロセスに、端末 RAM 階層ごとの上限を cgroup v2 で課す（例: 8 GB 機で可視 5 GiB / 背面 3 GiB、4 GB 機で 2 GiB / 1 GiB。3,200 MiB 未満と 18,432 MiB 以上の端末は対象外）。`memory.high` 到達で当該 cgroup に回収が集中し（clean ファイルページ破棄と非活性 anon の zram 退避＝ジャンクとして顕在化）、それでも増え続ければ kill される。lmkd が「全体の逼迫時に弱い者から殺す」のに対し、Memory Limiter は「逼迫していなくても暴走者を隔離する」——**重要度順の kill では、前面で漏れ続けるアプリから他を守れない**という「プロセス＝キャッシュ」モデルの穴を塞ぐ追加である。Pixel から開始し、他メーカーは順次採用と告知されている。
 
 ### 7. 何が変わり、何が変わっていないか (2016 Nougat → 現在)
@@ -194,7 +194,7 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 ## 結論 (Conclusions)
 
 - Android のメモリ管理は「スワップできない RAM を、多数のアプリでどう分け合うか」という一つの制約から導かれる。clean と shared を最大化する実行形式・Zygote、殺される前提のライフサイクル契約、アプリ知識をカーネルに渡す `oom_score_adj`——この三点は Nougat の書籍時代から**一切変わっていない**骨格である。
-- 変わったのは執行の場所と尺度である。カーネル内 shrinker の目的外使用は userspace lmkd に移り、空き量の閾値は PSI の停滞時間に置き換わった。書籍が「Low Memory Killer と呼ぶものが曖昧になりつつある」と書いた変遷は、**方針はユーザ空間、機構は mainline カーネル**という分業として完成した。
+- 変わったのは執行の場所と尺度である。カーネル内 shrinker の目的外使用は userspace lmkd に移り、空き量の閾値は PSI の停滞時間に置き換わった。Low Memory Killer という呼び名が指す範囲が曖昧になりつつあると書籍が指摘した変遷は、**方針はユーザ空間、機構は mainline カーネル**という分業として完成した。
 - 近年の追加（freezer・圧縮・MGLRU・16 KB・Memory Limiter）は、どれも「プロセス＝キャッシュ」モデルの弱点を補う方向にある: 背面キャッシュが CPU を食う（→凍結）、殺すのが早すぎる（→圧縮と良い LRU）、前面の暴走は重要度で止められない（→per-app 上限）。モデル自体は放棄されず、**キャッシュの管理が精密になり続けている**と総括できる。
 
 ### 次の接続先 (Related Topics)

@@ -2,11 +2,11 @@
 
 クラウド基盤 (cloud infrastructure) の分析。仮想化・分散システム・ネットワーキング・
 ストレージの一般機構が、**マルチテナント (multi-tenancy) と従量課金 (pay-per-use)**
-という制約の下でどう再設計され、製品化されるかを読む。Android / iOS / ブラウザに続く
-「第四のプラットフォーム」——データセンターというコンピュータ——の内部分析であり、
-AWS を主要な走る事例 (running example) として、標準・論文・オープン実装と相互検証する。
+という制約の下でどう再設計され、製品化されるかを読む。データセンターというコンピュータを、
+Android / iOS / ブラウザに続く「第四のプラットフォーム」として内部から分析する。
+AWS を全体を通した主要な事例 (running example) とし、標準・論文・オープン実装と相互検証する。
 
-既存スタックとの関係:
+既存スタックとの関係は次のとおりである。
 
 - 実行基盤は [`../virtualization/`](../virtualization/)（Firecracker, コンテナ in VM）の真上
 - ネットワークは [`../networking/virtual-networks-overlay.md`](../networking/virtual-networks-overlay.md)（VPC, Nitro オフロード）と対で読む

@@ -106,7 +106,7 @@ AI クラスタのインターコネクトは、「トラフィックが既知�
 
 [^llama3]: Grattafiori, A. et al. (Llama Team, AI @ Meta) (2024). The Llama 3 Herd of Models. arXiv:2407.21783 — 16,384 GPU・54 日間の中断統計（419 回・約 78% がハードウェア起因）を含む一次報告。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Jouppi, N. P. et al. (2023). TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning. *Proc. ISCA 2023*. DOI: 10.1145/3579371.3589350 — OCS による再構成可能トポロジ。
 - NVIDIA. *NVLink & NVSwitch — Technical Overview*. https://www.nvidia.com/en-us/data-center/nvlink/ — Accessed: 2026-07-13. — スケールアップ領域の帯域・ドメイン構成（ベンダ資料、目標値を含む）。

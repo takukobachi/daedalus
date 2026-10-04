@@ -115,7 +115,7 @@ SerDes は「銅線の物理は変えられない」という制約に対し、*
 
 [^razavi]: Razavi, B. (2021). *Design of CMOS Phase-Locked Loops: From Circuit Level to Architecture Level*. Cambridge University Press. — PLL/CDR・ジッタ特性（転送・トレランス・生成）の標準的典拠。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Dally, W. J. & Poulton, J. W. (1998). *Digital Systems Engineering*. Cambridge University Press. — シリアルリンク・シグナリング・タイミングの古典。
 - OIF. *Common Electrical I/O (CEI) Implementation Agreements*（CEI-112G / CEI-224G）. https://www.oiforum.com/ — Accessed: 2026-07-13. — 112G/224G 電気インターフェースの業界仕様。

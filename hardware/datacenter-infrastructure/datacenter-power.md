@@ -104,7 +104,7 @@ flowchart LR
 
 [^uptime-outage]: Uptime Institute. *Annual Outage Analysis*（年次）. https://uptimeinstitute.com/ — Accessed: 2026-07-13. — 停止原因の統計（電源系が主因であり続けること）の出典。
 
-その他の標準的典拠:
+その他の標準的典拠を以下に挙げる。
 
 - Barroso, L. A., Hölzle, U. & Ranganathan, P. (2018). *The Datacenter as a Computer* (3rd ed.). Morgan & Claypool. — 給電チェーン・TCO・キャッピングの体系的整理。
 - IEEE Std 3006.7 / IEEE Gold Book 系列. *Recommended Practice for Determining the Reliability of 7x24 Continuous Power Systems*. — 給電信頼性評価の実務標準。

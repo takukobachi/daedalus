@@ -34,7 +34,7 @@ ISA が「CPU が理解する命令」を定めるのに対し、**ABI (Applicat
 
 ### スタックフレーム (Stack Frame)
 
-関数呼び出しごとに、スタック上に**フレーム (frame)** が積まれる。典型的内容:
+関数呼び出しごとに、スタック上に**フレーム (frame)** が積まれる。典型的な内容を示す。
 
 ```
    高アドレス
@@ -78,7 +78,7 @@ long callee(long x, long y);
 long caller(void) { return callee(3, 4) + 1; }
 ```
 
-RV64 での概略:
+RV64 での概略を示す。
 
 ```asm
 caller:
@@ -127,11 +127,11 @@ struct S { char a; int b; char c; };  // sizeof は 6 ではなく 12 になり�
 
 ### 越境コストと最適化
 
-syscall は関数呼び出しの何百倍も重い。理由:
+syscall は関数呼び出しの何百倍も重い。理由は次のとおりである。
 - モード遷移とレジスタ退避/復元。
 - KPTI（`virtual-memory-mmu.md`）下ではページテーブル切替で TLB が冷える。
 
-**最適化の動機**: システムコールを減らす／まとめる。具体例:
+**最適化の動機**: システムコールを減らす／まとめる。具体例を以下に挙げる。
 - バッファリング（`write` をまとめる）、`readv`/`writev`（ベクタI/O）、`io_uring`（投入/完了をキュー化して syscall 回数を激減）、`vDSO`（`gettimeofday` 等をトラップなしでユーザ空間実行）。
 
 ### ABI 安定性と互換性

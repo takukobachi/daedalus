@@ -17,8 +17,8 @@ Android アプリのほぼすべてのコード——ライフサイクルコー
 
 ## 発見事項 (Findings)
 
-1. **UI の単一スレッド性は制約ではなく設計判断である。** View 階層・レイアウト状態・描画記録はロックなしで一貫性を保つ必要があり、入力(下から上)と状態変更(上から下)が逆向きのロック順序を要求する GUI では、細粒度ロックはデッドロックと性能劣化を招く。Android は他の主要ツールキット(Win32・WPF・Swing)と同じく「UI 状態は 1 スレッドだけが触る。他スレッドはメッセージで頼む」を選び、`ViewRootImpl` の `CalledFromWrongThreadException` でそれを強制する(有野 2017 Ⅰ巻 3.1)。
-2. **Looper は「スレッドにキューを 1 つ与える」TLS の仕掛けである。** `Looper.prepare()` は Looper を `ThreadLocal` に格納し、`Looper.myLooper()` はそれを引くだけ——static メソッドなのにスレッドごとに違う結果を返す(同 3.2.2)。`new Handler()` が引数なしで「今のスレッドの Looper」に結び付くのもこの TLS のためで、**Handler で重要なのは「どのスレッドで post するか」ではなく「どのスレッドで new したか」**である(同 3.3.3)。この暗黙性は事故の元となり、Android 11 (API 30) で引数なし `Handler()` は非推奨になった。
+1. **UI の単一スレッド性は制約ではなく設計判断である。** View 階層・レイアウト状態・描画記録はロックなしで一貫性を保つ必要があり、入力(下から上)と状態変更(上から下)が逆向きのロック順序を要求する GUI では、細粒度ロックはデッドロックと性能劣化を招く。Android は他の主要ツールキット(Win32・WPF・Swing)と同じくUI 状態には 1 スレッドだけが触れ、他スレッドはメッセージで処理を頼むという方式を選び、`ViewRootImpl` の `CalledFromWrongThreadException` でそれを強制する(有野 2017 Ⅰ巻 3.1)。
+2. **Looper は「スレッドにキューを 1 つ与える」TLS の仕掛けである。** `Looper.prepare()` は Looper を `ThreadLocal` に格納し、`Looper.myLooper()` はそれを引くだけ——static メソッドなのにスレッドごとに違う結果を返す(同 3.2.2)。`new Handler()` が引数なしで「今のスレッドの Looper」に結び付くのもこの TLS のためで、**Handler で重要なのは「どのスレッドで post するか」ではなく「どのスレッドで new したか」** である(同 3.3.3)。この暗黙性は事故の元となり、Android 11 (API 30) で引数なし `Handler()` は非推奨になった。
 3. **待機の実体は `epoll_wait` であり、起床の実体は `eventfd` への 8 バイトの write である。** `MessageQueue.next()` は「次のメッセージの時刻まで」を timeout にして native の `Looper::pollOnce` に入り、他スレッドからの `enqueueMessage` が先頭を差し替えたときだけ `nativeWake` → `eventfd` に 1 を書いて起こす。キューが空の UI スレッドは CPU を一切消費せずカーネル内で眠る——**電池を食わない待機**が GUI 常駐の前提条件である。
 4. **同じ epoll が「メッセージ以外のイベント源」も待つ。** native Looper は任意の fd を監視でき(`addFd`)、入力イベント(InputChannel のソケット)と VSYNC(DisplayEventReceiver)はこの経路で UI スレッドに届く。つまり UI スレッドは「Java のキュー」と「カーネルからのイベント」を**1 つの `epoll_wait` で多重化**しており、入力・描画・アプリの post が同じ待ち点を共有する。
 5. **フレームは同期バリアで他の仕事を追い越す。** `ViewRootImpl.scheduleTraversals()` はキューに**同期バリア**(target が null の特殊メッセージ)を置き、以後の通常 (synchronous) メッセージを堰き止める。Choreographer の VSYNC 駆動メッセージ (`MSG_DO_FRAME` 等) は**非同期 (asynchronous) メッセージ**としてバリアをすり抜け、フレーム処理が終わるとバリアが外される。FIFO を崩さずに「描画だけ優先レーン」を作る、キュー 1 本での優先度制御である。書籍 Ⅰ巻 3 章はこの機構に触れておらず、本書の中心的な補完点である。
@@ -84,7 +84,7 @@ sequenceDiagram
 ```
 
 - `Choreographer` はスレッドごと(`ThreadLocal`)に存在し、コールバックを input → animation → insets animation → traversal → commit の固定順で実行する(`Choreographer.doFrame`)。描画パイプラインの後段(RenderThread・SurfaceFlinger)は [`graphics-pipeline.md`](graphics-pipeline.md) を参照。
-- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ——「フレームを要求した瞬間からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
+- バリアは**フレーム要求時だけ**立つ。常時立てれば post した仕事が永遠に待たされ、立てなければ VSYNC 到着時に溜まった通常メッセージの後ろに描画が並ぶ——「フレームを要求した時点からフレームが終わるまで」だけ通常レーンを閉じるのが最小の介入である。
 
 ## 技術詳細 (Technical Details)
 

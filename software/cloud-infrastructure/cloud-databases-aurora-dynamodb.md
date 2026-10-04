@@ -4,7 +4,7 @@
 
 クラウド事業者が「データベースをサービスとして売る」とき、単機の DBMS をそのまま VM に載せる段階を超えると、2 つの根本的に異なる設計が現れる。**Aurora** は MySQL/PostgreSQL というリレーショナルの契約（SQL・トランザクション・既存アプリ互換）を守ったまま、ページの**下**のストレージ層を分散システムとして作り直した——標語は「**ログこそデータベース (the log is the database)**」。**DynamoDB** はリレーショナルの契約そのものを手放し、「**どんな規模でも 1 桁ミリ秒**」という予測可能性を製品にした——標語は「**予測可能な性能こそ商品 (predictability is the product)**」。
 
-本ドキュメントの中心テーゼは、クラウドデータベースの設計とは**「何を約束し続けるか」の選択**だ、ということである。Aurora は互換性を約束したから、SQL 実行層は変えられず、革新はすべて redo ログとストレージの間に押し込まれた。DynamoDB は予測可能性を約束したから、リクエストあたりの仕事量が有界にならない操作（join・全表スキャン・アドホックな集計）を **API から排除**した。両者は同じ力——マルチテナントの経済と[`cloud-control-planes.md`](cloud-control-planes.md) の信頼性原則——に押されながら、正反対の層で答えた対照実験であり、「計算と記憶の分離 (compute-storage disaggregation)」という共通の骨格がその下に横たわる。一次資料は Aurora の SIGMOD '17/'18 論文、DynamoDB の ATC '22/'23 論文、および祖先である Dynamo の SOSP '07 論文。分析深度は Level 3。
+本ドキュメントの中心テーゼは、クラウドデータベースの設計とは **「何を約束し続けるか」の選択**だ、ということである。Aurora は互換性を約束したから、SQL 実行層は変えられず、革新はすべて redo ログとストレージの間に押し込まれた。DynamoDB は予測可能性を約束したから、リクエストあたりの仕事量が有界にならない操作（join・全表スキャン・アドホックな集計）を **API から排除**した。両者は同じ力——マルチテナントの経済と[`cloud-control-planes.md`](cloud-control-planes.md) の信頼性原則——に押されながら、正反対の層で答えた対照実験であり、「計算と記憶の分離 (compute-storage disaggregation)」という共通の骨格がその下に横たわる。一次資料は Aurora の SIGMOD '17/'18 論文、DynamoDB の ATC '22/'23 論文、および祖先である Dynamo の SOSP '07 論文。分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
@@ -16,7 +16,7 @@
 
 1. **クラウドで最初に破綻するのはネットワーク I/O の経済であり、Aurora の答えは「ログ以外を流さない」である。** MySQL を複製ネットワークストレージ上で動かすと、1 コミットあたり redo ログ・binlog・データページ・ダブルライトバッファ等が多重に流れ、さらにそれがミラー間で複製される——書き込み増幅がネットワークで乗算される。Aurora はコンピュートノードから**redo ログレコードだけ**をストレージ層へ送り、ページの実体化 (materialization) はストレージノードが非同期に行う。ページとは「ログの適用結果のキャッシュ」にすぎない、という WAL の理論的含意（[`../databases/storage-engines.md`](../databases/storage-engines.md)）を、アーキテクチャの物理配置にまで昇格させた設計である。SIGMOD '17 の報告値では、ミラー版 MySQL 比で I/O トラフィックが桁で減る。
 
-2. **Aurora のクォーラム (6 copies / 3 AZ, W=4, R=3) は「AZ+1 故障」から逆算されている。** 守りたいのは「1 AZ 全損 + 無関係な 1 ノード故障」の同時発生で (a) 書き込み可用性を失わない、(b) データを失わない、の 2 つ。3 AZ × 2 コピーの 6 レプリカで W=4 なら AZ 全損 (−2) 後も書け、R=3 なら AZ+1 (−3) 後も読んで修復できる。さらにボリュームを **10 GB のセグメント（保護グループ）**に刻み、故障の修復単位を小さくして MTTR を分単位へ圧縮する——[`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) の語彙で言えば、「修復が終わる前に次が壊れる」確率を W/R ではなく **MTTR の短縮**で削る設計である。
+2. **Aurora のクォーラム (6 copies / 3 AZ, W=4, R=3) は「AZ+1 故障」から逆算されている。** 守りたいのは「1 AZ 全損 + 無関係な 1 ノード故障」の同時発生で (a) 書き込み可用性を失わない、(b) データを失わない、の 2 つ。3 AZ × 2 コピーの 6 レプリカで W=4 なら AZ 全損 (−2) 後も書け、R=3 なら AZ+1 (−3) 後も読んで修復できる。さらにボリュームを **10 GB のセグメント（保護グループ）** に刻み、故障の修復単位を小さくして MTTR を分単位へ圧縮する——[`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) の語彙で言えば、「修復が終わる前に次が壊れる」確率を W/R ではなく **MTTR の短縮**で削る設計である。
 
 3. **Aurora は読み取りクォーラムを日常経路から消し、合意を I/O 経路から追放した (SIGMOD '18)。** 素朴なクォーラム系は読みのたびに R 台へ問い合わせるが、Aurora のコンピュートノードは各セグメントの複製状態（どのストレージノードがどの LSN まで持つか）を追跡しており、**完全と分かっているレプリカ 1 台**から読む。書き込みも、グローバルな合意 (Paxos 級) をコミットごとに走らせるのではなく、単一ライターが振る LSN の全順序と、非同期 ack の水位線 (VDL: Volume Durable LSN) だけで一貫性を保つ。分散合意はストレージ構成の変更時——つまりコントロールプレーン——にだけ残る。[`cloud-control-planes.md`](cloud-control-planes.md) の「データプレーンから制御系への同期依存を消す」原則が、DB 内部で再演されている。
 

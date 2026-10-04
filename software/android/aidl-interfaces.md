@@ -90,7 +90,7 @@ sequenceDiagram
 ### 1. `.aidl` の構文と生成コード
 
 - **定義できるもの**: `interface`(メソッド集合)、`parcelable`(構造化データ)、`enum`(`@Backing(type="int")` 等で基底型を指定)、`union`、定数(`const int`/`const String`)。サポート型は Java のプリミティブ(developer.android.com のガイドによれば `short` を除く)、`String`・`CharSequence`、配列、`List`・`Map`、他の AIDL インタフェースと parcelable、`IBinder`、`ParcelFileDescriptor` である。
-- **生成される Java の骨格**(`generate_java_binder.cpp` の出力を説明用に簡略化):
+- **生成される Java の骨格**(`generate_java_binder.cpp` の出力を説明用に簡略化) を示す。
 
 **File**: `system/tools/aidl/generate_java_binder.cpp` が生成する `IFoo.java`(生成器のクラス/関数単位で参照、逐語引用ではない)
 **Purpose**: Stub/Proxy/asInterface/トランザクションコードの関係を示す

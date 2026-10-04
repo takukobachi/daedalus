@@ -37,7 +37,7 @@
 
 ### ヒューマノイドの標準的なシステム構成
 
-各社の公開情報を重ねると、`robotics-fundamentals.md` の階層構成がほぼそのまま現れる:
+各社の公開情報を重ねると、`robotics-fundamentals.md` の階層構成がほぼそのまま現れる。
 
 ```mermaid
 flowchart TB
@@ -75,7 +75,7 @@ flowchart TB
 
 ### 2. 手と操作 — 自由度をどこに置くか
 
-Tesla の第3世代ハンドが示す設計（報道ベース）は教科書的な問題解決である[^optimus-hands]:
+Tesla の第3世代ハンドが示す設計（報道ベース）は教科書的な問題解決である[^optimus-hands]。
 
 - **腱駆動 (tendon-driven)**: アクチュエータ約 25 基/腕を前腕に置き、ケーブルで指を駆動。指の質量・慣性を最小化しつつ自由度 22 を確保する。`kinematics-dynamics.md` の反射慣性の議論——動かす先端は軽いほどよい——の帰結。
 - **触覚指先**: 把持力のフィードバック（卵・ガラス瓶の取り扱いデモ）は、`locomotion-manipulation.md` で述べた「解析的な把持品質はモデル誤差で壊れる → 接触を測って閉ループにする」への実装解である。
@@ -83,7 +83,7 @@ Tesla の第3世代ハンドが示す設計（報道ベース）は教科書的�
 
 ### 3. 制御スタック — 二系統 VLA の構造
 
-Figure Helix が公表した構成は、学習ベースヒューマノイドの参照アーキテクチャとして読める[^helix]:
+Figure Helix が公表した構成は、学習ベースヒューマノイドの参照アーキテクチャとして読める[^helix]。
 
 - **System 2**: 事前学習済み視覚言語モデル（数 Hz）。シーン理解・言語指示の解釈という「遅い思考」を担う。
 - **System 1**: 高速視覚運動ポリシー（200 Hz 級）。System 2 の潜在指令を受けて全身の連続制御を出す。2026-01 発表の Helix 02 では歩行・バランス・操作を単一システムとして扱う全身自律へ拡張された[^helix-02]。
@@ -119,7 +119,7 @@ Figure Helix が公表した構成は、学習ベースヒューマノイドの�
 
 ## 参考文献 (References)
 
-一次資料（各社公式）:
+一次資料（各社公式）を以下に挙げる。
 
 [^bd-atlas]: [Boston Dynamics Unveils New Atlas Robot](https://bostondynamics.com/blog/boston-dynamics-unveils-new-atlas-robot-to-revolutionize-industry/) — Accessed: 2026-07-12. 油圧 Atlas 引退と全電動 Atlas の発表（2024-04）。
 
@@ -135,7 +135,7 @@ Figure Helix が公表した構成は、学習ベースヒューマノイドの�
 
 [^hyundai]: [Hyundai Motor Group Announces AI Robotics Strategy at CES 2026](https://www.hyundainews.com/releases/4664) — Accessed: 2026-07-12. 量産投資・工場導入計画。
 
-二次資料（報道・独立系）:
+二次資料（報道・独立系）を以下に挙げる。
 
 [^optimus-hands]: [Tesla Optimus Gen 3 Hands: 22-DoF, 50 Actuators Explained](https://www.basenor.com/blogs/news/tesla-optimus-gen-3-hands-22-dof-50-actuators-explained) — Accessed: 2026-07-12. Tesla は公式仕様書を出さないため報道ベース。数値は暫定と扱うこと。
 

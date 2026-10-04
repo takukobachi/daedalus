@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-ロケットエンジンは、SpaceX の競争力の源泉である。同社は2つの主力エンジンを持つ:
+ロケットエンジンは、SpaceX の競争力の源泉である。同社は2つの主力エンジンを持つ。
 
 - **Merlin (マーリン)**: Falcon 9 / Falcon Heavy を飛ばす、ケロシン (RP-1)／液体酸素のエンジン。枯れた**ガスジェネレータサイクル (gas-generator cycle)** を、再使用と量産に振り切って磨き上げた。
 - **Raptor (ラプター)**: Starship / Super Heavy 用の、液体メタン (CH₄)／液体酸素エンジン。実用化された世界で唯一の**フルフロー二段燃焼サイクル (full-flow staged combustion, FFSC)** を採用し、燃焼室圧でロケットエンジン史上の最高値を更新し続けている。
@@ -33,7 +33,7 @@
 
 ### 前提 — ロケット方程式と比推力 (Rocket Equation & Specific Impulse)
 
-ロケットの到達能力は **ツィオルコフスキーのロケット方程式**で表される:
+ロケットの到達能力は **ツィオルコフスキーのロケット方程式**で表される。
 
 ```
 Δv = v_e · ln(m0 / mf) = Isp · g0 · ln(m0 / mf)
@@ -50,7 +50,7 @@
 
 ### エンジンサイクルの分類 (Engine Cycles)
 
-ロケットエンジンの難所は「高圧の推進剤を主燃焼室へ送り込む**ターボポンプ**を、何で回すか」にある。その駆動ガスの扱いでサイクルが分かれる:
+ロケットエンジンの難所は「高圧の推進剤を主燃焼室へ送り込む**ターボポンプ**を、何で回すか」にある。その駆動ガスの扱いでサイクルが分かれる。
 
 ```
 [1] ガスジェネレータ (open cycle) — Merlin
@@ -72,12 +72,12 @@
 
 #### フルフロー二段燃焼 (FFSC) の核心
 
-Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]:
+Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]。
 
 - **酸素過剰プリバーナ (oxygen-rich preburner)**: 大量の LOX と少量のメタンを燃やし、**酸素リッチの高温ガス**で酸素側ターボポンプを駆動。
 - **燃料過剰プリバーナ (fuel-rich preburner)**: 大量のメタンと少量の LOX を燃やし、**燃料リッチの高温ガス**でメタン側ターボポンプを駆動。
 
-両者のガスは**いずれも主燃焼室に入り、そこで完全に燃え切る**。これが「フルフロー」の意味——推進剤を1滴も捨てない。利点:
+両者のガスは**いずれも主燃焼室に入り、そこで完全に燃え切る**。これが「フルフロー」の意味——推進剤を1滴も捨てない。利点は次のとおりである。
 
 1. **効率最大化**: 駆動ガスを捨てないため、原理的に最も高い Isp/圧力を狙える。
 2. **タービンの低温化**: 全流量でタービンを回すので、同じ仕事でもガス温度を低く保てる→部品寿命・再使用に有利。
@@ -104,7 +104,7 @@ Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]:
 
 ### Merlin と Falcon 9 のクラスタ (Clustering & Engine-Out)
 
-Falcon 9 第1段は **Merlin 1D を9基**束ね、海面で合計 約7,605 kN (1,710,000 lbf) を出す（オクタウェブ配置）[^f9official]。設計思想:
+Falcon 9 第1段は **Merlin 1D を9基**束ね、海面で合計 約7,605 kN (1,710,000 lbf) を出す（オクタウェブ配置）[^f9official]。設計思想は次のとおりである。
 
 - **エンジンアウト耐性 (engine-out capability)**: 9基のうち**最大2基が停止しても**ミッションを継続できる冗長性[^merlin]。多発化は信頼性を「数」で買う設計。
 - **再使用への適合**: 着陸時は中央1基（または3基）を再着火して減速する。深い**スロットリング**と複数回**再着火**ができることが、Merlin を再使用エンジンたらしめる。
@@ -132,7 +132,7 @@ SpaceX が Raptor でメタンへ移ったのは、**(1) すすが少なく再�
 
 ### 設計の反復 — Raptor 1 → 2 → 3 (Iterative Refinement)
 
-SpaceX の特徴は「飛ばして壊して直す」反復にある。Raptor では:
+SpaceX の特徴は「飛ばして壊して直す」反復にある。Raptor での経過を以下に示す。
 
 - **1→2**: スロート（ノズル喉部）を拡げて流量を増やし推力を ~185→~230 tf に、燃焼室圧を 250→300 bar へ。部品点数と製造コストを削減[^ea-raptor]。
 - **2→3**: 350 bar・280 tf へ。外部配管・センサ・ヒートシールドを**金属積層造形 (metal AM) と部品統合**で内部化し、推力重量比をほぼ倍に、製造の複雑さを大幅削減[^techtimes-raptor3]。
@@ -154,7 +154,7 @@ SpaceX の特徴は「飛ばして壊して直す」反復にある。Raptor で
 
 ## 結論 (Conclusions)
 
-Merlin と Raptor は、同じ SpaceX の中で対照的な設計判断を体現する:
+Merlin と Raptor は、同じ SpaceX の中で対照的な設計判断を体現する。
 
 - **Merlin** は「枯れたガスジェネレータサイクル」を量産・再使用・低コストへ振り切り、**性能の頂点ではなく運用の経済性**で Falcon 9 の再使用を成立させた。
 - **Raptor** は「フルフロー二段燃焼」という最難関サイクルを世界で初めて実用化し、**燃焼室圧と推力重量比を反復で更新**しながら、Starship の完全再使用という野心を支える。
@@ -187,7 +187,7 @@ Merlin と Raptor は、同じ SpaceX の中で対照的な設計判断を体現
 
 [^techtimes-raptor3]: [SpaceX Raptor 3 Engines and the Next Step in Starship Propulsion — New Space Economy](https://newspaceeconomy.ca/2026/04/16/spacex-raptor-3-engines-and-the-next-step-in-starship-propulsion/) ／ [NextBigFuture](https://www.nextbigfuture.com/2025/09/205681.html) — Raptor 3 は 350 bar・280 tf・Isp ~350 s・乾燥質量<1,525 kg、外部ヒートシールド廃止・一体再生冷却・金属積層造形による推力重量比ほぼ倍化。Accessed: 2026-06-30.
 
-その他の学術的典拠（査読前プレプリント含む、原理の確認に使用）:
+その他の学術的典拠（査読前プレプリント含む、原理の確認に使用）を以下に挙げる。
 
 - *Conceptual Design and Performance Analysis of a SpaceX Raptor Rocket Engine* (ResearchGate, 2025). — FFSC の性能解析。
 - *Preliminary design of a Raptor-like engine* (ResearchGate, 2022). — Raptor 類似 FFSC エンジンの予備設計。

@@ -4,7 +4,7 @@
 
 電力系統の根本制約は「電気は経済的な規模では貯蔵できない」ことだった（[`generation-and-grid-fundamentals.md`](generation-and-grid-fundamentals.md)）。系統用蓄電池 (grid-scale battery / BESS) はこの制約を部分的に外しつつある技術であり、同時に、[`electricity-markets-dispatch.md`](electricity-markets-dispatch.md) で整理した市場の中で**最も速い調整力の担い手**として電力事業の主要プレイヤーになりつつある。
 
-BESS は「大きな電池」ではなく、**セル（電気化学）→ モジュール/ラック → BMS（監視・保護）→ PCS（インバータ）→ EMS（運用・市場接続）**という階層システムである。興味深いのは、最下層のセルは EV（[`../automotive/ev/tesla-battery-powertrain.md`](../automotive/ev/tesla-battery-powertrain.md)）とほぼ同じ技術でありながら、設計の最適化軸が全く異なることだ。EV は重量・体積エネルギー密度が支配的だが、定置用は設置面積の制約が緩く、**サイクル寿命・安全性・kWh 単価**が支配する。本ドキュメントは、(1) BESS のハードウェア階層、(2) 化学系の選択 (LFP vs NMC) と劣化、(3) PCS がグリッドフォーミングの主戦場になっている構図、(4) 市場でのレベニュースタッキング (revenue stacking) と揚水発電との比較、(5) 安全（熱暴走）とセキュリティ、を整理する。
+BESS は「大きな電池」ではなく、**セル（電気化学）→ モジュール/ラック → BMS（監視・保護）→ PCS（インバータ）→ EMS（運用・市場接続）** という階層システムである。興味深いのは、最下層のセルは EV（[`../automotive/ev/tesla-battery-powertrain.md`](../automotive/ev/tesla-battery-powertrain.md)）とほぼ同じ技術でありながら、設計の最適化軸が全く異なることだ。EV は重量・体積エネルギー密度が支配的だが、定置用は設置面積の制約が緩く、**サイクル寿命・安全性・kWh 単価**が支配する。本ドキュメントは、(1) BESS のハードウェア階層、(2) 化学系の選択 (LFP vs NMC) と劣化、(3) PCS がグリッドフォーミングの主戦場になっている構図、(4) 市場でのレベニュースタッキング (revenue stacking) と揚水発電との比較、(5) 安全（熱暴走）とセキュリティ、を整理する。
 
 ## 方法論 (Methodology)
 

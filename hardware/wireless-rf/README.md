@@ -2,13 +2,13 @@
 
 **広域・高速側の無線**の分析。近距離無線の各論 (Wi-Fi の MAC 層・Bluetooth) は
 `../peripherals-connectivity/` でカバー済みであり、本領域はその**下の物理層理論**
-——電波伝搬・リンクバジェット・シャノン容量・変調・OFDM・MIMO——と、
+である電波伝搬・リンクバジェット・シャノン容量・変調・OFDM・MIMO と、
 セルラー (LTE/5G NR)・GNSS といった広域システムを扱う。
 
 電磁波・アンテナの物理は
 [`../../foundations/physics/electromagnetism/maxwell-equations-em-waves.md`](../../foundations/physics/electromagnetism/maxwell-equations-em-waves.md)
-が供給する。有線側の同型問題 (ISI・等化・FEC) は `../serdes-signal-integrity/` が
-兄弟領域である。
+が供給する。有線側の同型問題 (ISI・等化・FEC) は、兄弟領域の
+`../serdes-signal-integrity/` が扱う。
 
 ## ドキュメント
 

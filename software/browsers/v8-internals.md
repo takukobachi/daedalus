@@ -8,7 +8,7 @@ JavaScript は最適化に敵対的な言語である——変数に型がなく
 
 ## 方法論 (Methodology)
 
-- 各機構を**「何の規則性に賭けるか / 賭けが当たると何が省けるか / 外れると何を払うか」**の三点で記述し、独立した仕組みの列挙ではなく一つの投機体系として組み立てる。
+- 各機構を「**何の規則性に賭けるか / 賭けが当たると何が省けるか / 外れると何を払うか**」の三点で記述し、独立した仕組みの列挙ではなく一つの投機体系として組み立てる。
 - 起源を持つ概念は原典（Smalltalk のインラインキャッシュ、Self の maps と PIC）に紐づけ、V8 固有の実装と分離する[^deutsch][^self][^pic]。
 - 実装詳細は V8 の公式技術ブログ・設計文書 (v8.dev) を一次資料とし、バージョンで変わる閾値・数値は桁感に留める。
 - セキュリティは「JIT は最も攻撃される攻撃面」という事実から出発し、`../security/` の4層（見つける・exploit させない・閉じ込める・出所検証）に対応づける。
@@ -75,7 +75,7 @@ flowchart LR
 ### 5. Orinoco GC (Garbage Collection)
 
 - **若い世代**: 2 半空間のコピー式 scavenger を複数スレッドで並列実行。生存オブジェクトだけコピーするため「ほとんど死ぬ」若い世代と相性が良い（世代仮説）。
-- **老世代**: 並行マーキング（tri-color + write barrier）→ 並列スイープ、断片化が進めば圧縮。ポインタの張り替えを伴う圧縮・退避は安全点で行い、**「メインスレッドの停止をどの作業から順に追放するか」**の歴史が Orinoco の歴史である[^v8-gc]。
+- **老世代**: 並行マーキング（tri-color + write barrier）→ 並列スイープ、断片化が進めば圧縮。ポインタの張り替えを伴う圧縮・退避は安全点で行い、「**メインスレッドの停止をどの作業から順に追放するか**」の歴史が Orinoco の歴史である[^v8-gc]。
 - 世代間ポインタは remembered set で追跡し、scavenge が老世代全走査を免れる——`../../hardware/cpu-architecture/cache-coherence.md` のディレクトリと同じ「全捜索を差分記録で置換する」構図。
 
 ### 6. ポインタ圧縮・Smi・sandbox の表現 (Representation & the Sandbox)
@@ -87,7 +87,7 @@ flowchart LR
 
 - **JIT は実戦で最も突かれる攻撃面である。** 実際に悪用されるブラウザ脆弱性の相当数が V8 起因であり、型混同（IC・投機・map 無効化の縁のバグ）が主役を占める——投機体系の複雑さがそのまま攻撃面になっている。`../compilers-runtimes/` の一般論で述べた JIT 型混同の、最大の実例がここである。
 - **防御は 4 層で読む**（`../security/` の枠組み）: 見つける——文法認識ファザー Fuzzilli 等による継続的ファジング; exploit させない——Torque による builtins の型安全化、ヒープの隔離・強化; 閉じ込める——V8 sandbox → プロセスサンドボックス → サイト分離の三重の檻 (`../security/sandbox-architectures.md`); 出所——ソース信頼性はそもそも仮定しない（Web の前提）。
-- **JIT を捨てる選択肢**: 高保証環境向けの JIT-less モード（インタプリタ+baseline のみ）や、iOS の JIT 禁止 (`../ios/security-architecture.md`) は、「投機体系の攻撃面」対「性能」のトレードオフを反対側に倒した解であり、本ドキュメントの体系全体が**性能のために引き受けたリスク**であることを照らし返す。
+- **JIT を捨てる選択肢**: 高保証環境向けの JIT-less モード（インタプリタ+baseline のみ）や、iOS の JIT 禁止 (`../ios/security-architecture.md`) は、「投機体系の攻撃面」対「性能」のトレードオフで性能よりも攻撃面の縮小を優先した解であり、本ドキュメントの体系全体が**性能のために引き受けたリスク**であることを照らし返す。
 
 ## 結論 (Conclusions)
 
@@ -115,7 +115,7 @@ V8 は「動的言語の実行時の規則性」に対する投機の体系で�
 
 [^v8-sandbox]: V8 project. *The V8 Sandbox*. https://v8.dev/blog/sandbox — Accessed: 2026-07-13. — 外部ポインタ表・ケージ設計の一次資料。
 
-その他の標準的典拠:
+その他の標準的典拠を挙げる。
 
 - Aycock, J. (2003). A Brief History of Just-In-Time. *ACM Computing Surveys*, 35(2), 97–113. DOI: 10.1145/857076.857077 — JIT の系譜の総説。
 - Jones, R., Hosking, A. & Moss, E. (2011). *The Garbage Collection Handbook*. Chapman & Hall/CRC. — 世代別・並行 GC の理論的典拠。

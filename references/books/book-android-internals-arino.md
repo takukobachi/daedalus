@@ -7,7 +7,7 @@
 
 ## 位置づけ (Scope & Baseline)
 
-- **対象バージョン**: 本文は Android 7.0 Nougat (AOSP `android-7.0.0_r6`) を基準とし、下書きは 5.0 Lollipop (`android-5.1.1_r6`)。Ⅰ巻は 2016 年 12 月時点、Ⅱ巻は 2017 年 2 月時点の情報。カーネルは `kernel/msm.git` の `android-7.0.0_r0.18` を主に参照。バージョン依存の記述がない箇所は「4.0 ICS 以降なら概ね正しい」という前提で書かれている。
+- **対象バージョン**: 本文は Android 7.0 Nougat (AOSP `android-7.0.0_r6`) を基準とし、下書きは 5.0 Lollipop (`android-5.1.1_r6`)。Ⅰ巻は 2016 年 12 月時点、Ⅱ巻は 2017 年 2 月時点の情報。カーネルは `kernel/msm.git` の `android-7.0.0_r0.18` を主に参照。バージョン依存の記述がない箇所は、4.0 ICS 以降なら概ね正しいという前提で書かれている。
 - **方法**: Android の各層を網羅するのではなく、一つの問題（Ⅰ巻: 60fps を保つ GUI、Ⅱ巻: Activity とその再生成）について、最上位のアプリ API から HAL・カーネルまで関係する部分だけを縦に貫いて解説する。
 - **コードの扱い**: 書籍中のソースコードは実際の AOSP コードを著者が説明用に大きく改変した疑似コードであり、そのままでは動かず、重要な点で実装と異なる場合もあると著者自身が明記している。Daedalus では書籍を**機構の理解と設計意図の二次資料**として扱い、コードや数値は現行 AOSP で照合してから引用する。
 - **両巻の関係**: Ⅰ巻は GUI (View・描画・入力・ART)、Ⅱ巻は Activity (インストール・メモリ・プロセス・起動) を軸にし、Looper/Handler・Binder・init.rc・Zygote は両巻の速習節で重複して扱われる。Ⅱ巻 5.7 節「アプリの開始を見直す」が両巻の知識を束ねる山場と著者は位置づけている。
@@ -57,7 +57,7 @@
 | LK ブートローダー、boot / recovery パーティション、ramdisk が常にルート | ベンダ独自ブートローダー＋AVB、A/B・Virtual A/B・dynamic partitions (super)、fastbootd、GKI の boot / vendor_boot / init_boot、2 段階 init | [`boot-init-properties.md`](../../software/android/boot-init-properties.md) §8 |
 | View とレイアウト XML が UI の唯一の記述手段 | Jetpack Compose が主流の選択肢に (ComposeView として同じ ViewRootImpl 上で動く)。edge-to-edge の強制 (Android 15〜) | [`view-system-layout.md`](../../software/android/view-system-layout.md) §9 |
 
-**変わっていないもの**: UI スレッドの単一 Looper モデル、「記録は UI スレッド・発行は RenderThread」の二段構え、アプリ＝Linux ユーザーの UID サンドボックス、ActivityRecord 側に残る Bundle、Zygote による fork と COW 共有、init による epoll ループとサービス監視、「プロセスはいつ殺されてもよい」という契約。書籍が最も強調する「なぜそう設計されたか」の議論は、ほぼそのまま現在の Android を理解する土台として使える。
+**変わっていないもの**: UI スレッドの単一 Looper モデル、「記録は UI スレッド・発行は RenderThread」の二段構え、アプリ＝Linux ユーザーの UID サンドボックス、ActivityRecord 側に残る Bundle、Zygote による fork と COW 共有、init による epoll ループとサービス監視、「プロセスはいつ殺されてもよい」という契約。書籍が最も強調する、なぜそう設計されたかという議論は、ほぼそのまま現在の Android を理解する土台として使える。
 
 ## 読み方の提案 (How to Use These Notes)
 

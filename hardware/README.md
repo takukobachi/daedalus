@@ -20,7 +20,7 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
 - `serdes-signal-integrity/` — 高速シリアルリンクと SI（SerDes, PAM4, イコライゼーション,
   ジッタ, S パラメータ, COM …）。PCIe (`hw-sw-interface/`)・USB/ディスプレイ
   (`peripherals-connectivity/`)・Ethernet (`network-hardware/`) が論理層で共有する
-  物理層の共通土台。理論は `foundations/physics/electromagnetism/` の伝送線路編が供給
+  共通の物理層。理論は `foundations/physics/electromagnetism/` の伝送線路編が供給
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
 - `peripherals-connectivity/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
   サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi …）。`hw-sw-interface/` の
@@ -41,7 +41,7 @@ CPU の内部から SoC の外界までを、ソフトウェアに接続する�
   Rowhammer, TEE, secure boot …）。`cpu-architecture/` の投機実行・キャッシュ機構と
   ソフトウェア側セキュリティの橋渡し
 - `timekeeping/` — 時刻同期とクロック（発振器, 原子時計, GNSS 時刻, NTP/PTP …）。
-  `software/distributed-systems/` の論理時計に対する「物理時計側」の土台
+  `software/distributed-systems/` の論理時計に対する「物理時計側」の基礎
 
 ### 物理工学ドメイン (Physical Engineering Domains)
 

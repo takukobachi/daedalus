@@ -23,7 +23,7 @@
   論理回路・FPGA (`../physics/quantum-solid-state/mosfet-cmos.md`,
   `../../hardware/fpga-reconfigurable/`)、経路制御 (`../../software/networking/`)、
   正規表現・パーサ・検証の限界 (`../../software/security/`,
-  `../../software/ebpf/`) の骨格
+  `../../software/ebpf/`) の基礎
 - `number-theory-algebra/` — 数論・代数(合同算術と群、有限体、公開鍵暗号の数学 …)。
   TLS・セキュアブート (`../../software/networking/tls-internals.md`,
   `../../hardware/hardware-security/`)、CRC・スクランブラ
@@ -34,7 +34,7 @@
   (`../../hardware/peripherals-connectivity/wifi-architecture.md`)、オーディオ
   (`../../hardware/peripherals-connectivity/audio-subsystem.md`)、
   画像・ディスプレイ (`../../hardware/peripherals-connectivity/display-pipeline.md`)、
-  高速シリアルリンク (`../../hardware/serdes-signal-integrity/`) の土台
+  高速シリアルリンク (`../../hardware/serdes-signal-integrity/`) の基礎
 - `optimization/` — 最適化(凸性と LP/QP/SOCP、勾配法、KKT 条件、双対性と影の価格 …)。
   着陸誘導 (`../../hardware/aerospace/avionics-gnc.md`)、電力市場
   (`../../hardware/power-generation/electricity-markets-dispatch.md`)、
