@@ -8,7 +8,9 @@
 
 ## スコープの線引き
 
-- **ADAS・自動運転は扱わない** — `../automotive/` のロードマップ項目として扱う
+- **ADAS・自動運転は扱わない** — `../automotive/` で扱う
+  （[`adas-sensing-perception.md`](../automotive/adas-sensing-perception.md)・
+  [`autonomous-driving-stack-safety.md`](../automotive/autonomous-driving-stack-safety.md)）
 - **ドローン・飛行力学は扱わない** — `../aerospace/` の領域。本領域は地上ロボットを軸にする
 - **RTOS の一般論は扱わない** — [`../../software/embedded/`](../../software/embedded/)
   で扱い、本領域からは参照するに留める
