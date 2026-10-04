@@ -43,7 +43,6 @@ Conventions:
 |------|--------|---------|
 | Documents | `{category}-{description}.md` | `isa-riscv-intro.md` |
 | Diagrams | `{type}-{description}.{ext}` | `diagram-system-architecture.svg` |
-| Scripts | `{purpose}_{description}.{ext}` | `analyze_protocol.py` |
 
 File names: English only, lowercase with hyphens.
 
@@ -77,15 +76,6 @@ section, e.g. `## 運用・安全考察 (Operational & Safety Considerations)`.
 6. Security Considerations / セキュリティ考察
 7. Conclusions / 結論
 
-### Design Documents — Required Sections
-
-1. Purpose / 目的
-2. Requirements / 要件
-3. Design / 設計
-4. Rationale / 根拠
-5. Trade-offs / トレードオフ
-6. Implementation Notes / 実装ノート
-
 ### Foundations Documents — Required Sections
 
 For documents under `foundations/` (mathematics, physics, and other theory):
@@ -97,39 +87,23 @@ For documents under `foundations/` (mathematics, physics, and other theory):
 5. Applications within Daedalus / Daedalus内の応用 — relative links to the analysis documents this theory supports
 6. References / 参考文献 — textbooks and papers per the Citations standard
 
-### Hardware Specs Must Include
-
-Component ID, electrical characteristics, physical dimensions, timing diagrams,
-operating conditions, reference datasheets.
-
-### Software Specs Must Include
-
-System requirements, API definitions, protocol specs, data structures/schemas,
-error handling, performance requirements, version compatibility.
-
 ---
 
 ## 4. Writing Standards
 
 ### Code in Documents
 
-When quoting code from an analyzed system, always include the language spec, a
-context explanation, and the source location with line numbers:
-
-```
-**File**: `src/network/protocol.c` (lines 145-160)
-**Purpose**: Message framing logic
-```
-
-Pseudocode: language-agnostic, include complexity analysis, document assumptions.
+When quoting code from an analyzed system, give the language, a short purpose,
+and the source location with line numbers (e.g. `src/net/protocol.c` lines
+145-160). Pseudocode is language-agnostic and states its complexity and
+assumptions.
 
 ### Diagrams
 
 - **Mermaid inline** is the default — it is version-controllable and renders on
   GitHub. Use it for architecture, sequence, and state diagrams.
-- Use PlantUML or draw.io only when Mermaid cannot express the diagram; in that
-  case commit both the source and a rendered version (SVG preferred, or high-res
-  PNG).
+- Only when Mermaid cannot express a diagram, use PlantUML/draw.io and commit
+  both the source and a rendered SVG.
 - Use consistent notation (UML, C4). Include a legend for any custom notation.
 
 ### Citations
@@ -159,21 +133,6 @@ than picking a single number.
   fast-moving figure is in flux, do not assert one value — give the range, the
   access date, and the target-vs-demonstrated distinction.
 
-### Script Header
-
-```python
-"""
-Script: {name}
-Purpose: {what it does}
-Usage: {how to run it}
-Dependencies: {required tools/libraries}
-Author: {Agent} @ Daedalus
-Date: {YYYY-MM-DD}
-"""
-```
-
-`{Agent}` is the authoring agent, e.g. `Claude` or `Codex`.
-
 ---
 
 ## 5. Research Workflow
@@ -194,15 +153,8 @@ Date: {YYYY-MM-DD}
 
 ## 6. Quality Rules
 
-**Analysis depth** — default to Level 3:
-
-- **Level 1 (Surface)**: overview, main components, basic data/control flow.
-- **Level 2 (Functional)**: detailed behavior, key protocols, common edge cases.
-- **Level 3 (Complete, default)**: full system understanding — all protocols,
-  edge cases, failure modes, security, and optimization.
-
-Other rules:
-
+- Analysis depth defaults to Level 3 (complete): all protocols, edge cases,
+  failure modes, security, and optimization.
 - No placeholder text (TODO, TBD); all required sections complete before delivery.
 - No sensitive information (API keys, tokens, passwords) — redact as `█████████`.
 - Every claim is backed by evidence.
@@ -223,8 +175,7 @@ subdirectory name (e.g. `docs(compilers-runtimes)`, `docs(foundations)`);
 use `chore(<agent>)` for agent configuration (e.g. `chore(claude)`).
 
 Changes are merged via pull requests. Since this is a documentation/analysis
-repository (not implementation), PRs do not require a test plan unless scripts
-or tools are changed.
+repository (not implementation), PRs do not require a test plan.
 
 ---
 

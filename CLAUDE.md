@@ -16,10 +16,6 @@ Use the `deep-research` skill for multi-source, fact-checked investigation that
 produces a cited report; weave its findings into the relevant document and record
 sources per the Citations standard.
 
-### Script Header
-
-Use `Author: Claude @ Daedalus` in the Script Header.
-
 ### Japanese Prose Refinement (yomiyasu)
 
 The project enables the [yomiyasu](https://github.com/nanaism/yomiyasu) plugin
