@@ -8,7 +8,7 @@ system_server は UID `system` で動く単一の Java プロセスで、Activit
 
 ## 方法論 (Methodology)
 
-- 機構の基準線 (baseline) には有野 (2017) Ⅰ巻 1.3(Activity・ActivityThread・Binder・SystemServer・Zygote の速習、Android 7.0 Nougat 基準)と Ⅱ巻 5 章(Zygote と ActivityThread)を用いる。書籍は system_server を「サービスの入れ物」として速習するに留まるため、内部構造は現行 AOSP で再構成する。
+- 機構の基準線 (baseline) には有野 (2017) Ⅰ巻 1.3(Activity・ActivityThread・Binder・SystemServer・Zygote の速習、Android 7.0 Nougat 基準)と Ⅱ巻 5 章(Zygote と ActivityThread)を用いる。書籍は system_server をサービスの入れ物として速習するに留まるため、内部構造は現行 AOSP で再構成する。
 - 現在の姿は AOSP `frameworks/base` の `main` ブランチ(GitHub ミラー `aosp-mirror/platform_frameworks_base`、2026-09-27 参照)で確認した: `services/java/com/android/server/SystemServer.java`、`services/core/java/com/android/server/{SystemService,SystemServiceManager,Watchdog,DisplayThread,UiThread}.java`、`core/java/com/android/internal/os/BackgroundThread.java`、`services/core/java/com/android/server/wm/WindowManagerGlobalLock.java`、`services/core/java/com/android/server/pm/PackageManagerService.java`、`core/jni/com_android_internal_os_Zygote.cpp`、および `system/core/rootdir/init.zygote64.rc`。行番号は改訂で動くため、クラス・メソッド・定数名で参照する。
 - 各機構について「制約(単一プロセス・起動時間・可用性)→ 設計」の対応を取り、Nougat からの差分は技術詳細 §11 の表に集約する。導入バージョンを公開資料で確定できなかったものは本文で「確度」を明記する。
 - Binder の下回り(binder_proc・スレッドプール・oneway)は [`binder-internals.md`](binder-internals.md)、権限モデル全体は [`security-model.md`](security-model.md)、メッセージループの内部は [`looper-handler-message-loop.md`](looper-handler-message-loop.md) に委ねる。
@@ -151,7 +151,7 @@ sequenceDiagram
 | InputManagerService | other | 入力(ネイティブの InputReader/InputDispatcher を同一プロセスに持つ) | [`input-pipeline.md`](input-pipeline.md) |
 | Mainline のサービス(Wi-Fi、Bluetooth 等) | apex | APEX 内 `service-*.jar` | [`package-management.md`](package-management.md) |
 
-- **Installer は最初期に起動される**: `startBootstrapServices` の冒頭で installd への接続を確立し、PMS が起動時の走査でディレクトリ作成・権限設定を installd に頼めるようにする。書籍 Ⅱ巻 2 章の「特権操作は installd、判断は PMS」という分業は現在も同じである。
+- **Installer は最初期に起動される**: `startBootstrapServices` の冒頭で installd への接続を確立し、PMS が起動時の走査でディレクトリ作成・権限設定を installd に頼めるようにする。特権操作は installd、判断は PMS という書籍 Ⅱ巻 2 章の分業は現在も同じである。
 
 ### 6. スレッドモデル — 共有 Looper スレッドと Binder プール
 

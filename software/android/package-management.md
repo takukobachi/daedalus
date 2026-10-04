@@ -24,13 +24,13 @@ Android の「アプリをインストールする」という操作は、Linux 
 
 ## 発見事項 (Findings)
 
-1. **アプリ＝Linux ユーザという写像は 2016 年から一切変わっていない。** アプリ UID は依然 `FIRST_APPLICATION_UID = 10000`〜`LAST_APPLICATION_UID = 19999` (`Process.java`) の範囲から払い出される。変わったのは周辺だけで、マルチユーザでは `uid = userId × 100000 + appId` (`UserHandle.PER_USER_RANGE`) と**UID 空間を直積に拡張**し、隔離プロセス (99000〜) や SDK サンドボックス (20000〜29999) にも別レンジを割いた。「新しいセキュリティ要件を、カーネルから見れば古いマルチユーザ問題に見せる」(有野 (2017) Ⅱ巻 2.1.4) という設計判断は、10 年間の拡張すべてを吸収してきた。
+1. **アプリ＝Linux ユーザという写像は 2016 年から一切変わっていない。** アプリ UID は依然 `FIRST_APPLICATION_UID = 10000`〜`LAST_APPLICATION_UID = 19999` (`Process.java`) の範囲から払い出される。変わったのは周辺だけで、マルチユーザでは `uid = userId × 100000 + appId` (`UserHandle.PER_USER_RANGE`) と**UID 空間を直積に拡張**し、隔離プロセス (99000〜) や SDK サンドボックス (20000〜29999) にも別レンジを割いた。新しいセキュリティ要件をカーネルから見れば古いマルチユーザ問題に見せるという設計判断 (有野 (2017) Ⅱ巻 2.1.4)は、10 年間の拡張すべてを吸収してきた。
 2. **特権分離の線は「PMS は判断、特権デーモンは実行」のまま、特権側が二つに割れた。** Nougat では installd が data ディレクトリ作成と dexopt の両方を担った。Android 14 以降、dexopt は ART モジュール内の **ART Service** が所管し、特権作業は **artd** が担う。installd は `createAppData` 等のファイルシステム操作に縮退しつつ存続する (AIDL `IInstalld` に `dexopt` メソッド自体は残る)。分割の動機はセキュリティより**更新可能性**で、コンパイル方針を Mainline (ART APEX) 経由で OS 更新と独立に配るためである。
 3. **installd への経路は UNIX ソケットから Binder に変わった。** 書籍時点の `init.rc` は `/dev/socket/installd` (所有者 system, 0600) で「system_server だけが話せる」を実現していたが、Android 8.0 で `IInstalld.aidl`（[`aidl-interfaces.md`](aidl-interfaces.md)）の Binder サービス (`InstalldNativeService`) となり (`frameworks/native/cmds/installd/` は android-7.1.2_r1 では `commands.cpp` のみで `binder/` ディレクトリが無く、android-8.0.0_r1 で `binder/` と `InstalldNativeService.cpp` が現れる)、呼び出し元制限は SELinux とサービスマネージャのアクセス制御に移った。installd 自身は `user root` だが `capabilities CHOWN DAC_OVERRIDE DAC_READ_SEARCH FOWNER FSETID KILL SETGID SETUID SYS_ADMIN` に絞られている (`installd.rc`)——「root だが全能ではない」構成は書籍の説明 (2.3.3) と同じ思想である。
 4. **`packages.xml` は今も「Android の `/etc/passwd`」だが、中身はバイナリ (ABX) になった。** Android 12 以降、`Xml.resolveSerializer()` は `persist.sys.binary_xml` (既定 true) に従い Android Binary XML を書く。system_server の CPU 時間の無視できない割合が XML 処理に費やされていたことへの対策で、典型的な `packages.xml` で書き込み 4.3 倍高速・ディスク 2.4 倍削減という数値が `BinaryXmlSerializer` のクラス Javadoc に記されている (`core/java/com/android/internal/util/BinaryXmlSerializer.java` lines 45-47 @ android-12.0.0_r1: "benchmarking has shown to be 4.3x faster and use 2.4x less disk space than `Xml.newFastSerializer()` for a typical `packages.xml`"。比較対象はテキスト XML の高速シリアライザであり、第三者による再測定ではない)。ところがこの**性能最適化が新しい攻撃面を生んだ**: CVE-2024-34740 は `BinaryXmlSerializer` の長さフィールド (16bit) のオーバーフローで ABX の構造を注入し、`packages.xml` を改竄して system_server 権限に到達するものだった (2024 年 8 月修正)。台帳の整合性がシステムの信頼の起点であるという書籍の指摘 (2.4.4) の、最も直接的な実証である。
 5. **PMS は巨大な単一クラスから「スナップショット＋ヘルパ群」に解体された。** 現行の `pm/` には `Computer`/`ComputerEngine` (読み取り専用の不変スナップショット上で問い合わせに答える)、`InstallPackageHelper` (Prepare→Scan→Reconcile→Commit の 4 段階アトミックインストール)、`InitAppsHelper` (ブートスキャン)、`AppsFilterImpl` (可視性フィルタ)、`ResolveIntentHelper` と `resolution/` (Intent 解決) が並ぶ。動機は**ロック競合**である: PMS の `mLock` は全アプリからの問い合わせと更新が奪い合う大域ロックで、PermissionManager 等との入れ子でデッドロックの危険もあった (`Computer.java` のコメント)。読み手をスナップショットに逃がすことで、更新 (まれ) と問い合わせ (頻繁) を分離した。
 6. **Intent 解決は「能力による名前解決」から「可視性と所有権で制約された名前解決」になった。** 書籍時点では PMS は全アプリの intent-filter を持ち、呼び出し元が誰であれ候補を返した (2.5.3)。現在は (a) Android 11 のパッケージ可視性フィルタで**呼び出し元に見えるアプリだけ**が候補になり、(b) Android 12 で http/https の Web Intent は**ドメイン所有を検証済みのアプリ**にしか解決されず、未検証なら既定ブラウザへ落ち、(c) Android 13/14 で exported コンポーネントへの非一致 Intent・非 exported への暗黙 Intent が遮断された。解決アルゴリズムの核 (action/category/data の三項照合) は不変で、**照合の前後に認可フィルタが挿入された**のが変化の正体である。
-7. **ブートスキャンの遅さは「宣言的な台帳を毎回実体と照合する」設計の代金である。** 書籍は「起動時に毎回全 APK をスキャンしている」ことを驚きとして記した (2.5.3)。現在もこの照合は本質的に残る (`packages.xml` と `/data/app`・システム区画・APEX 内の APK を突き合わせる) が、`ParallelPackageParser` による並列解析と、解析結果の**パッケージキャッシュ**で定常ブートを短縮している。キャッシュはシステム更新 (OTA) で無効化されるため、「OTA 後の初回ブートだけ遅い」という体感はこの設計から直接出てくる。
+7. **ブートスキャンの遅さは「宣言的な台帳を毎回実体と照合する」設計の代金である。** 書籍は、起動時に毎回全 APK をスキャンしていることを驚きとして記した (2.5.3)。現在もこの照合は本質的に残る (`packages.xml` と `/data/app`・システム区画・APEX 内の APK を突き合わせる) が、`ParallelPackageParser` による並列解析と、解析結果の**パッケージキャッシュ**で定常ブートを短縮している。キャッシュはシステム更新 (OTA) で無効化されるため、「OTA 後の初回ブートだけ遅い」という体感はこの設計から直接出てくる。
 
 ## アーキテクチャ (Architecture)
 
@@ -75,7 +75,7 @@ flowchart LR
 凡例: 実線は呼び出し/書き込み、点線はデータの複製。サブグラフはプロセス (保護ドメイン) の境界を表す。
 
 - **書き手は一人、読み手は多数**: 台帳 (`Settings` と `packages.xml`) を変更できるのはインストール/アンインストール経路の Commit 段だけで、Intent 解決・`getPackageInfo` 等の大量の読み取りは不変スナップショット (`Computer`) に向かう。これは DB の MVCC と同型の設計で、読み手が書き手のロックを待たない。
-- **特権は二つのデーモンに分散**: installd はファイル所有権を変えられる (CHOWN/FOWNER) が、コンパイラを走らせる責務は artd に移った。どちらも system_server からの Binder 呼び出しでのみ動き、system_server 自身は root 権限を持たない——書籍 図2.3 の「特権部分だけを小さく切り出す」構図が二重化した形である。
+- **特権は二つのデーモンに分散**: installd はファイル所有権を変えられる (CHOWN/FOWNER) が、コンパイラを走らせる責務は artd に移った。どちらも system_server からの Binder 呼び出しでのみ動き、system_server 自身は root 権限を持たない——特権部分だけを小さく切り出すという書籍 図2.3 の構図が二重化した形である。
 
 ### インストールの流れ (1 セッション)
 
@@ -113,7 +113,7 @@ sequenceDiagram
 ### 2. インストールパイプライン — セッション、分割 APK、ストリーミング
 
 - **PackageInstaller セッション** (Android 5.0〜): インストーラは `createSession` → `openWrite` で APK 群をステージング領域に書き込み、`commit` で一括投入する。セッションは system_server 再起動をまたいで永続化される (`install_sessions.xml`)。Android 14 以降 targetSdk < 23 のアプリはインストール自体が拒否される (`INSTALL_FAILED_DEPRECATED_SDK_VERSION`)——実行時パーミッションを回避するために古い targetSdk を名乗るマルウェアへの対策で、**インストール時検査がポリシー施行点になった**例である。
-- **分割 APK と App Bundle**: 1 アプリ＝ base.apk ＋ ABI・画面密度・言語・機能ごとの `split_*.apk`。書籍の「fat バイナリ」(全 ABI の `.so` を 1 つの APK に同梱し、インストール時に必要な分だけ `lib/` にコピー、2.4.2) は、ストア側で端末に必要な分割だけを配る方式に置き換わった。Google Play は新規アプリに Android App Bundle を必須化している。**選択の場所がインストーラ (端末) からストア (サーバ) へ移った**ことで、ダウンロード量とストレージが減る代わりに、「端末上の APK 集合が元のビルド成果物と一致しない」ことを署名検証が扱う必要が生じた (分割ごとに同一鍵で署名、詳細は [`security-model.md`](security-model.md))。
+- **分割 APK と App Bundle**: 1 アプリ＝ base.apk ＋ ABI・画面密度・言語・機能ごとの `split_*.apk`。書籍が fat バイナリと呼ぶ方式 (全 ABI の `.so` を 1 つの APK に同梱し、インストール時に必要な分だけ `lib/` にコピー、2.4.2) は、ストア側で端末に必要な分割だけを配る方式に置き換わった。Google Play は新規アプリに Android App Bundle を必須化している。**選択の場所がインストーラ (端末) からストア (サーバ) へ移った**ことで、ダウンロード量とストレージが減る代わりに、「端末上の APK 集合が元のビルド成果物と一致しない」ことを署名検証が扱う必要が生じた (分割ごとに同一鍵で署名、詳細は [`security-model.md`](security-model.md))。
 - **4 段階アトミックインストール**: `InstallPackageHelper` は Prepare (解析・初期検証・署名の互換確認) → Scan (既存状態との照合) → Reconcile (同時にインストールされるパッケージ群の相互整合) → Commit (**ここだけがシステム状態を変更してよい**) に分け、「どの段で失敗しても全パッケージのインストールが失敗する」とコメントで規定する。複数 APK を原子的に入れる multi-package セッション (APEX＋APK の同時更新等) を成立させるための構造で、DB トランザクションの「検証と適用の分離」と同じ発想である。
 - **配置**: APK は `/data/app/` 下に置かれ、ディレクトリ名は Android 8.0 で連番 (`<pkg>-1`) から `SecureRandom` 16 バイトの Base64 接尾辞 (`<pkg>-<random>`) に、Android 11 で `~~<random>/<pkg>-<random>/` の二段構成になった (`services/core/java/com/android/server/pm/PackageManagerService.java` の `getNextCodePath()`: android-7.1.2_r1 line 14124 は連番、android-8.0.0_r1 line 16866 はランダム接尾辞、android-11.0.0_r1 lines 704 `RANDOM_DIR_PREFIX = "~~"` と 15954-15967 で二段化) (推測によるパス指定を不可能にし、`ApplicationInfo.sourceDir` を唯一の正規の取得手段にする)。書籍の `org.nattou.www.layerpaint-2` のような連番は過去のものである。
 - **インクリメンタルインストール** (Android 11〜): カーネルの **Incremental File System (IncFS)** 上に APK を置き、**全バイトが届く前にインストールを完了**させ、未到着ブロックは読み出し時にオンデマンド取得する (`adb install --incremental`、Play の段階配信)。この「部分的にしか存在しないファイルを検証する」問題を、APK Signature Scheme v4 (別ファイル `.idsig` の Merkle 木、fs-verity と同系) が解く。インストールの意味が「全部コピーした」から「検証可能に参照できる」へ変わった点が重要である。
@@ -121,19 +121,19 @@ sequenceDiagram
 ### 3. installd・artd とデータディレクトリ
 
 - **installd の責務**: `IInstalld.aidl` のメソッド群 (`createAppData`, `createAppDataBatched`, `destroyAppData`, `clearAppData`, `fixupAppData`, `restoreconAppData`, `getAppSize`, `moveCompleteApp`, `snapshotAppData` 等) がそのまま特権操作の目録になっている。どれも「アプリ UID 所有のディレクトリを作る/消す/測る/SELinux ラベルを付け直す」であり、**installd の攻撃面は IInstalld の引数検証に集約される**。
-- **データディレクトリの二重化**: 書籍時点 (Nougat) で既にファイルベース暗号化 (FBE) と Direct Boot が導入されており、アプリデータは **CE (Credential Encrypted) `/data/user/N/<pkg>`** と **DE (Device Encrypted) `/data/user_de/N/<pkg>`** の二系統を持つ。書籍が示す `/data/data/<pkg>` はユーザ 0 の CE 領域と同一実体の互換パスである。installd はユーザごと・暗号クラスごとにディレクトリを作り、UID に `chown` し、SELinux ラベル (アプリの seinfo と MLS カテゴリ) を付ける——「chown するだけ」(書籍 2.3.4) だった処理に**暗号クラスと MAC ラベル付けが加わった**のが最大の差分である。
+- **データディレクトリの二重化**: 書籍時点 (Nougat) で既にファイルベース暗号化 (FBE) と Direct Boot が導入されており、アプリデータは **CE (Credential Encrypted) `/data/user/N/<pkg>`** と **DE (Device Encrypted) `/data/user_de/N/<pkg>`** の二系統を持つ。書籍が示す `/data/data/<pkg>` はユーザ 0 の CE 領域と同一実体の互換パスである。installd はユーザごと・暗号クラスごとにディレクトリを作り、UID に `chown` し、SELinux ラベル (アプリの seinfo と MLS カテゴリ) を付ける——chown するだけ (書籍 2.3.4) だった処理に**暗号クラスと MAC ラベル付けが加わった**のが最大の差分である。
 - **dexopt の移管**: Nougat の installd は `dexopt` コマンドで dex2oat を起動し、プロファイルのマージも担った (書籍 2.3.6)。Android 14 以降は ART Service が「いつ・どのフィルタで」を決め、artd が入出力を fd で受け取り capability を落として dex2oat を exec する。PMS 側の dexopt 実装は Android 13 以前向けとして残置扱いである。コンパイル方針の詳細は [`art-runtime-internals.md`](art-runtime-internals.md) を参照。
 
 ### 4. packages.xml・packages.list — 台帳の永続化
 
 - **内容**: `<package>` 要素に名前・`codePath`・ネイティブライブラリパス・`userId` (appId)・installer・署名 (`<sigs>`, keyset)・付与済みインストール時パーミッション等を持つ (書籍 2.4.2 の構造は概ね現行と同じ)。ユーザごとの状態 (有効/無効・停止状態・実行時パーミッション) は別ファイル群に分かれている。
-- **原子性**: 現行 `Settings` は `ResilientAtomicFile` で `packages.xml` / `packages-backup.xml` / `packages.xml.reservecopy` の三つ組を扱う。書籍の注 (「壊れていれば backup を使う」, 2.4.2 注6/注8) は、**予備コピーを加えた多重化**に発展した。台帳が壊れると全アプリの UID が失われる (＝全データが所有者不明になる) ため、最も保守的な書き込み戦略が取られる。
+- **原子性**: 現行 `Settings` は `ResilientAtomicFile` で `packages.xml` / `packages-backup.xml` / `packages.xml.reservecopy` の三つ組を扱う。壊れていれば backup を使うという書籍の注 (2.4.2 注6/注8) は、**予備コピーを加えた多重化**に発展した。台帳が壊れると全アプリの UID が失われる (＝全データが所有者不明になる) ため、最も保守的な書き込み戦略が取られる。
 - **ABX (Android Binary XML)**: 先頭 4 バイトのマジック `ABX\0` で判別され、`Xml.resolvePullParser()` がテキスト XML と自動で読み分ける。型付きプリミティブ (int/long/bytes) を文字列化せずに直接書くことが速度と容量の効き所で、代償は人間が読めないこと (`abx2xml` ツールが必要) と、上述 CVE-2024-34740 のような**エンコーダ自身の境界バグ**である。
 - **packages.list**: 「パッケージ名 → UID・デバッグ可否・データディレクトリ・seinfo・補助 GID」の平文一覧。Java の PMS に Binder で問い合わせられない (あるいは問い合わせるべきでない) ネイティブ側——`run-as` 等——のために、台帳の**射影を読み取り専用で公開**している。
 
 ### 5. ブート時スキャンと APEX
 
-- **スキャンの順序** (`InitAppsHelper`): オーバーレイ → フレームワーク → 特権アプリ → システムアプリ → APEX 内の APK → `/data/app` のユーザアプリ。その過程で `packages.xml` の記録と実体の APK を突き合わせ、消えた/壊れた/途中までしか入っていないパッケージを整理する (書籍 2.4.3 注8 の「突き合わせ」)。
+- **スキャンの順序** (`InitAppsHelper`): オーバーレイ → フレームワーク → 特権アプリ → システムアプリ → APEX 内の APK → `/data/app` のユーザアプリ。その過程で `packages.xml` の記録と実体の APK を突き合わせ、消えた/壊れた/途中までしか入っていないパッケージを整理する (書籍 2.4.3 注8 でいう突き合わせ)。
 - **なぜ遅いか**: 数百の APK について ZIP を開き、バイナリ AndroidManifest を解析し、コンポーネントと intent-filter をメモリ上の索引に登録する必要がある。宣言的な台帳 (`packages.xml`) だけでは intent-filter 等の全情報を持たないため、**台帳は索引であって実体ではなく、実体は毎回 APK から再構築される**。現行は `ParallelPackageParser` のスレッドプールで並列解析し、解析済みパッケージのキャッシュ (`PackageCacher`) を再利用することで短縮している。OTA でシステム側が変わるとキャッシュが無効化され、同時に ART Service の `boot-after-ota` dexopt も走るため、OTA 直後の初回ブートが顕著に遅くなる。
 - **APEX と Mainline** (Android 10〜): APEX は署名付き ZIP (APK と同じ基盤で検証可能) の中に ext4 イメージを持ち、`apexd` がブート初期にループデバイス＋dm-verity で `/apex/<name>@<ver>` にマウントする。APK では表現できない**ネイティブライブラリ・ランタイム・HAL を、ブート初期に使える形で**更新するための形式であり、ART 自体 (＝ ART Service/artd) もこの経路で更新される。PMS はブート時に有効な APEX を問い合わせ、その中の APK もスキャン対象にする (`getApexScanPartitions`)。「パッケージ」の概念が、アプリから OS 部品へ拡張されたと言える。
 
@@ -161,7 +161,7 @@ sequenceDiagram
 | Intent 解決 | 全アプリの intent-filter を誰にでも照合 | 可視性フィルタ (11)・App Links のドメイン所有検証 (12)・非一致/非 exported 遮断 (13/14) | インストール済みアプリ一覧のプライバシー、Intent 横取り・リダイレクト攻撃 |
 | インストール可能条件 | 署名が有効なら targetSdk を問わない | targetSdk < 23 は拒否 (Android 14〜) | 実行時パーミッション回避目的の古い targetSdk を封じる |
 
-- **変わっていないもの**: 「PMS が台帳の唯一の書き手」「特権作業だけを小さなデーモンに切り出す」「intent-filter の三項照合」「台帳の整合性がシステムの信頼の起点」という四つの骨格。書籍が「他のシステムサービスを読む時にも応用できる」(2.6) と述べた構成原理は、現在の PMS/installd/artd にもそのまま適用できる。
+- **変わっていないもの**: 「PMS が台帳の唯一の書き手」「特権作業だけを小さなデーモンに切り出す」「intent-filter の三項照合」「台帳の整合性がシステムの信頼の起点」という四つの骨格。他のシステムサービスを読む時にも応用できると書籍が述べた (2.6) 構成原理は、現在の PMS/installd/artd にもそのまま適用できる。
 - **SDK Runtime について**: Privacy Sandbox の一部として広告 SDK をアプリ本体と別 UID (20000〜29999 レンジ) の別プロセスで動かす SDK Runtime が構想され、installd にも `reconcileSdkData` 等の支援が入った。しかし Google は 2025-10-17 付で SDK Runtime を含む Privacy Sandbox 技術群の退役を発表しており、UID レンジや installd のメソッドは AOSP に残るものの、**アプリ配布の前提として扱うべき機構ではなくなった** (2026-09-27 時点)。
 
 ## セキュリティ考察 (Security Considerations)
@@ -176,7 +176,7 @@ sequenceDiagram
 
 - Android のパッケージ管理の本質は、**「アプリ＝Linux ユーザ」という写像を台帳 (packages.xml) で永続化し、その台帳を名前解決 (Intent) にも流用する**ことにある。この骨格は 2016 年の書籍から現在まで一切変わっておらず、マルチユーザ・隔離プロセス・SDK サンドボックスといった拡張はすべて UID 空間の区画追加として吸収された。
 - 変わったのは台帳の**周辺の工学**である: 書き込みはアトミックな 4 段階トランザクションと三重化ファイルに、読み取りは不変スナップショットに、特権作業は installd と artd の二デーモンに、形式はバイナリ XML になった。いずれも「読み手の増加」「OS 部品の独立更新」「system_server の性能」という規模の圧力への応答で、機構の意味論を保ったまま実装を置き換えている。
-- Intent 解決は「能力に基づく開かれた名前解決」から、**可視性・ドメイン所有・exported 契約で認可された名前解決**へと移った。書籍が「Android らしさの根幹」と呼んだアプリ間連携 (2.6) は残しつつ、その連携が情報漏洩・横取りの経路にならないよう、照合の前後に認可フィルタを挟む形で進化している。
+- Intent 解決は「能力に基づく開かれた名前解決」から、**可視性・ドメイン所有・exported 契約で認可された名前解決**へと移った。書籍が Android らしさの根幹と位置づけたアプリ間連携 (2.6) は残しつつ、その連携が情報漏洩・横取りの経路にならないよう、照合の前後に認可フィルタを挟む形で進化している。
 - 台帳の整合性はシステムの信頼の起点であり続け、その直上に置いた最適化 (ABX) が最も深刻な脆弱性の一つを生んだ。**性能のために台帳の表現を変えるたびに、信頼の起点のコードを書き換えている**という自覚が、この層の設計・レビューに必要である。
 
 ### 次の接続先 (Related Topics)
