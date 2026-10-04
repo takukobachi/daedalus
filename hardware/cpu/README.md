@@ -14,14 +14,10 @@
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 分岐予測と投機実行 (branch prediction & speculative execution)
 - [`simd-vector.md`](simd-vector.md) — SIMD・ベクトル演算 (SIMD / vector processing)
 - [`dram-memory-controllers.md`](dram-memory-controllers.md) — DRAM とメモリコントローラ (DRAM & memory controllers)
+- [`numa-multi-socket.md`](numa-multi-socket.md) — NUMA とマルチソケット (NUMA & multi-socket systems)
+- [`performance-monitoring-units.md`](performance-monitoring-units.md) — 性能監視ユニット (performance monitoring units)
 
 ## 今後のテーマ候補
 
 - ヘテロジニアスマルチコア (heterogeneous multicore) — big.LITTLE / P・E コア、
   非対称コア間の共有キャッシュとマイグレーション、OS スケジューラとの接点
-- 性能計測と PMU (performance monitoring) — ハードウェア性能カウンタ、`perf` が読む
-  マイクロアーキテクチャ事象、トップダウン解析 (top-down microarchitecture analysis)
-- NUMA とマルチソケット (NUMA & multi-socket) — UPI / Infinity Fabric、メモリ
-  アフィニティ、[`cache-coherence.md`](cache-coherence.md)・
-  [`dram-memory-controllers.md`](dram-memory-controllers.md) のスケールアップ側の続き
-
