@@ -8,11 +8,25 @@
 [`../android/art-runtime-internals.md`](../android/art-runtime-internals.md) (ART) や
 ブラウザの JS エンジンは後者の実プロダクトである。
 
+AOT コンパイラ本体 (IR 上の中盤最適化と、機械語を作るバックエンド) は
+`compiler-middle-end-ir-optimization.md` → `compiler-backend-code-generation.md` →
+`linkers-loaders-elf.md` の順に、ソースからオブジェクトファイル・プロセスまでを一続きで追える。
+
 `language-implementations-cpython-go-rust.md` を起点に、標準ライブラリ内部・
 非同期実行器へ掘り下げる CPython / Go / Rust 比較の三部作を含む。
 
 ## 構成
 
+- `compiler-middle-end-ir-optimization.md` — コンパイラ中盤:「事実を証明し、
+  許された書き換えだけを行う」作業としての最適化。LLVM IR の設計と MLIR、
+  SSA 構築 (Cytron の支配辺境法 / Braun の on-the-fly 法)、SCCP・GVN・LICM・
+  インライン化のコストモデル、Loop/SLP 自動ベクトル化、別名解析、新パスマネージャと
+  `-O2`/`-O3` パイプライン、UB と poison/undef/freeze、PGO・LTO・ThinLTO
+- `compiler-backend-code-generation.md` — コンパイラバックエンド: 理想機械を有限の
+  実機へ写す NP 困難な写像の連鎖。命令選択 (木被覆・BURS、SelectionDAG vs
+  GlobalISel)、レジスタ割り当て (Chaitin/Briggs の彩色、線形走査、LLVM greedy の
+  追い出しと分割)、リストスケジューリングとマシンモデル、ソフトウェアパイプライニング、
+  呼び出し規約の低水準化、MC 層とフィックスアップ・relaxation
 - `linkers-loaders-elf.md` — リンカとローダ：シンボル解決と再配置という2つの
   基本操作、ELF の二重ビュー（セクション vs セグメント）、静的リンクの規則と
   失敗モード、PLT/GOT と遅延束縛、シンボル介入と LD_PRELOAD、ld.so の
@@ -42,12 +56,6 @@
 
 ## 今後のテーマ候補
 
-- コンパイラ中盤 (compiler middle-end) — IR・SSA 形式、主要最適化 (インライン化,
-  ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu/simd-vector.md`
-  の自動ベクトル化の供給側
-- コンパイラバックエンド (compiler backend) — 命令選択 (instruction selection)、
-  レジスタ割り当て (register allocation)、命令スケジューリング。
-  `../../hardware/cpu/` の ISA・パイプライン分析との合流点
 - ビルドシステムと再現可能ビルド (build systems & reproducible builds) —
   依存グラフとパッケージ依存解決 (go modules の MVS, cargo の semver, pip)、
   キャッシュと分散ビルド、ビット単位で同一な成果物が
