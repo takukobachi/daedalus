@@ -87,8 +87,8 @@ F = q(E + v × B)
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | 配線(BEOL)の抵抗率・エレクトロマイグレーション。銅配線・バリアメタルの動機 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | 電源分配・IR ドロップ・ジュール発熱。§2 のオームの法則と P = I²R が前提 |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | 配線の RC 遅延とクロストーク。高速化の物理的制約の起点 |
-| [`hardware/automotive/ev/tesla-battery-powertrain.md`](../../../hardware/automotive/ev/tesla-battery-powertrain.md) | トラクションモーターの動作原理(ローレンツ力)と大電流経路の I²R 損失 |
-| [`hardware/power-generation/`](../../../hardware/power-generation/) | 送電の I²R 損失と高電圧化の理由。発電機・変圧器の物理は次回(電磁誘導)で完結 |
+| [`engineering/automotive/ev/tesla-battery-powertrain.md`](../../../engineering/automotive/ev/tesla-battery-powertrain.md) | トラクションモーターの動作原理(ローレンツ力)と大電流経路の I²R 損失 |
+| [`engineering/energy/`](../../../engineering/energy/) | 送電の I²R 損失と高電圧化の理由。発電機・変圧器の物理は次回(電磁誘導)で完結 |
 
 ## 参考文献 (References)
 

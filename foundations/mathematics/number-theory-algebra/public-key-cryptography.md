@@ -78,11 +78,11 @@ Shor (1997) は、十分大規模な量子計算機が素因数分解と離散�
 | 文書 | 接続点 |
 |------|--------|
 | [`software/networking/tls-internals.md`](../../../software/networking/tls-internals.md) | 署名で認証された ephemeral (EC)DH、前方秘匿性、PQC ハイブリッド鍵交換 (§2, §4–5) |
-| [`hardware/peripherals-connectivity/bluetooth-pairing-protocol.md`](../../../hardware/peripherals-connectivity/bluetooth-pairing-protocol.md) | ペアリングの ECDH と中間者対策（認証つき鍵交換の必然性） (§2, §4) |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | セキュアブートの署名連鎖、スカラー倍・冪乗のサイドチャネルと対策 (§3–4) |
+| [`hardware/peripherals/bluetooth-pairing-protocol.md`](../../../hardware/peripherals/bluetooth-pairing-protocol.md) | ペアリングの ECDH と中間者対策（認証つき鍵交換の必然性） (§2, §4) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | セキュアブートの署名連鎖、スカラー倍・冪乗のサイドチャネルと対策 (§3–4) |
 | [`software/security/software-supply-chain-security.md`](../../../software/security/software-supply-chain-security.md) | アーティファクト署名・検証の数学的土台と鍵管理 (§3–4) |
-| [`software/specifications/authentication-tokens-specification.md`](../../../software/specifications/authentication-tokens-specification.md) | RS256/ES256 署名の代数、nonce 事故と決定論的署名 (§3–4) |
-| [`hardware/automotive/cybersecurity-iso21434.md`](../../../hardware/automotive/cybersecurity-iso21434.md) | 車載での署名検証・鍵管理と、長寿命製品ゆえの PQC 移行圧力 (§5) |
+| [`software/apis/authentication-tokens-specification.md`](../../../software/apis/authentication-tokens-specification.md) | RS256/ES256 署名の代数、nonce 事故と決定論的署名 (§3–4) |
+| [`engineering/automotive/cybersecurity-iso21434.md`](../../../engineering/automotive/cybersecurity-iso21434.md) | 車載での署名検証・鍵管理と、長寿命製品ゆえの PQC 移行圧力 (§5) |
 
 ## 参考文献 (References)
 

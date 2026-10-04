@@ -6,7 +6,7 @@
 
 中心テーゼは二つ。第一に、**観測には単価があり、可観測性の設計とは観測の予算配分である**、ということ。カウンタ (常時・ほぼ無料) → サンプリング (常時・有界コスト) → イベント記録 (トレース: 事象比例・非有界) という単価の階段があり、「常時安く測り、異常時だけ深く掘る」二段構えが本番環境の均衡点になる。観測自体が対象を変える (observer effect) 以上、これは精度と侵襲の取引でもある。
 
-第二に、**現代の観測基盤は「再コンパイルなしの全層計装」に到達した**、ということ。ハードウェアは PMU (performance monitoring unit) が μアーキテクチャ事象を数え、カーネルは tracepoint/kprobe に [`../ebpf/`](../ebpf/README.md) の検証済みコードを差し込め、分散システムはリクエストに文脈 (trace context) を運ばせて因果を復元する。printf を仕込んで再デプロイする時代は終わり、**観測は「あとから聞ける」能力としてシステムに常設される**ようになった。分散トレーシングの文脈伝搬が [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) の論理時計 (因果の追跡) の実務形であることも見逃せない——可観測性は分散システム理論の応用先である。
+第二に、**現代の観測基盤は「再コンパイルなしの全層計装」に到達した**、ということ。ハードウェアは PMU (performance monitoring unit) が μアーキテクチャ事象を数え、カーネルは tracepoint/kprobe に [`../operating-systems/`](../operating-systems/README.md) の検証済みコードを差し込め、分散システムはリクエストに文脈 (trace context) を運ばせて因果を復元する。printf を仕込んで再デプロイする時代は終わり、**観測は「あとから聞ける」能力としてシステムに常設される**ようになった。分散トレーシングの文脈伝搬が [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) の論理時計 (因果の追跡) の実務形であることも見逃せない——可観測性は分散システム理論の応用先である。
 
 本書は (1) 観測の単価階層、(2) PMU とトップダウン解析、(3) カーネルトレーシング (ftrace/perf/eBPF)、(4) 分散トレーシングとメトリクス工学、(5) 測定方法論の落とし穴 (coordinated omission・パーセンタイル)、を整理する。分析深度は Level 3。
 
@@ -20,7 +20,7 @@
 ## 発見事項 (Findings)
 
 1. **観測の単価階層が設計を決める。** (a) カウンタ: インクリメントのみ、常時有効でオーバーヘッド実質ゼロ (PMU・`/proc` 統計・NIC カウンタ)。(b) サンプリング: 一定周期で状態を標本化、コストは周波数で完全に制御できる (プロファイラ)。(c) イベント記録: 事象ごとに記録、負荷に比例して非有界 (トレース・ログ)。**高負荷時ほど知りたいのに、高負荷時ほどイベント記録は高くつく**という構造的皮肉が、「常時カウンタ+常時低頻度サンプリング+選択的トレース」という本番の定石を導く。
-2. **カウンタは方法論なしには嘘をつく。** PMU は数百種の事象を数えられるが同時に使えるカウンタは数個で、多重化 (時分割) は外挿誤差を、割り込みベースのサンプリングはスキッド (報告 IP のずれ、PEBS/IBS が緩和) を持ち込む。そして「キャッシュミス率が高い」単独では行動を導けない。トップダウン解析 (Yasin 2014) は、パイプラインの発行スロットを Retiring / Bad Speculation / Frontend Bound / Backend Bound の 4 つに完全分割し、**数百のカウンタを一本の決定木に変換した**——[`../../hardware/cpu-architecture/pipeline-superscalar-ooo.md`](../../hardware/cpu-architecture/pipeline-superscalar-ooo.md) の機構理解が、そのまま診断アルゴリズムになった例である。
+2. **カウンタは方法論なしには嘘をつく。** PMU は数百種の事象を数えられるが同時に使えるカウンタは数個で、多重化 (時分割) は外挿誤差を、割り込みベースのサンプリングはスキッド (報告 IP のずれ、PEBS/IBS が緩和) を持ち込む。そして「キャッシュミス率が高い」単独では行動を導けない。トップダウン解析 (Yasin 2014) は、パイプラインの発行スロットを Retiring / Bad Speculation / Frontend Bound / Backend Bound の 4 つに完全分割し、**数百のカウンタを一本の決定木に変換した**——[`../../hardware/cpu/pipeline-superscalar-ooo.md`](../../hardware/cpu/pipeline-superscalar-ooo.md) の機構理解が、そのまま診断アルゴリズムになった例である。
 3. **カーネルは「聞かれたときだけ喋る」黒板になった。** 静的 tracepoint (ABI として安定) と動的 kprobe/uprobe (任意関数に差し込めるが不安定) が計装点を提供し、ftrace・perf・eBPF は同じ計装点に載る別のフロントエンドである。決定的な転換は eBPF による**カーネル内集計**——事象ごとにユーザ空間へ運ぶ (perf 型) のではなく、カーネル内のヒストグラムに畳み込んで結果だけ渡す。毎秒百万事象をユーザ空間へコピーする転送コストこそがトレーシングの本当の壁であり、eBPF はそれを「データを持ってくる」から「計算を持っていく」への反転で解いた。
 4. **オン CPU プロファイルは「走っている理由」しか説明しない。** サンプリングプロファイラ (perf → 火焔グラフ) は CPU を使う関数を暴くが、レイテンシの大半が待ち (ロック・I/O・スケジューラ待ち) のとき、そこには映らない。オフ CPU 解析 (ブロックした地点と時間をスタック付きで集計) と PSI (pressure stall information: CPU/メモリ/I/O の飢餓時間の一級市民化) が対を成す。**「速くする」の前に「何を待っているか」**——[`../operating-systems/`](../operating-systems/README.md) のスケジューラ・ブロック I/O 分析はこの問いの解像度を与える。
 5. **分散トレーシングは因果の復元であり、本質的にサンプリングである。** trace ID + span (親子関係・開始終了時刻) をリクエストに随伴させ (W3C Trace Context)、サービス横断の 1 リクエストの解剖図を再構成する (Dapper が原型)。全リクエスト記録は帯域・保存の予算を超えるため、head (入口で決める: 安価・异常を逃す) と tail (全 span を一旦バッファし、遅い/失敗したトレースだけ残す: 高価・欲しいものが残る) のサンプリング戦略が核心の設計判断になる。
@@ -77,7 +77,7 @@ flowchart TD
 ### 2. カーネルトレーシング — ftrace・perf・eBPF
 
 - **計装点の契約**: tracepoint は開発者が置いた安定した観測点 (`sched:sched_switch`, `block:block_rq_issue`)、kprobe は任意カーネル関数への動的フックでカーネル更新に対して脆い。uprobes/USDT がユーザ空間側の対応物。**安定性の階層 = 観測資産の寿命**であり、ダッシュボードは tracepoint に、その場の調査は kprobe に載せるのが原則。
-- **eBPF の役割**: 検証器・JIT・マップの機構は [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) に譲る。観測にとっての本質は「集計をカーネル内で終わらせる」ことと「本番でその場で書ける」こと——`bpftrace -e 'kprobe:vfs_read { @bytes = hist(arg2); }'` のような一行が、再起動もパッチもなく毎秒百万事象を安全に畳み込む。runqlat (スケジューラ待ち)・biolatency (ブロック I/O 分布)・tcpretrans など、本リポジトリ各所の「観測の入口」の多くがこの仕組みの応用である。
+- **eBPF の役割**: 検証器・JIT・マップの機構は [`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) に譲る。観測にとっての本質は「集計をカーネル内で終わらせる」ことと「本番でその場で書ける」こと——`bpftrace -e 'kprobe:vfs_read { @bytes = hist(arg2); }'` のような一行が、再起動もパッチもなく毎秒百万事象を安全に畳み込む。runqlat (スケジューラ待ち)・biolatency (ブロック I/O 分布)・tcpretrans など、本リポジトリ各所の「観測の入口」の多くがこの仕組みの応用である。
 - **オフ CPU とレイテンシの分解**: オフ CPU 解析はブロック開始/終了 (sched tracepoint) で待ち時間をスタック別に集計し、「ロック待ち 40%・ディスク待ち 35%」のような**待ちの内訳**を出す。PSI は「実行可能なのに CPU が来ない/メモリで stall した時間」を資源別に常時集計し、飽和の早期警報 (アラート可能なカウンタ) に変えた——単発事象の羅列から「飢餓の総量」への抽象化である。
 
 ### 3. 分散トレーシングの工学
@@ -96,7 +96,7 @@ flowchart TD
 ### 5. 測定方法論 — 楽観バイアスとの戦い
 
 - **coordinated omission**: closed-loop 負荷生成器 (応答を待って次を送る) は、システムが遅い間の到着を「なかったこと」にする。計画到着時刻基準の補正 (HdrHistogram) か open-loop (到着はポアソン等で独立に発生) で測る。実世界のユーザは協調してくれない。
-- **ウォームアップと状態**: JIT ([`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md)) のティア昇格前、キャッシュのコールド、SSD の fresh state ([`../../hardware/storage-devices/nand-flash-ftl.md`](../../hardware/storage-devices/nand-flash-ftl.md)) を測った数字は定常状態を代表しない。「どの相を測ったか」の明示は層を問わない共通規律である。
+- **ウォームアップと状態**: JIT ([`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md)) のティア昇格前、キャッシュのコールド、SSD の fresh state ([`../../hardware/storage/nand-flash-ftl.md`](../../hardware/storage/nand-flash-ftl.md)) を測った数字は定常状態を代表しない。「どの相を測ったか」の明示は層を問わない共通規律である。
 - **平均の罪**: レイテンシは重い裾を持つ非対称分布であり、平均は「誰も体験していない値」になりがち。テール (p99/p999) がユーザ体験を決める——1 リクエストが 100 サービスに扇形展開するなら、各サービスの p99 は約 63% のリクエストが踏む (1−0.99¹⁰⁰)。**分散システムではテールが平均になる** (tail at scale)。
 
 ### 6. 観測の入口の入口 (Meta-Observability)
@@ -114,7 +114,7 @@ flowchart TD
 ## セキュリティ考察 (Security Considerations)
 
 - **観測機構は特権の塊である。** perf/eBPF はカーネルメモリと全プロセスの実行を見る能力に等しく、`perf_event_paranoid`・`CAP_PERFMON`/`CAP_BPF` による段階的な権限分割が守り。プロファイリングエージェントや APM は「全ホストで root 相当で動く常駐ソフト」であり、その供給網 ([`../security/`](../security/README.md) のサプライチェーン候補) は監視対象より高価値の標的になりうる。
-- **PMU はサイドチャネルの測定器でもある。** キャッシュ攻撃・一時的実行攻撃 ([`../../hardware/hardware-security/side-channels-tee-secure-boot.md`](../../hardware/hardware-security/side-channels-tee-secure-boot.md)) の多くは高分解能タイマと事象カウンタを利用する。仮想環境で PMU を露出するか、共有環境で誰に許すかは、可観測性とテナント分離の直接の綱引きである。
+- **PMU はサイドチャネルの測定器でもある。** キャッシュ攻撃・一時的実行攻撃 ([`../../hardware/security/side-channels-tee-secure-boot.md`](../../hardware/security/side-channels-tee-secure-boot.md)) の多くは高分解能タイマと事象カウンタを利用する。仮想環境で PMU を露出するか、共有環境で誰に許すかは、可観測性とテナント分離の直接の綱引きである。
 - **テレメトリは秘密の漏洩経路になる。** span の属性・ログ本文には URL・トークン・個人情報が混入しやすく、収集パイプラインは組織の全システムを横断して外部 SaaS に届くことも多い。計装時の redaction (秘匿化) 規約と、パイプライン自体のアクセス制御・保持期限が、[`security/`](../security/README.md) 的な意味での「第二のデータベース」として設計されるべきである。
 - **観測の欠落は攻撃者の友である。** 監査ログ・トレースの無効化や飽和 (ログ洪水で本命を埋める) は古典的な攻撃前処理であり、「観測パイプラインの可用性」自体が防御要件になる。逆に eBPF ベースの観測基盤はランタイムセキュリティ監視 (LSM フック) と同じ機構に載っており、観測と防御は道具を共有している。
 
@@ -127,8 +127,8 @@ flowchart TD
 
 ### 次の接続先 (Related Topics)
 
-- [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) — カーネル内集計を可能にした実行基盤。本書の道具の半分の土台。
-- [`../../hardware/cpu-architecture/pipeline-superscalar-ooo.md`](../../hardware/cpu-architecture/pipeline-superscalar-ooo.md) — トップダウン解析が数えている「発行スロット」の機構側。
+- [`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) — カーネル内集計を可能にした実行基盤。本書の道具の半分の土台。
+- [`../../hardware/cpu/pipeline-superscalar-ooo.md`](../../hardware/cpu/pipeline-superscalar-ooo.md) — トップダウン解析が数えている「発行スロット」の機構側。
 - [`../operating-systems/block-io-stack.md`](../operating-systems/block-io-stack.md)・[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — biolatency・runqlat・PSI の対象領域。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — 文脈伝搬の理論側 (因果・論理時計)。
 - [`../../hardware/timekeeping/clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md) — トレースの時間分解能を規定する物理時計。

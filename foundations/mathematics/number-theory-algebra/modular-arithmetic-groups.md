@@ -79,10 +79,10 @@ x mod n を知ることと、(x mod n₁, …, x mod n_k) を知ることは等�
 | 文書 | 接続点 |
 |------|--------|
 | [`software/networking/tls-internals.md`](../../../software/networking/tls-internals.md) | 鍵交換・署名の下部構造(冪乗・逆元・素数生成)、第3回への伏線 (§1, §4–5) |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | square-and-multiply のタイミングリーク、RSA-CRT 故障攻撃 (§3–4) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | square-and-multiply のタイミングリーク、RSA-CRT 故障攻撃 (§3–4) |
 | [`software/networking/load-balancing-architecture.md`](../../../software/networking/load-balancing-architecture.md) | `hash mod n` の再分配問題とコンシステントハッシュ法の動機 (§2) |
-| [`software/specifications/authentication-tokens-specification.md`](../../../software/specifications/authentication-tokens-specification.md) | 署名検証 (RS256/ES256) が依拠する冪乗と群の算術 (§4–5) |
-| [`hardware/cpu-architecture/isa-riscv-intro.md`](../../../hardware/cpu-architecture/isa-riscv-intro.md) | 機械整数演算＝mod 2^XLEN の合同算術という意味論 (§2) |
+| [`software/apis/authentication-tokens-specification.md`](../../../software/apis/authentication-tokens-specification.md) | 署名検証 (RS256/ES256) が依拠する冪乗と群の算術 (§4–5) |
+| [`hardware/cpu/isa-riscv-intro.md`](../../../hardware/cpu/isa-riscv-intro.md) | 機械整数演算＝mod 2^XLEN の合同算術という意味論 (§2) |
 
 ## 参考文献 (References)
 

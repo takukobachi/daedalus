@@ -151,7 +151,7 @@ ART を深掘りする価値は、それが「JVM の移植」ではなく、**�
 - [`platform-architecture.md`](platform-architecture.md) — ART を含む全体像（Zygote・lmkd・Verified Boot）。boot image と COW 分岐の関係。
 - [`binder-internals.md`](binder-internals.md) — 「テーブル＋不透明ハンドル」文法の IPC 版。Rust 化の動機の共通性。
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — mmap・COW・userfaultfd・ページイン局所性の一般論。本書はその実行系での活用。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — リードバリア・並行 GC が依拠する順序保証の一般論。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — リードバリア・並行 GC が依拠する順序保証の一般論。
 - [`memory-lmkd.md`](memory-lmkd.md) — Clean/Dirty・Shared/Private の分類が lmkd・zram・PSS 計測でどう使われるか。本書の「成果物を Clean に保つ」設計の受け皿。
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — Zygote fork → `handleBindApplication`（ProfileSaver 起動点）→ 初回フレームまで。AOT/JIT/アプリイメージが起動時間のどこに効くか。
 - [`package-management.md`](package-management.md) — インストール時 dexopt の起点（PackageManagerService → ART Service/artd）と APK・split・DEX の配置。

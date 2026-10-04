@@ -108,12 +108,12 @@ H(ω)(h の変換)が**周波数応答 (frequency response)** である。根拠
 | 文書 | 接続点 |
 |------|--------|
 | [`foundations/physics/electromagnetism/transmission-lines-signal-integrity.md`](../../physics/electromagnetism/transmission-lines-signal-integrity.md) | 周波数依存損失がエッジを鈍らせ ISI を生む機構 (同文書 §4) の数学的基盤 (§4–5) |
-| [`hardware/serdes-signal-integrity/signal-integrity-engineering.md`](../../../hardware/serdes-signal-integrity/signal-integrity-engineering.md) | S パラメータ・挿入損失は H(ω) の実測 (§4)、ジッタ・アイの周波数領域解析 |
-| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | CTLE/FFE/DFE = チャネルの逆フィルタリング (§4)、帯域とシンボルレートの交換 (§3) |
-| [`hardware/peripherals-connectivity/audio-subsystem.md`](../../../hardware/peripherals-connectivity/audio-subsystem.md) | 可聴帯域・イコライザ・スペクトルという言語の全体 (§1–4)、dB (§2) |
-| [`hardware/peripherals-connectivity/wifi-architecture.md`](../../../hardware/peripherals-connectivity/wifi-architecture.md) | OFDM = 直交搬送波への射影 (§1)、チャネル帯域幅とスループット (§3) |
-| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | 映像の空間周波数、スケーリング・圧縮のフィルタリング (§4)、高速リンクのエッジ (§5) |
-| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 光学ローパスフィルタとモアレ——2次元空間周波数でのエイリアシング前史 (§3, 次回) |
+| [`hardware/signal-integrity/signal-integrity-engineering.md`](../../../hardware/signal-integrity/signal-integrity-engineering.md) | S パラメータ・挿入損失は H(ω) の実測 (§4)、ジッタ・アイの周波数領域解析 |
+| [`hardware/signal-integrity/serdes-link-architecture.md`](../../../hardware/signal-integrity/serdes-link-architecture.md) | CTLE/FFE/DFE = チャネルの逆フィルタリング (§4)、帯域とシンボルレートの交換 (§3) |
+| [`hardware/peripherals/audio-subsystem.md`](../../../hardware/peripherals/audio-subsystem.md) | 可聴帯域・イコライザ・スペクトルという言語の全体 (§1–4)、dB (§2) |
+| [`hardware/peripherals/wifi-architecture.md`](../../../hardware/peripherals/wifi-architecture.md) | OFDM = 直交搬送波への射影 (§1)、チャネル帯域幅とスループット (§3) |
+| [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | 映像の空間周波数、スケーリング・圧縮のフィルタリング (§4)、高速リンクのエッジ (§5) |
+| [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 光学ローパスフィルタとモアレ——2次元空間周波数でのエイリアシング前史 (§3, 次回) |
 
 ## 参考文献 (References)
 

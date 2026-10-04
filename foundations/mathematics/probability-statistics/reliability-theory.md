@@ -87,13 +87,13 @@ MTBF: 平均故障間隔,  MTTR: 平均修復時間
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/automotive/functional-safety-iso26262.md`](../../../hardware/automotive/functional-safety-iso26262.md) | FIT・PMHF・単一点故障メトリクスの確率的基礎、冗長系と共通原因故障 (§2) |
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../../hardware/storage-devices/nand-flash-ftl.md) | 書き換え摩耗のワイブル的性格 (§1)、ウェアレベリング=摩耗の均し (工学への接続 §2) |
+| [`engineering/automotive/functional-safety-iso26262.md`](../../../engineering/automotive/functional-safety-iso26262.md) | FIT・PMHF・単一点故障メトリクスの確率的基礎、冗長系と共通原因故障 (§2) |
+| [`hardware/storage/nand-flash-ftl.md`](../../../hardware/storage/nand-flash-ftl.md) | 書き換え摩耗のワイブル的性格 (§1)、ウェアレベリング=摩耗の均し (工学への接続 §2) |
 | [`software/distributed-systems/consensus.md`](../../../software/distributed-systems/consensus.md) | レプリケーション=並列冗長 (§2)、「故障の中で動き続ける」設計 (§5)、故障検知と MTTR |
 | [`software/observability/observability-performance-engineering.md`](../../../software/observability/observability-performance-engineering.md) | 可用性・ナインズ・エラーバジェットの算術 (§3)、MTTR 短縮としての可観測性 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | バーンイン・加速試験・JEDEC 信頼性認定 (§4)、初期故障と製造欠陥の関係 (§1) |
-| [`hardware/aerospace/avionics-gnc.md`](../../../hardware/aerospace/avionics-gnc.md) | 多重冗長と多様性設計 (§2)、k-out-of-n 投票系 |
-| [`hardware/power-generation/plant-control-scada-security.md`](../../../hardware/power-generation/plant-control-scada-security.md) | 安全計装系の PFD(作動失敗確率)と定期試験間隔の設計 (§1, §3) |
+| [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 多重冗長と多様性設計 (§2)、k-out-of-n 投票系 |
+| [`engineering/energy/plant-control-scada-security.md`](../../../engineering/energy/plant-control-scada-security.md) | 安全計装系の PFD(作動失敗確率)と定期試験間隔の設計 (§1, §3) |
 
 ## 参考文献 (References)
 

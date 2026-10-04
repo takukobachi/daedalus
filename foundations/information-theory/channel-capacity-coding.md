@@ -79,11 +79,11 @@ Turbo/LDPC の核心は**反復的な確率伝播 (belief propagation)** ——�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/wireless-rf/radio-fundamentals-modulation.md`](../../hardware/wireless-rf/radio-fundamentals-modulation.md) | Shannon–Hartley、Eb/N₀、AMC、LDPC/Polar 採用——本回の限界側の実装カタログ (§3–4) |
-| [`hardware/peripherals-connectivity/wifi-architecture.md`](../../hardware/peripherals-connectivity/wifi-architecture.md) | MCS テーブルと適応レート制御 = 容量への追従制御 (§3) |
-| [`hardware/aerospace/satellites/starlink-satellite-bus.md`](../../hardware/aerospace/satellites/starlink-satellite-bus.md) | 衛星リンクバジェットと位相配列のビームごとリンク適応 (§3) |
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../hardware/storage-devices/nand-flash-ftl.md) | LDPC 軟判定復号・読み出しリトライ = 時間方向通信路の容量追随 (§4) |
-| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | リンク FEC (RS-FEC) の採否と遅延トレードオフ (§4–5) |
+| [`hardware/wireless/radio-fundamentals-modulation.md`](../../hardware/wireless/radio-fundamentals-modulation.md) | Shannon–Hartley、Eb/N₀、AMC、LDPC/Polar 採用——本回の限界側の実装カタログ (§3–4) |
+| [`hardware/peripherals/wifi-architecture.md`](../../hardware/peripherals/wifi-architecture.md) | MCS テーブルと適応レート制御 = 容量への追従制御 (§3) |
+| [`engineering/aerospace/satellites/starlink-satellite-bus.md`](../../engineering/aerospace/satellites/starlink-satellite-bus.md) | 衛星リンクバジェットと位相配列のビームごとリンク適応 (§3) |
+| [`hardware/storage/nand-flash-ftl.md`](../../hardware/storage/nand-flash-ftl.md) | LDPC 軟判定復号・読み出しリトライ = 時間方向通信路の容量追随 (§4) |
+| [`hardware/signal-integrity/serdes-link-architecture.md`](../../hardware/signal-integrity/serdes-link-architecture.md) | リンク FEC (RS-FEC) の採否と遅延トレードオフ (§4–5) |
 | [`foundations/mathematics/number-theory-algebra/finite-fields-coding.md`](../mathematics/number-theory-algebra/finite-fields-coding.md) | 符号の構成論（本回はその存在限界。両者で符号理論の全景になる） (§2, §4) |
 
 ## 参考文献 (References)

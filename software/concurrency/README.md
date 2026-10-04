@@ -1,12 +1,12 @@
 # Concurrency
 
 並行・並列プログラミング (concurrency & parallelism) の分析。
-`hardware/cpu-architecture/memory-ordering-atomics.md` が扱うハードウェアの
+`hardware/cpu/memory-ordering-atomics.md` が扱うハードウェアの
 メモリ順序を、言語・ランタイムレベルの抽象へと積み上げる層。
 
 ## 構成
 
-- `memory-models-and-synchronization.md` — 言語メモリモデル (C/C++11, Java JMM)、
+- `memory-models-synchronization.md` — 言語メモリモデル (C/C++11, Java JMM)、
   happens-before、アトミック/CAS、ロックと futex、lock-free 入門、非同期ランタイム
 - `lock-free-data-structures.md` — lock-free データ構造とメモリ回収：Treiber stack、
   Michael–Scott queue、ABA 問題、hazard pointer / epoch / RCU、wait-free、競合とコヒーレンスの実コスト

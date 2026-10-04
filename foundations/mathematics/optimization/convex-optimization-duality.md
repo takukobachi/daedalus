@@ -77,12 +77,12 @@
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/power-generation/electricity-markets-dispatch.md`](../../../hardware/power-generation/electricity-markets-dispatch.md) | 経済負荷配分＝制約付きコスト最小化、LMP＝需給・送電制約の双対変数 (§3–4) |
-| [`hardware/aerospace/avionics-gnc.md`](../../../hardware/aerospace/avionics-gnc.md) | 着陸誘導の lossless convexification と機上 SOCP 求解 (§1, §5) |
-| [`hardware/robotics/control-systems.md`](../../../hardware/robotics/control-systems.md) | MPC＝ホライズン付き QP を制御周期ごとに解く様式、制約の明示的取り扱い (§5) |
-| [`software/ml-systems/ml-training-systems.md`](../../../software/ml-systems/ml-training-systems.md) | SGD・学習率・条件数と正規化——非凸領域での勾配法の実務 (§2, §5) |
+| [`engineering/energy/electricity-markets-dispatch.md`](../../../engineering/energy/electricity-markets-dispatch.md) | 経済負荷配分＝制約付きコスト最小化、LMP＝需給・送電制約の双対変数 (§3–4) |
+| [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 着陸誘導の lossless convexification と機上 SOCP 求解 (§1, §5) |
+| [`engineering/robotics/control-systems.md`](../../../engineering/robotics/control-systems.md) | MPC＝ホライズン付き QP を制御周期ごとに解く様式、制約の明示的取り扱い (§5) |
+| [`software/ai/ml-training-systems.md`](../../../software/ai/ml-training-systems.md) | SGD・学習率・条件数と正規化——非凸領域での勾配法の実務 (§2, §5) |
 | [`software/networking/tcp-transport-congestion.md`](../../../software/networking/tcp-transport-congestion.md) | 輻輳制御＝効用最大化の双対分解、混雑信号＝リンクの影の価格 (§4) |
-| [`hardware/aerospace/orbital-mechanics.md`](../../../hardware/aerospace/orbital-mechanics.md) | 軌道遷移・ランデブーの Δv 最小化——軌道設計を最適制御として読む土台 (§1, §5) |
+| [`engineering/aerospace/orbital-mechanics.md`](../../../engineering/aerospace/orbital-mechanics.md) | 軌道遷移・ランデブーの Δv 最小化——軌道設計を最適制御として読む土台 (§1, §5) |
 
 ## 参考文献 (References)
 

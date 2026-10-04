@@ -4,7 +4,7 @@
 
 JavaScript・Java・Python・Go——今日書かれるコードの大半は、コンパイル済みバイナリではなく**ランタイム (runtime) の上**で走る。ランタイムは実行と同時に翻訳し (JIT: just-in-time compilation)、メモリを自動で回収する (GC: garbage collection)。本ドキュメントはこの二つの機構の内部を扱う。
 
-中心テーゼは、**マネージドランタイムとは「観測して賭けるシステム」である**、ということ。JIT は「この関数の引数は毎回この型だった」「この分岐はいつも同じ側だった」という**実行時の観測**に基づいて投機的に最適化し、外れたら脱最適化 (deoptimization) で賭け金を払い戻す——これは CPU の分岐予測・投機実行 ([`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md)) と同型の構造がソフトウェア層で再発明されたものである。GC もまた賭けの上に立つ: 「ほとんどのオブジェクトは若くして死ぬ」という**世代仮説**が、全ヒープ走査を新領域の走査に置き換え、桁違いの効率を生んだ。
+中心テーゼは、**マネージドランタイムとは「観測して賭けるシステム」である**、ということ。JIT は「この関数の引数は毎回この型だった」「この分岐はいつも同じ側だった」という**実行時の観測**に基づいて投機的に最適化し、外れたら脱最適化 (deoptimization) で賭け金を払い戻す——これは CPU の分岐予測・投機実行 ([`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md)) と同型の構造がソフトウェア層で再発明されたものである。GC もまた賭けの上に立つ: 「ほとんどのオブジェクトは若くして死ぬ」という**世代仮説**が、全ヒープ走査を新領域の走査に置き換え、桁違いの効率を生んだ。
 
 動的言語がなぜ静的言語に迫る速度で走れるのか。答えは「**実行中のプログラムは、書かれたプログラムより遥かに静的である**」——ソース上は何でも起こりうる場所も、実行時にはほぼ毎回同じことが起きる。JIT はこの実行時の単調さを収穫する装置であり、逆にこの前提を壊すコード (多態の乱発・型の揺れ) が「性能の崖」を作る。
 
@@ -12,7 +12,7 @@ JavaScript・Java・Python・Go——今日書かれるコードの大半は、�
 
 ## 方法論 (Methodology)
 
-- JIT と GC を別々の技術ではなく「観測と投機」「近似と賭け」という同じ設計原理の 2 適用として扱い、CPU マイクロアーキテクチャ ([`../../hardware/cpu-architecture/`](../../hardware/cpu-architecture/)) との構造的相似を明示する。
+- JIT と GC を別々の技術ではなく「観測と投機」「近似と賭け」という同じ設計原理の 2 適用として扱い、CPU マイクロアーキテクチャ ([`../../hardware/cpu/`](../../hardware/cpu/)) との構造的相似を明示する。
 - 歴史的原典 (Smalltalk/Self 系の論文) から現行実装 (V8, HotSpot, ZGC) への系譜で説明し、「新機能」がほぼ常に 1980 年代の発明の再適用であることを示す。
 - 性能の主張は「何を測るか」(スループット vs 停止時間 vs メモリ量) を常に併記する。GC の比較は単一軸では意味を成さないため。
 - コンパイラ中盤の一般論 (IR・最適化パス) は将来の別ドキュメントに委ね、本書は**実行時であることに固有の機構**に集中する。
@@ -23,7 +23,7 @@ JavaScript・Java・Python・Go——今日書かれるコードの大半は、�
 2. **動的言語の高速化は 1984 年の 2 つの発明の上に立つ。** Smalltalk のための **動的翻訳と インラインキャッシュ (IC)** (Deutsch & Schiffman) と、Self で完成した **hidden class (maps)** と多態 IC——「オブジェクトの形 (プロパティ構成) を暗黙の型として扱い、呼び出し地点ごとに直近の形をキャッシュする」。JavaScript が V8 で桁違いに速くなった (2008) 中核はこの再適用であり、プロパティアクセスは「形の一致確認 + 固定オフセット読み」という**静的言語並みの機械語**に落ちる。
 3. **投機は保険 (deopt) があるから踏める。** 最適化コードは「この形しか来ない」「この加算は整数」といった仮定を焼き込み、仮定の検査 (guard) が外れたら**実行中のフレームをインタプリタ状態に翻訳し直して**降格する (deoptimization / OSR)。この保険の存在が、健全性を保ったまま楽観的な最適化を可能にする——投機の哲学は CPU と同じだが、CPU の誤予測回復が数十サイクルで済むのに対し deopt は桁違いに高く、**繰り返す deopt (性能の崖) はプロファイルで探すべき事故**である。
 4. **GC の本質は「ゴミの発見」ではなく「生存者の発見」である。** ルート (スタック・グローバル) から辿れるものが生存、残りが自動的にゴミ——コストは**生存者の量**に比例し、ゴミの量には比例しない。ここから世代仮説の威力が出る: 「ほとんどのオブジェクトは若くして死ぬ」なら、若い領域 (nursery) は生存者がごく少なく、**生存者だけコピーして残り全部を一括破棄**する minor GC は、死んだ大多数に一切触れない。
-5. **並行 GC の中心問題は「動いている対象を止めずに数える」ことであり、答えはバリアである。** アプリケーション (mutator) がポインタを書き換える横で印付けすると、マーク済みオブジェクトから未マークへの参照が「隠れて」取りこぼされる (tri-color invariant の破れ)。write barrier / read barrier がこの書き換えを GC に通知する——[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) と同じ「並行下の一貫性」問題であり、現代の低停止 GC (ZGC, Shenandoah: 停止ミリ秒未満) はバリアのコストを常時払って停止時間を買っている。**スループット・停止時間・メモリ量の三竦み**が GC 選択の本当の軸である。
+5. **並行 GC の中心問題は「動いている対象を止めずに数える」ことであり、答えはバリアである。** アプリケーション (mutator) がポインタを書き換える横で印付けすると、マーク済みオブジェクトから未マークへの参照が「隠れて」取りこぼされる (tri-color invariant の破れ)。write barrier / read barrier がこの書き換えを GC に通知する——[`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) と同じ「並行下の一貫性」問題であり、現代の低停止 GC (ZGC, Shenandoah: 停止ミリ秒未満) はバリアのコストを常時払って停止時間を買っている。**スループット・停止時間・メモリ量の三竦み**が GC 選択の本当の軸である。
 6. **参照カウント (RC) と追跡 (tracing) は対立ではなく双対である。** RC は死をその場で検出 (決定的解放・停止なし) するが、循環を見逃し・カウンタ更新が常時コスト・マルチスレッドでは原子操作を強いる。追跡は生存を一括検出 (高スループット) するが停止・遅延を伴う。Bacon らはこの二つが同じ設計空間の両端であり、実用 GC はすべて両者の混成であることを示した (2004)。Swift/Obj-C の ARC ([`../ios/platform-architecture.md`](../ios/platform-architecture.md)) と JVM/V8 の追跡 GC は、レイテンシ決定性とスループットのどちらを優先するかの選択であり、Rust の所有権はこの問題を**コンパイル時に解いて実行時コストを消す**第三の道である。
 
 ## アーキテクチャ (Architecture)
@@ -84,7 +84,7 @@ flowchart TD
 ### 4. ランタイムと下の層の交差
 
 - **escape analysis**: 「このオブジェクトは関数外に漏れない」と証明できればヒープでなくスタック/レジスタに置き、GC 負荷そのものを消す。最良の GC 対策は割り当てないことであり、最適化 JIT の重要な仕事である。
-- GC は キャッシュ・仮想記憶と相互作用する: コピー GC の再配置は空間局所性を改善する一方、全ヒープ走査は LLC を洗い流し ([`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md))、巨大ヒープでは TLB とページフォルト ([`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md)) が GC 時間を支配しうる (THP が GC に効く理由)。コンテナのメモリ上限と GC の相性 (上限を知らずにヒープを広げて OOM kill) は運用の定番事故である。
+- GC は キャッシュ・仮想記憶と相互作用する: コピー GC の再配置は空間局所性を改善する一方、全ヒープ走査は LLC を洗い流し ([`../../hardware/cpu/cache-memory-hierarchy.md`](../../hardware/cpu/cache-memory-hierarchy.md))、巨大ヒープでは TLB とページフォルト ([`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md)) が GC 時間を支配しうる (THP が GC に効く理由)。コンテナのメモリ上限と GC の相性 (上限を知らずにヒープを広げて OOM kill) は運用の定番事故である。
 - **safepoint**: スタックを正確に走査するため、全スレッドを「GC が状態を解釈できる地点」で止める。JIT コードにはポーリング命令が織り込まれ、「たまに全員が同じ瞬間に立ち止まる」——長いループに safepoint がないと停止要求が待たされる (time-to-safepoint 問題) など、**GC の停止時間は GC アルゴリズム以外の場所でも作られる**。
 
 ### 5. 観測の入口 (Observability)
@@ -101,7 +101,7 @@ flowchart TD
 
 - **JIT は「攻撃者の入力から機械語を作る」装置である。** ブラウザの JS エンジンは信頼できないコードを高速化するため、型混乱 (type confusion)・IC/形システムのバグ・境界検査の最適化ミスがそのまま**任意コード実行**に到達しうる。ブラウザの脆弱性報奨の主戦場が JIT である理由であり、V8 はヒープ内ポインタを圧縮・隔離する sandbox を導入して「エンジン内のバグ 1 個 = 即プロセス掌握」の距離を伸ばしている。
 - **W^X と JIT の緊張**: JIT は「書ける + 実行できる」メモリを本質的に要求し、W^X (書込と実行の排他) と衝突する。二重マッピング (書込ビューと実行ビューを分離)・Apple の `MAP_JIT`＋スレッド単位の切替のような妥協が実装され、iOS は第三者アプリの JIT 自体を禁じた——**政策・緩和策・性能の三者交渉**がこの一点に凝縮されている。JIT が生成したコード領域を攻撃の踏み台に使う JIT spraying への対策 (定数の分割等) も生成器の責務である。
-- **Spectre はランタイムを直撃した**: 投機実行のサイドチャネル ([`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md)) は「同一プロセス内で信頼境界を跨ぐ」JS エンジンの前提を破壊し、V8 の対策は最終的にサイト分離 (信頼境界ごとにプロセスを分ける) という**アーキテクチャ側の撤退**に落ち着いた。高精度タイマの制限・`SharedArrayBuffer` の一時無効化はこの余波である。
+- **Spectre はランタイムを直撃した**: 投機実行のサイドチャネル ([`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md)) は「同一プロセス内で信頼境界を跨ぐ」JS エンジンの前提を破壊し、V8 の対策は最終的にサイト分離 (信頼境界ごとにプロセスを分ける) という**アーキテクチャ側の撤退**に落ち着いた。高精度タイマの制限・`SharedArrayBuffer` の一時無効化はこの余波である。
 - **GC の正しさはメモリ安全性そのものである**: バリアの取りこぼしや deopt 情報の不整合は「生きているオブジェクトの解放」= use-after-free をランタイム自身が作ることを意味する。マネージド言語が消したはずの脆弱性クラスは、ランタイムの実装バグとして一段下に移動しただけであり、ランタイムの複雑化 (並行 GC・多層 JIT) はこの一点で攻撃面の複雑化でもある。
 
 ## 結論 (Conclusions)
@@ -113,10 +113,10 @@ flowchart TD
 
 ### 次の接続先 (Related Topics)
 
-- [`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md) — 同じ「観測と投機」のハードウェア版。Spectre の源。
-- [`../toolchain/linkers-loaders-elf.md`](../toolchain/linkers-loaders-elf.md) — AOT 側の対応物。成果物がプロセスになる経路。
+- [`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md) — 同じ「観測と投機」のハードウェア版。Spectre の源。
+- [`linkers-loaders-elf.md`](linkers-loaders-elf.md) — AOT 側の対応物。成果物がプロセスになる経路。
 - [`../android/art-runtime-internals.md`](../android/art-runtime-internals.md) — AOT+JIT+プロファイルのハイブリッドの実例。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — 並行 GC のバリアが解いている一貫性問題の一般論。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — 並行 GC のバリアが解いている一貫性問題の一般論。
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — ヒープの下の層。GC と THP・OOM・コンテナ上限の交差点。
 
 ## 参考文献 (References)

@@ -1,16 +1,23 @@
 # コンパイラとランタイム (Compilers & Runtimes)
 
-言語処理系の実行時側の分析。ソースコードが「速く走る」までの機構として、JIT コンパイル・
-ガベージコレクション・ランタイムの投機を扱う。[`../toolchain/`](../toolchain/)
-(AOT コンパイル後の成果物がプロセスになるまで) の対になる「実行しながら翻訳する」側で、
+言語処理系の分析。コンパイル後の成果物（オブジェクトファイル）が実行中のプロセスになるまでの
+**リンク (linking) とロード (loading)** と、ソースコードが「速く走る」までの実行時側の機構
+（JIT コンパイル・ガベージコレクション・ランタイムの投機）の両方を扱う。前者は
+`../../hardware/hw-sw-interface/abi-syscalls.md` が定めた ABI という「見えない契約」を
+**誰が守らせているか**への答えであり、後者は「実行しながら翻訳する」側である。
 [`../android/art-runtime-internals.md`](../android/art-runtime-internals.md) (ART) や
-ブラウザの JS エンジンはこの層の実プロダクトである。
+ブラウザの JS エンジンは後者の実プロダクトである。
 
 `language-implementations-cpython-go-rust.md` を起点に、標準ライブラリ内部・
 非同期実行器へ掘り下げる CPython / Go / Rust 比較の三部作を含む。
 
 ## 構成
 
+- `linkers-loaders-elf.md` — リンカとローダ：シンボル解決と再配置という2つの
+  基本操作、ELF の二重ビュー（セクション vs セグメント）、静的リンクの規則と
+  失敗モード、PLT/GOT と遅延束縛、シンボル介入と LD_PRELOAD、ld.so の
+  ブートストラップ、IFUNC と xz 事件、ASLR/PIE/RELRO、LTO とリンカの進化
+  (BFD ld → gold → lld → mold)、dyld / Android linker / PE との対比
 - `managed-runtimes-gc-jit.md` — マネージドランタイム：階層型 JIT (インタプリタ →
   最適化コンパイラ)、hidden class とインラインキャッシュ、投機と deoptimization、
   GC (世代仮説・並行化・バリア)、参照カウントとの対比、JIT/GC のセキュリティ
@@ -36,5 +43,15 @@
 ## 今後のテーマ候補
 
 - コンパイラ中盤 (compiler middle-end) — IR・SSA 形式、主要最適化 (インライン化,
-  ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu-architecture/simd-vector.md`
+  ループ変換, ベクトル化)、LLVM のパス構造。`../../hardware/cpu/simd-vector.md`
   の自動ベクトル化の供給側
+- コンパイラバックエンド (compiler backend) — 命令選択 (instruction selection)、
+  レジスタ割り当て (register allocation)、命令スケジューリング。
+  `../../hardware/cpu/` の ISA・パイプライン分析との合流点
+- ビルドシステムと再現可能ビルド (build systems & reproducible builds) —
+  依存グラフとパッケージ依存解決 (go modules の MVS, cargo の semver, pip)、
+  キャッシュと分散ビルド、ビット単位で同一な成果物が
+  サプライチェーン検証に持つ意味
+- デバッグ情報とアンワインド (debug info & unwinding) — DWARF、
+  スタックアンワインド (CFI)、シンボリケーション。プロファイラ・例外処理・
+  クラッシュレポートの共通基盤

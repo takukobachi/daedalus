@@ -4,13 +4,13 @@
 
 超音速の流れは、前方に「これから障害物が来る」と知らせる術を持たない——圧力の乱れは音速でしか伝わらず、流れ自身がそれより速いからである。その結果、情報の不連続な壁、すなわち**衝撃波 (shock wave)** が生じる。衝撃波を横切る空気は、分子スケールの厚みの中で急減速・急圧縮・急加熱され、エントロピーが跳ぶ。
 
-本ドキュメントは、衝撃波がなぜ立つのか（波の突っ立ち）、垂直衝撃波・斜め衝撃波・膨張扇の基本関係、そしてマッハ数がさらに上がった**極超音速 (hypersonic, M ≳ 5)** 領域で現れる新しい物理——薄い衝撃層、空力加熱の支配、実在気体効果（解離・電離）——までを積み上げる。到達点は、`hardware/aerospace/reentry-thermal-protection.md` が結果として使った2つの主張——**鈍頭が正解であること**と**加熱率が v³ でスケールすること**——の理論的な足場である。
+本ドキュメントは、衝撃波がなぜ立つのか（波の突っ立ち）、垂直衝撃波・斜め衝撃波・膨張扇の基本関係、そしてマッハ数がさらに上がった**極超音速 (hypersonic, M ≳ 5)** 領域で現れる新しい物理——薄い衝撃層、空力加熱の支配、実在気体効果（解離・電離）——までを積み上げる。到達点は、`engineering/aerospace/reentry-thermal-protection.md` が結果として使った2つの主張——**鈍頭が正解であること**と**加熱率が v³ でスケールすること**——の理論的な足場である。
 
 ## 前提知識 (Prerequisites)
 
 - **圧縮性流れの基礎** — マッハ数、等エントロピー流、面積–速度関係（[`compressible-flow-nozzles.md`](compressible-flow-nozzles.md)）
 - **熱力学** — 断熱過程、エントロピー、第二法則（[`../thermodynamics-statistical/laws-entropy-heat-engines.md`](../thermodynamics-statistical/laws-entropy-heat-engines.md)）
-- 応用側の文脈: 再突入と熱防護（`../../../hardware/aerospace/reentry-thermal-protection.md`）
+- 応用側の文脈: 再突入と熱防護（`../../../engineering/aerospace/reentry-thermal-protection.md`）
 
 ## 本論 (Main Content)
 
@@ -48,7 +48,7 @@
 ```
 
 - **転向角と波角の関係 (θ-β-M)**: 同じ転向角に対し弱解と強解があり、通常は弱解が実現する。転向角には M₁ ごとの**最大値**があり、それを超える角度（＝鈍い物体）では衝撃波が付着できず、**離脱衝撃波 (detached bow shock)** として物体前方に立つ。
-- **超音速飛行の抗力の正体**: 衝撃波が運ぶエネルギーは**造波抗力 (wave drag)** として機体に課金される。超音速機の細長い形状・薄い翼・エリアルールは、すべて衝撃波を弱くする（転向角を小さくする）ための設計である（`../../../hardware/aerospace/aircraft-engineering-fundamentals.md` の高速側の延長）。
+- **超音速飛行の抗力の正体**: 衝撃波が運ぶエネルギーは**造波抗力 (wave drag)** として機体に課金される。超音速機の細長い形状・薄い翼・エリアルールは、すべて衝撃波を弱くする（転向角を小さくする）ための設計である（`../../../engineering/aerospace/aircraft-engineering-fundamentals.md` の高速側の延長）。
 
 ### 4. 極超音速 — 量ではなく質が変わる (the hypersonic regime, M ≳ 5)
 
@@ -71,16 +71,16 @@
 ## 工学への接続 (Engineering Connections)
 
 - **再突入機の形状設計**: 離脱衝撃波を保つ鈍頭、加熱率と Rn のトレードオフ、マッハ数独立を使った広速度域の空力設計——カプセル (Dragon) から揚力体 (Starship のベリーフロップ) までの形状の語彙を与える。
-- **TPS 要求の源泉**: 対流/輻射の配分、原子状酸素との表面反応（触媒加熱）、解離による衝撃層温度の変化は、TPS 材料（アブレータ/タイル）の選定と設計マージンを直接決める（`../../../hardware/aerospace/reentry-thermal-protection.md`）。
-- **超音速域の制御翼**: Falcon 9 のグリッドフィン（`../../../hardware/aerospace/spacex-reusability.md`）は、格子面それぞれに斜め衝撃波系を作ることで、遷音速〜超音速で失速的な挙動をしにくい制御面として働く——衝撃波の理解が着陸誘導の空力を支える例。
+- **TPS 要求の源泉**: 対流/輻射の配分、原子状酸素との表面反応（触媒加熱）、解離による衝撃層温度の変化は、TPS 材料（アブレータ/タイル）の選定と設計マージンを直接決める（`../../../engineering/aerospace/reentry-thermal-protection.md`）。
+- **超音速域の制御翼**: Falcon 9 のグリッドフィン（`../../../engineering/aerospace/spacex-reusability.md`）は、格子面それぞれに斜め衝撃波系を作ることで、遷音速〜超音速で失速的な挙動をしにくい制御面として働く——衝撃波の理解が着陸誘導の空力を支える例。
 - **ノズルとの往復**: 過膨張ノズル内の流れ剥離（`compressible-flow-nozzles.md`）は、ノズル内に立つ衝撃波と境界層の干渉問題であり、本ドキュメントの垂直/斜め衝撃波の応用である。
 - **通信ブラックアウト**: 電離が作るプラズマ鞘の遮蔽は、再突入中のテレメトリ設計（Starlink 経由の上面リンク）の物理的前提である。
 
 ## Daedalus内の応用 (Applications within Daedalus)
 
-- [`../../../hardware/aerospace/reentry-thermal-protection.md`](../../../hardware/aerospace/reentry-thermal-protection.md) — 鈍頭体理論・Sutton–Graves 則・ブラックアウトの理論的土台（本ドキュメントが供給）
-- [`../../../hardware/aerospace/spacex-reusability.md`](../../../hardware/aerospace/spacex-reusability.md) — グリッドフィンの超音速空力、再突入燃焼の意味（動圧・加熱の緩和）
-- [`../../../hardware/aerospace/aircraft-engineering-fundamentals.md`](../../../hardware/aerospace/aircraft-engineering-fundamentals.md) — 亜音速空力からの接続（造波抗力、面積則）
+- [`../../../engineering/aerospace/reentry-thermal-protection.md`](../../../engineering/aerospace/reentry-thermal-protection.md) — 鈍頭体理論・Sutton–Graves 則・ブラックアウトの理論的土台（本ドキュメントが供給）
+- [`../../../engineering/aerospace/spacex-reusability.md`](../../../engineering/aerospace/spacex-reusability.md) — グリッドフィンの超音速空力、再突入燃焼の意味（動圧・加熱の緩和）
+- [`../../../engineering/aerospace/aircraft-engineering-fundamentals.md`](../../../engineering/aerospace/aircraft-engineering-fundamentals.md) — 亜音速空力からの接続（造波抗力、面積則）
 - [`compressible-flow-nozzles.md`](compressible-flow-nozzles.md) — 等エントロピー流の対極としての衝撃波、過膨張剥離
 - [`../thermodynamics-statistical/laws-entropy-heat-engines.md`](../thermodynamics-statistical/laws-entropy-heat-engines.md) — エントロピー増大則（膨張衝撃波の不在、全圧損失の意味）
 

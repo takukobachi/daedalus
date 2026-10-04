@@ -9,7 +9,7 @@
 ## 今後のテーマ候補
 
 - チップスケール原子時計と保持時計 (CSAC & holdover clocks) — GNSS 遮断時の自律計時、
-  電力・通信インフラの耐障害設計。`../power-generation/` の系統保護と交差
+  電力・通信インフラの耐障害設計。`../../engineering/energy/` の系統保護と交差
 - 金融・放送のタイムスタンプ規制 (regulatory timestamping) — MiFID II の 100 µs 要件、
   SMPTE 2110/PTP による放送設備同期。「精度が法規制になる」ドメインの分析
 - 光格子時計と秒の再定義 (optical lattice clocks & SI second redefinition) — 10⁻¹⁸ 級の

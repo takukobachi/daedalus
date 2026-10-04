@@ -94,12 +94,12 @@ f(x+h) ≈ f(x) + ∇f·h + ½ hᵀHh,   H: ヘッセ行列 (Hᵢⱼ = ∂²f/�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`software/ml-systems/ml-inference-systems.md`](../../../software/ml-systems/ml-inference-systems.md) | 誤差逆伝播 = リバースモード自動微分 (§2)、学習の幾何(条件数とモーメンタム, §3) |
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | 学習ワークロードの実体はヤコビアン積の連鎖 (§2) —— GEMM 列に還元される理由 |
+| [`software/ai/ml-inference-systems.md`](../../../software/ai/ml-inference-systems.md) | 誤差逆伝播 = リバースモード自動微分 (§2)、学習の幾何(条件数とモーメンタム, §3) |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | 学習ワークロードの実体はヤコビアン積の連鎖 (§2) —— GEMM 列に還元される理由 |
 | [`../../physics/electromagnetism/maxwell-equations-em-waves.md`](../../physics/electromagnetism/maxwell-equations-em-waves.md) | 積分形 ⟺ 微分形の翻訳 (§5)。第4回で留保した微分形がここで完成 |
 | [`../../physics/electromagnetism/charge-field-potential.md`](../../physics/electromagnetism/charge-field-potential.md) | `E = −∇V` (§1)、ガウスの法則の局所化 (§5) |
 | [`../../physics/quantum-solid-state/pn-junction-diode.md`](../../physics/quantum-solid-state/pn-junction-diode.md) | 拡散電流 ∝ −∇n ——「勾配に比例した流れ」の輸送文法 (工学への接続 §4) |
-| [`hardware/power-generation/generation-and-grid-fundamentals.md`](../../../hardware/power-generation/generation-and-grid-fundamentals.md) | 潮流計算の Newton 法 = ヤコビアン + 疎 LU (§3, 工学への接続 §2) |
+| [`engineering/energy/generation-grid-fundamentals.md`](../../../engineering/energy/generation-grid-fundamentals.md) | 潮流計算の Newton 法 = ヤコビアン + 疎 LU (§3, 工学への接続 §2) |
 
 ## 参考文献 (References)
 

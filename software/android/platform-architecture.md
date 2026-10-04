@@ -21,7 +21,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 4. **ART は「測ってからコンパイルする」。** インストール時全 AOT（初期）→ インタープリタ＋JIT＋**プロファイル誘導の充電時 AOT**（Android 7+）へと進化した。ホットパスだけを最適化する判断をランタイムの実測に委ねる設計で、JIT/AOT の古典的トレードオフに対する運用込みの答えである。
 5. **swap の代わりにプロセスを殺す。** ディスク swap は行わず（zram による圧縮 RAM swap は併用）、メモリ逼迫時は **lmkd** が重要度の低いプロセスから SIGKILL する。アプリのライフサイクル（onCreate/onStop…）が「いつ殺されてもよい」前提で設計されているため、**プロセスはキャッシュ**として扱える——`onDestroy` は保証されない、はこの帰結。
 6. **Project Treble はカーネル/ベンダ層と OS 更新を分離した。** HAL を安定した Binder インタフェース (HIDL→AIDL) の背後に隔離し、SoC ベンダのコードを差し替えずに Android 本体を更新可能にした。組込みの宿痾「ベンダ依存で更新が止まる」への構造的な対処。
-7. **セキュリティは「起動の検証」から「実行時の隔離」まで一本の鎖である。** Verified Boot (dm-verity) がブート段とシステムパーティションの改竄を拒み、その上で UID+SELinux+権限が実行時を隔離し、鍵は Keystore/StrongBox がハード側に隔離する。車載の HSM・セキュアブート（[`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md)）と同じ設計文法である。
+7. **セキュリティは「起動の検証」から「実行時の隔離」まで一本の鎖である。** Verified Boot (dm-verity) がブート段とシステムパーティションの改竄を拒み、その上で UID+SELinux+権限が実行時を隔離し、鍵は Keystore/StrongBox がハード側に隔離する。車載の HSM・セキュアブート（[`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md)）と同じ設計文法である。
 
 ## アーキテクチャ (Architecture)
 
@@ -97,7 +97,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 
 - Treble (Android 8) 以前、ベンダ実装は Android 本体と密結合で、OS 更新にはベンダの再作業が必須だった——更新が止まる構造的原因。
 - Treble は **HAL を Binder ベースの安定インタフェース (HIDL、現在は AIDL) の背後に置き**、`system`（Google/AOSP 管理）と `vendor`（SoC ベンダ管理）をパーティションごと分離した。VTS (Vendor Test Suite) が境界の互換性を機械検証する。
-- さらに **APEX** (Android 10+) がランタイムや個別モジュールを Play 経由で更新可能にし（Project Mainline）、「OS 全体の更新」を待たずにセキュリティ修正を配れるようにした。**更新可能性はアーキテクチャの問題である**——車載 SDV が同じ課題（[`../../hardware/automotive/in-vehicle-networks.md`](../../hardware/automotive/in-vehicle-networks.md) のゾーン化・中央集約）に向かっているのは偶然ではない。
+- さらに **APEX** (Android 10+) がランタイムや個別モジュールを Play 経由で更新可能にし（Project Mainline）、「OS 全体の更新」を待たずにセキュリティ修正を配れるようにした。**更新可能性はアーキテクチャの問題である**——車載 SDV が同じ課題（[`../../engineering/automotive/in-vehicle-networks.md`](../../engineering/automotive/in-vehicle-networks.md) のゾーン化・中央集約）に向かっているのは偶然ではない。
 
 ### 4. 起動の検証 — Verified Boot
 
@@ -120,7 +120,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 
 ## セキュリティ考察 (Security Considerations)
 
-- **多層サンドボックス**: ①カーネル UID 分離（アプリ間はファイルシステム・プロセスレベルで他人）→ ② **SELinux** が「root でもできないこと」を規定（`untrusted_app` ドメイン、Android 5 以降全面 enforcing）→ ③ seccomp が使える syscall を制限 → ④ 権限モデル（install 時/実行時/署名権限、Android 6+ で実行時付与）がフレームワーク API を制御。**1 層の突破が即全損にならない**構成で、車載の多層防御（[`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md)）と同型。
+- **多層サンドボックス**: ①カーネル UID 分離（アプリ間はファイルシステム・プロセスレベルで他人）→ ② **SELinux** が「root でもできないこと」を規定（`untrusted_app` ドメイン、Android 5 以降全面 enforcing）→ ③ seccomp が使える syscall を制限 → ④ 権限モデル（install 時/実行時/署名権限、Android 6+ で実行時付与）がフレームワーク API を制御。**1 層の突破が即全損にならない**構成で、車載の多層防御（[`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md)）と同型。
 - **メディアスタックの教訓 (Stagefright, 2015)**: MMS で届く動画の解析だけで RCE に至る脆弱性群は、「巨大な C++ パーサが高権限プロセスに同居する」ことの危険を実証した。以後 Android はメディア処理を**権限の異なる複数プロセスへ分割**し、コーデックを制約の強いサンドボックスに隔離した——攻撃面の分割という古典原則の大規模適用例。
 - **鍵の隔離**: Keystore は鍵操作を TEE (TrustZone) 内で行い、鍵素材を Android 側に出さない。**StrongBox** (Android 9+) はさらに独立したセキュアエレメントへ隔離する。「OS が侵害されても鍵は出ない」を目指す点で、車載 HSM・航空宇宙の耐タンパ設計と同じ文法。
 - **Binder はカーネル攻撃面でもある**: 全プロセスが直接叩けるカーネルドライバであるため、Binder 実装の UAF・競合は権限昇格の常連クラスである（[`../concurrency/lock-free-data-structures.md`](../concurrency/lock-free-data-structures.md) の「カーネル内競合＝昇格」の系譜）。到達可能性の高さゆえ、ここの監査・fuzzing は継続的に行われている。
@@ -138,8 +138,8 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — COW・OOM・PSI・zram の一般論。本書はその Android 流の運用。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — cgroup/cpuset・優先度。top-app/background 分離の基盤。
 - [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) — Verified Boot が挿入されるブート段の一般構造。
-- [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — HSM・セキュアブート・多層防御の車載版。Android Automotive OS で両者は合流する。
-- [`../specifications/authentication-tokens-specification.md`](../specifications/authentication-tokens-specification.md) — アプリ層の認証。Keystore はそのトークン・鍵の置き場になる。
+- [`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md) — HSM・セキュアブート・多層防御の車載版。Android Automotive OS で両者は合流する。
+- [`../apis/authentication-tokens-specification.md`](../apis/authentication-tokens-specification.md) — アプリ層の認証。Keystore はそのトークン・鍵の置き場になる。
 - [`boot-init-properties.md`](boot-init-properties.md) — ブートローダーから init・プロパティ・init.rc を経て Zygote に至る起動の詳細。
 - [`memory-lmkd.md`](memory-lmkd.md) — 本書 §2「プロセス＝キャッシュ」の深掘り（カーネル回収・oom_score_adj・lmkd・freezer）。
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — 本書 §5「1 タップの旅」をプロセス/スレッド単位に展開したもの。

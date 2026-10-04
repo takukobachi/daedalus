@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-[`../../hardware/cpu-architecture/virtual-memory-mmu.md`](../../hardware/cpu-architecture/virtual-memory-mmu.md) は、アドレス変換の**機構**——ページテーブル・TLB・ページウォーク——を扱った。本ドキュメントはその真上、**OS がこの機構を使って何をするか**を主題とする: プロセスにアドレス空間という幻想を与え、物理メモリをファイルキャッシュと分け合い、足りなければ回収し、それでも足りなければプロセスを殺す——**ポリシと機構の層**である。
+[`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md) は、アドレス変換の**機構**——ページテーブル・TLB・ページウォーク——を扱った。本ドキュメントはその真上、**OS がこの機構を使って何をするか**を主題とする: プロセスにアドレス空間という幻想を与え、物理メモリをファイルキャッシュと分け合い、足りなければ回収し、それでも足りなければプロセスを殺す——**ポリシと機構の層**である。
 
 鍵になる転換は、ページフォルトを「エラー」ではなく **OS への主要な入口**として見ること。`fork` が一瞬で返るのも、`mmap` した 1TB のファイルが即座に「見える」のも、`malloc` が実メモリを消費しないのも、すべて「**実際に触られるまで何もしない (lazy)**」戦略の帰結であり、その決済がページフォルトで行われる。
 
@@ -37,7 +37,7 @@
    各範囲 = VMA (vm_area_struct): [start, end) × 権限(rwx) × 背後 (file or anon)
 ```
 
-- VMA は「この範囲は正当で、背後は何か（ファイルか匿名メモリか）、権限は何か」を記述する台帳。ページテーブル（[`../../hardware/cpu-architecture/virtual-memory-mmu.md`](../../hardware/cpu-architecture/virtual-memory-mmu.md)）はその**キャッシュされた実現**にすぎず、いつでも VMA から再構築できる。
+- VMA は「この範囲は正当で、背後は何か（ファイルか匿名メモリか）、権限は何か」を記述する台帳。ページテーブル（[`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md)）はその**キャッシュされた実現**にすぎず、いつでも VMA から再構築できる。
 - `mmap` は VMA を1つ挿入するだけの O(log n) 操作。だから巨大ファイルのマップが即座に返る。
 
 ### ページフォルトの分類と処理パス
@@ -75,7 +75,7 @@
 ### 1. demand paging と COW — 遅延の経済学
 
 - **demand paging**: 実行ファイルのコードも `mmap` 領域も、初アクセスまでロードしない。起動が速く、触らない部分のメモリを一切消費しない。代償は「初回アクセスの遅延が不定」——リアルタイム用途では `mlock`/`mlockall` で先に決済しておく（[`process-thread-scheduling.md`](process-thread-scheduling.md) のリアルタイムの文脈）。
-- **COW の連鎖**: `fork` 後の親子、`mmap(MAP_PRIVATE)` のファイル、重複排除 (KSM) ——「共有しておいて、書く者が複製コストを払う」は仮想記憶の至る所で使われる。**読み共有はタダ、書き込みがコスト**という非対称は、キャッシュコヒーレンス（[`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md)）と同じ構造で層を変えて再現している。
+- **COW の連鎖**: `fork` 後の親子、`mmap(MAP_PRIVATE)` のファイル、重複排除 (KSM) ——「共有しておいて、書く者が複製コストを払う」は仮想記憶の至る所で使われる。**読み共有はタダ、書き込みがコスト**という非対称は、キャッシュコヒーレンス（[`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md)）と同じ構造で層を変えて再現している。
 
 ### 2. ページキャッシュ — read/write と mmap の統一
 
@@ -101,7 +101,7 @@
 
 ### 5. ヒュージページの OS 側 — THP と khugepaged
 
-TLB カバレッジの問題（[`../../hardware/cpu-architecture/virtual-memory-mmu.md`](../../hardware/cpu-architecture/virtual-memory-mmu.md)）への OS 側の答えが **THP (Transparent Huge Pages)**: フォルト時に 2MB で割り当てる、または khugepaged が背景で 4KB×512 を昇格させる。
+TLB カバレッジの問題（[`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md)）への OS 側の答えが **THP (Transparent Huge Pages)**: フォルト時に 2MB で割り当てる、または khugepaged が背景で 4KB×512 を昇格させる。
 
 - 効能は TLB ミスとページウォークの削減。代償は (a) 内部断片化（2MB の一部しか使わない）、(b) 昇格・分割・コンパクションの CPU/レイテンシ、(c) 過去の実装では回収との相互作用によるレイテンシスパイク。データベースが「THP を無効にせよ」と長く案内してきたのはこの (b)(c) が原因で、**「透過」な最適化がワークロードによっては負ける**実例として覚えておく価値がある。
 
@@ -118,8 +118,8 @@ PSI (Pressure Stall Information) は「メモリ待ちで止まった時間の�
 
 ## セキュリティ考察 (Security Considerations)
 
-- **Dirty COW (CVE-2016-5195)**: COW の書き込み処理と `madvise` の競合により、**読み取り専用マップへの書き込みが本体に到達**する競合状態バグ。読み取り専用で root 所有のファイル（setuid バイナリ等）を書き換えられ、権限昇格が成立した。仮想記憶の中核パスの**データ競合**が直ちに最重要脆弱性になる実例であり、並行性の正しさ（[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md)）と仮想記憶が交差する地点。
-- **ページキャッシュはサイドチャネルになる**: キャッシュ在否の時間差（`mincore` や計時で観測）から、他プロセスがどのファイルのどこを触ったかが漏れる。共有＝観測面という構造はハードのキャッシュ攻撃（[`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md)）と同型で、`mincore` の挙動制限など OS 側の対処が続いている。
+- **Dirty COW (CVE-2016-5195)**: COW の書き込み処理と `madvise` の競合により、**読み取り専用マップへの書き込みが本体に到達**する競合状態バグ。読み取り専用で root 所有のファイル（setuid バイナリ等）を書き換えられ、権限昇格が成立した。仮想記憶の中核パスの**データ競合**が直ちに最重要脆弱性になる実例であり、並行性の正しさ（[`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md)）と仮想記憶が交差する地点。
+- **ページキャッシュはサイドチャネルになる**: キャッシュ在否の時間差（`mincore` や計時で観測）から、他プロセスがどのファイルのどこを触ったかが漏れる。共有＝観測面という構造はハードのキャッシュ攻撃（[`../../hardware/cpu/cache-memory-hierarchy.md`](../../hardware/cpu/cache-memory-hierarchy.md)）と同型で、`mincore` の挙動制限など OS 側の対処が続いている。
 - **zero page 保証**: 新規ページは必ずゼロ埋めで渡される。これが破れると他プロセスの残骸（鍵・パスワード）が読める——「未初期化メモリの開示」はカーネルにとって恒常的な脆弱性クラスである。ユーザ空間でも、秘密を置いたページは `mlock`（swap への漏出防止）と明示ゼロ化 (`explicit_bzero`) で扱う。
 - **OOM は可用性の攻撃面**: メモリを食い尽くす入力（解凍爆弾、巨大リクエスト）で OOM killer に無関係なプロセスを殺させうる。cgroup による隔離と入力サイズの上限が防御になる。
 
@@ -132,10 +132,10 @@ PSI (Pressure Stall Information) は「メモリ待ちで止まった時間の�
 
 ### 次の接続先 (Related Topics)
 
-- [`../../hardware/cpu-architecture/virtual-memory-mmu.md`](../../hardware/cpu-architecture/virtual-memory-mmu.md) — 本書の真下。ページテーブル・TLB・ページウォークの機構。
+- [`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md) — 本書の真下。ページテーブル・TLB・ページウォークの機構。
 - [`process-thread-scheduling.md`](process-thread-scheduling.md) — もう一つの主資源 (CPU) の多重化。直接回収はスケジューリングレイテンシに化ける。
 - [`../databases/storage-engines.md`](../databases/storage-engines.md) — ページキャッシュと自前バッファプールの緊張関係、fsync の意味論。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — Dirty COW 型のカーネル内競合の言語側の対応物。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — Dirty COW 型のカーネル内競合の言語側の対応物。
 - [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md) — writeback の着地先。FLUSH/FUA と永続性。
 
 ## 参考文献 (References)

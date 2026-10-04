@@ -94,5 +94,5 @@ Android プラットフォーム内部の分析。Linux カーネル（[`../oper
 
 ## 今後のテーマ候補
 
-- Android Automotive OS — 車載への展開（`../../hardware/automotive/` との合流点）
+- Android Automotive OS — 車載への展開（`../../engineering/automotive/` との合流点）
 - メディアスタック — Codec2、MediaSession、Stagefright 以後のプロセス分割の詳細

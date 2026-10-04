@@ -105,7 +105,7 @@ NIC や NVMe のような高速デバイスでは、I/O ごとに MMIO でパラ
 
 つまり**制御情報そのものを DMA に載せ、遅い MMIO を細い通知路に限定する**設計である。`storage-nvm-interface.md` の NVMe 送信/完了キューはこの形の直接の実例。
 
-- **scatter-gather**: 1つの転送を複数の（アドレス, 長さ）エントリで表す。OS の仮想記憶はページ単位でしか物理連続性を保証しないため（`../cpu-architecture/virtual-memory-mmu.md`）、大きなバッファを物理的に非連続なまま転送するには必須の機能。
+- **scatter-gather**: 1つの転送を複数の（アドレス, 長さ）エントリで表す。OS の仮想記憶はページ単位でしか物理連続性を保証しないため（`../cpu/virtual-memory-mmu.md`）、大きなバッファを物理的に非連続なまま転送するには必須の機能。
 
 ### MMIO のコスト非対称 — posted write と read の遅さ
 
@@ -131,7 +131,7 @@ writel(START,    base + REG_CTRL);   // 最後に開始（順序が機能上必�
 
 ### メモリ順序との接続
 
-ここでのバリアは `../cpu-architecture/memory-ordering-atomics.md` のメモリ順序と同根の問題である。違いは相手が「他コア」ではなく「デバイス」である点。MMIO の順序保証（device ordering）はアーキテクチャ依存で、強い順序の I/O マッピングや専用バリア命令で担保する。
+ここでのバリアは `../cpu/memory-ordering-atomics.md` のメモリ順序と同根の問題である。違いは相手が「他コア」ではなく「デバイス」である点。MMIO の順序保証（device ordering）はアーキテクチャ依存で、強い順序の I/O マッピングや専用バリア命令で担保する。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -149,10 +149,10 @@ writel(START,    base + REG_CTRL);   // 最後に開始（順序が機能上必�
 
 ### 次の接続先 (Related Topics)
 
-- `../cpu-architecture/memory-ordering-atomics.md` — MMIO の順序保証の基礎。
-- `../cpu-architecture/cache-memory-hierarchy.md` — DMA のキャッシュ整合問題の背景。
+- `../cpu/memory-ordering-atomics.md` — MMIO の順序保証の基礎。
+- `../cpu/cache-memory-hierarchy.md` — DMA のキャッシュ整合問題の背景。
 - `storage-nvm-interface.md` — ディスクリプタリングの実例 (NVMe キュー)。
-- `../automotive/in-vehicle-networks.md` — 実デバイス通信の応用例（車載バスと ECU）。
+- `../../engineering/automotive/in-vehicle-networks.md` — 実デバイス通信の応用例（車載バスと ECU）。
 
 ## 参考文献 (References)
 

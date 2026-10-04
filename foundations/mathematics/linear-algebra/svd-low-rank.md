@@ -83,8 +83,8 @@ A_k = Σᵢ₌₁ᵏ σᵢuᵢvᵢᵀ は、ランク k 以下の全行列の中
 
 | 文書 | 接続点 |
 |------|--------|
-| [`software/ml-systems/`](../../../software/ml-systems/) | 埋め込みの次元削減、モデル圧縮、LoRA。学習パイプラインに現れる低ランク構造の数学的根拠 |
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | 低ランク化は GEMM のサイズ自体を削減する——演算器を速くする(第1回 §4)のと相補的な、問題側からの高速化 |
+| [`software/ai/`](../../../software/ai/) | 埋め込みの次元削減、モデル圧縮、LoRA。学習パイプラインに現れる低ランク構造の数学的根拠 |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | 低ランク化は GEMM のサイズ自体を削減する——演算器を速くする(第1回 §4)のと相補的な、問題側からの高速化 |
 
 ## 参考文献 (References)
 

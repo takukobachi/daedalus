@@ -1,7 +1,7 @@
 # Distributed Systems
 
 分散システム (distributed systems) の分析。複製 (replication)・分断 (network
-partition)・並行性が絡む領域で、`hardware/cpu-architecture/cache-coherence.md` が
+partition)・並行性が絡む領域で、`hardware/cpu/cache-coherence.md` が
 扱う「コヒーレンス対コンシステンシ」の議論を、ノード間スケールへ拡張して捉える。
 
 ## 構成

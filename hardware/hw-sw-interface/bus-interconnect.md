@@ -25,7 +25,7 @@
 
 4. **オンチップとオフチップは設計圧力が異なる。** オフチップ (PCIe/CXL) はピン数とボード配線が制約で、シリアル化と高速 SerDes が要。オンチップ (AXI) はトランジスタが潤沢で配線が短いため、広いパラレルバスと多チャネル並行が許される。最適解が層で違う。
 
-5. **CXL はバスをコヒーレンシ境界に変える。** 従来 PCIe デバイスは非コヒーレントで、DMA とキャッシュ整合は明示管理だった（`mmio-dma-interrupts.md` 参照）。CXL は PCIe 物理層の上に `cxl.cache`／`cxl.mem` を載せ、デバイスをキャッシュコヒーレンシ領域に引き入れる。これは `../cpu-architecture/cache-coherence.md` のコヒーレンシをチップ外へ拡張する動きである。
+5. **CXL はバスをコヒーレンシ境界に変える。** 従来 PCIe デバイスは非コヒーレントで、DMA とキャッシュ整合は明示管理だった（`mmio-dma-interrupts.md` 参照）。CXL は PCIe 物理層の上に `cxl.cache`／`cxl.mem` を載せ、デバイスをキャッシュコヒーレンシ領域に引き入れる。これは `../cpu/cache-coherence.md` のコヒーレンシをチップ外へ拡張する動きである。
 
 ## アーキテクチャ (Architecture)
 
@@ -153,7 +153,7 @@ AXI の特徴は、読み・書きを**5つの独立チャネル**に分け、�
 | Read Data | R | slave→master | 読み出しデータ＋応答 |
 
 - **アドレスとデータの分離**: アドレスチャネルとデータチャネルが独立なので、後続要求のアドレスを先に投入でき、パイプライン化される。読みと書きも別チャネルゆえ同時進行できる。
-- **バースト転送 (burst)**: 1つのアドレス発行で連続する複数ビート (beat) を転送する。種別は `FIXED`（同一アドレス, FIFO 向け）・`INCR`（増加, メモリ向け）・`WRAP`（キャッシュラインフィル向け、境界で巻き戻る）。`../cpu-architecture/cache-memory-hierarchy.md` のキャッシュラインフィルは `WRAP` バーストに対応する。
+- **バースト転送 (burst)**: 1つのアドレス発行で連続する複数ビート (beat) を転送する。種別は `FIXED`（同一アドレス, FIFO 向け）・`INCR`（増加, メモリ向け）・`WRAP`（キャッシュラインフィル向け、境界で巻き戻る）。`../cpu/cache-memory-hierarchy.md` のキャッシュラインフィルは `WRAP` バーストに対応する。
 - **アウトスタンディング転送 (outstanding transactions)**: 応答を待たずに複数の要求を投入できる。各要求に **ID** を付け、応答を ID で対応づける。これがレイテンシ隠蔽の鍵で、メモリ遅延の間も次々と要求を出せる。
 - **ordering（順序保証）**: 同一 ID の転送は発行順に完了するが、**異なる ID の転送は順不同で完了してよい**。これにより低速スレーブが高速スレーブをブロックしない (out-of-order completion)。順序が必要なら同一 ID を使うか、バリアで律する。MMIO レジスタの順序依存（`mmio-dma-interrupts.md` の「開始ビットは最後」）は、この順序規則の上で守る必要がある。
 
@@ -180,7 +180,7 @@ CXL は PCIe の物理層・電気仕様を共有しつつ、上に3つのサブ
 | Type 2 | `cxl.io` + `cxl.cache` + `cxl.mem` | 自前メモリを持つアクセラレータ（GPU/FPGA） |
 | Type 3 | `cxl.io` + `cxl.mem` | メモリエクスパンダ（容量・帯域拡張） |
 
-**コヒーレンシとの接続**: 従来 PCIe DMA は非コヒーレントで、`mmio-dma-interrupts.md` の通り CPU 側が flush/invalidate を明示管理した。CXL はこれをハードウェアのコヒーレンシプロトコルに肩代わりさせ、ホストとデバイスが MESI 系（`../cpu-architecture/cache-memory-hierarchy.md` 参照）の一貫したビューを共有する。ホストがコヒーレンシの調停点 (home agent) となり、デバイスのキャッシュ状態を追跡する。これは**チップ内コヒーレンシをパッケージ外へ延長する**動きであり、`../cpu-architecture/cache-coherence.md` が扱う領域がボードレベルへ広がることを意味する。
+**コヒーレンシとの接続**: 従来 PCIe DMA は非コヒーレントで、`mmio-dma-interrupts.md` の通り CPU 側が flush/invalidate を明示管理した。CXL はこれをハードウェアのコヒーレンシプロトコルに肩代わりさせ、ホストとデバイスが MESI 系（`../cpu/cache-memory-hierarchy.md` 参照）の一貫したビューを共有する。ホストがコヒーレンシの調停点 (home agent) となり、デバイスのキャッシュ状態を追跡する。これは**チップ内コヒーレンシをパッケージ外へ延長する**動きであり、`../cpu/cache-coherence.md` が扱う領域がボードレベルへ広がることを意味する。
 
 ### 4. トポロジ: ツリー / メッシュ / NoC (Topology)
 
@@ -223,14 +223,14 @@ CXL は PCIe の物理層・電気仕様を共有しつつ、上に3つのサブ
 - バスと相互接続は、MMIO・DMA・割り込みが流れる**物理経路**であり、その歴史は共有パラレルバスから点対点シリアルリンク（＝小さなパケット交換ネットワーク）への一方向の移行で説明できる。
 - PCIe はチップ間をツリー状に結び、TLP・コンフィグ空間・BAR・MSI/MSI-X で「発見と通信」を成立させる。`mmio-dma-interrupts.md` の MMIO アドレスは、この列挙が割り当てた BAR の結果である。
 - AMBA/AXI はチップ内を5チャネルの独立握手・バースト・アウトスタンディング転送で結び、ID ベースの順序規則でレイテンシを隠蔽する。
-- CXL は PCIe 物理層の上にコヒーレンシを載せ、`../cpu-architecture/cache-coherence.md` のコヒーレンシ領域をパッケージ外（メモリ拡張・アクセラレータ）へ拡張する。これにより DMA のキャッシュ整合の明示管理が不要になる代わりに、コヒーレンシ境界が新たな信頼境界となる。
+- CXL は PCIe 物理層の上にコヒーレンシを載せ、`../cpu/cache-coherence.md` のコヒーレンシ領域をパッケージ外（メモリ拡張・アクセラレータ）へ拡張する。これにより DMA のキャッシュ整合の明示管理が不要になる代わりに、コヒーレンシ境界が新たな信頼境界となる。
 - 設計はつねに帯域とレイテンシ、効率と公平性のトレードオフであり、トポロジ・QoS・アービトレーション・クレジットがその調停手段である。
 
 ### 次の接続先 (Related Topics)
 
 - `mmio-dma-interrupts.md` — 本ドキュメントのバス上を実際に流れる MMIO・DMA・MSI の中身。
-- `../cpu-architecture/cache-coherence.md` — CXL が `cxl.cache`/`cxl.mem` で拡張する、コヒーレンシ領域そのもの。
-- `../cpu-architecture/cache-memory-hierarchy.md` — バースト／ラインフィルとコヒーレンシ状態 (MESI) の背景。
+- `../cpu/cache-coherence.md` — CXL が `cxl.cache`/`cxl.mem` で拡張する、コヒーレンシ領域そのもの。
+- `../cpu/cache-memory-hierarchy.md` — バースト／ラインフィルとコヒーレンシ状態 (MESI) の背景。
 
 ## 参考文献 (References)
 

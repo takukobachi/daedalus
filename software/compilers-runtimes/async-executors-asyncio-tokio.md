@@ -13,7 +13,7 @@
 ## 方法論 (Methodology)
 
 - 実行器を同じ 5 要素——タスクの表現・レディキュー・I/O 多重化との接続・タイマ・キャンセル——に分解して比較し、「asyncio 対 Tokio」を個別ツアーではなく同型問題の別解として読めるようにする。
-- `../concurrency/` との棲み分け: メモリモデル・同期プリミティブの一般論は [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) に、OS のスケジューリングとイベント多重化 (epoll 等) は [`../operating-systems/`](../operating-systems/) に委ね、本書は**言語ランタイムの上に組まれた実行器そのもの**に集中する。
+- `../concurrency/` との棲み分け: メモリモデル・同期プリミティブの一般論は [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) に、OS のスケジューリングとイベント多重化 (epoll 等) は [`../operating-systems/`](../operating-systems/) に委ね、本書は**言語ランタイムの上に組まれた実行器そのもの**に集中する。
 - 一次資料を優先する: asyncio は PEP 3156 と CPython `Lib/asyncio/`、Rust は RFC 2592 (task API) と std ドキュメント、Tokio は公式設計記事 (スケジューラ刷新・協調的 yield)。性能の主張は出典と計測主体を併記する (Tokio の数値は第一者計測)。
 - Go は独立の節を立てず、各論点の対照として引く (実行器を言語ランタイムに吸収した設計は前掲書 GMP 節で詳述済み)。
 
@@ -102,7 +102,7 @@
 
 - **実行器の可用性は「最も重い 1 タスク」に律速される。** プリエンプションがない以上、CPU-bound な 1 リクエスト (巨大 JSON のパース、圧縮、正規表現のバックトラック爆発) が全接続を止める——[`stdlib-internals-cpython-go-rust.md`](stdlib-internals-cpython-go-rust.md) の HashDoS と同型の「計算量を握られる」攻撃面が、協調的実行器では**プロセス全体の停止**に増幅される。防衛は入力サイズの制限・タイムアウト・重い処理の隔離 (spawn_blocking / run_in_executor) の多層で行う。
 - **非同期はコネクション保持を安価にする——攻撃者にとっても。** slowloris 型 (大量の遅い接続を維持する) 攻撃に対し、スレッドサーバは早々に枯渇することで「自衛」していたが、async サーバは 10 万接続を平然と抱えてメモリで死ぬ。**タイムアウトと同時接続数の上限を明示するのは async では必須の設計事項**であり、tokio/asyncio がタイムアウトを一級 API (asyncio.timeout, tokio::time::timeout) にしたのはこのためである。
-- **無制限の spawn とキューはメモリ DoS の形である。** 「リクエストごとに spawn」「無限バッファのチャネル」は、背圧 (backpressure) の欠如として攻撃可能になる。有界チャネル・セマフォによる同時実行数制限が防衛の基本形で、これは [`../messaging-streaming/`](../messaging-streaming/) の背圧設計と同じ問題の縮小版である。
+- **無制限の spawn とキューはメモリ DoS の形である。** 「リクエストごとに spawn」「無限バッファのチャネル」は、背圧 (backpressure) の欠如として攻撃可能になる。有界チャネル・セマフォによる同時実行数制限が防衛の基本形で、これは [`../messaging/`](../messaging/) の背圧設計と同じ問題の縮小版である。
 - **キャンセル経路はエラー処理の死角になりやすい。** asyncio の CancelledError の握り潰し (歴史的に `except Exception` で捕まった時代の名残)、Rust の drop による途中状態の消失、Go の context 無視——キャンセルは「正常でも異常でもない第三の終了」であり、リソースリーク・ロック保持・不変条件の破れがこの経路に溜まる。構造化並行性 (TaskGroup/JoinSet) の採用は、この死角を型とスコープで塞ぐセキュリティ対策としても読める。
 
 ## 結論 (Conclusions)
@@ -116,9 +116,9 @@
 
 - [`language-implementations-cpython-go-rust.md`](language-implementations-cpython-go-rust.md) — 本書の親。async 設計の三答と「関数の色」問題。
 - [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — 再演元の OS スケジューラと epoll 等の I/O 多重化。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — wake/poll の下にある同期と可視性の一般論。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — wake/poll の下にある同期と可視性の一般論。
 - [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) — 「停止を薄く塗る」「観測で統治する」という同型の設計原理。
-- [`../messaging-streaming/`](../messaging-streaming/) — 背圧・有界キューの一般論。
+- [`../messaging/`](../messaging/) — 背圧・有界キューの一般論。
 
 ## 参考文献 (References)
 

@@ -83,9 +83,9 @@ Aᵏ = P Dᵏ P⁻¹ = P diag(λ₁ᵏ, …, λₙᵏ) P⁻¹
 
 | 文書 | 接続点 |
 |------|--------|
-| [`software/ml-systems/`](../../../software/ml-systems/) | 最適化(ヘッセ行列の固有値と収束・条件数)、PCA・スペクトル手法、学習ダイナミクスの安定性 |
+| [`software/ai/`](../../../software/ai/) | 最適化(ヘッセ行列の固有値と収束・条件数)、PCA・スペクトル手法、学習ダイナミクスの安定性 |
 | [`software/observability/`](../../../software/observability/) | 待ち行列・信頼性のマルコフモデル。定常分布と混合時間(§4)が解析の土台 |
-| [`hardware/power-generation/`](../../../hardware/power-generation/) | 電力系統の小信号安定度・動揺モードは系統方程式の固有値解析そのもの |
+| [`engineering/energy/`](../../../engineering/energy/) | 電力系統の小信号安定度・動揺モードは系統方程式の固有値解析そのもの |
 
 ## 参考文献 (References)
 

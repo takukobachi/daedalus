@@ -92,11 +92,11 @@ LLN は「測定を繰り返せば真値に近づく」ことの保証——頻�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/cpu-architecture/branch-prediction-speculation.md`](../../../hardware/cpu-architecture/branch-prediction-speculation.md) | 予測ヒット率と誤予測ペナルティの期待値計算。予測器の学習は条件付き確率の推定 |
-| [`hardware/cpu-architecture/cache-memory-hierarchy.md`](../../../hardware/cpu-architecture/cache-memory-hierarchy.md) | AMAT = ヒット率で重み付けた期待アクセス時間——期待値の線形性の実例 |
+| [`hardware/cpu/branch-prediction-speculation.md`](../../../hardware/cpu/branch-prediction-speculation.md) | 予測ヒット率と誤予測ペナルティの期待値計算。予測器の学習は条件付き確率の推定 |
+| [`hardware/cpu/cache-memory-hierarchy.md`](../../../hardware/cpu/cache-memory-hierarchy.md) | AMAT = ヒット率で重み付けた期待アクセス時間——期待値の線形性の実例 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | 欠陥密度のポアソンモデルと歩留まり式、プロセスばらつきの正規モデル |
 | [`software/observability/observability-performance-engineering.md`](../../../software/observability/observability-performance-engineering.md) | 分位点 (p50/p99) の定義、テイルレイテンシの合成、ベンチマークの統計的設計 |
-| [`hardware/automotive/functional-safety-iso26262.md`](../../../hardware/automotive/functional-safety-iso26262.md) | 故障率 (FIT)・冗長系の信頼度計算と、その独立性仮定の限界(共通原因故障) |
+| [`engineering/automotive/functional-safety-iso26262.md`](../../../engineering/automotive/functional-safety-iso26262.md) | 故障率 (FIT)・冗長系の信頼度計算と、その独立性仮定の限界(共通原因故障) |
 
 ## 参考文献 (References)
 

@@ -98,11 +98,11 @@ q = −κ ∇T   (κ: 熱伝導率 [W/(m·K)] — Cu ≈ 400, Si ≈ 150, 空気
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/datacenter-infrastructure/datacenter-cooling.md`](../../../hardware/datacenter-infrastructure/datacenter-cooling.md) | 熱抵抗連鎖としての冷却設計 (§5)、チラーの COP とフリークーリング (§4)、空冷→液冷の物性差 |
-| [`hardware/datacenter-infrastructure/datacenter-power.md`](../../../hardware/datacenter-infrastructure/datacenter-power.md) | 受電 MW = 冷却すべき MW (§2)、PUE の熱力学的な内訳 (§4) |
-| [`hardware/power-generation/generation-and-grid-fundamentals.md`](../../../hardware/power-generation/generation-and-grid-fundamentals.md) | 火力・原子力 = 熱機関、カルノー限界とコンバインドサイクル (§4) |
+| [`engineering/datacenters/datacenter-cooling.md`](../../../engineering/datacenters/datacenter-cooling.md) | 熱抵抗連鎖としての冷却設計 (§5)、チラーの COP とフリークーリング (§4)、空冷→液冷の物性差 |
+| [`engineering/datacenters/datacenter-power.md`](../../../engineering/datacenters/datacenter-power.md) | 受電 MW = 冷却すべき MW (§2)、PUE の熱力学的な内訳 (§4) |
+| [`engineering/energy/generation-grid-fundamentals.md`](../../../engineering/energy/generation-grid-fundamentals.md) | 火力・原子力 = 熱機関、カルノー限界とコンバインドサイクル (§4) |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | 動的・リーク電力がすべて熱になる (§2)、サーマルスロットリングと DVFS |
-| [`hardware/gpu-accelerators/tpu-systolic-arrays.md`](../../../hardware/gpu-accelerators/tpu-systolic-arrays.md) | 性能/電力(演算とデータ移動のエネルギー)——1 演算あたりのジュールが熱として回収不能になる会計 (§2–3) |
+| [`hardware/accelerators/tpu-systolic-arrays.md`](../../../hardware/accelerators/tpu-systolic-arrays.md) | 性能/電力(演算とデータ移動のエネルギー)——1 演算あたりのジュールが熱として回収不能になる会計 (§2–3) |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | 3D 積層の熱制約——下層ダイの放熱路 (§5)、熱処理工程の温度管理 |
 | [`foundations/physics/quantum-solid-state/mosfet-cmos.md`](../quantum-solid-state/mosfet-cmos.md) | CMOS の電力3成分——発熱の発生源側の物理 (§2 の Q の出どころ) |
 

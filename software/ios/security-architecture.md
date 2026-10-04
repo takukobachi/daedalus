@@ -138,7 +138,7 @@ iOS のセキュリティを貫く一本の糸は、「**検証の根と強制�
 - [`platform-architecture.md`](platform-architecture.md) — 署名・サンドボックス・SEP の全体像での位置づけ。
 - [`mach-ipc-xpc.md`](mach-ipc-xpc.md) — audit token・エンタイトルメント検査・ポート寿命バグと PAC の攻防。
 - [`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) — 検証チェーンの一般構造。パーソナライズ署名はその拡張。
-- [`../../hardware/cpu-architecture/virtual-memory-mmu.md`](../../hardware/cpu-architecture/virtual-memory-mmu.md) — SPTM/PPL が操作を独占する対象 (ページテーブル) の一般機構。
+- [`../../hardware/cpu/virtual-memory-mmu.md`](../../hardware/cpu/virtual-memory-mmu.md) — SPTM/PPL が操作を独占する対象 (ページテーブル) の一般機構。
 
 ## 参考文献 (References)
 

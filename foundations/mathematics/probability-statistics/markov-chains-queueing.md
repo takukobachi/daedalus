@@ -91,9 +91,9 @@ L = λW
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/cpu-architecture/branch-prediction-speculation.md`](../../../hardware/cpu-architecture/branch-prediction-speculation.md) | 飽和カウンタ=マルコフ連鎖、履歴レジスタ=履歴の状態への畳み込み (§1)、定常ヒット率 (§2) |
+| [`hardware/cpu/branch-prediction-speculation.md`](../../../hardware/cpu/branch-prediction-speculation.md) | 飽和カウンタ=マルコフ連鎖、履歴レジスタ=履歴の状態への畳み込み (§1)、定常ヒット率 (§2) |
 | [`software/observability/observability-performance-engineering.md`](../../../software/observability/observability-performance-engineering.md) | 利用率–レイテンシ曲線 (§4)、リトルの法則による整合性チェック (§5)、飽和とテイルの関係 |
-| [`hardware/network-hardware/nic-switch-architecture.md`](../../../hardware/network-hardware/nic-switch-architecture.md) | スイッチバッファの溢れ確率とキュー長分布 (§4)、バーストとポアソン仮定の限界 (§3) |
+| [`hardware/networking/nic-switch-architecture.md`](../../../hardware/networking/nic-switch-architecture.md) | スイッチバッファの溢れ確率とキュー長分布 (§4)、バーストとポアソン仮定の限界 (§3) |
 | [`software/networking/tcp-transport-congestion.md`](../../../software/networking/tcp-transport-congestion.md) | 帯域遅延積=リトルの法則 (§5)、輻輳状態機械のマルコフモデル化 (§1)、キュー遅延の発生機構 (§4) |
 | [`software/databases/transactions-isolation.md`](../../../software/databases/transactions-isolation.md) | コネクションプール・ロック待ちのキューイング、同時実行数の設計 (§5) |
 

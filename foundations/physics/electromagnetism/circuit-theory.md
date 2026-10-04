@@ -94,10 +94,10 @@ Q 値:      Q = ω₀L/R = (1/R)√(L/C)   (蓄積エネルギー / 1周期の�
 |------|--------|
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | PDN と反共振 (§5)、デカップリング設計、RC 遅延と電源シーケンス (§4) |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | 集中定数近似の限界 (§1) がバス速度の壁——伝送線路(次回)への動機 |
-| [`hardware/power-generation/generation-and-grid-fundamentals.md`](../../../hardware/power-generation/generation-and-grid-fundamentals.md) | 交流電力・力率・無効電力 (§4)、送電網が回路理論で設計できる理由 (§1) |
-| [`hardware/power-generation/hvdc-interconnection.md`](../../../hardware/power-generation/hvdc-interconnection.md) | 交流送電の無効電力問題 (§4) が HVDC を選ばせる背景 |
-| [`hardware/automotive/ev/tesla-battery-powertrain.md`](../../../hardware/automotive/ev/tesla-battery-powertrain.md) | バッテリ等価回路モデル (§3)、インバータのフィルタ設計 (§4) |
-| [`hardware/peripherals-connectivity/audio-subsystem.md`](../../../hardware/peripherals-connectivity/audio-subsystem.md) | アナログフィルタ (§4)、スピーカーの等価回路と共振 (§5) |
+| [`engineering/energy/generation-grid-fundamentals.md`](../../../engineering/energy/generation-grid-fundamentals.md) | 交流電力・力率・無効電力 (§4)、送電網が回路理論で設計できる理由 (§1) |
+| [`engineering/energy/hvdc-interconnection.md`](../../../engineering/energy/hvdc-interconnection.md) | 交流送電の無効電力問題 (§4) が HVDC を選ばせる背景 |
+| [`engineering/automotive/ev/tesla-battery-powertrain.md`](../../../engineering/automotive/ev/tesla-battery-powertrain.md) | バッテリ等価回路モデル (§3)、インバータのフィルタ設計 (§4) |
+| [`hardware/peripherals/audio-subsystem.md`](../../../hardware/peripherals/audio-subsystem.md) | アナログフィルタ (§4)、スピーカーの等価回路と共振 (§5) |
 | [`hardware/timekeeping/clocks-time-synchronization.md`](../../../hardware/timekeeping/clocks-time-synchronization.md) | 水晶振動子の高 Q 共振 (§5) が周波数安定度の源 |
 
 ## 参考文献 (References)

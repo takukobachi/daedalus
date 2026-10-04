@@ -23,7 +23,7 @@
 4. **合意の単位は「値」ではなく「ログ」である。** 実システムが欲しいのは1回の合意ではなく操作列。single-decree Paxos をスロットごとに走らせる Multi-Paxos は、安定リーダの下でフェーズ1を償却し、定常状態を「リーダがログを追記し過半数が確認する」だけにする——これは Raft の定常状態と同じ形。
 5. **リーダは性能の道具であり、safety の前提ではない。** プロトコルの本体はむしろ**リーダ交代 (view change / election)** にある: 新リーダが「決まったかもしれない値」を確実に引き継ぐ部分が正しさの核心で、コード量も難しさもここに集中する。
 6. **再構成 (membership change) が最難関。** ノード集合そのものを変えると「過半数」の定義が変わり、新旧の過半数が交わらない瞬間ができうる。joint consensus（新旧両方の過半数を要求）や1台ずつの変更で交差を保つ。
-7. **クラッシュ故障と Byzantine 故障は別世界。** 本書のプロトコルは「止まるが嘘はつかない」故障モデル (crash fault) 上に立つ。嘘をつくノードを許すなら 3f+1 と署名付きプロトコル (PBFT 系) が要る——航空宇宙の冗長計算機（[`../../hardware/aerospace/avionics-gnc.md`](../../hardware/aerospace/avionics-gnc.md)）が実装してきたのと同じ理論の系譜である。
+7. **クラッシュ故障と Byzantine 故障は別世界。** 本書のプロトコルは「止まるが嘘はつかない」故障モデル (crash fault) 上に立つ。嘘をつくノードを許すなら 3f+1 と署名付きプロトコル (PBFT 系) が要る——航空宇宙の冗長計算機（[`../../engineering/aerospace/avionics-gnc.md`](../../engineering/aerospace/avionics-gnc.md)）が実装してきたのと同じ理論の系譜である。
 
 ## アーキテクチャ (Architecture)
 
@@ -147,7 +147,7 @@ Fischer–Lynch–Paterson (1985) の結果: **完全に非同期なシステム
 
 - **故障モデルの破れが safety を壊す**: Paxos/Raft の正しさは「ノードは止まるが嘘はつかない・**ディスクに書いたものは消えない**」に依存する。fsync が嘘をつく、ディスクが巻き戻る（[`../databases/storage-engines.md`](../databases/storage-engines.md) の永続性の議論）、あるいはノードが侵害されて偽メッセージを送ると、クラッシュ耐性プロトコルの保証は静かに消える。**侵害ノード1台で任意の合意を壊せる**——Byzantine 耐性が必要なら PBFT 系 (3f+1) へ移る必要があり、コストは桁で違う。
 - **選挙妨害による DoS**: 偽のタイムアウト誘発（遅延注入）や高い term の乱発でリーダ交代を空転させれば、safety を破らずに可用性を奪える。ノード間通信の認証 (mTLS) とネットワーク分離が前提条件になる。
-- **検証の文化**: 合意実装のバグは「もっともらしい最適化」に宿る（§3 のコミット規則、§5 の再構成）。Jepsen による故障注入テスト、TLA+ による仕様検証（Raft/VSR は形式仕様が公開されている）が実務の標準になりつつある。「テストで動いた」が保証にならない点は、並行処理（[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md)）と同じ構造である。
+- **検証の文化**: 合意実装のバグは「もっともらしい最適化」に宿る（§3 のコミット規則、§5 の再構成）。Jepsen による故障注入テスト、TLA+ による仕様検証（Raft/VSR は形式仕様が公開されている）が実務の標準になりつつある。「テストで動いた」が保証にならない点は、並行処理（[`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md)）と同じ構造である。
 
 ## 結論 (Conclusions)
 
@@ -162,8 +162,8 @@ Fischer–Lynch–Paterson (1985) の結果: **完全に非同期なシステム
 - [`consistency-models.md`](consistency-models.md) — 合意が実現する保証の側（線形化可能性、クォーラム）。本書はその実現機構。
 - [`../databases/storage-engines.md`](../databases/storage-engines.md) — ログの永続化 (WAL/fsync) は合意の safety の物理的前提。
 - [`../databases/transactions-isolation.md`](../databases/transactions-isolation.md) — 合意グループの上に載る並行制御。Spanner 型システムの残り半分。
-- [`../../hardware/aerospace/avionics-gnc.md`](../../hardware/aerospace/avionics-gnc.md) — Byzantine 障害 (3f+1) を実装してきた冗長飛行計算機。故障モデルの強い側の世界。
-- [`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md) — 単一値の合意機構としてのコヒーレンスプロトコルとの対比。
+- [`../../engineering/aerospace/avionics-gnc.md`](../../engineering/aerospace/avionics-gnc.md) — Byzantine 障害 (3f+1) を実装してきた冗長飛行計算機。故障モデルの強い側の世界。
+- [`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md) — 単一値の合意機構としてのコヒーレンスプロトコルとの対比。
 
 ## 参考文献 (References)
 

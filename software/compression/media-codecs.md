@@ -82,7 +82,7 @@ Opus は低遅延 MDCT 符号化 (CELT) と音声特化の線形予測符号化 
 
 ### 2. 量子化 — 唯一の非可逆段と知覚重み
 
-量子化は変換係数をステップ幅 Q で割って丸める——捨てられた端数が歪みのすべてである。要点は Q が一様でないこと: 視覚は高空間周波数とクロマ（色差）に鈍いため、そこに大きな Q を割り当てる（JPEG の量子化テーブル、動画の適応量子化）。クロマを最初から 1/2 解像度に落とす 4:2:0 サブサンプリングも同じ論理で、カメラ ISP・ディスプレイパイプライン（[`../../hardware/peripherals-connectivity/camera-image-sensors.md`](../../hardware/peripherals-connectivity/camera-image-sensors.md), [`../../hardware/peripherals-connectivity/display-pipeline.md`](../../hardware/peripherals-connectivity/display-pipeline.md)）と共有される YUV 表現の存在理由である。「品質スライダ」や CRF 値の実体は、この Q 群の一括スケーリングにほぼ等しい。
+量子化は変換係数をステップ幅 Q で割って丸める——捨てられた端数が歪みのすべてである。要点は Q が一様でないこと: 視覚は高空間周波数とクロマ（色差）に鈍いため、そこに大きな Q を割り当てる（JPEG の量子化テーブル、動画の適応量子化）。クロマを最初から 1/2 解像度に落とす 4:2:0 サブサンプリングも同じ論理で、カメラ ISP・ディスプレイパイプライン（[`../../hardware/peripherals/camera-image-sensors.md`](../../hardware/peripherals/camera-image-sensors.md), [`../../hardware/peripherals/display-pipeline.md`](../../hardware/peripherals/display-pipeline.md)）と共有される YUV 表現の存在理由である。「品質スライダ」や CRF 値の実体は、この Q 群の一括スケーリングにほぼ等しい。
 
 ### 3. 動き補償 — 時間方向の辞書引き
 

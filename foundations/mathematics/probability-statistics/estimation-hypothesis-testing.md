@@ -92,8 +92,8 @@ n が小さいとき事前分布が推定を安定化させ(シュリンケー�
 |------|--------|
 | [`software/observability/observability-performance-engineering.md`](../../../software/observability/observability-performance-engineering.md) | ベンチマーク比較の信頼区間 (§3)、リグレッション検定と多重比較 (§4)、効果量の報告 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | SPC 管理図による工程監視、歩留まり推定の信頼区間、ロット合否判定の検定 |
-| [`software/ml-systems/ml-inference-systems.md`](../../../software/ml-systems/ml-inference-systems.md) | 損失関数 = 負の対数尤度 (§2)、正則化 = 事前分布 (§5)、モデル評価の統計的比較 |
-| [`hardware/automotive/functional-safety-iso26262.md`](../../../hardware/automotive/functional-safety-iso26262.md) | 故障率メトリクスの実証(信頼性試験の n の設計、§工学への接続)|
+| [`software/ai/ml-inference-systems.md`](../../../software/ai/ml-inference-systems.md) | 損失関数 = 負の対数尤度 (§2)、正則化 = 事前分布 (§5)、モデル評価の統計的比較 |
+| [`engineering/automotive/functional-safety-iso26262.md`](../../../engineering/automotive/functional-safety-iso26262.md) | 故障率メトリクスの実証(信頼性試験の n の設計、§工学への接続)|
 | [`software/networking/tls-internals.md`](../../../software/networking/tls-internals.md) | 乱数品質の統計的検定——「ランダムに見えるか」は仮説検定の問題 (§4) |
 
 ## 参考文献 (References)

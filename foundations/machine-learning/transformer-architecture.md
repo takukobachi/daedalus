@@ -2,9 +2,9 @@
 
 ## 概要 (Overview)
 
-Transformer (Vaswani et al., 2017) は、現代の LLM のほぼ唯一のアーキテクチャである。その全体は、線形代数の言葉で驚くほど短く書ける——**トークン列をベクトル列に埋め込み、「注意」で列内の情報を混ぜ、「MLP」で各位置を変換する層を N 回重ね、最後に語彙上の確率分布を読み出す**。本ドキュメントはこの各段を定義から導出し、`../../software/ai-llm/llm-internals-prompting.md` が挙動レベルで述べた事実——固定計算、注意＝検索、文脈長の代償——に数式の裏付けを与える。
+Transformer (Vaswani et al., 2017) は、現代の LLM のほぼ唯一のアーキテクチャである。その全体は、線形代数の言葉で驚くほど短く書ける——**トークン列をベクトル列に埋め込み、「注意」で列内の情報を混ぜ、「MLP」で各位置を変換する層を N 回重ね、最後に語彙上の確率分布を読み出す**。本ドキュメントはこの各段を定義から導出し、`../../software/ai/llm-internals-prompting.md` が挙動レベルで述べた事実——固定計算、注意＝検索、文脈長の代償——に数式の裏付けを与える。
 
-導出の副産物として、実務で使う会計式が全て手に入る: パラメータ数 ≈ 12Ld²、学習 FLOPs ≈ 6ND、KV cache サイズ、注意の O(N²) コスト。これらは `../../software/ml-systems/` の推論・学習システム分析が前提とする量であり、本ドキュメントはその導出元である。
+導出の副産物として、実務で使う会計式が全て手に入る: パラメータ数 ≈ 12Ld²、学習 FLOPs ≈ 6ND、KV cache サイズ、注意の O(N²) コスト。これらは `../../software/ai/` の推論・学習システム分析が前提とする量であり、本ドキュメントはその導出元である。
 
 ## 前提知識 (Prerequisites)
 
@@ -119,23 +119,23 @@ C ≈ 6 N D    [FLOPs]
 KV bytes/token = 2 × L × h_kv × d_k × (bytes/element)
 ```
 
-（2 は K と V）。`../../software/ml-systems/ml-inference-systems.md` の容量式はこの導出の適用であり、GQA/MQA が h_kv < h とヘッドを共有するのは K, V 側の射影だけを細くしてこの項を圧縮する設計である (Ainslie et al., 2023)。
+（2 は K と V）。`../../software/ai/ml-inference-systems.md` の容量式はこの導出の適用であり、GQA/MQA が h_kv < h とヘッドを共有するのは K, V 側の射影だけを細くしてこの項を圧縮する設計である (Ainslie et al., 2023)。
 
 **推論の 2 相**: prefill は X が N 行の行列で行列×行列（計算律速）、decode は 1 行で行列×ベクトル（帯域律速）。`ml-inference-systems.md` が出発点とした二相構造は、同じ式の N = 系列長 と N = 1 の違いにすぎない。
 
 ## 工学への接続 (Engineering Connections)
 
 - **O(N²) が長文脈工学を駆動する。** スコア行列の実体化を避けるタイリング (FlashAttention)、KV cache のページング (PagedAttention)、注意の疎化・線形化の研究は、すべて §2 の計算量への応答である。「文脈を増やせば解決」に物理的な価格表を与えるのがこの式である。
-- **ほぼ全てが行列積である事実がハードウェアを決めた。** §7 の会計が示す通り、計算の大半は GEMM に落ちる。Tensor Core・TPU の脈動配列 (`../../hardware/gpu-accelerators/`) は「Transformer ＝行列積機械」への特化であり、逆に新アーキテクチャの実用性は「行列積に落ちるか」でほぼ決まる。
+- **ほぼ全てが行列積である事実がハードウェアを決めた。** §7 の会計が示す通り、計算の大半は GEMM に落ちる。Tensor Core・TPU の脈動配列 (`../../hardware/accelerators/`) は「Transformer ＝行列積機械」への特化であり、逆に新アーキテクチャの実用性は「行列積に落ちるか」でほぼ決まる。
 - **会計式は容量計画の道具である。** 12Ld² と 6ND と KV 式だけで、モデルサイズからメモリ・学習費用・サービング同時実行数の桁が見積れる。`ml-training-systems.md` の「16 バイト/パラメータ」等の会計はこの延長にある。
 - **残差流という見方はデバッグと解釈の座標系を与える。** 「どの層が何を書き込んだか」を残差流への加算として追う機構的解釈可能性は、幻覚・ジェイルブレイクの機構的理解や、活性化操作 (activation steering) の基礎になっている。
 
 ## Daedalus内の応用 (Applications within Daedalus)
 
-- `../../software/ai-llm/llm-internals-prompting.md` — 本ドキュメントの挙動レベルの出口。固定計算（§1–5 の固定深さ）、注意＝検索（§2–3）、条件付き分布（§6）の実務的帰結
-- `../../software/ml-systems/ml-inference-systems.md` — §7 の KV cache 式・二相構造の消費者。FlashAttention・PagedAttention は §2 の O(N²) への応答
-- `../../software/ml-systems/ml-training-systems.md` — 6ND と 12Ld² を前提とする分散学習の会計
-- `../../hardware/gpu-accelerators/` — 「ほぼ行列積」という計算特性が規定するハードウェア側
+- `../../software/ai/llm-internals-prompting.md` — 本ドキュメントの挙動レベルの出口。固定計算（§1–5 の固定深さ）、注意＝検索（§2–3）、条件付き分布（§6）の実務的帰結
+- `../../software/ai/ml-inference-systems.md` — §7 の KV cache 式・二相構造の消費者。FlashAttention・PagedAttention は §2 の O(N²) への応答
+- `../../software/ai/ml-training-systems.md` — 6ND と 12Ld² を前提とする分散学習の会計
+- `../../hardware/accelerators/` — 「ほぼ行列積」という計算特性が規定するハードウェア側
 - `../mathematics/linear-algebra/` — 射影・低ランク・テンソルの言語、`../information-theory/entropy-source-coding.md` — 損失＝符号長の同値、`../mathematics/optimization/` — 勾配法の言語
 
 ## 参考文献 (References)

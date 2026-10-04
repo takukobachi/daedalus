@@ -91,11 +91,11 @@ GAA / ナノシート (〜3 nm 以降): チャネルを完全に取り囲む (ga
 |------|--------|
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | ゲート形成・high-k/メタルゲート・FinFET/GAA 工程 (§1, §5) が作ろうとしている物理構造 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | 電力3成分と DVFS・クロックゲーティング (§4)、V_th とリークのトレードオフ |
-| [`hardware/cpu-architecture/cache-memory-hierarchy.md`](../../../hardware/cpu-architecture/cache-memory-hierarchy.md) | SRAM セル=交差結合インバータ (§3)。キャッシュ容量とリークの関係 |
-| [`hardware/cpu-architecture/pipeline-superscalar-ooo.md`](../../../hardware/cpu-architecture/pipeline-superscalar-ooo.md) | 周波数の頭打ち (§4) が ILP 追求からマルチコアへの転換を強制した物理的背景 |
-| [`hardware/cpu-architecture/dram-memory-controllers.md`](../../../hardware/cpu-architecture/dram-memory-controllers.md) | DRAM セルのアクセストランジスタとリーク→リフレッシュ (§2, §4) |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | 電力解析攻撃の物理的起源 = α·C·V²·f のデータ依存性 (工学への接続 §3) |
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | ダークシリコン時代の設計選択——電力バジェット内で演算器を並べる (§4) |
+| [`hardware/cpu/cache-memory-hierarchy.md`](../../../hardware/cpu/cache-memory-hierarchy.md) | SRAM セル=交差結合インバータ (§3)。キャッシュ容量とリークの関係 |
+| [`hardware/cpu/pipeline-superscalar-ooo.md`](../../../hardware/cpu/pipeline-superscalar-ooo.md) | 周波数の頭打ち (§4) が ILP 追求からマルチコアへの転換を強制した物理的背景 |
+| [`hardware/cpu/dram-memory-controllers.md`](../../../hardware/cpu/dram-memory-controllers.md) | DRAM セルのアクセストランジスタとリーク→リフレッシュ (§2, §4) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | 電力解析攻撃の物理的起源 = α·C·V²·f のデータ依存性 (工学への接続 §3) |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | ダークシリコン時代の設計選択——電力バジェット内で演算器を並べる (§4) |
 
 ## 参考文献 (References)
 

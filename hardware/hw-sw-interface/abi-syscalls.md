@@ -155,8 +155,8 @@ Linux カーネルは「ユーザ空間を壊さない」を原則とし、sysca
 
 ### 次の接続先 (Related Topics)
 
-- `../cpu-architecture/isa-riscv-intro.md` — レジスタと命令、特権レベルの基礎。
-- `../cpu-architecture/virtual-memory-mmu.md` — KPTI と越境コスト、メモリ保護。
+- `../cpu/isa-riscv-intro.md` — レジスタと命令、特権レベルの基礎。
+- `../cpu/virtual-memory-mmu.md` — KPTI と越境コスト、メモリ保護。
 - `mmio-dma-interrupts.md` — もう一つの境界（CPU とデバイス）との対比。
 
 ## 参考文献 (References)

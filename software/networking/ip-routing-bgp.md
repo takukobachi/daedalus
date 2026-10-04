@@ -17,7 +17,7 @@ IP の転送は、突き詰めれば一つの原語に還元される——宛�
 
 ## 発見事項 (Findings)
 
-1. **転送の原語は最長一致ただ一つであり、経路制御の複雑さはすべて「表を作る側」にある。** ルータは **RIB (Routing Information Base)** で複数プロトコルの候補を保持し、勝者だけを **FIB (Forwarding Information Base)** に落とす。この RIB/FIB 分離が「重い政策判断」と「ナノ秒の表引き」を両立させる——FIB 側の物理は [`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md) の TCAM/LPM 専用構造、ホスト側は [`kernel-network-stack.md`](kernel-network-stack.md) の IP 層ルーティング判定である。
+1. **転送の原語は最長一致ただ一つであり、経路制御の複雑さはすべて「表を作る側」にある。** ルータは **RIB (Routing Information Base)** で複数プロトコルの候補を保持し、勝者だけを **FIB (Forwarding Information Base)** に落とす。この RIB/FIB 分離が「重い政策判断」と「ナノ秒の表引き」を両立させる——FIB 側の物理は [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) の TCAM/LPM 専用構造、ホスト側は [`kernel-network-stack.md`](kernel-network-stack.md) の IP 層ルーティング判定である。
 2. **CIDR は経路表爆発への応急処置であり、その効果は経済的動機 (マルチホーミング・トラフィック制御) による非集約で常に侵食されている。** デフォルトフリーゾーン (DFZ) の IPv4 経路表は 2020 年代半ばで**約 100 万経路 (概数・増加中)** に達し、TCAM 容量という「シリコンの予算」を直撃する——集約の失敗はグローバルに転嫁されるコストである。
 3. **リンクステート IGP は「全員が同じ地図を持つ」ことを前提とし、その前提こそが AS 間で成立しない。** OSPF/IS-IS はトポロジ全体をフラッディングで共有し各自 Dijkstra を回すが、AS 間では (a) 誰も内部トポロジを晒したくない、(b) 経路選択の基準 (ポリシー) が AS ごとに異なり単一メトリックに還元できない、(c) 規模がフラッディングを許さない。**経路ベクトル (path vector)** は「AS_PATH という履歴つき伝聞」だけを交換することでこの3つを同時に満たす設計である。
 4. **BGP は最短経路プロトコルではなく経済契約の実行系である。** 経路決定は LOCAL_PREF → AS_PATH 長 → MED → … という**政策の梯子**であり、最上段の LOCAL_PREF は距離と無関係に「顧客経路 > ピア経路 > プロバイダ経路」という金銭的序列を符号化するのが定石である。パケットは最短ではなく**最も儲かる/安い**経路を流れる。
@@ -66,7 +66,7 @@ IP の転送は、突き詰めれば一つの原語に還元される——宛�
 
 - **LPM**: `10.1.0.0/16` と `10.1.2.0/24` が併存すれば、`10.1.2.5` 宛は後者に従う。より特定的な広告が常に勝つ——この性質は集約 (親プレフィックスの下に例外を掘る) を可能にすると同時に、**ハイジャックの武器**にもなる (セキュリティ考察参照)。
 - **CIDR (RFC 4632)**: クラスの廃止と任意長プレフィックスにより、プロバイダ単位の集約 (provider aggregation) で DFZ の成長を一度は抑えた。しかしマルチホーミング (自前 AS で複数プロバイダに接続) とトラフィック工学的な**細分化広告 (deaggregation)** が集約を破り、経路数は増加を続ける。
-- **表の物理的圧力**: DFZ フルルート (IPv4 約 100 万・概数、2020 年代半ば時点) を line rate で引くには TCAM ないし専用トライ構造が要り、その容量はシリコン面積と電力に直結する ([`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md))。FIB 容量超過は「表に載らない経路が捨てられる/遅い経路に落ちる」障害として顕在化した実例があり、**経路表の成長は全ルータ保有者への外部化されたコスト**である。
+- **表の物理的圧力**: DFZ フルルート (IPv4 約 100 万・概数、2020 年代半ば時点) を line rate で引くには TCAM ないし専用トライ構造が要り、その容量はシリコン面積と電力に直結する ([`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md))。FIB 容量超過は「表に載らない経路が捨てられる/遅い経路に落ちる」障害として顕在化した実例があり、**経路表の成長は全ルータ保有者への外部化されたコスト**である。
 
 ### 2. IGP — 同じ地図・同じ計算
 
@@ -101,7 +101,7 @@ IP の転送は、突き詰めれば一つの原語に還元される——宛�
 - **出方向**は LOCAL_PREF で自由に制御できるが、**入り方向**は他 AS の決定に委ねられるため間接手段しかない: **AS_PATH プリペンド** (自 AS を重ねて経路を「長く見せる」)、MED、細分化広告、コミュニティによるプロバイダへの依頼。マルチホーミングの実務はこの非対称との格闘である。
 - **エニーキャスト (anycast)**: 同一プレフィックスを複数拠点から起点広告すると、BGP は各視点で「近い」拠点を選ぶ——負荷分散・耐障害・DDoS の希釈 (攻撃が拠点群に分散吸収される) が一挙に得られる。DNS ルートサーバがこの代表例であり、詳細は [`dns-resolution.md`](dns-resolution.md) の議論に譲る。制約もある: 経路変動で拠点が切り替わると TCP のような状態を持つ接続は切れるため、短命トランザクション (DNS/UDP) や接続移行に耐える設計と相性がよい。
 - **クラウド接続**: インターネット**トランジット**経由 (経路は DFZ 任せ・品質保証なし) に対し、**専用線接続 (AWS Direct Connect 型)** は物理専用リンク上に**仮想インタフェース (VIF)** を切り、その上の BGP セッションでクラウド側が VPC プレフィックスを、顧客側がオンプレ経路を広告する——一般企業のエンジニアが BGP 設定に直面する最も普通の場面である。VPC の**ルートテーブル**は「このプレフィックスは IGW へ・これは VGW へ・これはピアリングへ」という宣言的な政策境界であり、AS 間ポリシーの縮小再演といえる。
-- **データセンター内の BGP**: 大規模 Clos ファブリック ([`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md)) では、IGP のフラッディングを嫌い **eBGP をラック単位の AS で組む**設計 (RFC 7938) が定着した。ECMP による多経路分散と組み合わせ、「AS 間プロトコルが建物内の標準になる」という転用が起きている。
+- **データセンター内の BGP**: 大規模 Clos ファブリック ([`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md)) では、IGP のフラッディングを嫌い **eBGP をラック単位の AS で組む**設計 (RFC 7938) が定着した。ECMP による多経路分散と組み合わせ、「AS 間プロトコルが建物内の標準になる」という転用が起きている。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -125,8 +125,8 @@ IP の転送は、突き詰めれば一つの原語に還元される——宛�
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — BGP のトランスポートは TCP。セッション保護 (TCP-AO) と、輻輳 (ミリ秒) vs 経路収束 (分) の時定数の対比。
 - [`kernel-network-stack.md`](kernel-network-stack.md) — ホスト側の FIB——カーネル IP 層の経路判定。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — BGP は結果整合な経路の分散データベースであり、収束途中の不整合 (ループ・黒穴) はこの語彙で読める。
-- [`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md) — FIB の物理: TCAM・LPM 専用構造と表容量の経済。
-- [`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md) — Clos ファブリックと ECMP。BGP がデータセンター内部の標準になった現場。
+- [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — FIB の物理: TCAM・LPM 専用構造と表容量の経済。
+- [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — Clos ファブリックと ECMP。BGP がデータセンター内部の標準になった現場。
 
 ## 参考文献 (References)
 
