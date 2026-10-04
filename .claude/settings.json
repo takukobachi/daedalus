@@ -36,6 +36,15 @@
     "commit-commands@claude-plugins-official": true,
     "hookify@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
-    "session-report@claude-plugins-official": true
+    "session-report@claude-plugins-official": true,
+    "yomiyasu@yomiyasu": true
+  },
+  "extraKnownMarketplaces": {
+    "yomiyasu": {
+      "source": {
+        "source": "github",
+        "repo": "nanaism/yomiyasu"
+      }
+    }
   }
 }
