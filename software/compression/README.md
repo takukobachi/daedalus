@@ -29,7 +29,7 @@
 - ニューラル圧縮 (neural compression) — 学習ベースのエントロピーモデル・
   autoencoder 型コーデック。「圧縮＝予測」
   ([`../../foundations/information-theory/entropy-source-coding.md`](../../foundations/information-theory/entropy-source-coding.md) §5)
-  の直接の実装で、`../ml-systems/` との合流点
+  の直接の実装で、`../ai/` との合流点
 - ストレージスタックの透過圧縮 — ZFS/Btrfs/ZNS の圧縮、NVMe 計算ストレージ、
   圧縮とアラインメント・torn write の相互作用。`../databases/`・
-  `../../hardware/storage-devices/` との合流点
+  `../../hardware/storage/` との合流点

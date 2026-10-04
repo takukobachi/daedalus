@@ -12,16 +12,16 @@
 
 - **出典階層上の注意**: クラウド内部のアーキテクチャは主にベンダー自身の発表 (AWS re:Invent 講演、Azure/VMware の NSDI 論文) を通じてしか文書化されていない。本書はこれらを**ベンダー提示 (vendor-presented)** と明示的にラベルし、同じ問題を公開の場で解いている標準 (VXLAN/Geneve/EVPN の RFC) とオープン実装 (OVS/OVN) で相互検証する——設計空間の制約は共通なので、公開実装が「独立した傍証」として機能する。
 - 各機構を「マッピング分配のどの困難 (規模・変動率・一貫性・障害時挙動) への対処か」で説明し、方式間の比較は交換条件の表として示す。
-- ホスト内のパケット経路 ([`kernel-network-stack.md`](kernel-network-stack.md))、仮想化の I/O 経路 ([`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md))、物理ファブリック ([`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md)) は既存ドキュメントに委ね、本書は「その間を繋ぐ仮想化層」に集中する。
+- ホスト内のパケット経路 ([`kernel-network-stack.md`](kernel-network-stack.md))、仮想化の I/O 経路 ([`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md))、物理ファブリック ([`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md)) は既存ドキュメントに委ね、本書は「その間を繋ぐ仮想化層」に集中する。
 
 ## 発見事項 (Findings)
 
 1. **仮想ネットワークの本体はパケット処理ではなくマッピングの分配である。** カプセル化は固定長ヘッダの付け外しにすぎない。難しいのは (テナント, 仮想 IP) → 物理ホストという写像を、数百万エントリ・秒単位の変動のもとで、パケットを転送する全地点に配り続けること——つまり複製されたキーバリューストアの設計であり、キャッシュ・無効化・陳腐エントリという語彙 ([`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md)) がそのまま通用する。
 2. **VLAN の破綻は ID 空間 (4094) だけではない——L2 の意味論そのものがスケールしない。** フラッディングと MAC 学習はブロードキャストドメインの全員に仕事を課し、STP は帯域を残して木を刈り、MAC テーブルは全 VM 分をコアスイッチに要求する。オーバーレイは ID を 24 ビットに広げただけでなく、**「未知宛先はフラッド」という L2 の前提を「マッピングは照会する」に置き換えた**点が本質である。
-3. **オーバーレイは L2 の幻想を捨てて L3 の上に L3 を作る。** アンダーレイは ECMP で並列化された Clos の IP ファブリック ([`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md)) であり、その上のトンネルは単なる UDP フロー。テナントに見せる「サブネット」も実体は転送表の中の論理であり、AWS 型 VPC には ARP フラッドすら存在しない——仮想スイッチが ARP 応答を合成する。
+3. **オーバーレイは L2 の幻想を捨てて L3 の上に L3 を作る。** アンダーレイは ECMP で並列化された Clos の IP ファブリック ([`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md)) であり、その上のトンネルは単なる UDP フロー。テナントに見せる「サブネット」も実体は転送表の中の論理であり、AWS 型 VPC には ARP フラッドすら存在しない——仮想スイッチが ARP 応答を合成する。
 4. **VPC は「ネットワークをデータベースとして実装した」システムである。** AWS がベンダー発表 (re:Invent CPN401 系) で示した構造は、マッピングサービスという中央ディレクトリをデータプレーンが照会・キャッシュするというもの——ルーティングプロトコルの収束ではなく、**信頼できる台帳 + キャッシュ無効化**で到達性を管理する。標準側の答え (EVPN) が BGP という複製プロトコルにマッピングを載せるのも、同じ問題の別解である。
 5. **セキュリティグループはファイアウォール箱の分散実装である——ポリシーは経路上の箱からファブリック自体へ移った。** 全トラフィックを 1 台の中間箱 (middlebox) に通すのではなく、各ホストの仮想スイッチが接続追跡 (connection tracking) 付きのステートフィルタを ENI ごとに施行する。チョークポイントが消え、施行点はワークロードと同じ数だけ水平にスケールする——マイクロセグメンテーション (microsegmentation) の原型である。
-6. **Nitro は仮想化のネットワーク税をホスト CPU から専用ハードへ移した。** カプセル化・マッピング照会・セキュリティグループ施行はかつてハイパーバイザの CPU を数割食っていた。AWS Nitro (ベンダー実証) はこの全処理を専用カードに移し、ホスト CPU を 100% テナントに売る——[`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md) の「境界の移動史」の終着点であり、Azure VFP + FPGA (NSDI '17/'18) が同じ結論に独立に到達している。
+6. **Nitro は仮想化のネットワーク税をホスト CPU から専用ハードへ移した。** カプセル化・マッピング照会・セキュリティグループ施行はかつてハイパーバイザの CPU を数割食っていた。AWS Nitro (ベンダー実証) はこの全処理を専用カードに移し、ホスト CPU を 100% テナントに売る——[`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) の「境界の移動史」の終着点であり、Azure VFP + FPGA (NSDI '17/'18) が同じ結論に独立に到達している。
 7. **フローキャッシュが「柔軟なポリシー」と「パケット単価」を両立させる。** OVS の megaflow は「最初の 1 発だけ全表を引き、以後は結果をキャッシュ」という構造で、ポリシーの一般性 (OpenFlow の多段表) と転送の速さを分離した。SmartNIC オフロードもこのキャッシュ層をハードに移すだけで、**例外処理はソフト・定常はキャッシュ**という分業は全実装に共通する。
 8. **外界との境界では「到達性そのものが商品」になる。** NAT ゲートウェイはフローごとの状態を持つ (だから課金され、上限がある)。インターネットゲートウェイは 1:1 の無状態変換で済む。PrivateLink 型のエンドポイントは「インターネットを経ずにサービスへ届く」ことを製品として切り売りする——アドレス変換の実装形態が、そのままクラウドの課金モデルと障害特性を規定している。
 
@@ -95,7 +95,7 @@
 - OVS (NSDI '15) は**カーネル/ユーザ空間分割**を採る: 最初のパケットはカーネルで表に当たらず userspace の `ovs-vswitchd` へ上がり (slow path)、全段のポリシー表を評価した**結果**をカーネルにキャッシュする (fast path)。
 - キャッシュの単位が **megaflow**——完全一致 (microflow) ではなく、「評価に実際に使われたフィールドだけ」をワイルドカード化した集約エントリで、1 エントリが多数のフローを吸収しキャッシュミス率を桁で下げる。ポリシーの一般性と転送単価の分離、という [`kernel-network-stack.md`](kernel-network-stack.md) の単価の経済のオーバーレイ版である。
 - **接続追跡**: ステートフルなセキュリティグループ (§5) は conntrack を要求する。OVS はカーネルの conntrack を `ct()` アクションとして呼び出し、「この方向の接続は確立済みか」をフロー評価に組み込む——状態を持つ分、テーブル枯渇という攻撃面も持ち込む ([`kernel-network-stack.md`](kernel-network-stack.md) の SYN flood と同型)。
-- **SmartNIC/DPU オフロード**: megaflow キャッシュと conntrack をカードのハード (eSwitch) に移し、例外だけホストに上げる。**AWS Nitro** はさらに進み、仮想スイッチ・マッピング照会・SG 施行・カプセル化のすべてを専用カードで実行する (ベンダー実証)——ホスト CPU のネットワーク税はゼロになり、かつテナントのコードとネットワーク施行が**別の計算機**に分離される。ハード構造は [`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md)、SR-IOV/virtio との接続は [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) を参照。
+- **SmartNIC/DPU オフロード**: megaflow キャッシュと conntrack をカードのハード (eSwitch) に移し、例外だけホストに上げる。**AWS Nitro** はさらに進み、仮想スイッチ・マッピング照会・SG 施行・カプセル化のすべてを専用カードで実行する (ベンダー実証)——ホスト CPU のネットワーク税はゼロになり、かつテナントのコードとネットワーク施行が**別の計算機**に分離される。ハード構造は [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md)、SR-IOV/virtio との接続は [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) を参照。
 
 ### 4. セキュリティグループ — 分散ステートフルファイアウォール
 
@@ -131,8 +131,8 @@
 - [`ip-routing-bgp.md`](ip-routing-bgp.md) — アンダーレイの経路制御と、EVPN が乗る BGP の機構。
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — カプセル化の MTU/MSS 税が輻輳制御・スループットに与える影響の受け側。
 - [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) — virtio/SR-IOV/パススルー——VM と仮想スイッチの間の I/O 経路。
-- [`../../hardware/network-hardware/nic-switch-architecture.md`](../../hardware/network-hardware/nic-switch-architecture.md) — eSwitch・SmartNIC/DPU・スイッチ ASIC というオフロード先の実体。
-- [`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md) — アンダーレイたる Clos/リーフスパインの物理。
+- [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — eSwitch・SmartNIC/DPU・スイッチ ASIC というオフロード先の実体。
+- [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — アンダーレイたる Clos/リーフスパインの物理。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — マッピング分配を複製状態の問題として読むための語彙。
 
 ## 参考文献 (References)

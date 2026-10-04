@@ -21,7 +21,7 @@
 3. **mTLS 自動化の実体は、ネットワーク位置から暗号学的アイデンティティへの認可の移行である。** 「どの IP/サブネットから来たか」(セキュリティグループの世界) ではなく「どの秘密鍵を持つワークロードか」(SPIFFE ID を担う証明書) で相手を識別する。IP はポッドの再スケジュールで変わるが、アイデンティティは変わらない——ゼロトラスト (zero trust) の実務形であり、境界防御の否定ではなく**境界の単位をネットワークからワークロードへ縮めた**ものである。
 4. **リトライは可用性の道具であると同時に障害の増幅器である——予算のないリトライは攻撃と区別がつかない。** N 段のサービス連鎖で各段が 3 回リトライすれば、最下段には 3^N 倍の負荷が届き得る。過負荷で遅くなったサービスへのリトライ集中は、[`load-balancing-architecture.md`](load-balancing-architecture.md) のヘルスチェック正帰還と同じカスケード障害の力学である。メッシュはリトライ予算 (retry budget)・タイムアウトの段階的短縮・外れ値排除をプロキシ層で一律に施行できる——が、既定値のまま全サービスに配れば、増幅器を一律に配ったことにもなる。
 5. **サイドカーは透過性を iptables 税とホップ倍増で買っている。** アプリを無改変に保つため、ポッドのネットワーク名前空間 ([`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md)) 内で iptables REDIRECT が全トラフィックをプロキシへ曲げる。1 つの RPC は送信側プロキシと受信側プロキシを必ず通り、ホップは 2 倍、各ホップでカーネル/ユーザ空間往復とプロトコル再解釈が走る——遅延はホップあたり ms 未満〜ms 級、メモリはポッドあたり数十〜百 MB 級が相場である。ポッド数 = プロキシ数というスケールで、この税は掛け算で効く。
-6. **eBPF メッシュは「全部 L7 プロキシに通す」前提を解体する。** 観測すべき通信の大半は L3/L4 の識別 (誰が誰に接続したか) で足り、L7 解釈 (どの HTTP パスか) を要する通信は一部に過ぎない。Cilium はアイデンティティ付き L3/L4 ポリシーをカーネル内 eBPF ([`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md)) で施行し、L7 が必要な場合だけノード共有のプロキシへ委譲する——「ポッドごとのフル L7 プロキシ」から「必要な層だけ、必要な場所で」への再配分である。Istio ambient も同じ再配分を L4 ノードプロキシ + オンデマンド L7 で行う。
+6. **eBPF メッシュは「全部 L7 プロキシに通す」前提を解体する。** 観測すべき通信の大半は L3/L4 の識別 (誰が誰に接続したか) で足り、L7 解釈 (どの HTTP パスか) を要する通信は一部に過ぎない。Cilium はアイデンティティ付き L3/L4 ポリシーをカーネル内 eBPF ([`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md)) で施行し、L7 が必要な場合だけノード共有のプロキシへ委譲する——「ポッドごとのフル L7 プロキシ」から「必要な層だけ、必要な場所で」への再配分である。Istio ambient も同じ再配分を L4 ノードプロキシ + オンデマンド L7 で行う。
 7. **テレメトリの均一性はメッシュの最も異論の少ない配当である。** 全 RPC が同じプロキシを通るため、リクエスト率・エラー率・遅延分布 (RED メトリクス) と分散トレースのスパンが、アプリのコードを 1 行も変えずに全サービスで同じ意味論で得られる ([`../observability/observability-performance-engineering.md`](../observability/observability-performance-engineering.md))。ただしトレースの文脈伝播 (trace context) だけはアプリがヘッダを引き回す必要があり、「完全に無償」ではない。
 8. **「メッシュが要るか」は機能の問いではなく規模と組織の問いである。** サービスが数個・言語が 1 つなら、ライブラリ (あるいはゲートウェイ 1 段) で足りる。メッシュが利くのは、多言語・多チーム・数十以上のサービスで「全員に同じポリシーを配る」コストが「メッシュを運用する」コストを上回る点からである。マネージドメッシュの整理統合 (AWS App Mesh は 2024 年に新規受付終了・2026 年 9 月末サポート終了が告知された——本書執筆 2026-07 時点) は、この損益分岐が当初の期待より高い位置にあったことの傍証と読める。
 
@@ -103,7 +103,7 @@
 
 - **サイドカー税の内訳**: (a) 遅延——ホップ 2 倍とプロキシ処理。p50 では ms 未満でも、テールでは GC・コンテキストスイッチと合成して効く。(b) メモリ/CPU——ポッドごとにプロキシ 1 つ。1000 ポッドなら 1000 個の Envoy が xDS 設定の複製を持つ。(c) 運用——プロキシのバージョン更新がアプリと独立に全ポッドの再起動を要る、起動順序の競合、非 HTTP プロトコルの例外処理。
 - **ambient 型 (Istio ambient)**: サイドカーを捨て、L4 (mTLS とアイデンティティ) をノード単位の軽量プロキシ (ztunnel) で、L7 ポリシーが要るサービスだけ名前空間単位のプロキシ (waypoint) で処理する。「全ポッドにフル L7」から「L4 は薄く常時、L7 は選択的に」への再配分であり、プロキシ数はポッド数からノード数 + 選択的な数へ落ちる。
-- **eBPF 型 (Cilium)**: CNI として各ノードのカーネルに eBPF プログラムを置き、ポッド間通信を**アイデンティティ番号付きで** L3/L4 施行する——SG と同じ層だが、単位が IP ではなくワークロードアイデンティティである点がメッシュ的である。同一ノード内はソケット層で短絡し、iptables の線形規則評価を回避する。L7 ポリシー (HTTP パス、Kafka トピック) が要るフローだけ、ノード共有の Envoy へ渡す。検証器・フック・マップという基盤機構は [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) の通りであり、本書の観点で重要なのは「**カーネルがアイデンティティを知っている**なら、ユーザ空間プロキシは L7 解釈が本当に要る時だけでよい」という前提の転換である。
+- **eBPF 型 (Cilium)**: CNI として各ノードのカーネルに eBPF プログラムを置き、ポッド間通信を**アイデンティティ番号付きで** L3/L4 施行する——SG と同じ層だが、単位が IP ではなくワークロードアイデンティティである点がメッシュ的である。同一ノード内はソケット層で短絡し、iptables の線形規則評価を回避する。L7 ポリシー (HTTP パス、Kafka トピック) が要るフローだけ、ノード共有の Envoy へ渡す。検証器・フック・マップという基盤機構は [`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) の通りであり、本書の観点で重要なのは「**カーネルがアイデンティティを知っている**なら、ユーザ空間プロキシは L7 解釈が本当に要る時だけでよい」という前提の転換である。
 - **「メッシュは要るか」**: 発見事項 8 の通り、答えは規模依存である。必要なのが mTLS だけなら CNI レベルの暗号化や SPIRE 単体で足りることがあり、必要なのがカナリアだけならゲートウェイ 1 段で足りる。メッシュは「その全部を、多言語で、一律に」が要件になった時の道具であり、複雑性の前払いである。
 
 ## セキュリティ考察 (Security Considerations)
@@ -130,7 +130,7 @@
 - [`virtual-networks-overlay.md`](virtual-networks-overlay.md) — L3/L4 の位置ベースポリシー (SG) とファブリック。本書の L7 アイデンティティ施行の下層かつ多層防御の相方。
 - [`http-quic-evolution.md`](http-quic-evolution.md) — メッシュの輸送 (HTTP/2 多重化、gRPC) の構造。
 - [`kernel-network-stack.md`](kernel-network-stack.md) — iptables/ネットフィルタとカーネル/ユーザ境界のコスト。サイドカー税の内訳。
-- [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) — eBPF メッシュの基盤機構 (検証器・フック・マップ)。
+- [`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) — eBPF メッシュの基盤機構 (検証器・フック・マップ)。
 - [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) — ポッド・ネットワーク名前空間・veth という横取りの境界。
 - [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — RPC が相続する故障モデル。「遅い」と「死んだ」の非区別性はタイムアウト設計の理論的下地。
 - [`../observability/observability-performance-engineering.md`](../observability/observability-performance-engineering.md) — メッシュが吐く均一メトリクス・分散トレースの読み方。

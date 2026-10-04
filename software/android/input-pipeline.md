@@ -12,7 +12,7 @@
 
 - 1 回のタップ（DOWN → MOVE… → UP）を軸に、各段の担当プロセス・スレッド・受け渡されるデータ型（`struct input_event` → `RawEvent` → `NotifyMotionArgs` → `InputMessage` → `MotionEvent`）を特定する。
 - 基準線は有野 (2017) Ⅰ巻 2.1〜2.6（Linux Input サブシステム、EventHub、InputReader、InputDispatcher と InputChannel）、4.8.3（タッチの送信と InputChannel）、6.5.6（ViewRootImpl が View へタッチイベントを届けるまで）。同書のコードは著者による簡略化擬似コードであるため、クラス名・定数は現行 AOSP（`frameworks/native/services/inputflinger/`、`frameworks/native/libs/input/`、`frameworks/base/core/java/android/view/`、main ブランチ、2026-09-27 参照）で照合し、導入版はリリースタグ（`android-13.0.0_r1` 等）のディレクトリ構成比較で判定した。
-- カーネル側は kernel.org の入力サブシステム文書（`input.rst`、`multi-touch-protocol.rst`）を一次資料とする。デバイス側（タッチ IC・HID レポート）は [`../../hardware/peripherals-connectivity/input-devices-hid.md`](../../hardware/peripherals-connectivity/input-devices-hid.md) に委ねる。
+- カーネル側は kernel.org の入力サブシステム文書（`input.rst`、`multi-touch-protocol.rst`）を一次資料とする。デバイス側（タッチ IC・HID レポート）は [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) に委ねる。
 - View 階層内部のヒットテスト・レイアウトの詳細は [`view-system-layout.md`](view-system-layout.md)、Looper/epoll の一般機構は [`looper-handler-message-loop.md`](looper-handler-message-loop.md) に委ね、本書は「サービス側の配送判断」と「プロセス境界の越え方」に重心を置く。
 
 ## 発見事項 (Findings)
@@ -164,7 +164,7 @@ flowchart LR
 - **注入 (injection) は権限で区切る**: `InputManager.injectInputEvent` は `INJECT_EVENTS`（署名/特権）を要し、アクセシビリティサービス経由の注入には `POLICY_FLAG_INJECTED_FROM_ACCESSIBILITY` が付く。アプリが受け取るイベントの出自（ハードウェア由来か注入か）を区別できる印が残される。アクセシビリティは入力を観測・再注入できる最強の権限の一つであり、Android 13 以降の「制限付き設定」（サイドロードアプリのアクセシビリティ有効化制限）と組で運用される（[`security-model.md`](security-model.md)）。
 - **タップジャッキングとオーバーレイ**: 半透明の `TYPE_APPLICATION_OVERLAY` で重要ボタンを偽装し、`FLAG_NOT_TOUCHABLE` でタッチを下へ通す古典攻撃に対し、Android 12 の untrusted touch 遮断は判定点を InputDispatcher へ移した。例外（同一 UID、IME・アクセシビリティ・アシスタントの trusted ウィンドウ、不可視・完全透明、合成不透明度 0.8 以下）の境界設計が攻撃面であり、trusted overlay の付与が system 権限に限られることが要となる。重要操作を持つアプリは依然として `filterTouchesWhenObscured` / `FLAG_WINDOW_IS_PARTIALLY_OBSCURED` による二重防御が推奨される。
 - **spy ウィンドウとモニタの権限**: 全タッチを覗ける spy は、誤って非特権プロセスに許せば全画面キーロガーになる。`MONITOR_INPUT` 権限の検査（WMS `sanitizeInputFeatures()`）と、`pilferPointers()` による横取りのログ（CANCEL がアプリに届く）が防壁である。
-- **入力はウェイクと電力の攻撃面でもある**: `EPOLLWAKEUP` はイベントごとにウェイクロックを取るため、壊れた（あるいは悪意ある）USB/Bluetooth HID がイベントを連射すればサスペンドを阻害できる。外部入力デバイスは [`../../hardware/peripherals-connectivity/input-devices-hid.md`](../../hardware/peripherals-connectivity/input-devices-hid.md) の HID 自己記述性ゆえにドライバなしで接続でき、BadUSB 型のキーストローク注入はこの経路をそのまま使う——カーネルから見て正規の入力デバイスである限り、Android の入力スタックは区別できない。
+- **入力はウェイクと電力の攻撃面でもある**: `EPOLLWAKEUP` はイベントごとにウェイクロックを取るため、壊れた（あるいは悪意ある）USB/Bluetooth HID がイベントを連射すればサスペンドを阻害できる。外部入力デバイスは [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) の HID 自己記述性ゆえにドライバなしで接続でき、BadUSB 型のキーストローク注入はこの経路をそのまま使う——カーネルから見て正規の入力デバイスである限り、Android の入力スタックは区別できない。
 - **パーサとしての InputFlinger**: EventHub・Mapper はカーネルが伝えるデバイス能力（軸範囲・キー配列）と IDC/KL/KCM ファイルを解釈する、system_server 内のネイティブコードである。未知のデバイスが提示する異常な軸範囲などは入力の信頼境界上の値であり、新規段の Rust 実装はこの攻撃面を小さくする方向に沿う。
 
 ## 結論 (Conclusions)
@@ -183,7 +183,7 @@ flowchart LR
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — ホームでのタップが InputDispatcher を経て Activity 起動に至る全経路。
 - [`binder-internals.md`](binder-internals.md) — InputChannel の fd を運ぶ制御路、トークンの偽造不能性。
 - [`security-model.md`](security-model.md) — オーバーレイ・アクセシビリティ・署名権限の位置づけ。
-- [`../../hardware/peripherals-connectivity/input-devices-hid.md`](../../hardware/peripherals-connectivity/input-devices-hid.md) — デバイス側（HID レポート、ポーリングと遅延バジェット）。
+- [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) — デバイス側（HID レポート、ポーリングと遅延バジェット）。
 - [`../operating-systems/power-management.md`](../operating-systems/power-management.md) — `EPOLLWAKEUP` と wakeup source。
 - [`window-manager.md`](window-manager.md) — addWindow による InputChannel 生成とフォーカス決定。
 

@@ -2,13 +2,13 @@
 
 ソフトウェアセキュリティ (software security) の分析。メモリ安全性・exploit 緩和・
 サンドボックス・応用暗号・サプライチェーンといった、「攻撃者を前提に壊れ方を設計する」
-機構を横断的に扱う。`hardware/hardware-security/`（サイドチャネル・TEE・信頼の起点）の
+機構を横断的に扱う。`hardware/security/`（サイドチャネル・TEE・信頼の起点）の
 **ソフトウェア側の対**であり、シリコンが守る底の上に積み上がるソフトウェア防御の層を
 担当する。
 
 同時にこの領域は**横串 (cross-cutting)** である。各分析文書の「セキュリティ考察」
-セクションには、`toolchain/` の ASLR/RELRO と xz 事件、`ios/`・`android/` のプラットフォーム
-緩和、`ebpf/` の検証器と Spectre、`compilers-runtimes/` の JIT 型混同、`networking/` の
+セクションには、`compilers-runtimes/` の ASLR/RELRO と xz 事件、`ios/`・`android/` のプラットフォーム
+緩和、`operating-systems/` の eBPF 検証器と Spectre、`compilers-runtimes/` の JIT 型混同、`networking/` の
 TLS が、それぞれの文脈で断片的に現れる。本領域はそれらを機構ごとに束ね直し、
 「攻撃と防御の軍拡競争」という一本の系譜として一般化する場である。
 

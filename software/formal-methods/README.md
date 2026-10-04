@@ -25,7 +25,7 @@ OS カーネル (seL4)、検証済みコンパイラ (CompCert)、そして eBPF
   各文書の設計を仕様化して突き合わせる
 - ハードウェア形式検証 (hardware formal verification) — 等価性検査、モデル検査に
   よるプロトコル検証 (キャッシュコヒーレンス)、RISC-V 形式仕様。
-  `../../hardware/cpu-architecture/` との合流点
+  `../../hardware/cpu/` との合流点
 - 実行時検証と property-based testing — QuickCheck 系、ファジングとの融合
   (`../security/fuzzing-program-analysis.md`)、モニタ合成。「証明とテストの間」の
   実務地帯

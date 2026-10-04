@@ -115,7 +115,7 @@ write(tmp); fsync(tmp); rename(tmp → target); fsync(親ディレクトリ)
 |---|---|
 | どの FS がどこにマウントされているか | `findmnt`、`/proc/self/mountinfo` |
 | dcache/inode キャッシュの状態 | `/proc/sys/fs/dentry-state`、`slabtop` (dentry, inode_cache) |
-| 誰がどのファイルに I/O しているか | `fatrace`、eBPF (`opensnoop`, `filetop`, [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md)) |
+| 誰がどのファイルに I/O しているか | `fatrace`、eBPF (`opensnoop`, `filetop`, [`ebpf-kernel-programmability.md`](ebpf-kernel-programmability.md)) |
 | ジャーナルの実挙動 | `/proc/fs/jbd2/*/info` (トランザクションの頻度・待ち) |
 | オンディスク構造の直接確認 | `debugfs` (ext4)、`xfs_db` (xfs)、`btrfs inspect-internal` |
 | クラッシュ一貫性の検査 | `dm-log-writes`＋再生検証、fio の `--fsync` 系オプション |
@@ -140,7 +140,7 @@ write(tmp); fsync(tmp); rename(tmp → target); fsync(親ディレクトリ)
 - [`virtual-memory-paging.md`](virtual-memory-paging.md) — ページキャッシュと writeback。FS はこのキャッシュの「背後 (backing store)」である。
 - [`../databases/storage-engines.md`](../databases/storage-engines.md) — 同じクラッシュ一貫性問題への DB 側の解 (WAL, ARIES)。FS を信用せず自前で握る設計。
 - [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md) — 永続性の最終防衛線 (FLUSH/FUA, FTL)。
-- [`../toolchain/linkers-loaders-elf.md`](../toolchain/linkers-loaders-elf.md) — mmap されたファイルとしての実行イメージ。
+- [`../compilers-runtimes/linkers-loaders-elf.md`](../compilers-runtimes/linkers-loaders-elf.md) — mmap されたファイルとしての実行イメージ。
 
 ## 参考文献 (References)
 

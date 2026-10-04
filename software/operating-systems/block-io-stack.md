@@ -21,7 +21,7 @@
 2. **単一キューは多コア × 高速 SSD で構造的に破綻した。** 旧 block 層はデバイスごとに 1 本のキューと 1 つのロックを持ち、全コアがそこで衝突する。実測で約 100 万 IOPS 付近で頭打ちになり、コアを増やすほど (特にソケットを跨ぐと) むしろ悪化した (Bjørling et al., SYSTOR '13)。ハードウェアはとうにその先にいた。
 3. **blk-mq の答えは「コアごとの入口 + デバイスごとの出口」。** ソフトウェアキューを CPU ごとに置いて競合を消し、ハードウェアディスパッチキューをデバイスの実キュー (NVMe は最大 64K キュー × 64K 深さ) に対応付ける。要求の追跡はロックでなくタグ (整数 ID) で行う。Linux 5.0 で旧経路は削除され、現在はこれが唯一の block 層である。
 4. **I/O スケジューラは「必須の最適化」から「選べるポリシ」に降格した。** NVMe の既定は `none` (並べ替えない——デバイスの並列性に任せるのが最速)。回転媒体や混載ワークロードには mq-deadline、デスクトップの応答性には BFQ、と「媒体と目的に応じて選ぶもの」になった。
-5. **io_uring の本質は「syscall を I/O の単位から外した」こと。** 提出リング (SQ) と完了リング (CQ) を共有メモリに置き、アプリは記述子を書き込むだけ。1 回の `io_uring_enter` で多数の I/O を提出・回収でき、SQPOLL を使えば**syscall ゼロ**の提出すら可能になる。Spectre/Meltdown 緩和策で syscall 単価が上がった時代 ([`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md)) に、境界横断の回数そのものを削る設計である。
+5. **io_uring の本質は「syscall を I/O の単位から外した」こと。** 提出リング (SQ) と完了リング (CQ) を共有メモリに置き、アプリは記述子を書き込むだけ。1 回の `io_uring_enter` で多数の I/O を提出・回収でき、SQPOLL を使えば**syscall ゼロ**の提出すら可能になる。Spectre/Meltdown 緩和策で syscall 単価が上がった時代 ([`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md)) に、境界横断の回数そのものを削る設計である。
 6. **「非同期 I/O」は io_uring 以前は嘘を含んでいた。** POSIX AIO はユーザ空間スレッドでの偽装、Linux ネイティブ AIO (libaio) は `O_DIRECT` 限定で、しかも経路の随所で密かにブロックした。io_uring はカーネル内で真に非同期に実行し、対象もストレージからネットワーク・ファイル操作へと拡大し続けている——**「非同期 syscall 実行基盤」への進化**である。
 
 ## アーキテクチャ (Architecture)
@@ -96,7 +96,7 @@ I/O レイテンシは「キュー待ち + デバイス実行」に分解して�
 | 疑問 | 道具 |
 |---|---|
 | デバイスは飽和しているか | `iostat -x` (`aqu-sz` キュー長, `r_await`/`w_await`)。**`%util` は並列デバイスでは飽和指標にならない** (1 本でも in-flight なら 100% に見える) |
-| レイテンシの分布 (テール) | eBPF: `biolatency` (ヒストグラム)、`biosnoop` (個別 I/O)、[`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) |
+| レイテンシの分布 (テール) | eBPF: `biolatency` (ヒストグラム)、`biosnoop` (個別 I/O)、[`ebpf-kernel-programmability.md`](ebpf-kernel-programmability.md) |
 | 要求は block 層のどこで時間を使ったか | `blktrace`/`blkparse`、`/sys/block/<dev>/queue/` (スケジューラ, nr_requests, read_ahead_kb) |
 | writeback / dirty の圧力 | `/proc/meminfo` (Dirty/Writeback)、PSI (`/proc/pressure/io`) |
 | cgroup ごとの I/O | `io.stat` (cgroup v2)、`iotop` |

@@ -59,7 +59,7 @@
 
 ### バッファプールはキャッシュ階層のもう一段
 
-バッファプール (buffer pool) は、オンディスクのページを DRAM に保持するソフトウェア管理キャッシュである。CPU の L1/L2/L3 が DRAM を隠すのと**同形の構造**であり、`../../hardware/cpu-architecture/cache-memory-hierarchy.md` の階層に、DB が明示的に管理するもう一段を足したものと読める。
+バッファプール (buffer pool) は、オンディスクのページを DRAM に保持するソフトウェア管理キャッシュである。CPU の L1/L2/L3 が DRAM を隠すのと**同形の構造**であり、`../../hardware/cpu/cache-memory-hierarchy.md` の階層に、DB が明示的に管理するもう一段を足したものと読める。
 
 ```
    CPU regs → L1 → L2 → L3 → DRAM → [Buffer Pool] → Disk/SSD
@@ -260,7 +260,7 @@ WAL があっても守れない別の障害。DB のページ（例 16 KiB）は
 複数トランザクションが同じページ・同じ行に触るときの調停。**本ドキュメントは入口の概観に留め、詳細は今後の transactions ドキュメントへ譲る。**
 
 - **ラッチ (latch) とロック (lock) は別物**である。
-  - **ラッチ**は、データ構造（B+tree のノード、バッファプールのフレーム）を**物理的な破壊から守る**短命な相互排他。保持はマイクロ秒オーダ、デッドロック検出はせず（取得順序の規律で回避）、回復の対象外。これは `../concurrency/memory-models-and-synchronization.md` の**ユーザ空間ロック（mutex/spinlock）そのもの**——CPU のアトミック命令とメモリバリアの上に立つ。B-link tree の latch crabbing はこのラッチの取り回しの話。
+  - **ラッチ**は、データ構造（B+tree のノード、バッファプールのフレーム）を**物理的な破壊から守る**短命な相互排他。保持はマイクロ秒オーダ、デッドロック検出はせず（取得順序の規律で回避）、回復の対象外。これは `../concurrency/memory-models-synchronization.md` の**ユーザ空間ロック（mutex/spinlock）そのもの**——CPU のアトミック命令とメモリバリアの上に立つ。B-link tree の latch crabbing はこのラッチの取り回しの話。
   - **ロック**は、トランザクションの**論理的な分離 (isolation)** を守る長命な論理ロック。トランザクション境界まで保持し、デッドロック検出を行い、分離レベル (isolation level) を実現する。回復の対象。
   - 「latch は構造を、lock は論理を守る」「latch は短く規律で、lock は長くデッドロック検出で」が区別の核。
 - **MVCC（多版型同時実行制御, Multi-Version Concurrency Control）** は、書き込みが読み手をブロックしないよう、**同一行の複数版 (version)** を保持する。版をストレージにどう置くかで2系統に分かれる。
@@ -284,22 +284,22 @@ WAL があっても守れない別の障害。DB のページ（例 16 KiB）は
 
 - **`fsync` を欺くストレージ層によるデータ損失**: DB は `fsync` の成功を「永続化された」と信じるが、その下の層（嘘をつくディスクの揮発キャッシュ、`fsync` を握りつぶす一部仮想化/ネットワークストレージ、誤設定の `nobarrier`）が約束を破ると、コミット済みデータが電源喪失で消える。これは可用性・整合性の侵害であり、`../../hardware/hw-sw-interface/storage-nvm-interface.md` の FLUSH/FUA/バリアが正しく貫通しているかの検証（power-cut テスト、`diskchecker` 類）が要る。DB の正しさは、最下層まで `fsync` が誠実であることに依存する。
 
-- **マルチテナントでの side channel（I/O・バッファプール）**: 共有 DB インスタンスで複数テナントがバッファプールや I/O 帯域を共有すると、片方のアクセスパターンが他方に観測されうる。あるテナントのクエリ後にページがバッファプールに載る→別テナントの同ページアクセスが速くなる、という**キャッシュタイミングチャネル**は、`../../hardware/cpu-architecture/cache-memory-hierarchy.md` のキャッシュ側チャネルと同型で、DB のバッファプール粒度で再現する。compaction/GC の I/O スパイクのタイミングからも負荷が漏れうる。緩和はテナントごとのバッファプール/インスタンス分離、I/O のレート制御、機密判定の定数時間化に帰着する。
+- **マルチテナントでの side channel（I/O・バッファプール）**: 共有 DB インスタンスで複数テナントがバッファプールや I/O 帯域を共有すると、片方のアクセスパターンが他方に観測されうる。あるテナントのクエリ後にページがバッファプールに載る→別テナントの同ページアクセスが速くなる、という**キャッシュタイミングチャネル**は、`../../hardware/cpu/cache-memory-hierarchy.md` のキャッシュ側チャネルと同型で、DB のバッファプール粒度で再現する。compaction/GC の I/O スパイクのタイミングからも負荷が漏れうる。緩和はテナントごとのバッファプール/インスタンス分離、I/O のレート制御、機密判定の定数時間化に帰着する。
 
 ## 結論 (Conclusions)
 
 - ストレージエンジンは、揮発で速い DRAM と、不揮発で遅くブロック単位の SSD/HDD の間の溝を埋める層であり、その設計はほぼすべて `../../hardware/hw-sw-interface/storage-nvm-interface.md` のハードウェアの非対称性（シーケンシャル≫ランダム、書き込みコスト、`fsync` の重さ）への応答として読める。
 - 2大系譜は RUM conjecture の2つの極である。**B+tree** は整列と in-place 更新で読みを最適化し（書き込みとページ分割を犠牲に）、**LSM-tree** は追記と compaction で書き込みを最適化する（読みと領域を犠牲に、Bloom filter で読みを救う）。三辺すべては同時に立てられない。
 - 永続性は性能とは独立の正しさの軸であり、**WAL プロトコル（先行書き込み規則）** が土台、**ARIES**（repeating history redo + CLR つき undo + fuzzy checkpoint）がその標準的実現である。WAL のコミットは `fsync` を通じてハードの FLUSH に律速され、torn write は double-write/full-page write でハード粒度の不一致を補う。
-- バッファプールは `../../hardware/cpu-architecture/cache-memory-hierarchy.md` のキャッシュ階層に DB が明示管理するもう一段を足したものであり、ヒット率・置換ポリシ・dirty page 管理という同形の問題を持つ。LSM の compaction は FTL の GC と、MVCC の旧版回収（VACUUM）も含め「追記して後で掃除する」同じ構造の各レイヤでの反復である。
-- 並行制御では **latch（構造を守る短命なユーザ空間ロック, `../concurrency/memory-models-and-synchronization.md`）** と **lock（論理分離を守る長命な論理ロック）** を峻別し、MVCC は版をテーブル追記か undo log に置く。詳細は今後の transactions ドキュメントへ。
+- バッファプールは `../../hardware/cpu/cache-memory-hierarchy.md` のキャッシュ階層に DB が明示管理するもう一段を足したものであり、ヒット率・置換ポリシ・dirty page 管理という同形の問題を持つ。LSM の compaction は FTL の GC と、MVCC の旧版回収（VACUUM）も含め「追記して後で掃除する」同じ構造の各レイヤでの反復である。
+- 並行制御では **latch（構造を守る短命なユーザ空間ロック, `../concurrency/memory-models-synchronization.md`）** と **lock（論理分離を守る長命な論理ロック）** を峻別し、MVCC は版をテーブル追記か undo log に置く。詳細は今後の transactions ドキュメントへ。
 - セキュリティ上、TDE は WAL・バックアップ・一時表まで境界を広げねば意味が薄く、削除は tombstone・slotted page・FTL の三段で物理に残留して GDPR と緊張し、`fsync` を欺く下層はコミットを失わせ、マルチテナントのバッファプールは side channel になる。永続性・残留性・隔離が、そのまま防御線である。
 
 ### 次の接続先 (Related Topics)
 
 - `../../hardware/hw-sw-interface/storage-nvm-interface.md` — 本ドキュメントの真下の層。NANDの erase-before-write、FTL、WAF、`fsync`/FLUSH/FUA、data remanence。DB の write amp はここの WAF と乗算的に重なり、compaction は FTL の GC と同型。
-- `../../hardware/cpu-architecture/cache-memory-hierarchy.md` — バッファプールはこのキャッシュ階層のもう一段。ヒット/ミス・置換ポリシ・側チャネルが DB 粒度で再現する。
-- `../concurrency/memory-models-and-synchronization.md` — latch はここのユーザ空間ロック（mutex/spinlock）そのもの。アトミック命令とメモリバリアの上に B-link tree の latch crabbing が立つ。
+- `../../hardware/cpu/cache-memory-hierarchy.md` — バッファプールはこのキャッシュ階層のもう一段。ヒット/ミス・置換ポリシ・側チャネルが DB 粒度で再現する。
+- `../concurrency/memory-models-synchronization.md` — latch はここのユーザ空間ロック（mutex/spinlock）そのもの。アトミック命令とメモリバリアの上に B-link tree の latch crabbing が立つ。
 - `../distributed-systems/consistency-models.md` — 単一ノードの durability（WAL コミット）が、分散レプリケーション（log shipping, クォーラム）でどう拡張されるか。本ノードの永続性は分散一貫性の構成要素になる。
 
 ## 参考文献 (References)

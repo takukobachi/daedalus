@@ -47,7 +47,7 @@
 ```
 
 - 読み出しは索引を引いて任意の k 断片を取得・復号する。修復 (repair) は故障検知後に残存断片から欠損分を再計算する**背景フロー**であり、前景 I/O と帯域を取り合う。
-- 故障ドメインの階層（ディスク < ノード < ラック < AZ）は [`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md) の物理設備そのものである。
+- 故障ドメインの階層（ディスク < ノード < ラック < AZ）は [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) の物理設備そのものである。
 
 ### 分岐点 — 中央索引 vs 計算配置
 
@@ -74,14 +74,14 @@
 
 - S3 型の索引はキー範囲でパーティション化された分散 KV であり、その各パーティションの実体は [`../databases/storage-engines.md`](../databases/storage-engines.md) の LSM-tree ＋ WAL である——オブジェクトストレージの中心部でストレージエンジンがそのまま再利用されている。パーティションの複製と分割・移動の調整は [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) の合意の仕事である。
 - **ホットスポット**: 辞書順パーティショニングでは、単調増加するキー接頭辞（日付、連番）が最後尾パーティションに書き込みを集中させる。S3 が長年「キーの先頭にランダム性を」と案内し、後に接頭辞単位の自動分割で緩和したのは、この索引の物理を API 利用者が透かし見ていた例である。
-- **CRUSH**: オブジェクト→placement group→OSD 群を、クラスタマップと重み付き階層（ラック・ホスト）を入力とする決定的関数で導く。故障ドメイン制約（「レプリカは異なるラックへ」）は関数の探索規則として表現される。マップは小規模なモニタ群が Paxos 系合意で管理する——中央索引を消しても、**合意はより小さな制御平面に凝縮されて残る**。分散ログのデータ平面/制御平面の階層化（[`../messaging-streaming/distributed-logs-delivery-semantics.md`](../messaging-streaming/distributed-logs-delivery-semantics.md) 発見事項 3）と同じ構図である。
+- **CRUSH**: オブジェクト→placement group→OSD 群を、クラスタマップと重み付き階層（ラック・ホスト）を入力とする決定的関数で導く。故障ドメイン制約（「レプリカは異なるラックへ」）は関数の探索規則として表現される。マップは小規模なモニタ群が Paxos 系合意で管理する——中央索引を消しても、**合意はより小さな制御平面に凝縮されて残る**。分散ログのデータ平面/制御平面の階層化（[`../messaging/distributed-logs-delivery-semantics.md`](../messaging/distributed-logs-delivery-semantics.md) 発見事項 3）と同じ構図である。
 
 ### 3. 耐久性の工学 — 複製・EC・ナインズの算術
 
 - **Reed–Solomon 符号**: データ k 断片から Galois 体 GF(2⁸) 上の多項式演算でパリティ m 断片を生成し、任意の k 断片から全体を復元できる（**MDS 符号**——同じ冗長量で理論上最良の耐故障数）。体が有限体である点が要で、実数上の行列分解の数値誤差問題は存在せず、演算は正確かつテーブル駆動で高速化できる。
 - **コストの通貨換算**: 3 複製は容量 3.0 倍・修復読み出し 1 倍・任意 2 故障耐性。RS(6,3) は容量 1.5 倍・修復読み出し 6 倍・任意 3 故障耐性。RS(12,4) なら容量 1.33 倍だが修復はさらに重い。**ストライプを広げるほど容量は安く、修復は高くなる**。Azure の LRC(12,2,2) はグループ局所パリティで単一故障（圧倒的多数派）の修復読み出しを 6 断片に抑えつつ 1.29 倍を達成した——「単一故障を安く、多重故障は稀だから高くてよい」という故障分布への最適化である。
 - **ナインズの算術**: 耐久性はマルコフモデル「健全 → 1 故障 → … → m+1 故障（喪失）」の年間吸収確率として計算される。パラメータは AFR（実測でおよそ 1–2%/年）、修復時間、ストライプ数。修復が速いほど多重故障の窓が狭まる——**耐久性は MTTR の関数**であり、「壊れない部品」より「速い修復」が効くという [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) の教えの実装である。10 万台規模ではディスク故障は毎日の定常負荷であり、修復・リバランスは例外処理ではなく常時流れる背景トラフィックとして帯域予算を持つ。
-- **前提の脆さ**: モデルは故障の独立を仮定するが、実際の喪失事故は相関故障——同一ファームウェア、同一 AZ、ソフトウェアのバグ——から来る。故障ドメイン跨ぎの配置は独立性の仮定を「買う」ための支出であり、AZ 跨ぎ複製はその最上位である。媒体自体の摩耗と内部冗長は [`../../hardware/storage-devices/nand-flash-ftl.md`](../../hardware/storage-devices/nand-flash-ftl.md) が扱う下層の同型問題である。
+- **前提の脆さ**: モデルは故障の独立を仮定するが、実際の喪失事故は相関故障——同一ファームウェア、同一 AZ、ソフトウェアのバグ——から来る。故障ドメイン跨ぎの配置は独立性の仮定を「買う」ための支出であり、AZ 跨ぎ複製はその最上位である。媒体自体の摩耗と内部冗長は [`../../hardware/storage/nand-flash-ftl.md`](../../hardware/storage/nand-flash-ftl.md) が扱う下層の同型問題である。
 - **スクラビング**: 全データを周期的に読み、チェックサムを検証し、不一致を冗長性から修復する。検出されない破損は AFR に現れない喪失経路であり、巡回周期はモデルの「検知遅れ」項として耐久性に直接効く。
 
 ### 4. 一貫性 — 結果整合性からの卒業と条件付き書き込み
@@ -118,9 +118,9 @@
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — 結果整合性・read-after-write・線形化可能性の語彙の供給元。
 - [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — 索引パーティションの複製と CRUSH マップを守る制御平面の合意。
 - [`../databases/storage-engines.md`](../databases/storage-engines.md) — メタデータ索引の実体である LSM-tree/WAL。
-- [`../messaging-streaming/distributed-logs-delivery-semantics.md`](../messaging-streaming/distributed-logs-delivery-semantics.md) — イベント通知とデータパイプライン、データ平面/制御平面の階層化という共通構図。
-- [`../../hardware/storage-devices/nand-flash-ftl.md`](../../hardware/storage-devices/nand-flash-ftl.md) — 断片を最終的に保持する媒体の摩耗・内部冗長という下層の同型問題。
-- [`../../hardware/datacenter-infrastructure/datacenter-fundamentals.md`](../../hardware/datacenter-infrastructure/datacenter-fundamentals.md) — 故障ドメイン（ラック・電源・AZ）の物理的実体。
+- [`../messaging/distributed-logs-delivery-semantics.md`](../messaging/distributed-logs-delivery-semantics.md) — イベント通知とデータパイプライン、データ平面/制御平面の階層化という共通構図。
+- [`../../hardware/storage/nand-flash-ftl.md`](../../hardware/storage/nand-flash-ftl.md) — 断片を最終的に保持する媒体の摩耗・内部冗長という下層の同型問題。
+- [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — 故障ドメイン（ラック・電源・AZ）の物理的実体。
 - [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — AFR・MTTR・共通原因故障・ナインズの算術という耐久性モデルの数学。
 
 ## 参考文献 (References)

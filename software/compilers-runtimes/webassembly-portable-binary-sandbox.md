@@ -15,7 +15,7 @@ WebAssembly (Wasm) は言語ではない。C/C++・Rust・Go・Kotlin がコン�
 - Wasm を「Web 技術」ではなく**実行モデルとサンドボックス設計**として扱い、三部作の軸 (支払時期・保証の置き場所) に接続する。ブラウザ API・JS 連携の詳細は扱わない。
 - 一次資料を優先する: 設計論文 (Haas et al., PLDI '17)、W3C 仕様 (3.0, 2025)、WASI/コンポーネントモデルの公式文書。性能とセキュリティの主張は**査読付きの第三者測定** (Jangda et al., ATC '19; Lehmann et al., USENIX Security '20) を軸に、ベンダの主張 (near-native 等) と区別して記述する——本リポジトリの Source Hierarchy 基準の適用例でもある。
 - エンジン内部は V8 (Liftoff/TurboFan) と Wasmtime (Cranelift) を主参照にし、JIT/GC の一般論は [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) に委ねる。
-- カーネル内の検証付き実行である eBPF ([`../ebpf/`](../ebpf/)) を対照として常設し、「検証で何を証明するか」の設計差を明示する。
+- カーネル内の検証付き実行である eBPF ([`../operating-systems/`](../operating-systems/)) を対照として常設し、「検証で何を証明するか」の設計差を明示する。
 
 ## 発見事項 (Findings)
 
@@ -76,13 +76,13 @@ flowchart LR
 
 - **V8**: Liftoff が関数単位の単一パスコンパイルで「ダウンロードしながらコンパイル」に近い起動を実現し、実行頻度の高い関数を TurboFan が置き換える。JS と違い型は静的に確定しているため、[`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) の投機・deopt 装置は原則不要——**JIT の複雑さの大半は動的型の観測装置だった**ことの傍証である。
 - **Wasmtime (Cranelift)**: サーバ・組込み向けに AOT コンパイル (事前変換したネイティブコードを mmap して即実行) を選べる。インスタンス生成はメモリの COW とプールで µs 級まで削られ、**リクエストごとに新品のサンドボックス**という運用が成立する。fuel (命令数課金) と epoch interruption (タイマでの強制脱出) が停止性の実行時対策。
-- 境界検査の実装スペクトラム: 64bit ホスト + wasm32 = 仮想予約 + guard page (検査ゼロ)、wasm64 / 32bit ホスト = 明示的比較命令。共有メモリ (threads 拡張) はアトミック命令と組み合わせ、[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) のメモリモデルの議論がそのまま適用される。
+- 境界検査の実装スペクトラム: 64bit ホスト + wasm32 = 仮想予約 + guard page (検査ゼロ)、wasm64 / 32bit ホスト = 明示的比較命令。共有メモリ (threads 拡張) はアトミック命令と組み合わせ、[`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) のメモリモデルの議論がそのまま適用される。
 
 ### 3. 言語ランタイムの持ち込みと WasmGC
 
 - MVP 時代の対応表: C/C++/Rust (ランタイム最小・最適)、Go (GC・スケジューラ同梱でバイナリ MB 級、TinyGo が縮小版を提供)、Python (CPython 丸ごと——Pyodide が科学計算スタックごと移植)。**三部作の「ランタイムの重さ」がそのまま Wasm バイナリの重さに写像される**。
 - WasmGC は `struct`/`array` 型と割り当て命令を追加し、参照はエンジン管理のヒープに住む (線形メモリの外)。ホスト GC との統合で循環参照 (JS ↔ Wasm) も回収可能になり、Kotlin/Wasm・Dart が採用。一方 Go のような「ポインタ演算を含む既存ランタイム前提」の言語は単純には乗れない——**GC を委譲できるのは、GC を抽象として使っていた言語だけ**という選別が起きている。
-- コンポーネントモデル (WASI 0.2, 2024): モジュール間を共有メモリではなく**型付きインタフェース (WIT) + 値のコピー**で合成する shared-nothing 設計。リンクではなく合成 (composition) を単位にする点で、[`../toolchain/linkers-loaders-elf.md`](../toolchain/linkers-loaders-elf.md) の動的リンクと好対照——シンボル解決の代わりに、インタフェース型の一致が結合の契約になる。
+- コンポーネントモデル (WASI 0.2, 2024): モジュール間を共有メモリではなく**型付きインタフェース (WIT) + 値のコピー**で合成する shared-nothing 設計。リンクではなく合成 (composition) を単位にする点で、[`linkers-loaders-elf.md`](linkers-loaders-elf.md) の動的リンクと好対照——シンボル解決の代わりに、インタフェース型の一致が結合の契約になる。
 
 ### 4. 観測の入口 (Observability)
 
@@ -98,7 +98,7 @@ flowchart LR
 
 - **境界の外側は強い: ホスト保護は構成的である。** 型検査・線形メモリ・インポート限定の外界アクセスにより、モジュールは**与えられていない権限を行使する形式的手段を持たない** (ambient authority の不在)。WASI はこれをシステム界面まで延長し、preopen されたディレクトリ以外は「存在すら見えない」——[`../security/`](../security/) で言うケイパビリティモデルの実装例である。攻撃面はしたがって (a) エンジン自体のバグ (検証器・JIT——攻撃者の入力から機械語を作る装置である点は [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) の JS エンジンと同じ)、(b) ホストがインポートとして渡した関数の脆弱性、に集約される。
 - **境界の内側は素朴: 「Wasm だから安全」はモジュール内部には及ばない。** Lehmann らは、線形メモリ内に緩和機構 (ASLR・カナリア・W^X 相当) がほぼ無く、C 由来モジュールでは古典的なメモリ破壊——ヒープメタデータの上書き、シャドウスタック上のデータ書き換え、`call_indirect` の添字差し替えによる**同型関数への制御流ハイジャック**——が現代のネイティブ環境より容易に成立しうることを示した。防御は言語側 (メモリ安全言語でコンパイルする) とエンジン側 (緩和の追加) の両輪であり、サンドボックスはその代替ではない。
-- **サイドチャネルはサンドボックスを尊重しない。** Wasm のプロセス内隔離は Spectre 型の投機的読み出し ([`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md)) に対して形式的な防壁を持たない。ブラウザが共有メモリ (SharedArrayBuffer) の解禁に cross-origin isolation (COOP/COEP) を要求するのは、高精度タイマの成立条件を信頼境界の再編で縛るためであり、マルチテナントのエッジ実行系も「同一プロセスに誰を同居させるか」という配置問題として同じ課題を負う——**プロセス隔離の放棄は、マイクロアーキテクチャの共有という請求書と引き換え**である。
+- **サイドチャネルはサンドボックスを尊重しない。** Wasm のプロセス内隔離は Spectre 型の投機的読み出し ([`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md)) に対して形式的な防壁を持たない。ブラウザが共有メモリ (SharedArrayBuffer) の解禁に cross-origin isolation (COOP/COEP) を要求するのは、高精度タイマの成立条件を信頼境界の再編で縛るためであり、マルチテナントのエッジ実行系も「同一プロセスに誰を同居させるか」という配置問題として同じ課題を負う——**プロセス隔離の放棄は、マイクロアーキテクチャの共有という請求書と引き換え**である。
 - **サプライチェーン**: プラグイン機構としての Wasm は「信頼できないコードを走らせる」を日常化する。検証が保証するのは型安全と隔離だけで、**何をするか** (渡したケイパビリティの悪用・暗号採掘・データ持ち出し) は保証しない——権限を最小に渡す設計 (ケイパビリティの粒度) と、fuel/epoch による資源課金が運用側の防衛線になる。
 
 ## 結論 (Conclusions)
@@ -112,10 +112,10 @@ flowchart LR
 
 - [`language-implementations-cpython-go-rust.md`](language-implementations-cpython-go-rust.md) — 本書が「第四の答え」として接続する実行モデルのスペクトラム。
 - [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) — tiering・JIT のセキュリティ・「攻撃者の入力から機械語を作る」問題の一般論。
-- [`../ebpf/`](../ebpf/) — カーネル内の検証付き実行。停止性を静的に要求する対照設計。
-- [`../toolchain/linkers-loaders-elf.md`](../toolchain/linkers-loaders-elf.md) — リンクによる結合と、コンポーネントモデルの合成の対比。
+- [`../operating-systems/`](../operating-systems/) — カーネル内の検証付き実行。停止性を静的に要求する対照設計。
+- [`linkers-loaders-elf.md`](linkers-loaders-elf.md) — リンクによる結合と、コンポーネントモデルの合成の対比。
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — guard page による境界検査の下部機構。
-- [`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md) — プロセス内隔離を貫くサイドチャネルの源。
+- [`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md) — プロセス内隔離を貫くサイドチャネルの源。
 
 ## 参考文献 (References)
 

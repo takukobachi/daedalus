@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-[`memory-models-and-synchronization.md`](memory-models-and-synchronization.md) は言語メモリモデルと同期プリミティブを整理し、「lock-free / wait-free 構造への入口」で止めた。本ドキュメントはその本編——**ロックを使わず、アトミック操作 (CAS) だけで共有データ構造を正しく作る**技術を扱う。
+[`memory-models-synchronization.md`](memory-models-synchronization.md) は言語メモリモデルと同期プリミティブを整理し、「lock-free / wait-free 構造への入口」で止めた。本ドキュメントはその本編——**ロックを使わず、アトミック操作 (CAS) だけで共有データ構造を正しく作る**技術を扱う。
 
 lock-free の動機は「速いから」では**ない**。無競合ならロックと大差なく、高競合ではむしろ遅いことすらある。本当の価値は**進行保証 (progress guarantee)**——どのスレッドが OS に止められても・優先度逆転が起きても・（プロセス共有メモリなら）参加者が死んでも、**系全体としては誰かが必ず前進する**こと——にある。
 
@@ -11,7 +11,7 @@ lock-free の動機は「速いから」では**ない**。無競合ならロッ
 ## 方法論 (Methodology)
 
 - 正しさの基準を**線形化可能性**（各操作がある一点で原子的に起きたように見える。[`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) の単一オブジェクト版）に置き、各アルゴリズムの「線形化点 (linearization point)」を特定しながら読む。
-- コードは C++ 風の擬似コードで示し、`memory_order` を明示する（[`memory-models-and-synchronization.md`](memory-models-and-synchronization.md) の意味論の適用例として）。
+- コードは C++ 風の擬似コードで示し、`memory_order` を明示する（[`memory-models-synchronization.md`](memory-models-synchronization.md) の意味論の適用例として）。
 - ABA と回収を「同じ根 (ポインタの再利用) から生える2つの症状」として統一的に扱う。
 - 一次資料（Treiber、Michael & Scott、Michael、McKenney、Herlihy）に基づく。
 
@@ -88,7 +88,7 @@ std::optional<T> pop() {
 ```
 
 - `compare_exchange_weak` は失敗時に期待値を**現在値へ書き戻す**ので、ループが自然に再読になる。
-- push 成功の release / pop の acquire ペアが「ノードの中身は繋いだ後に見える」を保証する（[`memory-models-and-synchronization.md`](memory-models-and-synchronization.md) の release/acquire の教科書的適用）。
+- push 成功の release / pop の acquire ペアが「ノードの中身は繋いだ後に見える」を保証する（[`memory-models-synchronization.md`](memory-models-synchronization.md) の release/acquire の教科書的適用）。
 
 ### 2. ABA 問題 — 具体的な破壊シナリオ
 
@@ -104,7 +104,7 @@ std::optional<T> pop() {
 対策は3系統ある。
 
 - **タグ付きポインタ (versioned pointer)**: ポインタに更新カウンタを併置し、ダブル幅 CAS（x86 の `cmpxchg16b`）で「番地＋世代」を比較する。世代が回り切る理論的隙は残るが実用上十分なことが多い。
-- **LL/SC**: ARM 等の load-linked/store-conditional は「番地への介入があったか」自体を検出するので原理的に ABA がない（[`../../hardware/cpu-architecture/memory-ordering-atomics.md`](../../hardware/cpu-architecture/memory-ordering-atomics.md)）。ただし偽失敗があり、C++ からは抽象の下に隠れる。
+- **LL/SC**: ARM 等の load-linked/store-conditional は「番地への介入があったか」自体を検出するので原理的に ABA がない（[`../../hardware/cpu/memory-ordering-atomics.md`](../../hardware/cpu/memory-ordering-atomics.md)）。ただし偽失敗があり、C++ からは抽象の下に隠れる。
 - **回収の遅延（次節）**: 「読者がいる間は再利用させない」なら、そもそも同一番地の再登場が起きない。**ABA 対策と回収問題は同じ解で同時に解ける**——これが実務で回収機構が中心課題になる理由。
 
 ### 3. メモリ回収 — 3方式の設計空間
@@ -128,7 +128,7 @@ std::optional<T> pop() {
 
 ### 5. 性能の現実 — 競合はコヒーレンスで決まる
 
-- 全スレッドが同じ `head` を CAS する構造は、その**キャッシュラインの所有権が Modified 状態でコア間を往復**する（[`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md)）。CAS 自体は数十サイクルでも、ラインの奪い合いで実効コストは桁で膨らみ、**コア数を増やすほど遅くなる**ことすらある。
+- 全スレッドが同じ `head` を CAS する構造は、その**キャッシュラインの所有権が Modified 状態でコア間を往復**する（[`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md)）。CAS 自体は数十サイクルでも、ラインの奪い合いで実効コストは桁で膨らみ、**コア数を増やすほど遅くなる**ことすらある。
 - 緩和策: **backoff**（負けたら少し待つ）、**elimination**（push と pop を出会わせて相殺——スタックでは中心へ触れずに済む）、**combining**（1スレッドが皆の操作をまとめて実行）、そして最も効くのは**単一ポイントを作らない設計**（per-core シャーディング、SPSC キューの束、フラットコンバイニング）。
 - 測定なしに lock-free を選ばない。「mutex で十分か」→「sharded mutex で十分か」→「既製 lock-free ライブラリ」→「自作」の順で、**自作は最後の手段**である。
 
@@ -136,7 +136,7 @@ std::optional<T> pop() {
 
 - **回収バグは即 use-after-free 脆弱性**: lock-free の解放誤りは、ヒープ再利用を介した型混同・任意書き込みに直結する、攻撃者にとって上質な原料である。しかも競合窓が狭く**テストをすり抜けて本番で顕在化**する。カーネルの RCU 誤用 (grace period を待たない解放) は実際に権限昇格級の CVE を生んできたクラスであり、[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の Dirty COW と並ぶ「カーネル内競合＝昇格」の系譜にある。
 - **ABA は整合性の静かな破壊**: クラッシュせず構造だけ壊れる場合、破損データがそのまま下流（認可判定・課金）に流れる。fail-stop でない失敗は検出も遅れる。
-- **検証はモデル検査で**: この領域の正しさは通常テストでは確立できない。C11/C++11 モデル上の網羅検査 (CDSChecker, GenMC)、Rust の並行 permutation テスト (loom)、カーネルの KCSAN のような**データ競合検出器**を CI に組み込むのが現実的な最低線である。「動いた」ではなく「モデル上で反例がない」を基準にする（[`memory-models-and-synchronization.md`](memory-models-and-synchronization.md) の結論と同じ規律）。
+- **検証はモデル検査で**: この領域の正しさは通常テストでは確立できない。C11/C++11 モデル上の網羅検査 (CDSChecker, GenMC)、Rust の並行 permutation テスト (loom)、カーネルの KCSAN のような**データ競合検出器**を CI に組み込むのが現実的な最低線である。「動いた」ではなく「モデル上で反例がない」を基準にする（[`memory-models-synchronization.md`](memory-models-synchronization.md) の結論と同じ規律）。
 - **DoS としての回収停滞**: epoch 系で読者を意図的に停滞させられる構成（読者区間がユーザ入力で伸びる等）は、メモリ枯渇 DoS の攻撃面になる。読者区間の長さを入力から独立させる設計が要る。
 
 ## 結論 (Conclusions)
@@ -148,9 +148,9 @@ std::optional<T> pop() {
 
 ### 次の接続先 (Related Topics)
 
-- [`memory-models-and-synchronization.md`](memory-models-and-synchronization.md) — 本書の前提。happens-before・memory_order・進行保証の定義。
-- [`../../hardware/cpu-architecture/memory-ordering-atomics.md`](../../hardware/cpu-architecture/memory-ordering-atomics.md) — CAS/LL-SC の命令実体と ABA 耐性の差。
-- [`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md) — CAS 競合の実コストを決めるライン所有権の物理。
+- [`memory-models-synchronization.md`](memory-models-synchronization.md) — 本書の前提。happens-before・memory_order・進行保証の定義。
+- [`../../hardware/cpu/memory-ordering-atomics.md`](../../hardware/cpu/memory-ordering-atomics.md) — CAS/LL-SC の命令実体と ABA 耐性の差。
+- [`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md) — CAS 競合の実コストを決めるライン所有権の物理。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — 正しさ基準（線形化可能性）の分散版。
 - [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) — カーネル内競合が権限昇格になる構造 (Dirty COW) との並び。
 

@@ -6,7 +6,7 @@
 
 中心テーゼは二つ。第一に、**標準ライブラリのデータ構造は言語設計の縮図である**。CPython の dict が全要素をポインタで持つのは「すべてが PyObject」の帰結であり、Go の map の要素にアドレスを取れないのは GC と漸進的成長の帰結であり、Rust の HashMap のイテレータ無効化がコンパイルエラーなのは借用検査の帰結である——データ構造の「癖」に見えるものは、ほぼすべて言語の中核設計から導出できる。
 
-第二に、**ハードウェアは言語の違いを押し流して同じ答えに収斂させる**。三言語は独立の歴史を持ちながら、ハッシュ表は連鎖法 (chaining) ではなく開番地法 (open addressing) に、そして 2020 年代には Rust (1.36, 2019) と Go (1.24, 2025) が揃って **SwissTable 系** (制御バイト列を SIMD で一括走査する設計) に到達した。キャッシュ階層 ([`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md)) と SIMD ([`../../hardware/cpu-architecture/simd-vector.md`](../../hardware/cpu-architecture/simd-vector.md)) という物理が、設計空間の勝者を決めた例である。
+第二に、**ハードウェアは言語の違いを押し流して同じ答えに収斂させる**。三言語は独立の歴史を持ちながら、ハッシュ表は連鎖法 (chaining) ではなく開番地法 (open addressing) に、そして 2020 年代には Rust (1.36, 2019) と Go (1.24, 2025) が揃って **SwissTable 系** (制御バイト列を SIMD で一括走査する設計) に到達した。キャッシュ階層 ([`../../hardware/cpu/cache-memory-hierarchy.md`](../../hardware/cpu/cache-memory-hierarchy.md)) と SIMD ([`../../hardware/cpu/simd-vector.md`](../../hardware/cpu/simd-vector.md)) という物理が、設計空間の勝者を決めた例である。
 
 本書は (1) ハッシュ表の三実装 (レイアウト・探査・成長)、(2) 反復順序という意味論の分岐 (仕様への昇格 vs 意図的ランダム化)、(3) HashDoS とハッシュ関数の防御、(4) 文字列表現 (「i 番目の文字」への三つの答え)、を CPython/Go/Rust のソースと一次資料を基に整理する。分析深度は Level 3。
 
@@ -111,10 +111,10 @@
 
 - [`language-implementations-cpython-go-rust.md`](language-implementations-cpython-go-rust.md) — 本書の親。支払時期テーゼと boxing の税の一般論。
 - [`async-executors-asyncio-tokio.md`](async-executors-asyncio-tokio.md) — 姉妹編の各論 (その 2)。実行器の内部と協調スケジューリングの統治。
-- [`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md) — 開番地法と SwissTable を勝たせた物理。
-- [`../../hardware/cpu-architecture/simd-vector.md`](../../hardware/cpu-architecture/simd-vector.md) — 制御バイト一括照合を可能にする命令群。
+- [`../../hardware/cpu/cache-memory-hierarchy.md`](../../hardware/cpu/cache-memory-hierarchy.md) — 開番地法と SwissTable を勝たせた物理。
+- [`../../hardware/cpu/simd-vector.md`](../../hardware/cpu/simd-vector.md) — 制御バイト一括照合を可能にする命令群。
 - [`managed-runtimes-gc-jit.md`](managed-runtimes-gc-jit.md) — 漸進疎開と同型の「停止を薄く塗る」設計の一般論。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — map の並行書き込み検出の下にある一般問題。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — map の並行書き込み検出の下にある一般問題。
 
 ## 参考文献 (References)
 

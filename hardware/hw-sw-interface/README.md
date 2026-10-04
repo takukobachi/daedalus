@@ -14,6 +14,6 @@
 ## 今後のテーマ候補
 
 - IOMMU 深掘り (IOMMU) — VT-d / SMMU のアドレス変換、SR-IOV、DMA 攻撃と防御。
-  `../hardware-security/` および `../../software/virtualization/` と交差
+  `../security/` および `../../software/virtualization/` と交差
 - CXL とメモリ拡張 (CXL & memory pooling) — [`bus-interconnect.md`](bus-interconnect.md)
   の CXL 概説の先。メモリ拡張・プーリング・ティアリングとキャッシュコヒーレントな接続

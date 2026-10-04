@@ -111,7 +111,7 @@
 - [`platform-architecture.md`](platform-architecture.md) — Verified Boot・SELinux・Keystore の全体像での位置づけ。
 - [`binder-internals.md`](binder-internals.md) — フレームワーク層検査の土台（呼び出し元 UID 刻印）と Rust 化の実践。
 - [`art-runtime-internals.md`](art-runtime-internals.md) — 検証器・JIT・JNI という実行系側の型安全境界。
-- [`../../hardware/automotive/cybersecurity-iso21434.md`](../../hardware/automotive/cybersecurity-iso21434.md) — 多層防御・HSM・アテステーションの車載版設計文法。
+- [`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md) — 多層防御・HSM・アテステーションの車載版設計文法。
 - [`package-management.md`](package-management.md) — 権限検査の第一層 (UID) を割り当てる側。installd・packages.xml・パッケージ可視性。
 - [`boot-init-properties.md`](boot-init-properties.md) — ブートローダーのアンロック・fastboot・init による SELinux ポリシー読み込み。
 - [`system-server-services.md`](system-server-services.md) — 単一障害点としての system_server の内部構造。

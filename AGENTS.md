@@ -19,8 +19,9 @@ Top-level layout:
 
 ```tree
 daedalus/
-├── hardware/      # Hardware analysis (CPU, HW/SW interface, automotive, ...)
-├── software/      # Software analysis (architecture, specifications, ...)
+├── hardware/      # Computer hardware analysis (CPU, accelerators, HW/SW interface, ...)
+├── software/      # Software analysis (OS, distributed systems, platforms, ...)
+├── engineering/   # Physical engineering systems (aerospace, automotive, robotics, energy, ...)
 ├── foundations/   # Foundational theory (mathematics, physics, ...) behind the analyses
 └── references/    # Reference materials (papers, books, articles)
 ```
@@ -38,8 +39,16 @@ Conventions:
 
 ### File Naming
 
-Documents are named `{category}-{description}.md` (e.g. `isa-riscv-intro.md`):
 English only, lowercase with hyphens.
+
+- **Directories**: a short topic noun (e.g. `cpu/`, `cloud/`). Do not repeat the
+  parent's name (`hardware/security/`, not `hardware/hardware-security/`) or add a
+  synonym as a second word.
+- **Documents**: a name that identifies the content on its own, even if it overlaps
+  the directory name (e.g. `cloud-iam-authorization.md`). Avoid filler such as
+  `-analysis` or `-and-`.
+- Add a new directory when a topic does not belong to an existing one; merge a
+  single-document directory only when it is clearly part of another topic.
 
 ---
 
@@ -56,9 +65,9 @@ English only, lowercase with hyphens.
 
 Section headings are `## 日本語 (English)`, e.g. `## 概要 (Overview)` — the
 lists below give the English names. Every analysis and foundations document
-ends with `## 参考文献 (References)`. In non-software domains (aerospace,
-automotive, …) Security Considerations may be replaced by a domain-appropriate
-section, e.g. `## 運用・安全考察 (Operational & Safety Considerations)`.
+ends with `## 参考文献 (References)`. In `engineering/` documents, Security
+Considerations may be replaced by a domain-appropriate section, e.g.
+`## 運用・安全考察 (Operational & Safety Considerations)`.
 
 ### Analysis Documents — Required Sections
 

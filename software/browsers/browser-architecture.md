@@ -4,7 +4,7 @@
 
 ブラウザは「アプリケーション」の顔をした**オペレーティングシステム**である。相互に信頼しない多数のプログラム (ウェブサイト) をダウンロードしてすぐに実行し、資源を多重化し、隔離を強制する——[`../android/`](../android/README.md)・[`../ios/`](../ios/README.md) が扱ったのと同じ問題を、インストールという儀式すらない、より敵対的な前提で解く。本書はこの「第三のプラットフォーム」を、既存 2 プラットフォームと同じ切り口 (プロセス・IPC・実行系・グラフィックス・セキュリティ) で解剖する。主対象は Chromium (最も文書化された実装) とし、WebKit/Firefox は対照として参照する。
 
-中心テーゼは二つ。第一に、**ブラウザのプロセスモデルはウェブの信頼境界 (同一生成元ポリシー) を OS の隔離境界 (プロセス) に写像する試みの歴史**である、ということ。2008 年のマルチプロセス化 (タブ≒プロセス) は「レンダラは乗っ取られる」を設計前提に据え、2018 年のサイト分離 (site isolation) は Spectre ([`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md)) によって「プロセス内に秘密を同居させた時点で負け」が確定したことへの応答だった。ハードウェアの投機実行がブラウザのプロセス設計を書き換えた——本リポジトリが追う「層をまたぐ強制」の教科書的事例である。
+中心テーゼは二つ。第一に、**ブラウザのプロセスモデルはウェブの信頼境界 (同一生成元ポリシー) を OS の隔離境界 (プロセス) に写像する試みの歴史**である、ということ。2008 年のマルチプロセス化 (タブ≒プロセス) は「レンダラは乗っ取られる」を設計前提に据え、2018 年のサイト分離 (site isolation) は Spectre ([`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md)) によって「プロセス内に秘密を同居させた時点で負け」が確定したことへの応答だった。ハードウェアの投機実行がブラウザのプロセス設計を書き換えた——本リポジトリが追う「層をまたぐ強制」の教科書的事例である。
 
 第二に、**レンダリングと JS 実行は「敵が書いたコードを毎フレーム締切内に走らせる」問題**である、ということ。16.7 ms の締切 ([`../android/graphics-pipeline.md`](../android/graphics-pipeline.md)・[`../ios/core-animation-render-server.md`](../ios/core-animation-render-server.md) と同じ) を、事前コンパイルも静的検証もできない動的言語で守るために、投機的 JIT・並行 GC・スレッド分割 (メイン/コンポジタ) という機構群が積み上がった。[`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md) の一般論が最も苛烈な形で現れる現場である。
 
@@ -13,7 +13,7 @@
 ## 方法論 (Methodology)
 
 - Chromium の公式設計文書・セキュリティ文書と、サイト分離の原著論文 (Reis et al., USENIX Security '19) を一次資料とし、V8/JSC の実装は開発チームの技術解説 (v8.dev, webkit.org) で確認する。
-- プロセスモデルは「どの信頼境界を、どの OS 機構に、いくらのコストで写像したか」という会計として記述する。サンドボックスは各 OS の機構 ([`../operating-systems/`](../operating-systems/README.md)・[`../ebpf/`](../ebpf/README.md) の seccomp) への写像として整理する。
+- プロセスモデルは「どの信頼境界を、どの OS 機構に、いくらのコストで写像したか」という会計として記述する。サンドボックスは各 OS の機構 ([`../operating-systems/`](../operating-systems/README.md)・[`../operating-systems/`](../operating-systems/README.md) の seccomp) への写像として整理する。
 - レンダリングは Android/iOS の既存分析と同じ語彙 (メインスレッド/コンポジタ・VSYNC・ダメージ追跡) で記述し、三者比較を可能にする。
 - 実装バージョンで揺れる細部 (プロセス上限・ティア構成の閾値) は構造の説明に必要な範囲に留め、参照時点 (2026-07) を明示する。
 
@@ -80,7 +80,7 @@ flowchart TD
 
 ### 2. サンドボックスと Mojo IPC
 
-- **レンダラの権限**: 理想は「計算と IPC 以外何もできない」。Linux では 2 層——名前空間サンドボックス (user/PID/network namespaces で見える世界を空にする) + seccomp-BPF ([`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) の classic BPF 応用) でシステムコール表面を削る。Windows では制限トークン + Job + win32k ロックアウト、macOS では Seatbelt プロファイル。**OS ごとに材料が違う同じ檻**であり、[`../virtualization/`](../virtualization/README.md) のコンテナ隔離と同じ機構を「1 アプリ内」で使う。
+- **レンダラの権限**: 理想は「計算と IPC 以外何もできない」。Linux では 2 層——名前空間サンドボックス (user/PID/network namespaces で見える世界を空にする) + seccomp-BPF ([`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) の classic BPF 応用) でシステムコール表面を削る。Windows では制限トークン + Job + win32k ロックアウト、macOS では Seatbelt プロファイル。**OS ごとに材料が違う同じ檻**であり、[`../virtualization/`](../virtualization/README.md) のコンテナ隔離と同じ機構を「1 アプリ内」で使う。
 - **ブローカ様式**: フォント・GPU・ファイルなど、サンドボックス内から直接触れない資源は特権側のブローカが代行し、ポリシーで許可範囲を絞る。
 - **Mojo**: インタフェース定義 (.mojom) からバインディングを生成、メッセージパイプの端点 (ハンドル) を能力として受け渡す。送れるのは「持っている」パイプだけであり、機能の到達可能性がハンドルの所持で決まる——Binder の handle 翻訳・Mach のポート権利と同じケイパビリティ設計。特権側の検証漏れ (「レンダラがそんな値を送るはずがない」) がサンドボックス脱出の定番であるため、`ReportBadMessage` による即時 kill と、境界をまたぐ入力の再検証が規律になっている。
 - **Rule of 2**: Chromium の設計規律——「信頼できない入力・安全でない言語・高権限」のうち同時に満たしてよいのは 2 つまで。3 つ揃う場所はサンドボックス化するか、言語を替えるか、入力を検証済みに変える。セキュリティ設計を工学的チェックリストに落とした好例である。
@@ -97,7 +97,7 @@ flowchart TD
 - **ティアの分業** (V8, as of 2026): Ignition (バイトコードインタプリタ、起動即実行・フットプリント最小) → Sparkplug (バイトコードから 1:1 で素朴な機械語を吐く高速ベースライン) → Maglev (SSA ベースの中間最適化) → TurboFan (型フィードバックに基づく投機的最適化)。上位ほどコンパイルが高く、実行頻度 (ホットネス) が投資判断になる。JSC も LLInt→Baseline→DFG→FTL と同型で、**4 ティアへの収斂は「ウェブのワークロードは大半が一度しか走らない」ことへの応答**である。
 - **型投機の資材**: hidden class (shape) がオブジェクトレイアウトを静的型のように扱わせ、インラインキャッシュが呼び出し点ごとの観測型を蓄える。TurboFan は「この shape しか来ない」前提で最適化し、外れたら deopt で Ignition に落ちる。詳細な一般論は [`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md)。
 - **GC (Orinoco)**: 世代別 + 並列 (young) + 並行マーキング (old)。メインスレッドの停止をフレーム間隙 (アイドル時間) にスケジュールする idle-time GC は、「締切の合間に掃除する」ブラウザ固有の適応である。DOM オブジェクト (C++) 側も Oilpan (トレーシング GC) で管理され、V8 ヒープとの間の参照は cross-heap の統合トレースで回収する——**2 つのヒープ・2 つの言語をまたぐ GC** という難所がブラウザにはある。
-- **WebAssembly**: 検証可能なバイトコードで「JS を経由しない移植可能実行」を提供する。検証器付きバイトコード + JIT という構図は [`../ebpf/`](../ebpf/README.md) と同型であり、比較分析はロードマップ ([`../compilers-runtimes/`](../compilers-runtimes/README.md) 候補) に置く。
+- **WebAssembly**: 検証可能なバイトコードで「JS を経由しない移植可能実行」を提供する。検証器付きバイトコード + JIT という構図は [`../operating-systems/`](../operating-systems/README.md) と同型であり、比較分析はロードマップ ([`../compilers-runtimes/`](../compilers-runtimes/README.md) 候補) に置く。
 - **プラットフォーム制約**: iOS では長らく WebKit/JavaScriptCore のみが JIT (書込可能→実行可能なメモリ) を許され、他ブラウザは JIT なしの WebKit ラッパだった。EU の DMA を機に代替エンジンの門が条件付きで開いた (as of 2026、適用範囲は流動的)。JIT 権限がプラットフォームの統制点になる構造は [`../ios/platform-architecture.md`](../ios/platform-architecture.md) の延長線にある。
 
 ### 5. 観測の入口 (Observability)
@@ -131,7 +131,7 @@ flowchart TD
 - [`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md) — JIT・投機・GC の一般論。V8/JSC はその実プロダクト。
 - [`../security/memory-safety-exploit-mitigations.md`](../security/memory-safety-exploit-mitigations.md) — 攻撃連鎖の各段に効く緩和技術の系譜。
 - [`../networking/http-quic-evolution.md`](../networking/http-quic-evolution.md)・[`../networking/tls-internals.md`](../networking/tls-internals.md) — ネットワークプロセスの中身。
-- [`../../hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md) — サイト分離を強制した投機実行の物理。
+- [`../../hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md) — サイト分離を強制した投機実行の物理。
 
 ## 参考文献 (References)
 

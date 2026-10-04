@@ -6,7 +6,7 @@
 
 本ドキュメントは、現代ストレージの中核である **NANDフラッシュ (NAND flash)** の物理的制約（消去前書き込み erase-before-write、摩耗 wear）と、それを隠蔽する **FTL (Flash Translation Layer)**、そして CPU・OS とストレージを繋ぐプロトコル（**SATA/AHCI**, **NVMe**, **eMMC/UFS**）とブロックデバイス抽象を整理する。さらに、DRAM とストレージの境界を侵食しつつある**永続メモリ (persistent memory)** にも触れる。なぜ SSD が「使ううちに遅くなる」のか、なぜ `fsync` が重いのか、なぜ「完全消去」が難しいのか、をハードウェアの観点から説明する。
 
-`../cpu-architecture/cache-memory-hierarchy.md` が「主記憶までの速度差」を扱ったのに対し、本稿はその下、ストレージ層の内部とインタフェースを扱う。
+`../cpu/cache-memory-hierarchy.md` が「主記憶までの速度差」を扱ったのに対し、本稿はその下、ストレージ層の内部とインタフェースを扱う。
 
 ## 方法論 (Methodology)
 
@@ -186,7 +186,7 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 ストレージとDRAMの中間を埋める層。**バイト単位アクセス可能で不揮発**という、ブロックデバイスと根本的に異なる性質を持つ。
 
 - **NVDIMM-N**: DRAM + フラッシュ + バックアップ電源（スーパーキャパシタ等）。通常は DRAM として動き、停電時に内容をフラッシュへ退避。速度は DRAM、容量は DRAM 並み。
-- **永続メモリ (persistent memory, PMEM)**: メモリバスに挿し、CPU のロード/ストアで直接アクセスできる不揮発メモリ。ブロック層 (FTL/LBA) を経ずに、`mmap` した領域へ直接書く **DAX (Direct Access)** が可能。`../cpu-architecture/virtual-memory-mmu.md` の `mmap` がそのまま永続データに繋がる。
+- **永続メモリ (persistent memory, PMEM)**: メモリバスに挿し、CPU のロード/ストアで直接アクセスできる不揮発メモリ。ブロック層 (FTL/LBA) を経ずに、`mmap` した領域へ直接書く **DAX (Direct Access)** が可能。`../cpu/virtual-memory-mmu.md` の `mmap` がそのまま永続データに繋がる。
 - **永続化の難所**: CPU のストアはキャッシュに留まる。永続を保証するには、キャッシュラインを書き戻す命令（`CLWB`/`CLFLUSHOPT`）＋順序付け (`SFENCE`) が要る。ブロックの FLUSH に相当する操作が、キャッシュライン粒度に降りてくる。
 - **CXL メモリ (CXL.mem)**: PCIe 物理層上の CXL で、メモリ（揮発/不揮発）をデバイスとして接続し、コヒーレントに共有・拡張する。メモリ階層とストレージ階層の境界をさらに溶かす方向。
 
@@ -231,8 +231,8 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 
 - `mmio-dma-interrupts.md` — NVMe の Doorbell(MMIO)・データ転送(DMA)・MSI-X 完了通知(割り込み)の機構。
 - `bus-interconnect.md` — NVMe が載る PCIe と、CXL の物理層。
-- `../cpu-architecture/cache-memory-hierarchy.md` — ストレージ階層の最下層としての位置づけ（速度・容量・コストの桁感）。
-- `../cpu-architecture/virtual-memory-mmu.md` — `mmap`/page cache と、PMEM の DAX 直接アクセス。
+- `../cpu/cache-memory-hierarchy.md` — ストレージ階層の最下層としての位置づけ（速度・容量・コストの桁感）。
+- `../cpu/virtual-memory-mmu.md` — `mmap`/page cache と、PMEM の DAX 直接アクセス。
 
 ## 参考文献 (References)
 

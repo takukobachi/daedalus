@@ -134,7 +134,7 @@ IP は「ベストエフォート」——パケットは落ち、重複し、�
 - [`http-quic-evolution.md`](http-quic-evolution.md) — TCP の構造的限界への答え (HTTP/2・QUIC・HTTP/3)。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — パケットロス・遅延・分断という故障モデルの発生源はこの層。
 - [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) — NIC リング・割り込み合体・オフロード。プロトコル処理の物理的な下端。
-- [`../../hardware/automotive/automotive-ethernet-tsn.md`](../../hardware/automotive/automotive-ethernet-tsn.md) — 「輻輳を確率で扱う」インターネットと対照的な、帯域予約による決定性の設計。
+- [`../../engineering/automotive/automotive-ethernet-tsn.md`](../../engineering/automotive/automotive-ethernet-tsn.md) — 「輻輳を確率で扱う」インターネットと対照的な、帯域予約による決定性の設計。
 
 ## 参考文献 (References)
 

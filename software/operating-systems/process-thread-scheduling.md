@@ -20,13 +20,13 @@ CPU は1つの物理コアにつき1時点で1つの実行流れ (hardware threa
 
 1. **プロセスとスレッドの境界は実装で溶ける。** 古典的には「プロセス = 資源 + 1スレッド」だが、Linux では `clone(2)` のフラグ集合（アドレス空間共有 `CLONE_VM`、FD 共有 `CLONE_FILES` 等）の濃淡として連続的に表現され、スケジューラはどちらも `task_struct` として等しく扱う。スレッドとは「資源共有の度合いが高いタスク」にすぎない。
 
-2. **文脈切り替えの真のコストはレジスタ退避ではなく、キャッシュと TLB の冷却 (cold cache/TLB) である。** レジスタ保存復元は数十〜百ナノ秒の直接コストだが、切り替え後に作業セットが L1/L2 から追い出され、TLB がフラッシュされることによる**間接コスト**が支配的で、これは数マイクロ秒相当に達しうる（`../../hardware/cpu-architecture/virtual-memory-mmu.md`、`../../hardware/cpu-architecture/cache-coherence.md`）。
+2. **文脈切り替えの真のコストはレジスタ退避ではなく、キャッシュと TLB の冷却 (cold cache/TLB) である。** レジスタ保存復元は数十〜百ナノ秒の直接コストだが、切り替え後に作業セットが L1/L2 から追い出され、TLB がフラッシュされることによる**間接コスト**が支配的で、これは数マイクロ秒相当に達しうる（`../../hardware/cpu/virtual-memory-mmu.md`、`../../hardware/cpu/cache-coherence.md`）。
 
-3. **プリエンプションはタイマ割り込みという「外部からの強制」で初めて成立する。** 協調的 (cooperative) スケジューリングは走行中タスクの自発的な譲渡に依存し、暴走タスクを止められない。周期的なタイマ割り込み（`../../hardware/cpu-architecture/interrupts-exceptions-traps.md`）がカーネルに制御を奪い返す機会を与え、これがプリエンプティブ・マルチタスクの物理的基盤である。
+3. **プリエンプションはタイマ割り込みという「外部からの強制」で初めて成立する。** 協調的 (cooperative) スケジューリングは走行中タスクの自発的な譲渡に依存し、暴走タスクを止められない。周期的なタイマ割り込み（`../../hardware/cpu/interrupts-exceptions-traps.md`）がカーネルに制御を奪い返す機会を与え、これがプリエンプティブ・マルチタスクの物理的基盤である。
 
 4. **公平性は「重み付き仮想時間 (weighted virtual time)」で定式化される。** Linux CFS は固定タイムスライスを捨て、各タスクが消費した CPU 時間を nice 値で重み付けした **vruntime** で管理し、最小 vruntime のタスクを赤黒木 (red-black tree) で O(log N) に選ぶ。後継の EEVDF はこれに**締切 (eligible deadline)** を加え、レイテンシ要求を公平性と両立させる。
 
-5. **マルチコアではスケジューリングが「どのコアか」という配置問題に拡張される。** 単一の実行可能キューでは競合が爆発するため per-CPU 実行可能キュー (runqueue) に分割され、その代償として**負荷分散 (load balancing)** が必要になる。さらに NUMA（`../../hardware/cpu-architecture/cache-coherence.md`）と CPU 親和性 (affinity)、消費電力（`../../hardware/hw-sw-interface/clock-power-reset.md`）が配置判断に絡み、スケジューラは多目的最適化問題になる。
+5. **マルチコアではスケジューリングが「どのコアか」という配置問題に拡張される。** 単一の実行可能キューでは競合が爆発するため per-CPU 実行可能キュー (runqueue) に分割され、その代償として**負荷分散 (load balancing)** が必要になる。さらに NUMA（`../../hardware/cpu/cache-coherence.md`）と CPU 親和性 (affinity)、消費電力（`../../hardware/hw-sw-interface/clock-power-reset.md`）が配置判断に絡み、スケジューラは多目的最適化問題になる。
 
 ## アーキテクチャ (Architecture)
 
@@ -119,8 +119,8 @@ Linux の対応では `TASK_RUNNING`（READY と RUNNING の両方を兼ねる�
 5. 以降、T_new の作業セットを L1/L2 へ再充填するキャッシュミスの嵐    ← 間接(最重)
 ```
 
-- **直接コスト**（レジスタ退避復元 + スケジューラ選択）は数十〜数百ナノ秒オーダ。FPU/SIMD レジスタ群は大きいため、使われるまで退避を遅延する **lazy FPU save** が一般的（`../../hardware/cpu-architecture/simd-vector.md` のレジスタ幅が直接効く）。
-- **間接コスト**こそが本質。切り替え後、新タスクは自分のコードとデータでキャッシュを温め直す必要があり、これが数千サイクル＝マイクロ秒級に達しうる。さらにアドレス空間が変わると **TLB** の翻訳が無効化される（`../../hardware/cpu-architecture/virtual-memory-mmu.md`）。
+- **直接コスト**（レジスタ退避復元 + スケジューラ選択）は数十〜数百ナノ秒オーダ。FPU/SIMD レジスタ群は大きいため、使われるまで退避を遅延する **lazy FPU save** が一般的（`../../hardware/cpu/simd-vector.md` のレジスタ幅が直接効く）。
+- **間接コスト**こそが本質。切り替え後、新タスクは自分のコードとデータでキャッシュを温め直す必要があり、これが数千サイクル＝マイクロ秒級に達しうる。さらにアドレス空間が変わると **TLB** の翻訳が無効化される（`../../hardware/cpu/virtual-memory-mmu.md`）。
 - **TLB フラッシュの緩和**: x86 の **PCID (Process Context ID)** / ARM の **ASID (Address Space ID)** は、TLB エントリにアドレス空間タグを付け、CR3/TTBR を切り替えても全フラッシュを避ける。これにより頻繁な切り替えでも TLB が生き残り、間接コストを大幅に削る。同一プロセス内スレッド切り替えはそもそもアドレス空間不変なのでこの問題自体が生じない。
 
 この間接コストの存在が「切り替えは安くない」という事実の根拠であり、スケジューラが**タイムスライスを短くしすぎない**理由（切り替えオーバヘッドが実仕事を食う）と、**キャッシュ親和性 (affinity)** を保とうとする理由の両方を説明する。
@@ -136,7 +136,7 @@ Linux の対応では `TASK_RUNNING`（READY と RUNNING の両方を兼ねる�
         │  (例: 250Hz〜1000Hz、tickless なら可変)
         ▼
    CPU が現タスクを中断しカーネルの割り込みハンドラへ (特権遷移)
-        │   ← ../../hardware/cpu-architecture/interrupts-exceptions-traps.md
+        │   ← ../../hardware/cpu/interrupts-exceptions-traps.md
         ▼
    scheduler_tick(): 走行中タスクの実行時間を加算、vruntime 更新
         │
@@ -223,7 +223,7 @@ CFS は公平だが、「低レイテンシが欲しい」という要求を nic
 
 ### 7. マルチコアでの負荷分散と親和性 (Load Balancing & Affinity)
 
-単一のグローバル実行可能キューは、全コアが1つのロックとキャッシュラインを奪い合うため**シリアライズ点**になる（`../../hardware/cpu-architecture/cache-coherence.md` のホットライン競合と同じ構造）。よって現代カーネルは **per-CPU runqueue** を持つ。その代償が負荷分散と親和性の管理である。
+単一のグローバル実行可能キューは、全コアが1つのロックとキャッシュラインを奪い合うため**シリアライズ点**になる（`../../hardware/cpu/cache-coherence.md` のホットライン競合と同じ構造）。よって現代カーネルは **per-CPU runqueue** を持つ。その代償が負荷分散と親和性の管理である。
 
 - **負荷分散 (load balancing)**: コア間でタスク数（正確には負荷の重み）が偏ると、忙しいコアから暇なコアへタスクを移す (migration)。Linux は **scheduling domain** という階層（SMT 兄弟 → 同一 LLC コア群 → 同一 NUMA ノード → ノード跨ぎ）でこれを行い、**階層が深いほど移動の閾値を高くする**。遠いコアへの移動ほどキャッシュ・TLB を捨てるコストが高いからである。
 - **CPU 親和性 (affinity)**: `sched_setaffinity(2)` / `taskset` でタスクを特定コア集合に固定する。キャッシュの温かさを保ち、リアルタイムタスクを専用コアに隔離する。**ソフト親和性**（スケジューラが極力同じコアに戻そうとする傾向）と、**ハード親和性**（明示的なマスク）がある。
@@ -231,7 +231,7 @@ CFS は公平だが、「低レイテンシが欲しい」という要求を nic
 
 ### 8. NUMA 親和性 (NUMA Awareness)
 
-複数ソケット構成ではメモリがノードに分散し、リモートノードのメモリアクセスはローカルより遅い（`../../hardware/cpu-architecture/cache-coherence.md` の ccNUMA 注を参照）。スケジューラはタスクを**そのデータが在るノード**に置こうとする。
+複数ソケット構成ではメモリがノードに分散し、リモートノードのメモリアクセスはローカルより遅い（`../../hardware/cpu/cache-coherence.md` の ccNUMA 注を参照）。スケジューラはタスクを**そのデータが在るノード**に置こうとする。
 
 - **データとスレッドの同居**: タスクのメモリが NUMA ノード0に first-touch で確保されているなら、そのタスクをノード0のコアで走らせる方がメモリレイテンシが小さい。リモートノードへ migration すると、以後すべてのメモリアクセスが跨ノードになり高くつく。
 - **Linux の NUMA balancing (`AutoNUMA`)**: ページに定期的にアクセス障害 (NUMA hinting fault) を仕掛けて「どのノードのどのタスクがそのページに触っているか」を観測し、(a) ページをタスクのノードへ移す (page migration)、(b) タスクをページのノードへ移す、のいずれかで同居を改善する。前述の負荷分散とは**ローカリティを優先するか負荷均等を優先するか**で時に対立し、スケジューラはその折衷を取る。
@@ -250,7 +250,7 @@ CFS は公平だが、「低レイテンシが欲しい」という要求を nic
 
 スケジューリングは資源配分機構であると同時に、その配分の**観測可能性**と**枯渇可能性**がセキュリティ問題を生む。
 
-- **スケジューラ・サイドチャネル / タイミングリーク**: 攻撃者プロセスは自分の走行が遅延した量から、同居タスクの活動を推定できる。SMT で物理コアを共有する場合、被害者の実行ユニット占有が攻撃者のスループットに直接漏れる（PortSmash 系）。文脈切り替え頻度・キャッシュ温度（`../../hardware/cpu-architecture/cache-coherence.md` のクロスコア・タイミングチャネル）と組み合わさると、秘密依存の分岐や実行時間が漏洩経路になる。緩和は**コア・スケジューリング (core scheduling)**（信頼境界を跨ぐタスクを同一物理コアの SMT 兄弟に同時配置しない）と SMT 無効化、定数時間実装。
+- **スケジューラ・サイドチャネル / タイミングリーク**: 攻撃者プロセスは自分の走行が遅延した量から、同居タスクの活動を推定できる。SMT で物理コアを共有する場合、被害者の実行ユニット占有が攻撃者のスループットに直接漏れる（PortSmash 系）。文脈切り替え頻度・キャッシュ温度（`../../hardware/cpu/cache-coherence.md` のクロスコア・タイミングチャネル）と組み合わさると、秘密依存の分岐や実行時間が漏洩経路になる。緩和は**コア・スケジューリング (core scheduling)**（信頼境界を跨ぐタスクを同一物理コアの SMT 兄弟に同時配置しない）と SMT 無効化、定数時間実装。
 
 - **cgroup / CPU quota による隔離**: `cgroup v2` の `cpu.max`（周期内の上限実行時間）と `cpu.weight`（相対配分）は、テナント／コンテナごとに CPU を会計し、1グループが全体を食い潰すのを防ぐ。CFS bandwidth controller が、quota を使い切ったグループを周期境界までスロットルする。これがコンテナ環境でのマルチテナント隔離の土台である。ただし quota の周期境界でのバースト的スロットリングがレイテンシ尖りを生む副作用は既知の注意点。
 
@@ -266,16 +266,16 @@ CFS は公平だが、「低レイテンシが欲しい」という要求を nic
 
 - スケジューリングは「有限コアの時間多重化」によって並行実行の錯覚を作る OS の中核機構であり、ポリシー（誰を走らせるか）と機構（文脈切り替え）に分離して理解すべきである。
 - プロセスとスレッドの区別は実装で連続化し（Linux の `task_struct`/`clone`）、M:N は実装難度ゆえ 1:1 が汎用 OS の標準に落ち着いた。
-- 文脈切り替えの真のコストはレジスタ退避ではなく、キャッシュ冷却と TLB フラッシュの間接コストであり、PCID/ASID・親和性・タイムスライス下限はすべてこのコストを抑える工夫である（`../../hardware/cpu-architecture/virtual-memory-mmu.md`、`../../hardware/cpu-architecture/cache-coherence.md`）。
-- プリエンプションはタイマ割り込みという外部強制で初めて成立し（`../../hardware/cpu-architecture/interrupts-exceptions-traps.md`）、ティックレス化を通じて電力（`../../hardware/hw-sw-interface/clock-power-reset.md`）とも接続する。
+- 文脈切り替えの真のコストはレジスタ退避ではなく、キャッシュ冷却と TLB フラッシュの間接コストであり、PCID/ASID・親和性・タイムスライス下限はすべてこのコストを抑える工夫である（`../../hardware/cpu/virtual-memory-mmu.md`、`../../hardware/cpu/cache-coherence.md`）。
+- プリエンプションはタイマ割り込みという外部強制で初めて成立し（`../../hardware/cpu/interrupts-exceptions-traps.md`）、ティックレス化を通じて電力（`../../hardware/hw-sw-interface/clock-power-reset.md`）とも接続する。
 - アルゴリズムは「固定スライス＋優先度」の欠陥（スライス調整難・飢餓）を、重み付き仮想時間（CFS の vruntime + 赤黒木）で乗り越え、EEVDF が公平性とレイテンシを直交化した。リアルタイムは平均でなく最悪ケースの問題であり、EDF と優先度継承が予測可能性を支える。
 - マルチコアではスケジューリングが配置問題に拡張され、負荷分散・親和性・NUMA ローカリティ・電力が多目的に競合する。セキュリティ面では、配分の観測可能性（サイドチャネル）と枯渇可能性（fork bomb/飢餓）が脅威となり、隔離と会計（cgroup quota・rlimit・core scheduling）が防御の要である。
 
 ### 次の接続先 (Related Topics)
 
-- `../../hardware/cpu-architecture/interrupts-exceptions-traps.md` — タイマ割り込みと特権遷移。プリエンプションとシステムコール戻りのスケジューリング契機を提供する。
-- `../../hardware/cpu-architecture/virtual-memory-mmu.md` — ページテーブルと TLB。文脈切り替えの間接コストと PCID/ASID による緩和の前提。
-- `../../hardware/cpu-architecture/cache-coherence.md` — NUMA / ccNUMA とクロスコア・タイミングチャネル。負荷分散のローカリティ判断とサイドチャネルの基盤。
+- `../../hardware/cpu/interrupts-exceptions-traps.md` — タイマ割り込みと特権遷移。プリエンプションとシステムコール戻りのスケジューリング契機を提供する。
+- `../../hardware/cpu/virtual-memory-mmu.md` — ページテーブルと TLB。文脈切り替えの間接コストと PCID/ASID による緩和の前提。
+- `../../hardware/cpu/cache-coherence.md` — NUMA / ccNUMA とクロスコア・タイミングチャネル。負荷分散のローカリティ判断とサイドチャネルの基盤。
 - `../../hardware/hw-sw-interface/abi-syscalls.md` — システムコール境界。スケジューリングのチェックポイントとブロッキング遷移の発生点。
 - `../../hardware/hw-sw-interface/clock-power-reset.md` — クロック・電力・C-state/DVFS。ティックレスと省電力スケジューリングの接点。
 

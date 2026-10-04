@@ -137,8 +137,8 @@ Tx2 (Bob):   当直者数を読む → 2人 → 自分を off に更新
 
 ## セキュリティ考察 (Security Considerations)
 
-- **分離異常は攻撃者が誘発できる**: lost update / write skew は偶然を待たなくても、**リクエストを並行に投げるだけ**で意図的に起こせる。残高チェック→引き出しの並行実行によるダブルスペンド、クーポンの多重適用、在庫の過剰引当は、いずれも「弱い分離レベル＋検査してから使う」パターンの帰結で、**TOCTOU（[`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md)）のデータベース版**である。対策も同型——検査と使用を同一の原子単位（SERIALIZABLE、FOR UPDATE、一意制約）に入れる。
-- **決済・資金移動は serializable を選ぶ**: [`../specifications/stripe-connect-specification.md`](../specifications/stripe-connect-specification.md) が扱う資金整合は、この異常クラスを冪等キーと台帳突合で多層防御する実務例。
+- **分離異常は攻撃者が誘発できる**: lost update / write skew は偶然を待たなくても、**リクエストを並行に投げるだけ**で意図的に起こせる。残高チェック→引き出しの並行実行によるダブルスペンド、クーポンの多重適用、在庫の過剰引当は、いずれも「弱い分離レベル＋検査してから使う」パターンの帰結で、**TOCTOU（[`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md)）のデータベース版**である。対策も同型——検査と使用を同一の原子単位（SERIALIZABLE、FOR UPDATE、一意制約）に入れる。
+- **決済・資金移動は serializable を選ぶ**: [`../apis/stripe-connect-specification.md`](../apis/stripe-connect-specification.md) が扱う資金整合は、この異常クラスを冪等キーと台帳突合で多層防御する実務例。
 - **ロックは DoS の道具になる**: 長い明示ロックや巨大トランザクションで他者を待たせる・デッドロックを量産する攻撃面がある。タイムアウト (`lock_timeout` 等) と権限分離で bound する。
 - **バージョンは情報を残す**: MVCC の旧バージョンは回収まで物理的に残る（[`storage-engines.md`](storage-engines.md) の data remanence と同根）。削除の即時性を仮定しない。
 
@@ -152,7 +152,7 @@ Tx2 (Bob):   当直者数を読む → 2人 → 自分を off に更新
 ### 次の接続先 (Related Topics)
 
 - [`storage-engines.md`](storage-engines.md) — 本書の下の層。MVCC のバージョンが載るページ・WAL・VACUUM の物理。
-- [`../concurrency/memory-models-and-synchronization.md`](../concurrency/memory-models-and-synchronization.md) — 同じ「並行実行の正しさ」をメモリ語で扱う層。データ競合/TOCTOU ↔ 分離異常の対応。
+- [`../concurrency/memory-models-synchronization.md`](../concurrency/memory-models-synchronization.md) — 同じ「並行実行の正しさ」をメモリ語で扱う層。データ競合/TOCTOU ↔ 分離異常の対応。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) ／ [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — 分離 (isolation) と一貫性 (consistency) の交点。分散トランザクション（2PC + Paxos/Raft グループ）は両者の合流点で、今後のテーマ。
 
 ## 参考文献 (References)

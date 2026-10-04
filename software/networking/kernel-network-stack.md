@@ -22,7 +22,7 @@
 3. **1 本の TCP 接続は 1 コアでしか処理できない——だから分配はハッシュで行う。** RSS は NIC がフローハッシュで受信キューをコア群に振り分ける機構であり、順序を守るためフロー内は必ず同じキューに落とす。ここで生まれる「フロー単位の並列性」という粒度は、コア数を増やしてもエレファントフロー 1 本は速くならないという限界も規定する。
 4. **バッチ化は受信 (GRO) と送信 (GSO/TSO) で対称に効く。** パケット単価が支配的なら、答えは「パケットを大きくする」——GRO は到着した同一フローのセグメントを 64KB 級に束ねてからスタックに通し、GSO/TSO は逆に、スタックを巨大セグメントのまま通し分割を最後 (できれば NIC ハード) まで遅延する。**スタックの中では MTU より大きいパケットが流れている**のが現代の常態である。
 5. **送信側の待ち行列 (qdisc) は輻輳制御の共犯者である。** バッファブロート ([`tcp-transport-congestion.md`](tcp-transport-congestion.md)) への対処はデバイス直前の層に実装される: fq_codel (滞留時間で落とす AQM)、fq (フロー分離とペーシング——BBR が要求)、BQL (ドライバキューへの供給量をバイト単位で自動調整)。アルゴリズム (CUBIC/BBR) だけ見ていても輻輳挙動は説明できず、この層の設定が結果を変える。
-6. **XDP は「カーネルを捨てずにカーネルを飛ばす」中間解である。** eBPF プログラムをドライバ内・**sk_buff 生成前**に走らせ、DDoS 弾き・転送・ロードバランスを 1 コア数千万 pps 級で処理する (CoNEXT '18 で単コア 24Mpps のドロップ性能)。DPDK のような全部盗り (カーネル排除・コア占有・スタック自作) と、汎用性の間の実用的な均衡点であり、eBPF ([`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md)) の代表的な着地先である。
+6. **XDP は「カーネルを捨てずにカーネルを飛ばす」中間解である。** eBPF プログラムをドライバ内・**sk_buff 生成前**に走らせ、DDoS 弾き・転送・ロードバランスを 1 コア数千万 pps 級で処理する (CoNEXT '18 で単コア 24Mpps のドロップ性能)。DPDK のような全部盗り (カーネル排除・コア占有・スタック自作) と、汎用性の間の実用的な均衡点であり、eBPF ([`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md)) の代表的な着地先である。
 
 ## アーキテクチャ (Architecture)
 
@@ -57,7 +57,7 @@ flowchart TD
 | 10GbE | 約 1,488 万 pps | 約 67ns |
 | 100GbE | 約 1 億 4,880 万 pps | **約 6.7ns** |
 
-DRAM アクセス 1 回 (約 100ns、[`../../hardware/cpu-architecture/cache-memory-hierarchy.md`](../../hardware/cpu-architecture/cache-memory-hierarchy.md)) が予算を桁で超える——最小フレーム連打をカーネルの通常経路で受け切るのは物理的に不可能であり、バッチ化・オフロード・バイパスは選択ではなく必然である。
+DRAM アクセス 1 回 (約 100ns、[`../../hardware/cpu/cache-memory-hierarchy.md`](../../hardware/cpu/cache-memory-hierarchy.md)) が予算を桁で超える——最小フレーム連打をカーネルの通常経路で受け切るのは物理的に不可能であり、バッチ化・オフロード・バイパスは選択ではなく必然である。
 
 ## 技術詳細 (Technical Details)
 
@@ -71,7 +71,7 @@ DRAM アクセス 1 回 (約 100ns、[`../../hardware/cpu-architecture/cache-mem
 
 - **NAPI の poll budget**: 1 回の softirq で処理する上限 (既定 300 級) を設け、ネットワークが他の仕事を飢えさせないようにする。溢れれば `ksoftirqd` (通常優先度のスレッド) へ降格——**高負荷時にネットワーク処理が「ただのプロセス」と競合し始める**のはこの構造による。
 - **RSS** (ハード): NIC が 5-tuple ハッシュで受信キューを選び、キューごとに別コアへ割り込む。**RPS** (ソフト): キューが足りない NIC 用に同じ分配をソフトで再現。**RFS**: 「そのフローを read しているアプリのいるコア」へ運んでキャッシュ局所性を取る。**XPS** は送信側の対応物。
-- 調律の勘所は「フローの処理を最後までどのコアで完結させるか」であり、IRQ affinity・アプリの CPU ピン止め・RFS の整合が崩れるとコア間のキャッシュライン運搬 ([`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md)) が単価に上乗せされる。
+- 調律の勘所は「フローの処理を最後までどのコアで完結させるか」であり、IRQ affinity・アプリの CPU ピン止め・RFS の整合が崩れるとコア間のキャッシュライン運搬 ([`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md)) が単価に上乗せされる。
 
 ### 3. オフロードの分業 — NIC は既に小さなコンピュータである
 
@@ -112,7 +112,7 @@ DRAM アクセス 1 回 (約 100ns、[`../../hardware/cpu-architecture/cache-mem
 
 - **パケットパーサはリモート攻撃面の最前線である。** 細工されたフレームはドライバ・GRO・トンネル解析のバグを**認証前・接続前**に直撃する (例: 断片化処理の脆弱性群)。sk_buff のポインタ演算という設計自体が、境界検査の誤りを即メモリ破壊にする——リモートから到達可能なカーネルコードとして、この層は最も高い監査密度に値する。
 - **SYN flood と状態枯渇**: 接続確立前の状態 (半開接続・conntrack エントリ) は攻撃者が無償で消費させられる資源であり、SYN cookie (状態を持たず ISN に符号化) が古典的対処。netfilter の conntrack テーブル枯渇も同型の問題で、「**認証前に確保する状態を最小化する**」が設計原則になる (QUIC のアドレス検証・アンプ制限 ([`http-quic-evolution.md`](http-quic-evolution.md)) も同じ原則の別実装)。
-- **XDP/eBPF は防御の道具でもある**: パケット単価が最小の地点 (skb 生成前) で落とすことは、DDoS 対策として構造的に正しい位置であり、検証器 ([`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md)) がその安全性を担保する。一方でオフロード・SmartNIC への処理移譲は、ホストの観測 (tcpdump に映らないトラフィック) と信頼境界 (NIC ファームウェア) の再考を要求する。
+- **XDP/eBPF は防御の道具でもある**: パケット単価が最小の地点 (skb 生成前) で落とすことは、DDoS 対策として構造的に正しい位置であり、検証器 ([`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md)) がその安全性を担保する。一方でオフロード・SmartNIC への処理移譲は、ホストの観測 (tcpdump に映らないトラフィック) と信頼境界 (NIC ファームウェア) の再考を要求する。
 - **タイミングと観測のサイドチャネル**: RX タイムスタンプや RST/ICMP の応答差は、スキャンや OS 指紋採取 (fingerprinting) に使われる。共有 NIC のキュー競合はテナント間の存在検知に化けうる——共有 = 観測面の一般則はこの層でも成り立つ。
 
 ## 結論 (Conclusions)
@@ -126,9 +126,9 @@ DRAM アクセス 1 回 (約 100ns、[`../../hardware/cpu-architecture/cache-mem
 
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — 本書の真上。ここで運ばれるセグメントの意味論 (再送・輻輳制御)。qdisc/ペーシングは両者の境界。
 - [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) — 本書の真下。リングバッファ・DMA・割り込み合体の機構。
-- [`../ebpf/ebpf-kernel-programmability.md`](../ebpf/ebpf-kernel-programmability.md) — XDP の実行基盤 (検証器・JIT・マップ)。
+- [`../operating-systems/ebpf-kernel-programmability.md`](../operating-systems/ebpf-kernel-programmability.md) — XDP の実行基盤 (検証器・JIT・マップ)。
 - [`../operating-systems/block-io-stack.md`](../operating-systems/block-io-stack.md) — 同型の進化 (単価との戦い・リング・ポーリング・io_uring) のストレージ版。対で読む。
-- [`../../hardware/cpu-architecture/cache-coherence.md`](../../hardware/cpu-architecture/cache-coherence.md) — コア間分配 (RSS/RFS) の性能を規定する下部構造。
+- [`../../hardware/cpu/cache-coherence.md`](../../hardware/cpu/cache-coherence.md) — コア間分配 (RSS/RFS) の性能を規定する下部構造。
 
 ## 参考文献 (References)
 
