@@ -149,10 +149,10 @@ for i in 1..n:
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/cpu-architecture/simd-vector.md`](../../../hardware/cpu-architecture/simd-vector.md) | ベクトル演算のデータ並列実行。同文書の AMX/行列拡張の節は本ドキュメントの行列積の計算構造を前提とする |
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | Tensor Core は小行列積 (matrix multiply-accumulate) を1命令化したもの。演算強度の議論(§4)がその存在理由 |
-| [`software/ml-systems/`](../../../software/ml-systems/) | 学習・推論ワークロードの計算の実体が GEMM であること、ブロック化・データ再利用がカーネル最適化の中心であること |
-| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | 表示パイプラインの座標変換・色空間変換は行列で表現され、変換の合成=行列積で畳み込まれる |
+| [`hardware/cpu/simd-vector.md`](../../../hardware/cpu/simd-vector.md) | ベクトル演算のデータ並列実行。同文書の AMX/行列拡張の節は本ドキュメントの行列積の計算構造を前提とする |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | Tensor Core は小行列積 (matrix multiply-accumulate) を1命令化したもの。演算強度の議論(§4)がその存在理由 |
+| [`software/ai/`](../../../software/ai/) | 学習・推論ワークロードの計算の実体が GEMM であること、ブロック化・データ再利用がカーネル最適化の中心であること |
+| [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | 表示パイプラインの座標変換・色空間変換は行列で表現され、変換の合成=行列積で畳み込まれる |
 
 ## 参考文献 (References)
 

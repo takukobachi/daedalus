@@ -90,12 +90,12 @@ p 型: ホウ素 (B, 13族) を添加 — 価電子が1個少ない。価電子�
 | 文書 | 接続点 |
 |------|--------|
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | イオン注入・拡散・酸化の各工程は §4「ドーピングの空間パターン=デバイス」の実装。ウェハがほぼ絶縁体から始まる理由 (§3) |
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../../hardware/storage-devices/nand-flash-ftl.md) | フローティングゲートへの電荷蓄積とトンネル注入(シリーズ第4回で詳述)の前提となるバンド描像 |
-| [`hardware/cpu-architecture/dram-memory-controllers.md`](../../../hardware/cpu-architecture/dram-memory-controllers.md) | セルリークの温度依存 (§3) がリフレッシュレートを規定 |
+| [`hardware/storage/nand-flash-ftl.md`](../../../hardware/storage/nand-flash-ftl.md) | フローティングゲートへの電荷蓄積とトンネル注入(シリーズ第4回で詳述)の前提となるバンド描像 |
+| [`hardware/cpu/dram-memory-controllers.md`](../../../hardware/cpu/dram-memory-controllers.md) | セルリークの温度依存 (§3) がリフレッシュレートを規定 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | サブスレッショルドリークの指数的温度依存——電力管理が戦う相手の正体 |
-| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 光子→電子・正孔対の変換 (Eg と波長の関係)、フォトダイオードの動作前提 |
+| [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 光子→電子・正孔対の変換 (Eg と波長の関係)、フォトダイオードの動作前提 |
 | [`hardware/timekeeping/clocks-time-synchronization.md`](../../../hardware/timekeeping/clocks-time-synchronization.md) | 原子時計 = エネルギー量子化 (§1) の直接応用。準位間隔の普遍性が秒の定義を支える |
-| [`hardware/automotive/ev/ev-fundamentals.md`](../../../hardware/automotive/ev/ev-fundamentals.md) | インバータの SiC/GaN 化はワイドバンドギャップ材料 (工学への接続 §1) の採用 |
+| [`engineering/automotive/ev/ev-fundamentals.md`](../../../engineering/automotive/ev/ev-fundamentals.md) | インバータの SiC/GaN 化はワイドバンドギャップ材料 (工学への接続 §1) の採用 |
 
 ## 参考文献 (References)
 

@@ -68,8 +68,8 @@ U = ½ L I²        (磁場のエネルギー。キャパシタの ½CV² と対
 |------|--------|
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | 電源の過渡応答・電圧ドループ。負荷電流の di/dt と電源網の寄生インダクタンスの積が電圧の暴れを決める |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | 同時スイッチングノイズ・リターンパス。信号の高速化=di/dt 増大が §3 の物理を顕在化させる |
-| [`hardware/automotive/ev/tesla-battery-powertrain.md`](../../../hardware/automotive/ev/tesla-battery-powertrain.md) | トラクションモーターの逆起電力と回生ブレーキ、インバータによる交流駆動 |
-| [`hardware/power-generation/`](../../../hardware/power-generation/) | 発電機(§2)と変圧器・交流送電(§3)。系統が交流である物理的理由 |
+| [`engineering/automotive/ev/tesla-battery-powertrain.md`](../../../engineering/automotive/ev/tesla-battery-powertrain.md) | トラクションモーターの逆起電力と回生ブレーキ、インバータによる交流駆動 |
+| [`engineering/energy/`](../../../engineering/energy/) | 発電機(§2)と変圧器・交流送電(§3)。系統が交流である物理的理由 |
 
 ## 参考文献 (References)
 

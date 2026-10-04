@@ -79,10 +79,10 @@ Tucker 分解: T ≈ G ×₁ A ×₂ B ×₃ C        (小さなコアテンソ�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | Tensor Core のタイル行列積への縮約の還元 (§3)、レイアウト整列 (§4) |
-| [`hardware/cpu-architecture/simd-vector.md`](../../../hardware/cpu-architecture/simd-vector.md) | ストライドとメモリ連続性 (§4) が SIMD ロードの効率を決める——ギャザー/スキャッタとユニットストライドの差 |
-| [`software/ml-systems/ml-inference-systems.md`](../../../software/ml-systems/ml-inference-systems.md) | 推論グラフの実体はバッチ GEMM 列 (§3)。オペレータ融合・レイアウト選択・注意機構の縮約構造 |
-| [`hardware/cpu-architecture/cache-memory-hierarchy.md`](../../../hardware/cpu-architecture/cache-memory-hierarchy.md) | 高階テンソルの巡回順序=多重ループのブロック化。キャッシュ効率の議論の一般形 |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | Tensor Core のタイル行列積への縮約の還元 (§3)、レイアウト整列 (§4) |
+| [`hardware/cpu/simd-vector.md`](../../../hardware/cpu/simd-vector.md) | ストライドとメモリ連続性 (§4) が SIMD ロードの効率を決める——ギャザー/スキャッタとユニットストライドの差 |
+| [`software/ai/ml-inference-systems.md`](../../../software/ai/ml-inference-systems.md) | 推論グラフの実体はバッチ GEMM 列 (§3)。オペレータ融合・レイアウト選択・注意機構の縮約構造 |
+| [`hardware/cpu/cache-memory-hierarchy.md`](../../../hardware/cpu/cache-memory-hierarchy.md) | 高階テンソルの巡回順序=多重ループのブロック化。キャッシュ効率の議論の一般形 |
 
 ## 参考文献 (References)
 

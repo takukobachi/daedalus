@@ -104,10 +104,10 @@ IEEE 754 倍精度 (binary64) は実数を `±(1.f) × 2^e`(仮数 52 bit、指�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/cpu-architecture/simd-vector.md`](../../../hardware/cpu-architecture/simd-vector.md) | 分解のブロック化は SIMD/キャッシュに合わせた行列積への還元。浮動小数点 (IEEE 754) は SIMD レーンのデータ型そのもの |
-| [`hardware/gpu-accelerators/gpu-simt-architecture.md`](../../../hardware/gpu-accelerators/gpu-simt-architecture.md) | Tensor Core の低精度演算を混合精度反復改良で倍精度品質に引き上げる——誤差解析が可能にするハードウェア活用 |
-| [`software/ml-systems/ml-inference-systems.md`](../../../software/ml-systems/ml-inference-systems.md) | FP16/BF16/INT8 量子化の精度影響を見積もる枠組み(単位丸め・誤差伝播)の出所 |
-| [`hardware/power-generation/generation-and-grid-fundamentals.md`](../../../hardware/power-generation/generation-and-grid-fundamentals.md) | 電力潮流計算 (Newton–Raphson) の内側は疎 LU 分解の反復再利用 |
+| [`hardware/cpu/simd-vector.md`](../../../hardware/cpu/simd-vector.md) | 分解のブロック化は SIMD/キャッシュに合わせた行列積への還元。浮動小数点 (IEEE 754) は SIMD レーンのデータ型そのもの |
+| [`hardware/accelerators/gpu-simt-architecture.md`](../../../hardware/accelerators/gpu-simt-architecture.md) | Tensor Core の低精度演算を混合精度反復改良で倍精度品質に引き上げる——誤差解析が可能にするハードウェア活用 |
+| [`software/ai/ml-inference-systems.md`](../../../software/ai/ml-inference-systems.md) | FP16/BF16/INT8 量子化の精度影響を見積もる枠組み(単位丸め・誤差伝播)の出所 |
+| [`engineering/energy/generation-grid-fundamentals.md`](../../../engineering/energy/generation-grid-fundamentals.md) | 電力潮流計算 (Newton–Raphson) の内側は疎 LU 分解の反復再利用 |
 
 ## 参考文献 (References)
 

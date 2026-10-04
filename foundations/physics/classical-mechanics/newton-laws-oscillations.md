@@ -47,7 +47,7 @@ m·dv = −v_e·dm  (v_e: 排気速度)  ⟹  Δv = v_e·ln(m₀/m_f)   — ツ�
    m₀: 初期質量, m_f: 最終質量, v_e = Isp·g₀
 ```
 
-対数がすべてを支配する——Δv を稼ぐには質量比 m₀/m_f を指数的に増やすしかなく、これが多段ロケットの動機であり、Δv が宇宙機設計の通貨になる理由である(`hardware/aerospace/orbital-mechanics.md` がこの式の上に Δv 収支を組み立てる)。
+対数がすべてを支配する——Δv を稼ぐには質量比 m₀/m_f を指数的に増やすしかなく、これが多段ロケットの動機であり、Δv が宇宙機設計の通貨になる理由である(`engineering/aerospace/orbital-mechanics.md` がこの式の上に Δv 収支を組み立てる)。
 
 ### 3. 回転運動と剛体 (rotation and rigid bodies)
 
@@ -62,7 +62,7 @@ m·dv = −v_e·dm  (v_e: 排気速度)  ⟹  Δv = v_e·ln(m₀/m_f)   — ツ�
 
 **慣性モーメント (moment of inertia)** は「回転させにくさ」だが、質量と違い**軸の取り方と質量分布に依存する**——同じ質量でも軸から遠くに分布するほど I は大きい(フライホイールが縁に質量を集める理由)。ロボットアームでは、リンクを伸ばすと手先質量の r が増えて I が肩関節から見て激変する——後続回で扱うマニピュレータ方程式の慣性行列 M(q) が「姿勢 q に依存する」ことの物理的中身はこれである。
 
-外部トルクがなければ L は保存する。この単純な事実が2つの重要現象を生む。第一に**ジャイロ効果 (gyroscopic effect)**: 高速回転する物体に軸を倒すトルクを加えると、軸は倒れずにトルクと直交する方向へ**歳差運動 (precession)** する——dL/dt = τ により、L の変化はトルクの方向に起きるからである。回転する L が姿勢の「硬さ」として働くため、ジャイロは姿勢の基準になり、自転する弾丸・フリスビーは安定する。第二に**内部トルクによる姿勢制御**: 宇宙機は真空中で押す相手がないが、内部の**リアクションホイール (reaction wheel)** を回せば、角運動量保存により機体は逆向きに回る——推進剤を使わない姿勢制御であり、蓄積した角運動量の「飽和」をスラスタで捨てる運用も含め、`hardware/aerospace/avionics-gnc.md` の姿勢制御アクチュエータの物理そのものである。
+外部トルクがなければ L は保存する。この単純な事実が2つの重要現象を生む。第一に**ジャイロ効果 (gyroscopic effect)**: 高速回転する物体に軸を倒すトルクを加えると、軸は倒れずにトルクと直交する方向へ**歳差運動 (precession)** する——dL/dt = τ により、L の変化はトルクの方向に起きるからである。回転する L が姿勢の「硬さ」として働くため、ジャイロは姿勢の基準になり、自転する弾丸・フリスビーは安定する。第二に**内部トルクによる姿勢制御**: 宇宙機は真空中で押す相手がないが、内部の**リアクションホイール (reaction wheel)** を回せば、角運動量保存により機体は逆向きに回る——推進剤を使わない姿勢制御であり、蓄積した角運動量の「飽和」をスラスタで捨てる運用も含め、`engineering/aerospace/avionics-gnc.md` の姿勢制御アクチュエータの物理そのものである。
 
 ### 4. 単振動・減衰・共振 (harmonic oscillation, damping, and resonance)
 
@@ -89,7 +89,7 @@ m·ẍ + kx = 0  ⟹  x(t) = A·cos(ω₀t + φ),  ω₀ = √(k/m)
 
 これは ODE 文書 §4 の**線形化 → 固有値 → 安定判別**の最小の実例である。同じ方程式・同じ手続きで、符号1つが運命を分ける——真下の平衡は**安定 (stable)**(ずれると復元力が戻す。固有値は純虚数、摩擦を足せば左半平面)、真上は**不安定 (unstable)**(ずれは時定数 τ で指数的に成長する。固有値の一方が正の実軸上)。物理的には、安定平衡はポテンシャル U(θ) の谷、不安定平衡は山の頂であり、§4 の振動は「谷の底の曲率 U''」が決める普遍現象だったのである。
 
-不安定側の**倒立振子 (inverted pendulum)** が現代制御の看板問題である理由は、この時定数にある——放置すれば e^{t/τ} で倒れる系を、τ より十分速く測って押し返すフィードバックだけが直立させられる。制御なしには1秒も立たないが、制御があれば立つ——プラントの不安定性をセンサと計算で買い戻す構図が、そのまま実システムに現れる: セグウェイとヒューマノイドの直立(倒立振子の安定化、`hardware/robotics/control-systems.md` の LQR の典型適用先)、二足歩行の線形倒立振子モデル(LIPM——時定数 √(z_c/g) ≈ 0.3 s が歩行制御の要求速度を決める、`hardware/robotics/locomotion-manipulation.md`)、そして推力偏向で立てるロケット——垂直着陸する Falcon 9 は、空力的に不安定な倒立振子を TVC とグリッドフィンで実時間安定化する制御問題である(`hardware/aerospace/spacex-reusability.md`)。
+不安定側の**倒立振子 (inverted pendulum)** が現代制御の看板問題である理由は、この時定数にある——放置すれば e^{t/τ} で倒れる系を、τ より十分速く測って押し返すフィードバックだけが直立させられる。制御なしには1秒も立たないが、制御があれば立つ——プラントの不安定性をセンサと計算で買い戻す構図が、そのまま実システムに現れる: セグウェイとヒューマノイドの直立(倒立振子の安定化、`engineering/robotics/control-systems.md` の LQR の典型適用先)、二足歩行の線形倒立振子モデル(LIPM——時定数 √(z_c/g) ≈ 0.3 s が歩行制御の要求速度を決める、`engineering/robotics/locomotion-manipulation.md`)、そして推力偏向で立てるロケット——垂直着陸する Falcon 9 は、空力的に不安定な倒立振子を TVC とグリッドフィンで実時間安定化する制御問題である(`engineering/aerospace/spacex-reusability.md`)。
 
 ## 工学への接続 (Engineering Connections)
 
@@ -102,13 +102,13 @@ m·ẍ + kx = 0  ⟹  x(t) = A·cos(ω₀t + φ),  ω₀ = √(k/m)
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/robotics/kinematics-dynamics.md`](../../../hardware/robotics/kinematics-dynamics.md) | 剛体動力学 (§3) の多体系への一般化——マニピュレータ方程式 M(q)q̈ + C q̇ + g = τ の物理的中身(慣性行列 = 姿勢依存の慣性モーメント) |
-| [`hardware/robotics/control-systems.md`](../../../hardware/robotics/control-systems.md) | プラントモデルとしての運動方程式 (§1)、倒立振子の安定化 = LQR の典型問題 (§5) |
-| [`hardware/robotics/locomotion-manipulation.md`](../../../hardware/robotics/locomotion-manipulation.md) | 線形倒立振子モデル (LIPM) と ZMP (§5)——不安定平衡の時定数 √(z_c/g) が歩行の要求速度を決める |
-| [`hardware/aerospace/orbital-mechanics.md`](../../../hardware/aerospace/orbital-mechanics.md) | ツィオルコフスキー式 (§2) と Δv 収支、軌道運動 = 中心力下の F = ma(シリーズ後続回で本格展開) |
-| [`hardware/aerospace/spacex-reusability.md`](../../../hardware/aerospace/spacex-reusability.md) | 垂直着陸 = 倒立振子の実時間安定化 (§5) + 可変質量の運動方程式 (§2) のワンショット制御 |
-| [`hardware/aerospace/avionics-gnc.md`](../../../hardware/aerospace/avionics-gnc.md) | 姿勢動力学とリアクションホイール (§3)、IMU と慣性系・見かけの力 (§1) |
-| [`hardware/automotive/ev/ev-fundamentals.md`](../../../hardware/automotive/ev/ev-fundamentals.md) | 回生ブレーキ = 運動エネルギーの回収 (§2)、駆動力・トルクと車両加速 (§1, §3) |
+| [`engineering/robotics/kinematics-dynamics.md`](../../../engineering/robotics/kinematics-dynamics.md) | 剛体動力学 (§3) の多体系への一般化——マニピュレータ方程式 M(q)q̈ + C q̇ + g = τ の物理的中身(慣性行列 = 姿勢依存の慣性モーメント) |
+| [`engineering/robotics/control-systems.md`](../../../engineering/robotics/control-systems.md) | プラントモデルとしての運動方程式 (§1)、倒立振子の安定化 = LQR の典型問題 (§5) |
+| [`engineering/robotics/locomotion-manipulation.md`](../../../engineering/robotics/locomotion-manipulation.md) | 線形倒立振子モデル (LIPM) と ZMP (§5)——不安定平衡の時定数 √(z_c/g) が歩行の要求速度を決める |
+| [`engineering/aerospace/orbital-mechanics.md`](../../../engineering/aerospace/orbital-mechanics.md) | ツィオルコフスキー式 (§2) と Δv 収支、軌道運動 = 中心力下の F = ma(シリーズ後続回で本格展開) |
+| [`engineering/aerospace/spacex-reusability.md`](../../../engineering/aerospace/spacex-reusability.md) | 垂直着陸 = 倒立振子の実時間安定化 (§5) + 可変質量の運動方程式 (§2) のワンショット制御 |
+| [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 姿勢動力学とリアクションホイール (§3)、IMU と慣性系・見かけの力 (§1) |
+| [`engineering/automotive/ev/ev-fundamentals.md`](../../../engineering/automotive/ev/ev-fundamentals.md) | 回生ブレーキ = 運動エネルギーの回収 (§2)、駆動力・トルクと車両加速 (§1, §3) |
 | [`foundations/physics/electromagnetism/circuit-theory.md`](../electromagnetism/circuit-theory.md) | 直列 RLC 共振・Q 値 (§4 の電気的双子)——機械振動と同一方程式の相互移送 |
 
 ## 参考文献 (References)

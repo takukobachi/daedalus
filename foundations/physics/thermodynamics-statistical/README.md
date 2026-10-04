@@ -4,8 +4,8 @@
 熱になるのか」「冷却はなぜ電力を食うのか」「発電所の効率はなぜ頭打ちなのか」に、
 熱力学の法則からエントロピーの統計的意味・熱移動の工学まで積み上げて
 答えることがこのシリーズの目標である。データセンター冷却
-(`../../../hardware/datacenter-infrastructure/`)、発電
-(`../../../hardware/power-generation/`)、クロック・電力管理
+(`../../../engineering/datacenters/`)、発電
+(`../../../engineering/energy/`)、クロック・電力管理
 (`../../../hardware/hw-sw-interface/clock-power-reset.md`) の支配法則を与える。
 
 ## 文書一覧 (Documents)
@@ -22,5 +22,5 @@
    半導体のキャリア統計 (`../quantum-solid-state/`) と計算の物理的下限
 3. **伝熱工学の深掘り** — 熱抵抗網の過渡応答(熱容量・熱時定数)、
    フィン・ヒートシンク設計、相変化伝熱(沸騰・ヒートパイプ)。
-   液冷・液浸 (`../../../hardware/datacenter-infrastructure/datacenter-cooling.md`)
+   液冷・液浸 (`../../../engineering/datacenters/datacenter-cooling.md`)
    の定量的な設計言語

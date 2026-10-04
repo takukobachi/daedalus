@@ -2,8 +2,8 @@
 
 質量をもつ物体の運動を支配する物理。ロボット・ロケット・自動車の制御ループが
 作用する「プラント」の正体はニュートン力学の運動方程式である。このシリーズは
-ロボティクス (`../../../hardware/robotics/`)、航空宇宙
-(`../../../hardware/aerospace/`)、車載 (`../../../hardware/automotive/`) の
+ロボティクス (`../../../engineering/robotics/`)、航空宇宙
+(`../../../engineering/aerospace/`)、車載 (`../../../engineering/automotive/`) の
 分析群が暗黙に依拠する力学を、三法則から振動・安定性・多体系・軌道まで
 積み上げて文書化する。
 
@@ -20,8 +20,8 @@
 2. **ラグランジュ形式と多体系** — 一般化座標、ラグランジアンと最小作用、
    拘束の扱い、多リンク系の運動方程式。マニピュレータ方程式
    M(q)q̈ + C(q,q̇)q̇ + g(q) = τ
-   (`../../../hardware/robotics/kinematics-dynamics.md`) の導出原理を与える
+   (`../../../engineering/robotics/kinematics-dynamics.md`) の導出原理を与える
 3. **軌道力学** — 中心力とポテンシャル、角運動量保存とケプラーの法則、
    軌道要素と二体問題、脱出速度。
-   `../../../hardware/aerospace/orbital-mechanics.md` の Δv 収支・軌道遷移の
+   `../../../engineering/aerospace/orbital-mechanics.md` の Δv 収支・軌道遷移の
    理論的基礎

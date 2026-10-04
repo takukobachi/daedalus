@@ -31,6 +31,6 @@
   理論的下限の深掘り
 - 情報理論とセキュリティ (information-theoretic security) — 完全秘匿 (one-time pad)、
   エントロピー源の健全性評価 (min-entropy, NIST SP 800-90B)、サイドチャネルの
-  情報量的定式化。`../../hardware/hardware-security/` との合流点
+  情報量的定式化。`../../hardware/security/` との合流点
 - Kolmogorov 複雑性と計算理論 — 「個々の系列の圧縮不可能性」という確率によらない
   情報量。将来の計算理論シリーズ（`../README.md` のロードマップ）との接続点

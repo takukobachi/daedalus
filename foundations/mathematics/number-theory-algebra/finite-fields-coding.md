@@ -77,9 +77,9 @@ GF(pⁿ) = GF(p)[x] を n 次の既約多項式 g(x) で割った余りの世界
 | 文書 | 接続点 |
 |------|--------|
 | [`software/object-storage/object-storage-architecture.md`](../../../software/object-storage/object-storage-architecture.md) | RS(k,m) イレイジャーコーディングの数学的本体＝GF(2⁸) 上の補間と MDS 性 (§2, §5) |
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../../hardware/storage-devices/nand-flash-ftl.md) | BCH/LDPC による ECC——有限体上の符号族を媒体誤り特性へ適合させたもの (§5) |
-| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | スクランブラ・PRBS＝原始多項式 LFSR の最長周期系列、リンク FEC (§4–5) |
-| [`hardware/wireless-rf/radio-fundamentals-modulation.md`](../../../hardware/wireless-rf/radio-fundamentals-modulation.md) | チャネル符号化・拡散符号の代数的土台 (§4–5) |
+| [`hardware/storage/nand-flash-ftl.md`](../../../hardware/storage/nand-flash-ftl.md) | BCH/LDPC による ECC——有限体上の符号族を媒体誤り特性へ適合させたもの (§5) |
+| [`hardware/signal-integrity/serdes-link-architecture.md`](../../../hardware/signal-integrity/serdes-link-architecture.md) | スクランブラ・PRBS＝原始多項式 LFSR の最長周期系列、リンク FEC (§4–5) |
+| [`hardware/wireless/radio-fundamentals-modulation.md`](../../../hardware/wireless/radio-fundamentals-modulation.md) | チャネル符号化・拡散符号の代数的土台 (§4–5) |
 | [`software/networking/kernel-network-stack.md`](../../../software/networking/kernel-network-stack.md) | チェックサム・CRC オフロードの計算の実体 (§4) |
 | [`foundations/mathematics/probability-statistics/reliability-theory.md`](../probability-statistics/reliability-theory.md) | 「n−k 故障まで耐える」符号が、故障確率モデルと合成されて耐久性になる (§5) |
 

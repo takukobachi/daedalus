@@ -76,10 +76,10 @@ f(x, y, …) = ( x ∧ f(1, y, …) ) ∨ ( ¬x ∧ f(0, y, …) )
 | 文書 | 接続点 |
 |------|--------|
 | [`foundations/physics/quantum-solid-state/mosfet-cmos.md`](../../physics/quantum-solid-state/mosfet-cmos.md) | CMOS NAND/NOR＝関数的完全性の物理実装、プルアップ/プルダウンの双対性 (§2–3) |
-| [`hardware/fpga-reconfigurable/fpga-architecture-flow.md`](../../../hardware/fpga-reconfigurable/fpga-architecture-flow.md) | LUT＝真理値表のメモリ化、論理合成＝簡単化と Shannon 展開の機械化 (§3–4) |
-| [`hardware/cpu-architecture/pipeline-superscalar-ooo.md`](../../../hardware/cpu-architecture/pipeline-superscalar-ooo.md) | 組合せ論理の段数がクリティカルパス＝クロック周期を決める (§4) |
+| [`hardware/fpga/fpga-architecture-flow.md`](../../../hardware/fpga/fpga-architecture-flow.md) | LUT＝真理値表のメモリ化、論理合成＝簡単化と Shannon 展開の機械化 (§3–4) |
+| [`hardware/cpu/pipeline-superscalar-ooo.md`](../../../hardware/cpu/pipeline-superscalar-ooo.md) | 組合せ論理の段数がクリティカルパス＝クロック周期を決める (§4) |
 | [`software/security/fuzzing-program-analysis.md`](../../../software/security/fuzzing-program-analysis.md) | シンボリック実行のパス条件＝SAT/SMT 判定、検証技術の土台 (§5) |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | 「代数的に同値な式」が消費電力・時間で区別可能になる——同値性の限界 (§4) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | 「代数的に同値な式」が消費電力・時間で区別可能になる——同値性の限界 (§4) |
 
 ## 参考文献 (References)
 

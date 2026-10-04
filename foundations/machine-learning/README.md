@@ -8,9 +8,9 @@
 
 - **`foundations/machine-learning/`（本ディレクトリ）** — 数理: なぜこの式か、
   どこから導出されるか
-- **`../../software/ai-llm/`** — モデルの上のシステム: エージェント、プロンプティング、
+- **`../../software/ai/`** — モデルの上のシステム: エージェント、プロンプティング、
   ループの工学。とくに `llm-internals-prompting.md` は本系列の「実務向けの出口」
-- **`../../software/ml-systems/`** — モデルの下のシステム: 推論・学習の実行基盤。
+- **`../../software/ai/`** — モデルの下のシステム: 推論・学習の実行基盤。
   本系列が導出する量（パラメータ数、FLOPs、KV cache サイズ）の消費者
 
 ## 構成
@@ -28,5 +28,5 @@
 - 逆伝播と最適化の実務 (backpropagation & optimizers) — 自動微分、Adam 系列、
   学習率スケジュール、損失地形。`../mathematics/optimization/` の非凸側への拡張
 - 強化学習の基礎 (reinforcement learning) — MDP、方策勾配、PPO。
-  RLHF (`../../software/ai-llm/llm-internals-prompting.md` §4) の理論的基礎
+  RLHF (`../../software/ai/llm-internals-prompting.md` §4) の理論的基礎
 - 汎化の理論 (generalization) — 二重降下、宝くじ仮説、暗黙の正則化

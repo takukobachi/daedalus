@@ -82,10 +82,10 @@ H(p, q) = −Σ p(x) log₂ q(x) = H(p) + D(p‖q)
 
 | 文書 | 接続点 |
 |------|--------|
-| [`software/ml-systems/ml-training-systems.md`](../../software/ml-systems/ml-training-systems.md) | クロスエントロピー損失の最小化 = KL 最小化 = 訓練データの最短圧縮 (§5) |
-| [`hardware/wireless-rf/radio-fundamentals-modulation.md`](../../hardware/wireless-rf/radio-fundamentals-modulation.md) | 変調シンボルあたりのビット数・符号化率の分母にある「情報量」の定義 (§1–2) |
-| [`hardware/cpu-architecture/branch-prediction-speculation.md`](../../hardware/cpu-architecture/branch-prediction-speculation.md) | 分岐履歴の条件付きエントロピーが予測精度の理論限界を与える (§3) |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../hardware/hardware-security/side-channels-tee-secure-boot.md) | 鍵・乱数の実効エントロピー、サイドチャネル漏洩の「漏れた情報量」的読み (§2–3) |
+| [`software/ai/ml-training-systems.md`](../../software/ai/ml-training-systems.md) | クロスエントロピー損失の最小化 = KL 最小化 = 訓練データの最短圧縮 (§5) |
+| [`hardware/wireless/radio-fundamentals-modulation.md`](../../hardware/wireless/radio-fundamentals-modulation.md) | 変調シンボルあたりのビット数・符号化率の分母にある「情報量」の定義 (§1–2) |
+| [`hardware/cpu/branch-prediction-speculation.md`](../../hardware/cpu/branch-prediction-speculation.md) | 分岐履歴の条件付きエントロピーが予測精度の理論限界を与える (§3) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../hardware/security/side-channels-tee-secure-boot.md) | 鍵・乱数の実効エントロピー、サイドチャネル漏洩の「漏れた情報量」的読み (§2–3) |
 | [`software/observability/observability-performance-engineering.md`](../../software/observability/observability-performance-engineering.md) | メトリクス圧縮 (Gorilla 型) が搾取する時系列の低い条件付きエントロピー (§3–4) |
 | [`foundations/mathematics/probability-statistics/probability-random-variables.md`](../mathematics/probability-statistics/probability-random-variables.md) | エントロピー・KL の土台となる確率変数と期待値 (§1–3) |
 

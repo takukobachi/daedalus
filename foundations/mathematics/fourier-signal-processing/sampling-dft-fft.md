@@ -102,12 +102,12 @@ Cooley & Tukey (1965) の再発見(ガウスに遡る先行はある)が信号�
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/peripherals-connectivity/audio-subsystem.md`](../../../hardware/peripherals-connectivity/audio-subsystem.md) | サンプルレートと可聴帯域 (§2–3)、ビット深度と SNR (§4)、ΔΣ 型 ADC/DAC (§4) |
-| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 画素格子 = 2次元空間サンプリング、モアレと光学ローパスフィルタ (§3) |
-| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | スケーリング = 再サンプリングと補間フィルタ (§2)、リサイズ時のエイリアシング (§3) |
-| [`hardware/peripherals-connectivity/wifi-architecture.md`](../../../hardware/peripherals-connectivity/wifi-architecture.md) | OFDM の IFFT/FFT 変復調 (§6)、サブキャリア間隔と直交性 (§5) |
-| [`hardware/wireless-rf/radio-fundamentals-modulation.md`](../../../hardware/wireless-rf/radio-fundamentals-modulation.md) | RF チェーンの ADC/DAC 配置、帯域通過サンプリング (§3)、SDR の成立条件 |
-| [`hardware/serdes-signal-integrity/serdes-link-architecture.md`](../../../hardware/serdes-signal-integrity/serdes-link-architecture.md) | ADC ベース受信器——リンクを「サンプリング+DSP」で受ける現代 SerDes (§1–2, §6) |
+| [`hardware/peripherals/audio-subsystem.md`](../../../hardware/peripherals/audio-subsystem.md) | サンプルレートと可聴帯域 (§2–3)、ビット深度と SNR (§4)、ΔΣ 型 ADC/DAC (§4) |
+| [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 画素格子 = 2次元空間サンプリング、モアレと光学ローパスフィルタ (§3) |
+| [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | スケーリング = 再サンプリングと補間フィルタ (§2)、リサイズ時のエイリアシング (§3) |
+| [`hardware/peripherals/wifi-architecture.md`](../../../hardware/peripherals/wifi-architecture.md) | OFDM の IFFT/FFT 変復調 (§6)、サブキャリア間隔と直交性 (§5) |
+| [`hardware/wireless/radio-fundamentals-modulation.md`](../../../hardware/wireless/radio-fundamentals-modulation.md) | RF チェーンの ADC/DAC 配置、帯域通過サンプリング (§3)、SDR の成立条件 |
+| [`hardware/signal-integrity/serdes-link-architecture.md`](../../../hardware/signal-integrity/serdes-link-architecture.md) | ADC ベース受信器——リンクを「サンプリング+DSP」で受ける現代 SerDes (§1–2, §6) |
 
 ## 参考文献 (References)
 

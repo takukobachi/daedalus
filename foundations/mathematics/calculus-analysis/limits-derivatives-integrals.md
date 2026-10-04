@@ -89,9 +89,9 @@ k > 0: 指数成長 — 発振の立ち上がり、複利、正帰還
 | [`../../physics/electromagnetism/induction-inductance.md`](../../physics/electromagnetism/induction-inductance.md) | ファラデーの法則 `emf = −dΦ/dt` の微分、およびインダクタのエネルギー `∫Li di` の積分 |
 | [`../../physics/electromagnetism/charge-field-potential.md`](../../physics/electromagnetism/charge-field-potential.md) | 電位 = 電場の線積分、電場 = 電位の(負の)微分——基本定理の物理版 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | RC 時定数と指数減衰 (§5)、電源立ち上がりの過渡応答 |
-| [`hardware/aerospace/orbital-mechanics.md`](../../../hardware/aerospace/orbital-mechanics.md) | 運動方程式(2階微分方程式)の数値積分としての軌道伝播 |
-| [`hardware/aerospace/avionics-gnc.md`](../../../hardware/aerospace/avionics-gnc.md) | 慣性航法の二重積分と誤差の t² 成長 (工学への接続 §4) |
-| [`software/ml-systems/ml-inference-systems.md`](../../../software/ml-systems/ml-inference-systems.md) | 学習の実体である勾配法 = 導関数の零点探索の大規模化 (§2) |
+| [`engineering/aerospace/orbital-mechanics.md`](../../../engineering/aerospace/orbital-mechanics.md) | 運動方程式(2階微分方程式)の数値積分としての軌道伝播 |
+| [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 慣性航法の二重積分と誤差の t² 成長 (工学への接続 §4) |
+| [`software/ai/ml-inference-systems.md`](../../../software/ai/ml-inference-systems.md) | 学習の実体である勾配法 = 導関数の零点探索の大規模化 (§2) |
 
 ## 参考文献 (References)
 

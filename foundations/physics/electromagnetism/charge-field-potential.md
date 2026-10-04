@@ -118,11 +118,11 @@ U = ½ C V² = Q² / 2C
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/cpu-architecture/dram-memory-controllers.md`](../../../hardware/cpu-architecture/dram-memory-controllers.md) | DRAM セル=1T1C のキャパシタ電荷。リーク→リフレッシュ必須という同文書の前提が §5 の物理 |
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../../hardware/storage-devices/nand-flash-ftl.md) | フローティングゲートへの電荷注入・保持がビットの実体。多値化 (MLC/TLC/QLC) は電荷量の分解能の問題 |
+| [`hardware/cpu/dram-memory-controllers.md`](../../../hardware/cpu/dram-memory-controllers.md) | DRAM セル=1T1C のキャパシタ電荷。リーク→リフレッシュ必須という同文書の前提が §5 の物理 |
+| [`hardware/storage/nand-flash-ftl.md`](../../../hardware/storage/nand-flash-ftl.md) | フローティングゲートへの電荷注入・保持がビットの実体。多値化 (MLC/TLC/QLC) は電荷量の分解能の問題 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | 動的電力 CV²f と DVFS。電圧スケーリングが二乗で効く根拠 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | high-k ゲート絶縁膜・low-k 層間絶縁膜。§5 の誘電体の工学的使い分け |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | Rowhammer は隣接行アクセスによるセル電荷のリーク誘発。電力解析は CV²f がデータ依存に揺らぐことの悪用 |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | Rowhammer は隣接行アクセスによるセル電荷のリーク誘発。電力解析は CV²f がデータ依存に揺らぐことの悪用 |
 
 ## 参考文献 (References)
 

@@ -4,14 +4,14 @@
 
 ロケットエンジンの心臓部は燃焼室だが、**推力を生むのはノズル**である。高温高圧のガスを「先細り→末広がり」というデ・ラバルノズル (de Laval nozzle) に通すと、熱エネルギーが整然と運動エネルギーへ変換され、排気は超音速に達する。なぜ**絞ってから広げる**と速くなるのか、なぜスロットで必ず音速 (M = 1) になるのか、なぜ同じエンジンでも海面用と真空用でノズルの長さが違うのか——本ドキュメントは、これらを圧縮性流れ (compressible flow) の基礎から積み上げて説明する。
 
-到達点は3つの式である: 面積–速度関係（ノズル形状の理由）、チョーク流量（推力の「蛇口」がスロットにある理由）、そして推力式と排気速度（比推力 Isp と分子量・燃焼温度の関係）。`hardware/aerospace/` の SpaceX 分析で結果だけ使ってきた数値（膨張比、海面/真空 Isp 差）の理論的根拠を、ここで供給する。
+到達点は3つの式である: 面積–速度関係（ノズル形状の理由）、チョーク流量（推力の「蛇口」がスロットにある理由）、そして推力式と排気速度（比推力 Isp と分子量・燃焼温度の関係）。`engineering/aerospace/` の SpaceX 分析で結果だけ使ってきた数値（膨張比、海面/真空 Isp 差）の理論的根拠を、ここで供給する。
 
 ## 前提知識 (Prerequisites)
 
 - **古典力学** — 運動量保存・エネルギー保存（[`../classical-mechanics/newton-laws-oscillations.md`](../classical-mechanics/newton-laws-oscillations.md)）
 - **熱力学** — 第一法則、断熱過程、エンタルピーの概念（[`../thermodynamics-statistical/laws-entropy-heat-engines.md`](../thermodynamics-statistical/laws-entropy-heat-engines.md)）
 - **微分積分** — 微小量の関係式の操作（`../../mathematics/calculus-analysis/`）
-- ロケット側の文脈: ロケット方程式と Isp（`../../../hardware/aerospace/spacex-rocket-engines.md`）
+- ロケット側の文脈: ロケット方程式と Isp（`../../../engineering/aerospace/spacex-rocket-engines.md`）
 
 ## 本論 (Main Content)
 
@@ -114,16 +114,16 @@ v_e = √( 2γ/(γ−1) · R̄T0/M̄ · [1 − (p_e/p0)^((γ−1)/γ)] )
 ## 工学への接続 (Engineering Connections)
 
 - **ノズルは「熱→運動」の変換器であり、効率の上限は熱力学が決める**。燃焼室温度 T0 を上げる（≒カルノー的な高温源の確保）、分子量を下げる、深く膨張させる——Isp 向上の手段はすべて v_e の式の中にある。エンジンサイクルの工夫（`spacex-rocket-engines.md` の FFSC）は、この式の p0 と T0 を上げるための機械側の努力と読める。
-- **設計は「1点最適 × 制約」**: 膨張比は打ち上げプロファイル上の代表高度への最適化であり、第1段は剥離限界、上段は質量・全長が実効的な制約になる。多段化（`../../../hardware/aerospace/orbital-mechanics.md`「なぜ多段か」）は、ノズルの高度最適化問題でもある。
+- **設計は「1点最適 × 制約」**: 膨張比は打ち上げプロファイル上の代表高度への最適化であり、第1段は剥離限界、上段は質量・全長が実効的な制約になる。多段化（`../../../engineering/aerospace/orbital-mechanics.md`「なぜ多段か」）は、ノズルの高度最適化問題でもある。
 - **チョークという設計の錨**: 「下流条件に流量が依存しない」性質は、エンジン制御を燃焼室圧制御に単純化し、複数エンジンのクラスタ（9基/33基）でも各エンジンの流量が互いに干渉しない土台を与える。
-- **ジェットエンジンとの対比**: 航空機のジェット（`../../../hardware/aerospace/aircraft-engineering-fundamentals.md`）は通常、先細りノズルのみ（排気は M ≤ 1 付近）。ロケットが末広がり部を持つのは、外気を使わず自前の高圧ガスを**真空近くまで膨張させ切る**必要があるからである。
+- **ジェットエンジンとの対比**: 航空機のジェット（`../../../engineering/aerospace/aircraft-engineering-fundamentals.md`）は通常、先細りノズルのみ（排気は M ≤ 1 付近）。ロケットが末広がり部を持つのは、外気を使わず自前の高圧ガスを**真空近くまで膨張させ切る**必要があるからである。
 
 ## Daedalus内の応用 (Applications within Daedalus)
 
-- [`../../../hardware/aerospace/spacex-rocket-engines.md`](../../../hardware/aerospace/spacex-rocket-engines.md) — Merlin/Raptor の Isp・燃焼室圧・推力の数値の理論的根拠（本ドキュメントの v_e 式・チョーク流量・膨張比がその土台）
-- [`../../../hardware/aerospace/orbital-mechanics.md`](../../../hardware/aerospace/orbital-mechanics.md) — ロケット方程式の v_e がここで決まる。多段化の必然性との接続
-- [`../../../hardware/aerospace/spacex-starship-superheavy.md`](../../../hardware/aerospace/spacex-starship-superheavy.md) — 海面3基＋真空3基という Starship のエンジン構成の理由
-- [`../../../hardware/aerospace/aircraft-engineering-fundamentals.md`](../../../hardware/aerospace/aircraft-engineering-fundamentals.md) — ジェット推進（亜音速ノズル）との対比
+- [`../../../engineering/aerospace/spacex-rocket-engines.md`](../../../engineering/aerospace/spacex-rocket-engines.md) — Merlin/Raptor の Isp・燃焼室圧・推力の数値の理論的根拠（本ドキュメントの v_e 式・チョーク流量・膨張比がその土台）
+- [`../../../engineering/aerospace/orbital-mechanics.md`](../../../engineering/aerospace/orbital-mechanics.md) — ロケット方程式の v_e がここで決まる。多段化の必然性との接続
+- [`../../../engineering/aerospace/spacex-starship-superheavy.md`](../../../engineering/aerospace/spacex-starship-superheavy.md) — 海面3基＋真空3基という Starship のエンジン構成の理由
+- [`../../../engineering/aerospace/aircraft-engineering-fundamentals.md`](../../../engineering/aerospace/aircraft-engineering-fundamentals.md) — ジェット推進（亜音速ノズル）との対比
 - [`../thermodynamics-statistical/laws-entropy-heat-engines.md`](../thermodynamics-statistical/laws-entropy-heat-engines.md) — 「熱を仕事に変える」一般論。ノズルはその連続流版
 
 ## 参考文献 (References)

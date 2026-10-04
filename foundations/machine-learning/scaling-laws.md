@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-LLM の性能向上を駆動してきた最大の経験則は、**損失がモデルサイズ・データ量・計算量のべき則 (power law) に従って滑らかに下がる**というスケーリング則である。この一見単純な曲線が、「次のモデルにいくら投じるべきか」「パラメータとデータをどう配分するか」「小さいモデルを長く訓練する意味は何か」という数十億ドル規模の意思決定を支配し、データセンター建設（`../../hardware/datacenter-infrastructure/`）までを駆動している。
+LLM の性能向上を駆動してきた最大の経験則は、**損失がモデルサイズ・データ量・計算量のべき則 (power law) に従って滑らかに下がる**というスケーリング則である。この一見単純な曲線が、「次のモデルにいくら投じるべきか」「パラメータとデータをどう配分するか」「小さいモデルを長く訓練する意味は何か」という数十億ドル規模の意思決定を支配し、データセンター建設（`../../engineering/datacenters/`）までを駆動している。
 
 本ドキュメントは、べき則の形とその含意、計算最適学習 (compute-optimal training; Chinchilla)、推論コストを含めた総費用の最適化、「創発」をめぐる論争、そしてテスト時計算 (test-time compute) という第二のスケーリング軸を、原論文に基づいて整理する。`transformer-architecture.md` の会計式 C ≈ 6ND を前提とする。
 
@@ -70,22 +70,22 @@ Wei et al. (2022) は、算術・多段推論などの下流タスク性能が�
 
 学習時の C だけでなく、**推論時に費やす計算**も性能の軸である。同一モデルでも、思考トークンの延長・複数サンプル生成と検証器による選別・探索により、下流性能は推論計算に対してべき則的に改善しうる (Snell et al., 2024)。強化学習で思考の質自体を訓練した推論モデル（o1 系、拡張思考）は、この軸を製品パラメータ（思考予算）に変えた。
 
-含意は配分問題の再来である: 固定の総予算の下で「大きいモデルを短く考えさせる」か「小さいモデルを長く考えさせるか」はタスク難易度依存のトレードオフになり、学習時スケーリング（§2–3）とテスト時スケーリングは代替と補完の関係に立つ。`../../software/ai-llm/llm-internals-prompting.md` §2 の「思考の外部化」、および pass@k と選別器の関係（`../../software/ai-llm/agent-architectures.md` 技術詳細 3）は、この軸の挙動レベル・エージェントレベルの現れである。
+含意は配分問題の再来である: 固定の総予算の下で「大きいモデルを短く考えさせる」か「小さいモデルを長く考えさせるか」はタスク難易度依存のトレードオフになり、学習時スケーリング（§2–3）とテスト時スケーリングは代替と補完の関係に立つ。`../../software/ai/llm-internals-prompting.md` §2 の「思考の外部化」、および pass@k と選別器の関係（`../../software/ai/agent-architectures.md` 技術詳細 3）は、この軸の挙動レベル・エージェントレベルの現れである。
 
 ## 工学への接続 (Engineering Connections)
 
 - **投資判断の計器盤。** べき則の滑らかさが「次の 10 倍」の性能を事前に見積り可能にし、スケール競争と AI インフラ投資（GPU・データセンター・電力）の合理的根拠を与えた。逆に指数 α の小ささは、性能の線形改善に指数的コストがかかることを警告する。
-- **モデルサイズの選定は総費用最適化である。** §3 の式は「サービングする製品」のモデルを選ぶ実務の中心にある。推論量の見積りが N の選択を変え、それが `../../software/ml-systems/ml-inference-systems.md` のサービング経済（KV cache、バッチング）と `../../hardware/gpu-accelerators/` の調達に波及する。
+- **モデルサイズの選定は総費用最適化である。** §3 の式は「サービングする製品」のモデルを選ぶ実務の中心にある。推論量の見積りが N の選択を変え、それが `../../software/ai/ml-inference-systems.md` のサービング経済（KV cache、バッチング）と `../../hardware/accelerators/` の調達に波及する。
 - **評価設計への警告。** §5 は「指標の不連続性が能力の不連続性に見える」罠を示す。ベンチマーク設計・能力予測・安全性評価のいずれでも、背後の連続量を測る計器選びが結論を左右する。
-- **電力・設備への写像。** C ≈ 6ND は FLOPs であり、実効演算効率と電力効率を介してデータセンターの MW とキャンパス規模に翻訳される（`../../hardware/datacenter-infrastructure/datacenter-power.md`）。スケーリング則は建設計画の需要予測関数でもある。
+- **電力・設備への写像。** C ≈ 6ND は FLOPs であり、実効演算効率と電力効率を介してデータセンターの MW とキャンパス規模に翻訳される（`../../engineering/datacenters/datacenter-power.md`）。スケーリング則は建設計画の需要予測関数でもある。
 
 ## Daedalus内の応用 (Applications within Daedalus)
 
 - `transformer-architecture.md` — 前提となる会計 C ≈ 6ND、損失＝符号長と既約項 E
-- `../../software/ai-llm/llm-internals-prompting.md` — 挙動レベルの出口（思考の外部化＝テスト時計算、事前学習の意味）
-- `../../software/ai-llm/agent-architectures.md` — pass^k・検証器と §6 のテスト時スケーリングの接続
-- `../../software/ml-systems/ml-training-systems.md` — C を実時間・クラスタ規模に落とす側、`ml-inference-systems.md` — §3 の推論費用項の中身
-- `../../hardware/gpu-accelerators/interconnects-scaleout-training.md`、`../../hardware/datacenter-infrastructure/` — スケーリング則が駆動する物理側
+- `../../software/ai/llm-internals-prompting.md` — 挙動レベルの出口（思考の外部化＝テスト時計算、事前学習の意味）
+- `../../software/ai/agent-architectures.md` — pass^k・検証器と §6 のテスト時スケーリングの接続
+- `../../software/ai/ml-training-systems.md` — C を実時間・クラスタ規模に落とす側、`ml-inference-systems.md` — §3 の推論費用項の中身
+- `../../hardware/accelerators/interconnects-scaleout-training.md`、`../../engineering/datacenters/` — スケーリング則が駆動する物理側
 
 ## 参考文献 (References)
 

@@ -88,12 +88,12 @@ pn 接合は光と電気の変換器でもある。前回 §「工学への接�
 | 文書 | 接続点 |
 |------|--------|
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | 接合形成=イオン注入・拡散・アニールの目的物。ウェル構造と寄生接合の管理 |
-| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 画素=フォトダイオード (§5)。空乏層の掃き分けが量子効率と速度を決める |
-| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | LED/OLED バックライト・自発光画素の発光原理 (§5)、Eg と色の関係 |
-| [`hardware/automotive/ev/tesla-battery-powertrain.md`](../../../hardware/automotive/ev/tesla-battery-powertrain.md) | インバータの還流ダイオード・ボディダイオード、SiC 化による損失削減 (工学への接続 §2) |
-| [`hardware/power-generation/battery-energy-storage.md`](../../../hardware/power-generation/battery-energy-storage.md) | 太陽電池 (§5) とパワーコンディショナの整流・変換段 |
+| [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 画素=フォトダイオード (§5)。空乏層の掃き分けが量子効率と速度を決める |
+| [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | LED/OLED バックライト・自発光画素の発光原理 (§5)、Eg と色の関係 |
+| [`engineering/automotive/ev/tesla-battery-powertrain.md`](../../../engineering/automotive/ev/tesla-battery-powertrain.md) | インバータの還流ダイオード・ボディダイオード、SiC 化による損失削減 (工学への接続 §2) |
+| [`engineering/energy/battery-energy-storage.md`](../../../engineering/energy/battery-energy-storage.md) | 太陽電池 (§5) とパワーコンディショナの整流・変換段 |
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | サーマルダイオードによる温度測定 (工学への接続 §4)、ESD 保護と電源クランプ |
-| [`hardware/hardware-security/side-channels-tee-secure-boot.md`](../../../hardware/hardware-security/side-channels-tee-secure-boot.md) | レーザー・電圧グリッチによるフォールト注入の物理的入口は接合の光感受性 (§5)・降伏 (§4) |
+| [`hardware/security/side-channels-tee-secure-boot.md`](../../../hardware/security/side-channels-tee-secure-boot.md) | レーザー・電圧グリッチによるフォールト注入の物理的入口は接合の光感受性 (§5)・降伏 (§4) |
 
 ## 参考文献 (References)
 

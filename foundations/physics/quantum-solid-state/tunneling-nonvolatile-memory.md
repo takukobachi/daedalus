@@ -88,12 +88,12 @@ TLC: 8 レベル / 3 bit    QLC: 16 レベル / 4 bit
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/storage-devices/nand-flash-ftl.md`](../../../hardware/storage-devices/nand-flash-ftl.md) | 本回はこの文書のデバイス物理層——FN トンネリング、V_th 分布、P/E 摩耗、ECC の必然性 |
+| [`hardware/storage/nand-flash-ftl.md`](../../../hardware/storage/nand-flash-ftl.md) | 本回はこの文書のデバイス物理層——FN トンネリング、V_th 分布、P/E 摩耗、ECC の必然性 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | 3D NAND の積層・高アスペクト比エッチング (§3)、high-k 膜 (§2) の製造要求 |
 | [`software/operating-systems/block-io-stack.md`](../../../software/operating-systems/block-io-stack.md) | ブロック層の下に FTL がある理由 (§3, 工学への接続 §1)、TRIM の物理的意味 |
 | [`hardware/hw-sw-interface/storage-nvm-interface.md`](../../../hardware/hw-sw-interface/storage-nvm-interface.md) | NVMe が前提とする NAND の遅延・並列性・摩耗特性の由来 |
 | [`hardware/hw-sw-interface/boot-initialization.md`](../../../hardware/hw-sw-interface/boot-initialization.md) | ブートコード・ファームウェアの不揮発保存の物理 (§3, 工学への接続 §3) |
-| [`hardware/cpu-architecture/dram-memory-controllers.md`](../../../hardware/cpu-architecture/dram-memory-controllers.md) | DRAM との対照——揮発/不揮発の分岐点は障壁の厚さ (工学への接続 §2) |
+| [`hardware/cpu/dram-memory-controllers.md`](../../../hardware/cpu/dram-memory-controllers.md) | DRAM との対照——揮発/不揮発の分岐点は障壁の厚さ (工学への接続 §2) |
 
 ## 参考文献 (References)
 

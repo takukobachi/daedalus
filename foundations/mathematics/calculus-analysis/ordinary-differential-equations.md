@@ -103,10 +103,10 @@ A = PDP⁻¹ と対角化できれば e^{At} = P·diag(e^{λᵢt})·P⁻¹
 |------|--------|
 | [`hardware/hw-sw-interface/clock-power-reset.md`](../../../hardware/hw-sw-interface/clock-power-reset.md) | RC 遅延と時定数 (§2)、電源シーケンスの過渡応答、PLL のループ動特性 (§3–4) |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | リンギング=不足減衰の2階応答 (§3)。終端設計は ζ の設計 |
-| [`hardware/power-generation/generation-and-grid-fundamentals.md`](../../../hardware/power-generation/generation-and-grid-fundamentals.md) | 動揺方程式と過渡安定度 (§3–4)、周波数応答・慣性の意味 |
-| [`hardware/aerospace/orbital-mechanics.md`](../../../hardware/aerospace/orbital-mechanics.md) | 運動方程式の数値積分としての軌道伝播 (§5) |
-| [`hardware/aerospace/avionics-gnc.md`](../../../hardware/aerospace/avionics-gnc.md) | 姿勢・軌道制御 = 線形化 → 固有値配置 (§4) の応用領域 |
-| [`hardware/automotive/ev/tesla-battery-powertrain.md`](../../../hardware/automotive/ev/tesla-battery-powertrain.md) | モータ制御・電流ループの動特性、バッテリの等価回路モデル (RC 網, §2) |
+| [`engineering/energy/generation-grid-fundamentals.md`](../../../engineering/energy/generation-grid-fundamentals.md) | 動揺方程式と過渡安定度 (§3–4)、周波数応答・慣性の意味 |
+| [`engineering/aerospace/orbital-mechanics.md`](../../../engineering/aerospace/orbital-mechanics.md) | 運動方程式の数値積分としての軌道伝播 (§5) |
+| [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 姿勢・軌道制御 = 線形化 → 固有値配置 (§4) の応用領域 |
+| [`engineering/automotive/ev/tesla-battery-powertrain.md`](../../../engineering/automotive/ev/tesla-battery-powertrain.md) | モータ制御・電流ループの動特性、バッテリの等価回路モデル (RC 網, §2) |
 | [`../../physics/electromagnetism/induction-inductance.md`](../../physics/electromagnetism/induction-inductance.md) | L·di/dt がもたらす1階・2階の過渡現象の数学的処理 |
 
 ## 参考文献 (References)

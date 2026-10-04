@@ -80,9 +80,9 @@ Bellman–Ford:     負重みも可。全辺の緩和 (relax) を n−1 回繰�
 | [`software/networking/ip-routing-bgp.md`](../../../software/networking/ip-routing-bgp.md) | リンクステート＝Dijkstra、距離ベクトル＝分散 Bellman–Ford、BGP＝パスベクトルとループ検出 (§5) |
 | [`software/compilers-runtimes/managed-runtimes-gc-jit.md`](../../../software/compilers-runtimes/managed-runtimes-gc-jit.md) | GC のマーク＝到達可能性探索、並行 GC＝動くグラフ上の探索 (§3) |
 | [`software/databases/transactions-isolation.md`](../../../software/databases/transactions-isolation.md) | wait-for graph の閉路＝デッドロック、直列化可能性グラフの無閉路性 (§3–4) |
-| [`software/search-ir/vector-search-ann.md`](../../../software/search-ir/vector-search-ann.md) | HNSW＝航行可能性を設計した近傍グラフ、貪欲探索と長距離辺 (§3) |
-| [`hardware/network-hardware/nic-switch-architecture.md`](../../../hardware/network-hardware/nic-switch-architecture.md) | L2 の STP＝分散全域木、冗長リンクの遮断とループフリー転送 (§2) |
-| [`software/messaging-streaming/distributed-logs-delivery-semantics.md`](../../../software/messaging-streaming/distributed-logs-delivery-semantics.md) | ストリーム処理のデータフロー DAG、クリティカルパスとパイプライン律速 (§4) |
+| [`software/search/vector-search-ann.md`](../../../software/search/vector-search-ann.md) | HNSW＝航行可能性を設計した近傍グラフ、貪欲探索と長距離辺 (§3) |
+| [`hardware/networking/nic-switch-architecture.md`](../../../hardware/networking/nic-switch-architecture.md) | L2 の STP＝分散全域木、冗長リンクの遮断とループフリー転送 (§2) |
+| [`software/messaging/distributed-logs-delivery-semantics.md`](../../../software/messaging/distributed-logs-delivery-semantics.md) | ストリーム処理のデータフロー DAG、クリティカルパスとパイプライン律速 (§4) |
 
 ## 参考文献 (References)
 

@@ -95,11 +95,11 @@ S = (1/μ₀) E×B    [W/m²]   (大きさの時間平均 = 放射強度)
 
 | 文書 | 接続点 |
 |------|--------|
-| [`hardware/peripherals-connectivity/wifi-architecture.md`](../../../hardware/peripherals-connectivity/wifi-architecture.md) | 2.4/5/6 GHz の伝搬特性、OFDM の搬送波、アンテナ・MIMO の物理的基盤 |
-| [`hardware/peripherals-connectivity/bluetooth-pairing-protocol.md`](../../../hardware/peripherals-connectivity/bluetooth-pairing-protocol.md) | 2.4 GHz ISM 帯の共有、到達距離と送信電力 (1/r² 減衰) |
+| [`hardware/peripherals/wifi-architecture.md`](../../../hardware/peripherals/wifi-architecture.md) | 2.4/5/6 GHz の伝搬特性、OFDM の搬送波、アンテナ・MIMO の物理的基盤 |
+| [`hardware/peripherals/bluetooth-pairing-protocol.md`](../../../hardware/peripherals/bluetooth-pairing-protocol.md) | 2.4 GHz ISM 帯の共有、到達距離と送信電力 (1/r² 減衰) |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | 信号は場として伝わる——伝播遅延・インピーダンス(次回)の前提となる描像 |
-| [`hardware/peripherals-connectivity/camera-image-sensors.md`](../../../hardware/peripherals-connectivity/camera-image-sensors.md) | 可視光 = 数百 THz の電磁波。波長がセンサ画素・カラーフィルタ設計を規定 |
-| [`hardware/peripherals-connectivity/display-pipeline.md`](../../../hardware/peripherals-connectivity/display-pipeline.md) | 液晶の動作原理は偏波 (§4) の制御 |
+| [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 可視光 = 数百 THz の電磁波。波長がセンサ画素・カラーフィルタ設計を規定 |
+| [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | 液晶の動作原理は偏波 (§4) の制御 |
 | [`hardware/timekeeping/clocks-time-synchronization.md`](../../../hardware/timekeeping/clocks-time-synchronization.md) | Cs 原子時計のマイクロ波遷移 (9.19 GHz)、GNSS 信号の光速伝播と測位 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | リソグラフィの解像度は波長で律速——EUV 13.5 nm への移行の物理的必然 |
 

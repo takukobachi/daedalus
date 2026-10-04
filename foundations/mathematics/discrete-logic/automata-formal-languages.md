@@ -79,8 +79,8 @@ NFA (n 状態) → DFA (最大 2ⁿ 状態)
 |------|--------|
 | [`software/networking/tcp-transport-congestion.md`](../../../software/networking/tcp-transport-congestion.md) | TCP 接続管理＝DFA、状態＝将来に必要な要約、輻輳制御の状態機械 (§1) |
 | [`software/networking/tls-internals.md`](../../../software/networking/tls-internals.md) | ハンドシェイク状態機械と遷移逸脱バグ、レコード層のパース (§1, §4) |
-| [`software/search-ir/inverted-index-fulltext-search.md`](../../../software/search-ir/inverted-index-fulltext-search.md) | FST 語彙表＝辞書のオートマトン化、ワイルドカード＝オートマトンの積、正規表現クエリの DoS (§3) |
-| [`software/ebpf/ebpf-kernel-programmability.md`](../../../software/ebpf/ebpf-kernel-programmability.md) | 検証器＝停止性問題への「言語を制限する」という回答 (§5) |
+| [`software/search/inverted-index-fulltext-search.md`](../../../software/search/inverted-index-fulltext-search.md) | FST 語彙表＝辞書のオートマトン化、ワイルドカード＝オートマトンの積、正規表現クエリの DoS (§3) |
+| [`software/operating-systems/ebpf-kernel-programmability.md`](../../../software/operating-systems/ebpf-kernel-programmability.md) | 検証器＝停止性問題への「言語を制限する」という回答 (§5) |
 | [`software/security/fuzzing-program-analysis.md`](../../../software/security/fuzzing-program-analysis.md) | Rice の定理＝静的解析が近似を強いられる根拠、fuzzing という相補戦略 (§5) |
 | [`software/browsers/web-security-model.md`](../../../software/browsers/web-security-model.md) | HTML/URL のパーサ差分と「正規表現でパースするな」の数学的根拠 (§4) |
 
