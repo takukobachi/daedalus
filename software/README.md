@@ -41,7 +41,8 @@
 - `distributed-systems/` — 分散システム（一貫性モデル, 合意, 複製）。
   `cache-coherence.md` の coherence/consistency 議論のスケールアップ
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
-  トランザクション, 分離レベル）。`hardware/hw-sw-interface/storage-nvm-interface.md` の上位層
+  トランザクション, 分離レベル, クエリ実行・最適化, 分散データベース）。
+  `hardware/hw-sw-interface/storage-nvm-interface.md` の上位層
 - `messaging/` — メッセージングとストリーム処理（分散ログ, 複製と耐久性,
   配信セマンティクス/exactly-once, ウィンドウとチェックポイント, バックプレッシャ）。
   `distributed-systems/`・`databases/` の機構をシステム間のデータフローへ応用する層
