@@ -6,20 +6,20 @@
 
 視点として、**ハーネス (harness) はモデルにとっての OS である**という類推を採用する。モデルは CPU のように計算を担うが、メモリ管理（コンテキストウィンドウの割り付けと回収）、スケジューリング（ツール実行の並列化と直列化）、保護（権限ゲートとサンドボックス）、割り込み処理（エラー・中断・再開）はすべてハーネスの責務である。OS 抜きの CPU が実用にならないのと同じく、ハーネス抜きのモデルは実用にならない。
 
-対をなす `agent-architectures.md` が設計空間（何を作るか）を扱うのに対し、本ドキュメントは実装の不変条件（どう壊れないように動かすか）を扱う。物差しは **タスク成功率**（壊れないか）、**トークン経済**（いくらかかるか、キャッシュが効いているか）、**尾部レイテンシ**（最悪ケースで固まらないか）の 3 つである。
+対をなす [`agent-architectures.md`](agent-architectures.md) が設計空間（何を作るか）を扱うのに対し、本ドキュメントは実装の不変条件（どう壊れないように動かすか）を扱う。物差しは **タスク成功率**（壊れないか）、**トークン経済**（いくらかかるか、キャッシュが効いているか）、**尾部レイテンシ**（最悪ケースで固まらないか）の 3 つである。
 
 ## 方法論 (Methodology)
 
 - **API 契約から出発する**: 停止理由、ツール結果の形式、キャッシュのプレフィックス一致規則といった各社 API の公開仕様を一次資料とし、ループ設計をその契約の帰結として導出する。ベンダー固有の値は例として扱い、構造（どの API にもある分岐）を主対象とする。
 - **実運用者の一次報告を採用する**: エージェント製品を実運用するチームの技術報告（Anthropic のコンテキストエンジニアリング文書、Manus チームの報告等）から、再現的に観察されている経験則（KV キャッシュ命中率の支配性、追記のみ (append-only) 履歴の優位）を抽出する。
 - **失敗様式から逆算する**: 「動く実装」ではなく「壊れ方」を列挙し（コンテキスト溢れ、キャッシュ全滅、ツール結果の肥大、二重実行、無限ループ）、各失敗を防ぐ不変条件としてループの設計規則を記述する。
-- **数値は桁感にとどめる**: キャッシュ単価やコンテキスト長はモデル・時期依存のため、比率と傾向のみを主張し、絶対値には依存しない。アクセス日 2026-08-08。
+- **数値は桁感にとどめる**: キャッシュ単価やコンテキスト長はモデル・時期依存のため、比率と傾向のみを主張し、絶対値には依存しない。初版のアクセス日は 2026-08-08、停止理由の一覧とキャッシュ単価は 2026-10-04 に公式ドキュメントで再確認した（値は「2026-10 時点」）。
 
 ## 発見事項 (Findings)
 
-1. **ループの正しさは「全ての停止理由を処理すること」に尽きる。** エージェントループは停止理由を遷移条件とする状態機械である。`tool_use` と `end_turn` だけ処理する素朴な実装は、`max_tokens`（途中打ち切り）、`pause_turn`（サーバ側ツールの中断）、`refusal`（安全拒否）、コンテキスト超過で、それぞれ黙って壊れる。未処理の停止理由は「まれな例外」ではなく、長時間運用では必ず踏む通常ケースである。
+1. **ループの正しさは「全ての停止理由を処理すること」に尽きる。** エージェントループは停止理由を遷移条件とする状態機械である。`tool_use` と `end_turn` だけ処理する素朴な実装は、`max_tokens`（途中打ち切り）、`stop_sequence`（停止文字列での終了）、`pause_turn`（サーバ側ツールの中断）、`refusal`（安全拒否）、`model_context_window_exceeded`（応答が文脈窓を使い切った）、そして入力側のコンテキスト超過で、それぞれ黙って壊れる（2026-10 時点の Claude API が文書化する停止理由は 7 種）。未処理の停止理由は「まれな例外」ではなく、長時間運用では必ず踏む通常ケースである。
 
-2. **エージェントの単価はキャッシュ命中率でほぼ決まる。** エージェントは 1 ターンごとに全履歴を再送する。入力トークンは会話長の 2 乗オーダーで累積するため、キャッシュされた入力（未キャッシュの約 1/10 の単価、比率は提供者依存）に載るかどうかが支配的なコスト要因になる。Manus チームは KV キャッシュ命中率を「本番エージェントの単一で最重要の指標」と報告している。ループ設計の含意は単純で、**履歴は追記のみ (append-only) にし、プレフィックス（システムプロンプト・ツール定義・過去ターン）を 1 バイトも変えない**。タイムスタンプの埋め込み、ツール集合の動的な入れ替え、非決定的な JSON 直列化は、いずれもプレフィックスを破壊してキャッシュを全滅させる「静かな無効化要因」である。
+2. **エージェントの単価はキャッシュ命中率でほぼ決まる。** エージェントは 1 ターンごとに全履歴を再送する。入力トークンは会話長の 2 乗オーダーで累積するため、キャッシュされた入力に載るかどうかが支配的なコスト要因になる。2026-10 時点の Claude API では、キャッシュ読み出しは基本入力単価の 0.1 倍（一部の新しいモデルでは 0.05 倍や 0.025 倍）、書き込みは 5 分 TTL で 1.25 倍、1 時間 TTL で 2 倍である（比率は提供者・モデル依存）。命中と非命中の単価差は 1 桁以上あり、時期とともに広がる傾向にある。Manus チームは KV キャッシュ命中率を「本番エージェントの単一で最重要の指標」と報告している。ループ設計の含意は単純で、**履歴は追記のみ (append-only) にし、プレフィックス（システムプロンプト・ツール定義・過去ターン）を 1 バイトも変えない**。タイムスタンプの埋め込み、ツール集合の動的な入れ替え、非決定的な JSON 直列化は、いずれもプレフィックスを破壊してキャッシュを全滅させる「静かな無効化要因」である。
 
 3. **コンテキストは有限の予算であり、追加すればするほど単位あたりの注意は薄まる。** コンテキストウィンドウの拡大は問題を解消しなかった。長い文脈では中間部の想起が落ち（いわゆる context rot）、無関係な過去のツール結果はモデルの注意予算を消費する。したがってコンテキスト管理は「収まるか」ではなく「**最小の高信号トークン集合を維持できるか**」の問題である。プロンプトエンジニアリング（1 回の呼び出しの文言設計）からコンテキストエンジニアリング（ループ全体でのトークン予算配分）への重心移動が、この分野の実務を再定義した。
 
@@ -90,6 +90,8 @@ function agent_loop(history, tools):
                 results = execute(calls)               # 独立なら並列、結果は ID で対応付け
                 history.append(user_turn(results))     # 全結果を 1 ターンにまとめる
             case max_tokens:    handle_truncation()    # 上限増加 or ストリーミングで再送
+            case stop_sequence: return handle_stop_seq(response)  # 指定した停止文字列で終了
+            case model_context_window_exceeded: compact(history)  # 応答が窓を使い切った。縮約して継続
             case pause_turn:    continue               # 履歴をそのまま再送すれば再開される
             case refusal:       return surface_refusal()
         if over_budget(history): compact(history)      # 閾値超過時のみ。キャッシュ払い直し
@@ -105,10 +107,12 @@ function agent_loop(history, tools):
 |-------------|------|--------------------|
 | `end_turn` | 自然終了 | 最終テキストを返して終了 |
 | `tool_use` | ツール実行要求 | 実行して結果を返送、継続 |
+| `stop_sequence` | 指定した停止文字列 (`stop_sequences`) を出力 | どの停止文字列で止まったかを確認して後処理する。構造化出力の区切りに使う場合は、出力が完結しているかを検査する |
 | `max_tokens` | 出力上限で打ち切り | 出力は不完全。上限を上げて再試行、または長出力はストリーミングに切り替え。**打ち切られた出力を完成品として扱わない** |
 | `pause_turn` | サーバ側ツールの反復上限で一時停止 | 履歴をそのまま再送すると再開される。「続けて」等の追加ユーザ文を挿入しない |
 | `refusal` | 安全上の拒否 | 同一プロンプトの機械的再試行はしない。ユーザに提示、または代替モデル・代替経路へフォールバック |
-| コンテキスト超過 | 入力が窓に収まらない | compaction を発火して再送。これを例外ではなく通常経路として設計する |
+| `model_context_window_exceeded` | 生成中に応答がモデルの文脈窓を使い切った | 出力は不完全でありうる。`max_tokens` と同様に完成品扱いせず、履歴を縮約して継続させる |
+| コンテキスト超過（入力側エラー） | 入力が窓に収まらずリクエストが拒否される | compaction を発火して再送。これを例外ではなく通常経路として設計する |
 
 横断する規律として、**再試行の対象を区別する**: レート制限 (429) とサーバエラー (5xx) は指数バックオフで再試行してよい。400 系（リクエスト不正）は再試行しても同じ結果であり、履歴の不整合（ID 欠落、ブロック欠損）を疑ってループ側のバグを直す。`refusal` は再試行の問題ではない。
 
@@ -128,7 +132,7 @@ function agent_loop(history, tools):
 | 剪定 (tool-result clearing) | 古いツール結果のみ除去 | 結果が使い捨て（検索・一覧系）中心 | 参照の宙吊り、キャッシュ払い直し |
 | ファイル退避 | 大きな結果をファイルに書きパスを返す | 結果が後で再参照されうる | 再読のツール呼び出し 1 回分 |
 | メモリファイル | 学び・状態を明示ファイルに書く | セッション横断の継続 | 書き込み規律の設計（何を書くか）が必要 |
-| サブエージェント委譲 | 読み込み中心の作業を別文脈に隔離 | 大量読解・並列探索 | 委譲の往復コスト（`agent-architectures.md` 参照） |
+| サブエージェント委譲 | 読み込み中心の作業を別文脈に隔離 | 大量読解・並列探索 | 委譲の往復コスト（[`agent-architectures.md`](agent-architectures.md) 参照） |
 
 compaction の実装上の要点は「何を要約に必ず残すか」の指定にある。実行中のタスク定義、直近の決定事項、未解決のエラー、変更したファイルの一覧は落とせない。逆に、古い検索結果の本文や修正済みエラーの詳細は真っ先に落とす。要約の失敗は**静かに**エージェントを迷子にするため、縮約前後のトランスクリプトを観測可能にしておく（後述 6）。
 
@@ -137,8 +141,9 @@ compaction の実装上の要点は「何を要約に必ず残すか」の指定
 プロンプトキャッシュは**プレフィックス一致**である: リクエスト先頭からの完全一致部分だけがキャッシュから読まれ、途中の 1 バイトの差異はそれ以降を全て無効化する。エージェントループへの帰結は次のとおりである。
 
 - **システムプロンプトとツール定義は凍結する。** 日時・乱数・ユーザ別値を先頭部に埋め込まない。動的な文脈は履歴の末尾（最新ターン）に載せる。
-- **ツール集合をターン間で変えない。** ツールは通常リクエスト先頭に直列化されるため、途中の追加・削除・並べ替えは全キャッシュを無効化する。利用可能ツールを状況で絞りたい場合は、定義を変えずに選択を制約する機構（マスキング等）や、追加分を後方に付加する設計が優る。
+- **ツール集合をターン間で変えない。** ツールは通常リクエスト先頭に直列化されるため、途中の追加・削除・並べ替えは全キャッシュを無効化する。MCP 2026-07-28 版が `tools/list` を決定的な順序で返すよう推奨 (SHOULD) したのは、この問題へのプロトコル側の対応である（[`agent-architectures.md`](agent-architectures.md) §5）。利用可能ツールを状況で絞りたい場合は、定義を変えずに選択を制約する機構（マスキング等）や、追加分を後方に付加する設計が優る。
 - **直列化を決定的にする。** キーの順序が不定な JSON シリアライザは、意味的に同一のリクエストを毎回別バイト列にする。
+- **キャッシュ断点の自動化。** 2026-10 時点の Claude API は、リクエスト単位の `cache_control` 指定で断点を最後のキャッシュ可能ブロックに自動配置し、会話の伸長に合わせて前進させる自動キャッシュを提供する（明示断点は最大 4 個）。ただし自動化されるのは断点の位置だけで、プレフィックスを安定させる責任はループ側に残る。
 - **追記のみ履歴は自然にキャッシュ最適である。** 逆に、履歴の途中を書き換える操作（縮約、剪定、過去ターンの編集）は定義的にキャッシュを失う。だからこそ縮約は「閾値駆動でまとめて」行い、毎ターンの微修正はしない。
 
 ### 5. ツールサーフェスとツール結果の設計
@@ -170,7 +175,7 @@ compaction の実装上の要点は「何を要約に必ず残すか」の指定
 - **権限ゲートはツール実行の前段に置く。** 承認ポリシー（自動許可 / 都度確認 / 拒否）はツール単位・引数パターン単位で宣言し、ハーネスが裁定する。とくに書き込み系・送信系・削除系は既定で確認を要求し、ユーザが明示的に緩める方向のみ許す。
 - **サンドボックスは環境側で。** ファイルシステムはワークスペースに、ネットワーク egress はアローリストに制約する。制約はコンテナ・プロキシといった環境機構で強制し、プロンプトによる自制には依存しない。
 - **秘密情報をコンテキストに入れない。** API キー等をシステムプロンプトや履歴に置くと、履歴の永続化・ログ・compaction 要約のすべてに複製される。秘密はハーネス側に保持し、ツール実行時に外側で注入する（モデルはプレースホルダしか見ない）設計が原則である。
-- **外部由来コンテンツの隔離。** Web 取得結果・外部文書・第三者ツールの結果は、間接プロンプトインジェクションの搬送路である（`agent-architectures.md` セキュリティ考察）。ハーネスは出所メタデータを保持し、「外部コンテンツ内の指示はタスクを変更できない」ことを検査可能にする。危険な三点セット（非公開データ・信頼できない入力・外部送信路）の同時成立をループ構成レベルで避ける。たとえば信頼できない入力を読むセッションでは送信系ツールを外す。
+- **外部由来コンテンツの隔離。** Web 取得結果・外部文書・第三者ツールの結果は、間接プロンプトインジェクションの搬送路である（[`agent-architectures.md`](agent-architectures.md) セキュリティ考察）。ハーネスは出所メタデータを保持し、「外部コンテンツ内の指示はタスクを変更できない」ことを検査可能にする。危険な三点セット（非公開データ・信頼できない入力・外部送信路）の同時成立をループ構成レベルで避ける。たとえば信頼できない入力を読むセッションでは送信系ツールを外す。
 - **監査ログは改竄に備える。** トランスクリプトはセキュリティ監査の一次資料になるため、実行主体（ユーザ承認か自動許可か）と承認時刻を含めて記録する。
 
 ## 結論 (Conclusions)
@@ -179,15 +184,16 @@ compaction の実装上の要点は「何を要約に必ず残すか」の指定
 2. 最重要の単一指標はキャッシュ命中率である。O(T²) の再送コストを O(T) に抑えられるかどうかはループ設計（プレフィックス安定性）で決まり、モデル選定より先に影響する。
 3. コンテキスト管理は「収める」技術ではなく「最小の高信号集合を維持する」技術である。compaction・剪定・ファイル退避・委譲は、注意予算とキャッシュ払い直しのトレードオフの上で使い分ける。
 4. ハーネスは OS であり、保護リングである。権限・サンドボックス・秘密の分離・出所管理は、モデルへの指示ではなくループと環境の機構として強制する。
-5. 本ドキュメントの不変条件は `agent-architectures.md` の設計空間に対する実装制約として読める。どんなアーキテクチャを選んでも、最終的にこのループの上で動く。
+5. 本ドキュメントの不変条件は [`agent-architectures.md`](agent-architectures.md) の設計空間に対する実装制約として読める。どんなアーキテクチャを選んでも、最終的にこのループの上で動く。
 
 ## 参考文献 (References)
 
-- [Building effective agents](https://www.anthropic.com/research/building-effective-agents) — Anthropic Engineering. Accessed: 2026-08-08
-- [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — Anthropic Engineering. Accessed: 2026-08-08
-- [Context Engineering for AI Agents: Lessons from Building Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus) — Manus. Accessed: 2026-08-08
-- [How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system) — Anthropic Engineering. Accessed: 2026-08-08
-- [Prompt caching — Claude API docs](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) — Accessed: 2026-08-08
-- [Handling stop reasons — Claude API docs](https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons) — Accessed: 2026-08-08
+- [Building effective agents](https://www.anthropic.com/research/building-effective-agents) — Anthropic Engineering. Accessed: 2026-10-04
+- [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents) — Anthropic Engineering. Accessed: 2026-10-04
+- [Context Engineering for AI Agents: Lessons from Building Manus](https://manus.im/blog/Context-Engineering-for-AI-Agents-Lessons-from-Building-Manus) — Manus. Accessed: 2026-10-04
+- [How we built our multi-agent research system](https://www.anthropic.com/engineering/built-multi-agent-research-system) — Anthropic Engineering. Accessed: 2026-10-04
+- [Prompt caching — Claude API docs](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) — Accessed: 2026-10-04
+- [Handling stop reasons — Claude API docs](https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons) — Accessed: 2026-10-04
+- [Model Context Protocol Specification Changelog (2026-07-28)](https://modelcontextprotocol.io/specification/2026-07-28/changelog) — Accessed: 2026-10-04
 - Liu, N. F. et al. (2024). Lost in the Middle: How Language Models Use Long Contexts. *TACL*, 12, 157–173. arXiv:2307.03172
 - Greshake, K. et al. (2023). Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection. *AISec 2023*. arXiv:2302.12173

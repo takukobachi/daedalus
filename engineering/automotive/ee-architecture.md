@@ -2,16 +2,16 @@
 
 ## 概要 (Overview)
 
-**E/E アーキテクチャ (Electrical/Electronic architecture)** とは、車両の電子制御ユニット (ECU)・ネットワーク・電源分配・ソフトウェア配置の全体構成を指す。`in-vehicle-networks.md` が CAN を軸にプロトコルを、`automotive-ethernet-tsn.md` が Ethernet/TSN バックボーンを扱ったのに対し、本書はその**上位の構成論**として、なぜ ECU が 100 個規模まで増殖したのか、なぜ業界全体が **分散 (distributed) → ドメイン (domain) → ゾーン (zonal) ＋セントラルコンピュート (central compute)** へ移行しつつあるのかを扱う。
+**E/E アーキテクチャ (Electrical/Electronic architecture)** とは、車両の電子制御ユニット (ECU)・ネットワーク・電源分配・ソフトウェア配置の全体構成を指す。[`in-vehicle-networks.md`](in-vehicle-networks.md) が CAN を軸にプロトコルを、[`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) が Ethernet/TSN バックボーンを扱ったのに対し、本書はその**上位の構成論**として、なぜ ECU が 100 個規模まで増殖したのか、なぜ業界全体が **分散 (distributed) → ドメイン (domain) → ゾーン (zonal) ＋セントラルコンピュート (central compute)** へ移行しつつあるのかを扱う。
 
-移行の物理的な強制力 (forcing function) は**配線ハーネス (wiring harness)** である。数 km・数十 kg に達したハーネスが重量・コスト・組立性の限界を突き、アーキテクチャの再設計を強いた。その帰結が **SDV (Software-Defined Vehicle, ソフトウェア定義車両)** である。SDV は、ソフトウェアを ECU 調達から切り離し、出荷後も OTA で進化させる思想である。`ev/tesla-software-manufacturing.md` が記述するテスラの集中型 E/E は、この業界共通の変遷の先行例として本書で一般化する。分析深度は Level 3。
+移行の物理的な強制力 (forcing function) は**配線ハーネス (wiring harness)** である。数 km・数十 kg に達したハーネスが重量・コスト・組立性の限界を突き、アーキテクチャの再設計を強いた。その帰結が **SDV (Software-Defined Vehicle, ソフトウェア定義車両)** である。SDV は、ソフトウェアを ECU 調達から切り離し、出荷後も OTA で進化させる思想である。[`ev/tesla-software-manufacturing.md`](ev/tesla-software-manufacturing.md) が記述するテスラの集中型 E/E は、この業界共通の変遷の先行例として本書で一般化する。分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
 - E/E アーキテクチャを「**ECU の数と配置・ネットワークトポロジ・電源分配・ソフトウェア配置**」の 4 層で分解し、世代（分散/ドメイン/ゾーン＋セントラル）ごとに対比する。
 - 変遷の駆動力を、(1) 機能追加の調達モデル（feature-per-box）、(2) 配線ハーネスの物理限界、(3) ソフトウェア価値の増大（SDV）の 3 つに整理し、それぞれ定量的根拠を付す。
 - ECU 数・ハーネス重量/長は広く引用されるが出典により幅がある。CLAUDE.md「Source Hierarchy & Conflicts」に従い**単一値でなく範囲**で示し、ベンダー公称値（Bosch/Aptiv の削減率、テスラの目標値）は **公称・目標 (target)** と明示して実証値と区別する。
-- 業界事例（テスラ、VW ID 系、Tier-1 各社）は個別記述を避け、**一般化した設計パターン**として抽出する。テスラ固有の詳細は `ev/tesla-software-manufacturing.md` に委ねる。
+- 業界事例（テスラ、VW ID 系、Tier-1 各社）は個別記述を避け、**一般化した設計パターン**として抽出する。テスラ固有の詳細は [`ev/tesla-software-manufacturing.md`](ev/tesla-software-manufacturing.md) に委ねる。
 
 ## 発見事項 (Findings)
 
@@ -88,7 +88,7 @@ graph LR
 
 ### 4. ゾーンアーキテクチャ (Zonal Architecture)
 
-- **ゾーンコントローラ**は車体の物理区画ごとに置かれ、近傍のセンサ/アクチュエータの I/O（CAN FD・LIN・10BASE-T1S 等）を集約し、Ethernet/TSN 幹線で中央と結ぶ（幹と枝の階層は `automotive-ethernet-tsn.md` 参照）。機能はもはや特定の箱に宿らず、**ゾーンは I/O とゲートウェイ、計算は中央**という分業になる。
+- **ゾーンコントローラ**は車体の物理区画ごとに置かれ、近傍のセンサ/アクチュエータの I/O（CAN FD・LIN・10BASE-T1S 等）を集約し、Ethernet/TSN 幹線で中央と結ぶ（幹と枝の階層は [`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) 参照）。機能はもはや特定の箱に宿らず、**ゾーンは I/O とゲートウェイ、計算は中央**という分業になる。
 - **電源分配の再設計**が対になる。従来の集中ヒューズボックス＋リレーを、ゾーンコントローラ内蔵の **eFuse（半導体ヒューズ）/ スマートスイッチ**に置換する。溶断式と違い再設定可能で、電流監視・診断・ソフト制御ができ、故障時の遮断も速い。電源線も「ゾーンまで太い幹線、そこから短い枝」となり、信号と電力の両方でハーネスが縮む。
 - **効果の規模（ベンダー公称）**: Bosch はゾーン指向化でハーネス重量 15–20% 減、Aptiv は Smart Vehicle Architecture で約 20% 減＋フラットケーブル化で最大 40% 減の余地と公称する。**第三者による実測の公開は乏しく、公称値として扱う**。
 
@@ -96,7 +96,7 @@ graph LR
 
 計算は少数の **HPC (High-Performance Computer)** に集約される。核心は性能でなく**混在重要度の同居**である。
 
-- **ハイパーバイザ**で ASIL 系（車両制御）と QM 系（IVI、Linux/Android）を仮想マシンとして分離し、CPU・メモリ・I/O の**干渉からの自由 (FFI)** を確保する（ISO 26262、`functional-safety-iso26262.md`）。
+- **ハイパーバイザ**で ASIL 系（車両制御）と QM 系（IVI、Linux/Android）を仮想マシンとして分離し、CPU・メモリ・I/O の**干渉からの自由 (FFI)** を確保する（ISO 26262、[`functional-safety-iso26262.md`](functional-safety-iso26262.md)）。
 - SoC 内には**セーフティアイランド**（ロックステップコアと独立電源/クロック監視を持つ領域）を置き、高性能コア群の故障を検出・縮退させる。
 - それでも安全上の最終防衛線として、ブレーキ等の**縮退動作 (graceful degradation)** をゾーン側や独立 ECU に残す設計が一般的で、「完全中央集中」は現実には採られにくい。
 
@@ -110,13 +110,13 @@ graph LR
 
 ### 7. 業界事例の一般化 (Industry Examples, Generalized)
 
-- **テスラ**: 中央コンピュータ＋少数のボディコントローラ（前/右/左）＋ Ethernet という徹底した集中・ゾーン構成の先行例。ハーネス短縮と OTA を最初期から設計目標に置いた。詳細は `ev/tesla-software-manufacturing.md`（本書はその一般化）。
+- **テスラ**: 中央コンピュータ＋少数のボディコントローラ（前/右/左）＋ Ethernet という徹底した集中・ゾーン構成の先行例。ハーネス短縮と OTA を最初期から設計目標に置いた。詳細は [`ev/tesla-software-manufacturing.md`](ev/tesla-software-manufacturing.md)（本書はその一般化）。
 - **VW ID 系 (E3 アーキテクチャ)**: **ICAS (In-Car Application Server)** と呼ぶ HPC 群に機能を集約。ICAS1（Continental 製、Adaptive AUTOSAR ベース）がゲートウェイ＋ボディ機能＋ OTA 統括を担う。ハードとソフトの分離を明示的に掲げた量産例（ベンダー・OEM 発表ベース）。
 - **一般的傾向**: Tier-1（Bosch・Aptiv・Continental 等）は「ドメイン→クロスドメイン→ゾーン＋ビークルコンピュータ」の段階的ロードマップを提示しており、移行は一足飛びではなく**折衷構成を経由して漸進**する。各社の削減率・時期の数字はマーケティングを含む公称であり、本書では傾向のみを事実として扱う。
 
 ## セキュリティ考察 (Security Considerations)
 
-集約は攻撃面 (attack surface) の質を変える。個別の対策技術は `cybersecurity-iso21434.md` に譲り、ここではアーキテクチャ固有の論点に絞る。
+集約は攻撃面 (attack surface) の質を変える。個別の対策技術は [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) に譲り、ここではアーキテクチャ固有の論点に絞る。
 
 - **「多数の貧しい標的」から「少数の豊かな標的」へ**: 分散型では 1 ECU の侵害の影響が局所的だったが、HPC は車両機能の大半を実行するため、**侵害 1 点の価値が桁違いに大きい**。HPC 上の VM 分離・最小権限・セキュアブートが、従来の「ECU 1 個の堅牢化」よりはるかに重い意味を持つ。
 - **ゾーンコントローラ＝天然のセキュリティ境界**: すべての末端 I/O がゾーンを経由するため、ゾーンコントローラはフィルタリング・レート制限・IDS の設置点として機能する。ドメイン型のセントラルゲートウェイが担った境界防御が、位置ベースで多重化される形になる。
@@ -132,12 +132,15 @@ graph LR
 
 ### 次の接続先 (Related Topics)
 
-- `in-vehicle-networks.md` — 本書の下層: CAN の調停・無認証問題、ECU の内部構成。
-- `automotive-ethernet-tsn.md` — ゾーン幹線の実体: Ethernet/TSN・SPE・SOME/IP。
-- `ev/tesla-software-manufacturing.md` — 本書が一般化したテスラ固有の集中型 E/E・OTA・製造統合。
-- `functional-safety-iso26262.md` — 混在重要度・FFI・ASIL 分解の規範。
-- `cybersecurity-iso21434.md` — 集約後の攻撃面への対策: セキュア OTA・HSM・SecOC・UN R155/R156。
-- `../../hardware/cpu/` — HPC が要求する仮想化・並行性・メモリ階層の基礎。
+- [`in-vehicle-networks.md`](in-vehicle-networks.md) — 本書の下層: CAN の調停・無認証問題、ECU の内部構成。
+- [`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) — ゾーン幹線の実体: Ethernet/TSN・SPE・SOME/IP。
+- [`ev/tesla-software-manufacturing.md`](ev/tesla-software-manufacturing.md) — 本書が一般化したテスラ固有の集中型 E/E・OTA・製造統合。
+- [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 混在重要度・FFI・ASIL 分解の規範。
+- [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) — 集約後の攻撃面への対策: セキュア OTA・HSM・SecOC・UN R155/R156。
+- [`../../hardware/cpu/`](../../hardware/cpu/) — HPC が要求する仮想化・並行性・メモリ階層の基礎。
+- [`../../software/embedded/autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) — Classic/Adaptive Platform と内製 Vehicle OS：集約後のソフトウェア基盤。
+- [`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) — 混在重要度の隔離を担うハイパーバイザの仕組み。
+- [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — 直列系の信頼度劣化と冗長・共通原因故障：集中化が単一障害点を生む定量的理由。
 
 ## 参考文献 (References)
 

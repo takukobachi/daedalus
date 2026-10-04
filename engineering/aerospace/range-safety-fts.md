@@ -8,7 +8,7 @@
 
 本ドキュメントは、飛行安全の原理（飛行回廊・破壊限界線・瞬時落下点）、FTS のハードウェア構成、コマンド式から自律式への転換の論理、そして Starship 飛行試験での FTS 作動事例を分析する。分析深度は Level 3。
 
-> 関連: 冗長計算機と fail-safe/fail-operational の設計原理は `avionics-gnc.md`、射点側の安全は `launch-ground-systems.md`。
+> 関連: 冗長計算機と fail-safe/fail-operational の設計原理は [`avionics-gnc.md`](avionics-gnc.md)、射点側の安全は [`launch-ground-systems.md`](launch-ground-systems.md)。
 
 ## 方法論 (Methodology)
 
@@ -19,7 +19,7 @@
 
 ## 発見事項 (Findings)
 
-1. **飛行安全の単位は「機体」ではなく「公衆リスク」。** 規制（FAA Part 450）は、飛行経路下の人口に対する予測死傷リスク (expected casualty, E_c) を閾値以下に抑えることを要求する。機体を守るためではなく、**機体を犠牲にしてでも**公衆を守るのが FTS である[^part450]。
+1. **飛行安全の単位は「機体」ではなく「公衆リスク」。** 規制（FAA Part 450）は、飛行経路下の人口に対する予測死傷リスク (expected casualty, E_c) を閾値以下に抑えることを要求する。一般公衆に対しては集団リスク E_c ≤ 1×10⁻⁴（1回の打ち上げあたり）、個人リスク ≤ 1×10⁻⁶ が上限である（14 CFR 450.101(a)）。機体を守るためではなく、**機体を犠牲にしてでも**公衆を守るのが FTS である[^part450]。
 2. **鍵となる計算は瞬時落下点 (IIP)。** 「今この瞬間に推力が止まったら破片はどこに落ちるか」を連続的に計算し、その点が保護区域に入る前、つまり**破壊限界線 (destruct lines)** を越える前に飛行を終端する。判断は常に「手遅れになる前」でなければならない。
 3. **執行は「推力停止」と「タンク開放」。** 液体ロケットの FTS は、エンジン停止に加えて線形成形炸薬 (linear shaped charge) でタンクを開き、推進剤を分散させて**地上到達エネルギーを最小化**する。爆発させることが目的ではなく、まとまった質量とエネルギーの落下を防ぐことが目的である[^rcc319]。
 4. **AFSS は「判断系の機上移設」。** 地上レーダ＋人間の判断を、機上の GPS/IMU＋事前定義の規則群 (mission rules) に置き換える。冗長化された機上計算機が自機位置を航法解で監視し、規則違反で自律的に終端する。標準は RCC 319 に成文化されている[^rcc319]。
@@ -48,6 +48,29 @@
    ▓▓ 保護区域（人口密集地・航路）▓▓
 ```
 
+### AFSS の判断フロー (AFSS Decision Flow)
+
+E_c とその確率モデルの背景は [`../../foundations/mathematics/probability-statistics/probability-random-variables.md`](../../foundations/mathematics/probability-statistics/probability-random-variables.md)（期待値）と [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md)（冗長系の信頼度）を参照。
+
+```mermaid
+flowchart TD
+    subgraph NAV["航法 (独立安全系)"]
+        GPS["GPS ×2"] --> FUSE["航法解<br/>位置・速度"]
+        IMU["IMU ×2"] --> FUSE
+    end
+    FUSE --> IIP["瞬時落下点 IIP を毎周期計算"]
+    IIP --> RULES{"mission rules 照合<br/>破壊限界線・ゲート・<br/>航法健全性"}
+    RULES -- "全規則を満足" --> CONT["飛行継続"]
+    CONT --> SAFE{"保護区域を<br/>離脱したか"}
+    SAFE -- "いいえ" --> IIP
+    SAFE -- "はい" --> SAFING["セーフ化 (safing)<br/>以後は終端しない"]
+    RULES -- "違反 / 航法喪失" --> VOTE{"冗長 AFSS 計算機の<br/>独立判断"}
+    VOTE --> TERM["終端: 推力停止 +<br/>線形成形炸薬でタンク開放"]
+    TERM --> DISP["推進剤を高空で分散<br/>地上到達エネルギー最小化"]
+```
+
+凡例: 四角は処理、菱形は判定。終端判断は「疑わしきは終端」（航法解を失った場合も終端側に倒す）であり、450.108 の「有効なリアルタイムデータが飛行安全限界の違反を示したとき終端する」要求に対応する[^part450]。
+
 ### 判断系の転換 — コマンド式 vs 自律式 (Command vs Autonomous)
 
 | 観点 | コマンド式 FTS（従来） | AFSS（自律式） |
@@ -60,7 +83,7 @@
 | 弱点 | リンク妨害・人的遅れ | **規則とソフトの事前検証が全て** |
 | 標準 | RCC 313 系 | **RCC 319**（FTS 共通標準）[^rcc319] |
 
-- **本質**: 安全判断の正しさを「その場の人間の判断力」から「**事前に検証された規則集合**」へ移す転換であり、航空宇宙ソフトウェアの検証文化（`avionics-gnc.md` の fail-safe 設計）が公衆安全の最前線に立つことを意味する。
+- **本質**: 安全判断の正しさを「その場の人間の判断力」から「**事前に検証された規則集合**」へ移す転換であり、航空宇宙ソフトウェアの検証文化（[`avionics-gnc.md`](avionics-gnc.md) の fail-safe 設計）が公衆安全の最前線に立つことを意味する。
 
 ### FTS ハードウェア構成 (FTS Hardware)
 
@@ -92,18 +115,18 @@ FTS の執行は直感に反して「爆破」ではない。
 - **初運用**: 2017年2月19日の Falcon 9 CRS-10（KSC 39A からの初打ち上げ）が、**AFSS を主系とした初の運用飛行**。第45スペースウィングは「射場の人員・設備所要を削減し、スケジュール柔軟性と即応性を高める」と公式に評価した[^45sw]。
 - **帰還ブースタとの相性**: RTLS（射点帰還）では、上昇する第2段と降下する第1段が**同時に飛行安全の管理対象**になる。機上完結の AFSS は、この複数オブジェクト管理を地上網の増強なしに成立させる。
 - **回廊の解放**: 2020年、ケープカナベラルからの**極軌道回廊**が約60年ぶりに再開された。キューバ上空を通過する経路は、AFSS による確実な終端能力を前提に公衆リスク計算が成立したもので、「自律化が物理的に新しい軌道を開いた」事例である[^polar]。
-- **規制の並走**: FAA の商業打ち上げ規則は Part 450 へ統合され、性能基準ベース（E_c 閾値）の枠組みで AFSS を含む新方式を受け入れる構造になった[^part450]。
+- **規制の並走**: FAA の商業打ち上げ規則は Part 450 へ統合され（2021年3月施行。旧 Part 415/417 等を置換）、性能基準ベース（E_c 閾値）の枠組みで AFSS を含む新方式を受け入れる構造になった[^part450]。
 
 ### 事例分析 — Starship 飛行試験での FTS 作動
 
-- **IFT-1 (2023-04)**: 上昇中に複数エンジン不調から姿勢を喪失、FTS が指令された。しかし**起爆からタンク破壊・飛行終端までに想定を超える時間（約40秒）** を要し、機体はタンブリングを続けた後に分解した。FAA 事故調査の是正措置には **FTS の炸薬増強と再認定**が含まれ、以後の機体に適用された[^faa-ift]。巨大なステンレスタンク（`rocket-structures-tanks.md`）に対する終端手段の実効性は、実飛行で初めて検証されたことになる。
+- **IFT-1 (2023-04)**: 上昇中に複数エンジン不調から姿勢を喪失、FTS が指令された。しかし**起爆からタンク破壊・飛行終端までに想定を超える時間（約40秒）** を要し、機体はタンブリングを続けた後に分解した。FAA 事故調査の是正措置には **FTS の炸薬増強と再認定**が含まれ、以後の機体に適用された[^faa-ift]。巨大なステンレスタンク（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）に対する終端手段の実効性は、実飛行で初めて検証されたことになる。
 - **IFT-2 (2023-11)**: ブースタはホットステージング後のブーストバック中に、シップは飛行後半に、それぞれ自律安全系が異常を検知して終端した。機体は失われたが、**「異常時に設計どおり自律終端する」ことが両段で実証**された飛行でもある[^faa-ift]。
 - **読み方**: FTS は「使われないことが最良」の系だが、開発初期の高頻度試験では実際に作動する。fly-fail-fix の反復開発は、機体だけでなく**安全系そのものの実証機会**としても機能している。ただしそれは、飛行回廊と退避区域の設計が正しく、公衆被害ゼロで失敗できたからである。
 
 ## セキュリティ考察 (Security Considerations)
 
 - **攻撃面の交換**: コマンド式 FTS は秘匿化された無線リンクという**RF 攻撃面**（妨害・なりすまし）を持つ。AFSS はリンクを廃してこの面を消す代わりに、**ソフトウェアと規則データの完全性**が安全の全てになる。mission rules の検証・署名・改竄防止、開発環境のサプライチェーン管理が、事実上の飛行安全要件となる。
-- **誤作動と不作動の非対称**: FTS の不作動は公衆被害に、誤作動は機体喪失に至る。設計は「疑わしきは終端」に倒しつつ（公衆保護が上位）、正常飛行での誤終端を防ぐため冗長系の合意と保護区域外でのセーフ化を組み合わせる。これは `avionics-gnc.md` の fail-safe/fail-operational の使い分けの、最も重い応用例である。
+- **誤作動と不作動の非対称**: FTS の不作動は公衆被害に、誤作動は機体喪失に至る。設計は「疑わしきは終端」に倒しつつ（公衆保護が上位）、正常飛行での誤終端を防ぐため冗長系の合意と保護区域外でのセーフ化を組み合わせる。これは [`avionics-gnc.md`](avionics-gnc.md) の fail-safe/fail-operational の使い分けの、最も重い応用例である。
 - **本リポジトリの立場**: FTS の具体的な起爆装置仕様・無線プロトコルの詳細は公開標準 (RCC 319) の範囲でのみ扱い、運用中システムの脆弱性探索にあたる内容は扱わない（`CLAUDE.md` の Security & Ethics 方針）。
 
 ## 結論 (Conclusions)
@@ -122,7 +145,7 @@ SpaceX にとって AFSS は安全対策であると同時に**運用アーキ�
 
 [^rcc319]: Range Commanders Council (2019). *Flight Termination Systems Commonality Standard*. RCC 319-19 — FTS（コマンド式・自律式双方）の設計・試験・認定要求の共通標準。AFSS の冗長構成・独立電源・セーフ化要求を含む。
 
-[^part450]: FAA, 14 CFR Part 450 — *Launch and Reentry License Requirements* — 予測死傷リスク (E_c) に基づく性能基準型の商業打ち上げ安全規制。飛行中断・飛行安全解析の要求事項。Accessed: 2026-07-26.
+[^part450]: FAA, [14 CFR Part 450 — *Launch and Reentry License Requirements* (LII, Cornell)](https://www.law.cornell.edu/cfr/text/14/part-450) — 予測死傷リスク (E_c) に基づく性能基準型の商業打ち上げ安全規制。§450.101(a)（一般公衆の集団リスク E_c ≤ 1×10⁻⁴、個人リスク ≤ 1×10⁻⁶／打ち上げ）、§450.108（飛行中断と飛行安全限界: 有効なリアルタイムデータが限界違反を示したら終端）、§450.143/§450.145（飛行安全システムの要求）。Accessed: 2026-10-04.
 
 [^45sw]: [45th Space Wing — Falcon 9 CRS-10 launch marks first operational use of the Autonomous Flight Safety System (2017-02)](https://www.patrick.spaceforce.mil/) — AFSS 初運用の公式発表。人員・設備所要の削減とスケジュール柔軟性の向上への言及。Accessed: 2026-07-26.
 
@@ -134,6 +157,6 @@ SpaceX にとって AFSS は安全対策であると同時に**運用アーキ�
 
 **本リポジトリ内参照**
 
-- `avionics-gnc.md` — 冗長計算機、fail-safe / fail-operational、Byzantine 障害
-- `launch-ground-systems.md` — 射点側の安全（退避区域、地上事故の巻き添え範囲）
-- `rocket-structures-tanks.md` — タンク構造（FTS が「開く」対象の設計）
+- [`avionics-gnc.md`](avionics-gnc.md) — 冗長計算機、fail-safe / fail-operational、Byzantine 障害
+- [`launch-ground-systems.md`](launch-ground-systems.md) — 射点側の安全（退避区域、地上事故の巻き添え範囲）
+- [`rocket-structures-tanks.md`](rocket-structures-tanks.md) — タンク構造（FTS が「開く」対象の設計）

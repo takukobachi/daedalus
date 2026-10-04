@@ -4,7 +4,7 @@
 
 現代のCPUは命令を深いパイプライン (pipeline) で並列処理し、1サイクルに複数命令を発行するスーパースカラ (superscalar) 構造を持つ。この機構は「次に実行する命令アドレスが常に分かっている」ことを前提とするが、条件分岐 (conditional branch) はその前提を崩す。分岐の方向と飛び先は、分岐命令自身が**実行完了するまで確定しない**。
 
-この穴を埋めるのが**分岐予測 (branch prediction)** と**投機実行 (speculative execution)** である。CPUは分岐の結果を予測し、確定前に予測経路の命令を先行実行する。予測が当たれば停止なく流れ、外れれば投機分を破棄してやり直す。命令の約5本に1本が分岐である一般的なコードでは、予測精度がそのままスループットを左右する。
+この穴を埋めるのが**分岐予測 (branch prediction)** と**投機実行 (speculative execution)** である。CPUは分岐の結果を予測し、確定前に予測経路の命令を先行実行する。予測が当たれば停止なく流れ、外れれば投機分を破棄してやり直す。命令の約5本に1本が分岐である一般的なコードでは、予測精度がそのままスループットを左右する[^hp]。
 
 本ドキュメントは、分岐予測器の構造と動作原理を整理し、予測ミスの性能コストを定量的な桁感で示し、さらに投機実行が **Spectre** 系のマイクロアーキテクチャ・サイドチャネル (microarchitectural side channel) を生む構造を明らかにする。
 
@@ -18,13 +18,36 @@
 
 ## 発見事項 (Findings)
 
-1. **制御ハザードのコストはパイプライン深さに比例する。** 予測ミス時は投機中の全命令をフラッシュし、正しい経路を先頭から流し直す。深いパイプライン（10〜20段）では1回のミスで**10〜20サイクル超**が失われ、これは数十命令分の発行機会に相当する。
-2. **動的予測 (dynamic prediction) は履歴で精度を稼ぐ。** 2ビット飽和カウンタ (2-bit saturating counter) による単純な方式でも実コードで90%前後、gshare やトーナメント (tournament) 予測器では多くのワークロードで**95〜99%超**に達する。残り数%のミスが性能の足を引っ張る。
+1. **制御ハザードのコストはパイプライン深さに比例する。** 予測ミス時は投機中の全命令をフラッシュし、正しい経路を先頭から流し直す。深いパイプライン（10〜20段）では1回のミスで**10〜20サイクル超**が失われ、これは数十命令分の発行機会に相当する[^fog]。
+2. **動的予測 (dynamic prediction) は履歴で精度を稼ぐ。** 2ビット飽和カウンタ (2-bit saturating counter) による単純な方式でも実コードで90%前後[^smith]、2レベル適応型・gshare・トーナメント (tournament) 予測器では多くのワークロードで**95〜99%超**に達する[^yeh-patt][^mcfarling]。残り数%のミスが性能の足を引っ張る。
 3. **方向とターゲットは別々に予測される。** 「分岐するか (taken/not-taken)」は方向予測器が、「どこへ飛ぶか」は分岐ターゲットバッファ (BTB) とリターンアドレススタック (RAS) が担う。間接分岐 (indirect branch) はターゲットが多値で予測が難しい。
 4. **予測ミスの真のコストは IPC の低下として表れる。** 予測精度 p、ミスペナルティ N サイクル、分岐頻度 f のとき、分岐に起因する追加 CPI はおよそ `f·(1−p)·N`。f=0.2, p=0.97, N=15 なら約 0.09 CPI 増となる。ピーク IPC が高い設計ほど相対的損失が大きい。
 5. **投機実行は「なかったことにできない痕跡」を残す。** 投機結果はアーキテクチャ的にはロールバックされるが、キャッシュ・BTB・予測器といったマイクロアーキテクチャ状態には副作用が残る。これが **Spectre** の本質であり、性能機構がそのまま情報漏洩経路になる。
 
 ## アーキテクチャ (Architecture)
+
+### 予測から確定までの全体像 (Prediction-to-Commit Flow)
+
+フロントエンドは毎サイクル、現在の PC から「次にフェッチすべきアドレス」を予測器群に問い合わせ、分岐解決を待たずに投機経路を流し込む。分岐が実行段で解決した時点で、予測が正しければ ROB 先頭からコミットされ、外れていれば以降の命令を破棄して正しいアドレスから再フェッチする。どちらの場合も予測器は実結果で更新される。
+
+```mermaid
+flowchart LR
+    PC["フェッチ PC"] --> PRED
+    subgraph PRED["分岐予測ユニット (フェッチ段で並列参照)"]
+        BTB["BTB<br/>(PC → ターゲット)"]
+        DIR["方向予測器<br/>(2-bit / gshare / TAGE)"]
+        RAS["RAS<br/>(ret の戻り先)"]
+        IND["間接分岐予測器<br/>(履歴依存ターゲット)"]
+    end
+    PRED -->|"予測した次 PC"| FETCH["投機フェッチ・デコード"]
+    FETCH --> SPEC["投機実行<br/>(ROB に未確定で保持)"]
+    SPEC --> RES{"分岐解決<br/>(実行段)"}
+    RES -->|"予測的中"| COMMIT["コミット<br/>(アーキテクチャ状態へ反映)"]
+    RES -->|"予測ミス"| SQUASH["スカッシュ / 回復<br/>(以降の ROB エントリ破棄・RAT 復元)"]
+    SQUASH -->|"正しいアドレス"| PC
+    RES -.->|"実結果で更新"| PRED
+    SQUASH -.->|"キャッシュ・予測器の痕跡は残る"| SIDE["マイクロアーキ状態<br/>(サイドチャネルの起点)"]
+```
 
 ### 制御ハザードとパイプラインフラッシュ
 
@@ -58,9 +81,11 @@
   [7] TAGE / 神経 (perceptron) 多長履歴・機械学習的（近年の実装）
 ```
 
+[7] の代表が2つある。**TAGE** は幾何級数的に長さの異なる複数のグローバル履歴でタグ付きテーブルを引き、最長一致の表を採用する[^tage]。**パーセプトロン予測器**は履歴ビットの重み付き和の符号で方向を決め、履歴長に対してハードウェア量が線形にしか増えないため長い履歴を扱える[^perceptron]。
+
 ### 2ビット飽和カウンタ
 
-各分岐に2ビットの状態を持たせ、taken/not-taken の偏りを記憶する。1ビット方式が「ループ脱出のたびに2回ミスする」弱点を、ヒステリシス (hysteresis) で解消する。
+各分岐に2ビットの状態を持たせ、taken/not-taken の偏りを記憶する。1ビット方式が「ループ脱出のたびに2回ミスする」弱点を、ヒステリシス (hysteresis) で解消する[^smith]。状態遷移は有限オートマトンそのものである（[`automata-formal-languages.md`](../../foundations/mathematics/discrete-logic/automata-formal-languages.md)）。
 
 ```
         taken            taken            taken
@@ -78,8 +103,8 @@
 ### 履歴と gshare
 
 - **グローバル履歴 (global history)**: 直近 k 個の「全分岐」の taken/not-taken を**グローバル履歴レジスタ (GHR)** に詰める。分岐どうしの相関 (correlation) を捉える。
-- **ローカル履歴 (local history)**: 分岐**個別**の過去パターンを保持。周期的な振る舞い（例: 3回ごとに taken）に強い。
-- **gshare**: `index = GHR XOR PC` でパターン履歴表 (PHT) を引く。GHR と PC を混ぜることでエイリアシング (aliasing) を抑えつつ、相関情報を活かす。
+- **ローカル履歴 (local history)**: 分岐**個別**の過去パターンを保持。周期的な振る舞い（例: 3回ごとに taken）に強い。履歴レジスタとパターン表の2段構成は Yeh & Patt の2レベル適応型予測に由来する[^yeh-patt]。
+- **gshare**: `index = GHR XOR PC` でパターン履歴表 (PHT) を引く。GHR と PC を混ぜることでエイリアシング (aliasing) を抑えつつ、相関情報を活かす[^mcfarling]。
 
 ```
    PC      ─────────────┐
@@ -93,7 +118,7 @@
 
 ### トーナメント予測器
 
-グローバル予測器とローカル予測器を**両方**走らせ、各分岐ごとに「どちらが当たりやすいか」を学習した**選択器 (chooser / meta-predictor)** が選ぶ。分岐の性質（相関型か周期型か）に応じて最良の予測器を使い分け、単独方式の弱点を補う。
+グローバル予測器とローカル予測器を**両方**走らせ、各分岐ごとに「どちらが当たりやすいか」を学習した**選択器 (chooser / meta-predictor)** が選ぶ。分岐の性質（相関型か周期型か）に応じて最良の予測器を使い分け、単独方式の弱点を補う[^mcfarling]。
 
 ```
         ┌─────────────────┐
@@ -167,7 +192,7 @@ size_t gshare_index(uint64_t pc, uint64_t ghr, int k) {
 - **当たり**: 投機結果をリタイア (retire) し、アーキテクチャ状態（レジスタ・メモリ）へコミット。
 - **外れ**: 当該分岐以降の ROB エントリと投機レジスタ（物理レジスタの割当）を破棄し、フロントエンドをフラッシュ。
 
-**ロールバックされるのはアーキテクチャ状態だけ**である点が重要である。投機中に発行されたメモリアクセスがキャッシュに残したラインや、更新された BTB／予測器エントリは**巻き戻されない**。この「消し残し」が次節のサイドチャネルの起点になる。
+**ロールバックされるのはアーキテクチャ状態だけ**である点が重要である[^hp]。投機中に発行されたメモリアクセスがキャッシュに残したラインや、更新された BTB／予測器エントリは**巻き戻されない**。この「消し残し」が次節のサイドチャネルの起点になる。
 
 ### 5. ソフトウェアから見た指針
 
@@ -180,7 +205,7 @@ size_t gshare_index(uint64_t pc, uint64_t ghr, int k) {
 
 投機実行は「アーキテクチャ的になかったことになる計算」を許す。だがその計算がキャッシュなどのマイクロアーキテクチャ状態に痕跡を残すため、**本来読めない秘密値を、間接的に観測できてしまう**。これが投機実行サイドチャネル攻撃 (transient execution attack) の核心であり、本ドキュメントで最も重要な論点である。
 
-攻撃は概ね4段で構成される: **(1) 予測器を汚染** → **(2) 秘密に依存した投機実行を誘発** → **(3) 投機が秘密をキャッシュ等に符号化** → **(4) 別経路（キャッシュタイミング）で復号**。観測経路（段4）は `cache-memory-hierarchy.md` の Flush+Reload / Prime+Probe そのものである。
+攻撃は概ね4段で構成される: **(1) 予測器を汚染** → **(2) 秘密に依存した投機実行を誘発** → **(3) 投機が秘密をキャッシュ等に符号化** → **(4) 別経路（キャッシュタイミング）で復号**。観測経路（段4）は [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) の Flush+Reload / Prime+Probe そのものである[^spectre]。ハードウェアセキュリティ全体の中での位置づけは [`side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) を参照。
 
 ### Spectre v1 (Bounds Check Bypass, CVE-2017-5753)
 
@@ -194,28 +219,28 @@ if (x < array1_size) {                 // ① この分岐を「成立」と誤�
 }
 ```
 
-攻撃者は事前に正当な `x` で `if` を何度も成立させ、**方向予測器を「taken」に訓練**しておく。次に境界外の `x` を渡すと、CPU は境界チェックの解決を待たずに②③を投機実行する。`x` が範囲外でも、投機中は `array1[x]` が秘密メモリを読み、その値 `v` で `array2` の特定ラインがキャッシュに載る。分岐解決後に②③はロールバックされるが、`array2` のキャッシュ痕跡は残る。攻撃者が `array2` を Flush+Reload で走査し、ヒットしたインデックスから `v` を逆算する。
+攻撃者は事前に正当な `x` で `if` を何度も成立させ、**方向予測器を「taken」に訓練**しておく。次に境界外の `x` を渡すと、CPU は境界チェックの解決を待たずに②③を投機実行する。`x` が範囲外でも、投機中は `array1[x]` が秘密メモリを読み、その値 `v` で `array2` の特定ラインがキャッシュに載る。分岐解決後に②③はロールバックされるが、`array2` のキャッシュ痕跡は残る。攻撃者が `array2` を Flush+Reload で走査し、ヒットしたインデックスから `v` を逆算する[^spectre]。
 
 - **緩和策**:
-  - **`lfence` 等の投機バリア (speculation barrier)**: 境界チェックの後に挿入し、分岐解決まで後続ロードの投機を止める。
+  - **`lfence` 等の投機バリア (speculation barrier)**: 境界チェックの後に挿入し、分岐解決まで後続ロードの投機を止める[^intel-mit]。Arm では `CSDB` 等の専用バリアが同じ役割を担う[^arm-spec]。
   - **マスキング (index masking)**: `x &= (array1_size - 1)` 等でインデックスを物理的に範囲内へ丸め、投機中も境界外を読ませない。
-  - コンパイラ支援 (`__builtin_speculation_safe_value` / MSVC `/Qspectre`)。
+  - コンパイラ支援 (`__builtin_speculation_safe_value` / MSVC `/Qspectre`)。JIT を持つ言語ランタイムでは同種のマスキングを生成コードに埋め込む必要があり、最終的にはプロセス分離へ退いた経緯がある（[`managed-runtimes-gc-jit.md`](../../software/compilers-runtimes/managed-runtimes-gc-jit.md)、[`browser-architecture.md`](../../software/browsers/browser-architecture.md)）。
 
 ### Spectre v2 (Branch Target Injection, CVE-2017-5715)
 
-方向ではなく**間接分岐のターゲット**を汚染する。攻撃者は自分のプロセスから BTB／間接分岐予測器に細工し、被害者の間接分岐 (`jmp [reg]` / `call [reg]`) が**攻撃者の選んだガジェット (gadget) アドレス**へ投機的に飛ぶよう仕向ける。被害者の権限で任意のコード断片を投機実行させ、秘密をキャッシュへ符号化できる。予測器が物理コア内（SMT 兄弟スレッド含む）で共有・部分タグ付けされている構造が、この**予測器の汚染 (predictor poisoning)** を可能にする。
+方向ではなく**間接分岐のターゲット**を汚染する。攻撃者は自分のプロセスから BTB／間接分岐予測器に細工し、被害者の間接分岐 (`jmp [reg]` / `call [reg]`) が**攻撃者の選んだガジェット (gadget) アドレス**へ投機的に飛ぶよう仕向ける。被害者の権限で任意のコード断片を投機実行させ、秘密をキャッシュへ符号化できる。予測器が物理コア内（SMT 兄弟スレッド含む）で共有・部分タグ付けされている構造が、この**予測器の汚染 (predictor poisoning)** を可能にする[^spectre]。
 
 - **緩和策**:
-  - **retpoline**: 間接分岐を `call`/`ret` を使った構文へ書き換え、間接予測器に**当てさせない**。RAS を無害な無限ループ（`pause; lfence`）へ誘導し、投機の暴走を封じ込める。BTB 由来の投機ターゲット注入を構造的に回避する古典的ソフトウェア対策。
-  - **IBRS (Indirect Branch Restricted Speculation)**: 高特権モードで、低特権に汚染された予測を使わせないハードウェアモード。enhanced IBRS (eIBRS) で常時有効化し性能影響を低減。
-  - **IBPB (Indirect Branch Predictor Barrier)**: コンテキストスイッチ等の境界で間接予測器の履歴をフラッシュし、プロセス間の汚染を断つ。
-  - **STIBP (Single Thread Indirect Branch Predictors)**: SMT 兄弟スレッド間で間接予測器を共有させない。
-  - 近年は RAS を狙う **Retbleed**／分岐履歴を狙う **BHI (Branch History Injection)** など派生が報告され、retpoline 単独では不十分な世代があるため、ハードウェア緩和との併用が前提。
+  - **retpoline**: 間接分岐を `call`/`ret` を使った構文へ書き換え、間接予測器に**当てさせない**。RAS を無害な無限ループ（`pause; lfence`）へ誘導し、投機の暴走を封じ込める。BTB 由来の投機ターゲット注入を構造的に回避する古典的ソフトウェア対策[^retpoline]。
+  - **IBRS (Indirect Branch Restricted Speculation)**: 高特権モードで、低特権に汚染された予測を使わせないハードウェアモード。enhanced IBRS (eIBRS) で常時有効化し性能影響を低減[^intel-mit]。
+  - **IBPB (Indirect Branch Predictor Barrier)**: コンテキストスイッチ等の境界で間接予測器の履歴をフラッシュし、プロセス間の汚染を断つ[^intel-mit]。
+  - **STIBP (Single Thread Indirect Branch Predictors)**: SMT 兄弟スレッド間で間接予測器を共有させない[^intel-mit]。
+  - 近年は RAS を狙う **Retbleed**／分岐履歴を狙う **BHI (Branch History Injection)** など派生が報告された[^retbleed][^bhi]。Retbleed は特定条件下で `ret` が BTB 由来の予測に落ちることを突いて retpoline を迂回し、BHI は eIBRS 下でもユーザが仕込んだ分岐履歴でカーネルの間接分岐予測を誘導できることを示した。retpoline 単独では不十分な世代があるため、ハードウェア緩和との併用が前提である。
 
 ### その他の派生と一般原則
 
 - **Spectre-RSB / ret2spec**: RAS（リターンスタックバッファ）をオーバーフロー／汚染し、`ret` の投機ターゲットを乗っ取る。
-- **Meltdown (CVE-2017-5754)** は厳密には例外処理中の投機を突くもので分岐予測非依存だが、痕跡の観測経路（キャッシュ）は共通。ページテーブル分離 (KPTI) で緩和する。
+- **Meltdown (CVE-2017-5754)** は厳密には例外処理中の投機を突くもので分岐予測非依存だが、痕跡の観測経路（キャッシュ）は共通。ページテーブル分離 (KPTI) で緩和する[^meltdown]（[`virtual-memory-mmu.md`](virtual-memory-mmu.md)、[`virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md)）。
 - **一般原則**:
   - **秘密を投機の制御・アドレスに載せない** — 境界マスキングと定数時間実装 (constant-time)。
   - **予測の伝播を断つ** — バリア (`lfence`)、retpoline、IBPB によるドメイン境界の隔離。
@@ -233,18 +258,46 @@ if (x < array1_size) {                 // ① この分岐を「成立」と誤�
 
 ### 次の接続先 (Related Topics)
 
-- `pipeline-superscalar-ooo.md` — 制御ハザードと投機実行の母体（パイプライン・アウトオブオーダ実行）。
-- `cache-memory-hierarchy.md` — 投機の痕跡を読み出すサイドチャネルの観測経路（キャッシュ・Flush+Reload / Prime+Probe）。
+- [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md) — 制御ハザードと投機実行の母体（パイプライン・アウトオブオーダ実行）。
+- [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) — 投機の痕跡を読み出すサイドチャネルの観測経路（キャッシュ・Flush+Reload / Prime+Probe）。
+- [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — Meltdown と KPTI、ページ権限が投機的アクセスを止めない理由。
+- [`../security/side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) — 投機実行攻撃を含むハードウェアサイドチャネルの全体像。
+- [`../../software/browsers/browser-architecture.md`](../../software/browsers/browser-architecture.md) — Spectre への構造的応答としてのサイト分離（ソフトウェア側）。
+- [`../../software/compilers-runtimes/managed-runtimes-gc-jit.md`](../../software/compilers-runtimes/managed-runtimes-gc-jit.md) — JIT ランタイムが受けた Spectre の影響と緩和。
+- [`../../software/security/sandbox-architectures.md`](../../software/security/sandbox-architectures.md) — 投機実行が書き換えたサンドボックス境界の設計。
 
 ## 参考文献 (References)
 
 **一次資料 (Primary — 論文・教科書)**
 
-- Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — 分岐予測・投機実行・ROB の標準教科書 (Ch. 3)。
-- McFarling, S. (1993). *Combining Branch Predictors*. DEC WRL Technical Note TN-36. — [PDF](https://www.hpl.hp.com/techreports/Compaq-DEC/WRL-TN-36.pdf) — Accessed: 2026-07-02。gshare とトーナメント予測器の原典。
-- Kocher, P. et al. (2019). Spectre Attacks: Exploiting Speculative Execution. *IEEE Symposium on Security and Privacy*. — [spectreattack.com/spectre.pdf](https://spectreattack.com/spectre.pdf) — Accessed: 2026-07-02。Spectre v1/v2 の一次論文。
-- Lipp, M. et al. (2018). Meltdown: Reading Kernel Memory from User Space. *USENIX Security Symposium*. — [meltdownattack.com/meltdown.pdf](https://meltdownattack.com/meltdown.pdf) — Accessed: 2026-07-02。
+[^hp]: Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — 分岐予測・投機実行・ROB の標準教科書 (Ch. 3)。分岐頻度・ミスペナルティの代表値の典拠。
+
+[^smith]: Smith, J. E. (1981). A Study of Branch Prediction Strategies. *Proceedings of the 8th Annual Symposium on Computer Architecture (ISCA '81)*, 135–148. — 2ビット飽和カウンタを含む動的分岐予測の原典。
+
+[^yeh-patt]: Yeh, T.-Y., & Patt, Y. N. (1991). Two-Level Adaptive Training Branch Prediction. *Proceedings of the 24th Annual International Symposium on Microarchitecture (MICRO-24)*, 51–61. DOI: 10.1145/123465.123475 — 履歴レジスタ + パターン表の2レベル予測。SPEC で約97%の精度を報告。
+
+[^mcfarling]: McFarling, S. (1993). *Combining Branch Predictors*. DEC Western Research Laboratory, Technical Note TN-36. — [PDF](https://www.ece.ucdavis.edu/~akella/270W05/mcfarling93combining.pdf) — Accessed: 2026-10-04。gshare とトーナメント予測器の原典。
+
+[^tage]: Seznec, A., & Michaud, P. (2006). A case for (partially) TAgged GEometric history length branch prediction. *Journal of Instruction-Level Parallelism*, 8. — [JILP](https://jilp.org/vol8/v8paper1.pdf) — Accessed: 2026-10-04。TAGE 予測器の原典。
+
+[^perceptron]: Jiménez, D. A., & Lin, C. (2001). Dynamic Branch Prediction with Perceptrons. *Proceedings of the 7th International Symposium on High-Performance Computer Architecture (HPCA)*, 197–206. DOI: 10.1109/HPCA.2001.903263 — ニューラル（パーセプトロン）予測器の原典。
+
+[^spectre]: Kocher, P., Horn, J., Fogh, A., Genkin, D., Gruss, D., Haas, W., Hamburg, M., Lipp, M., Mangard, S., Prescher, T., Schwarz, M., & Yarom, Y. (2019). Spectre Attacks: Exploiting Speculative Execution. *2019 IEEE Symposium on Security and Privacy (SP)*, 1–19. DOI: 10.1109/SP.2019.00002 — Spectre v1/v2 の一次論文。
+
+[^meltdown]: Lipp, M., Schwarz, M., Gruss, D., Prescher, T., Haas, W., Fogh, A., Horn, J., Mangard, S., Kocher, P., Genkin, D., Yarom, Y., & Hamburg, M. (2018). Meltdown: Reading Kernel Memory from User Space. *27th USENIX Security Symposium*, 973–990. — [PDF](https://www.usenix.org/system/files/conference/usenixsecurity18/sec18-lipp.pdf) — Accessed: 2026-10-04。
+
+[^retbleed]: Wikner, J., & Razavi, K. (2022). RETBLEED: Arbitrary Speculative Code Execution with Return Instructions. *31st USENIX Security Symposium*, 3825–3842. — [PDF](https://www.usenix.org/system/files/sec22-wikner.pdf) — Accessed: 2026-10-04。retpoline を迂回する `ret` 経由の BTI。
+
+[^bhi]: Barberis, E., Frigo, P., Muench, M., Bos, H., & Giuffrida, C. (2022). Branch History Injection: On the Effectiveness of Hardware Mitigations Against Cross-Privilege Spectre-v2 Attacks. *31st USENIX Security Symposium*, 971–988. — [USENIX](https://www.usenix.org/conference/usenixsecurity22/presentation/barberis) — Accessed: 2026-10-04。eIBRS 下での分岐履歴注入。
+
+**ベンダ技術文書 (Vendor Technical Documentation)**
+
+[^intel-mit]: Intel. (2018). *Speculative Execution Side Channel Mitigations* (Doc. 336996-003, Rev. 3.0). — [PDF](https://www.intel.com/content/dam/develop/external/us/en/documents/336996-speculative-execution-side-channel-mitigations.pdf) — Accessed: 2026-10-04。IBRS/eIBRS・IBPB・STIBP・`lfence` バリアの仕様。
+
+[^retpoline]: Intel. (2018). *Retpoline: A Branch Target Injection Mitigation* (Doc. 337131-003). — [PDF](https://www.intel.com/content/dam/develop/external/us/en/documents/retpoline-a-branch-target-injection-mitigation.pdf) — Accessed: 2026-10-04。retpoline の構成と前提条件。
+
+[^arm-spec]: Arm. (2020). *Cache Speculation Side-channels* (Whitepaper, Version 2.5). — [PDF](https://documentation-service.arm.com/static/61f904cafa8173727a1b7286) — Accessed: 2026-10-04。Arm における変種ごとの影響と `CSDB` 等の緩和。
 
 **二次資料 (Secondary)**
 
-- Fog, A. *The Microarchitecture of Intel, AMD and VIA CPUs*. — [agner.org/optimize](https://www.agner.org/optimize/microarchitecture.pdf) — Accessed: 2026-07-02。実装ごとの予測器構成・ミスペナルティの実測整理。
+[^fog]: Fog, A. *The Microarchitecture of Intel, AMD and VIA CPUs*. — [agner.org/optimize](https://www.agner.org/optimize/microarchitecture.pdf) — Accessed: 2026-10-04。実装ごとの予測器構成・ミスペナルティの実測整理。

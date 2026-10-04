@@ -2,9 +2,9 @@
 
 ## 概要 (Overview)
 
-通常、CPU はプログラムカウンタ (program counter) を1命令ずつ進めて実行する。しかしこの逐次の流れは、しばしば**強制的に中断**される。デバイスが事象を通知してきたり (外部割り込み)、命令の実行自体が成立しなかったり (ページフォルト、ゼロ除算)、プログラムが自らカーネルへ依頼したり (システムコール) するためだ。これらを総称して**例外的制御移行 (exceptional control flow)** と呼ぶ。本ドキュメントが扱うのは、その移行を **CPU 内部がどう実現するか**、すなわちどの命令の境界で止め、どこへ飛び、何を保存し、どう元へ戻るかである。
+通常、CPU はプログラムカウンタ (program counter) を1命令ずつ進めて実行する。しかしこの逐次の流れは、しばしば**強制的に中断**される。デバイスが事象を通知してきたり (外部割り込み)、命令の実行自体が成立しなかったり (ページフォルト、ゼロ除算)、プログラムが自らカーネルへ依頼したり (システムコール) するためだ。これらを総称して**例外的制御移行 (exceptional control flow)** と呼ぶ[^csapp]。本ドキュメントが扱うのは、その移行を **CPU 内部がどう実現するか**、すなわちどの命令の境界で止め、どこへ飛び、何を保存し、どう元へ戻るかである。
 
-デバイス側が割り込みを「どう発行するか」(MMIO レジスタ、MSI、割り込みコントローラ APIC/GIC) は `../hw-sw-interface/mmio-dma-interrupts.md` が扱う。本ドキュメントはその一歩 CPU 寄り、**割り込み信号が CPU コアに届いた後**に集中する。すなわち、精密例外 (precise exception) とアウトオブオーダ実行 (out-of-order execution) の関係、特権レベル遷移、ベクタテーブル/IDT、コンテキスト保存とハンドラ進入、マスクと優先度、ネスト、そしてシステムコールがトラップとして実装される仕組みである。
+デバイス側が割り込みを「どう発行するか」(MMIO レジスタ、MSI、割り込みコントローラ APIC/GIC) は [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) が扱う。本ドキュメントはその一歩 CPU 寄り、**割り込み信号が CPU コアに届いた後**に集中する。すなわち、精密例外 (precise exception) とアウトオブオーダ実行 (out-of-order execution) の関係、特権レベル遷移、ベクタテーブル/IDT、コンテキスト保存とハンドラ進入、マスクと優先度、ネスト、そしてシステムコールがトラップとして実装される仕組みである。
 
 ## 方法論 (Methodology)
 
@@ -17,9 +17,9 @@
 
 1. **「同期か非同期か」が分類の根本である。** 同期例外は特定の命令の実行に起因し、その命令の位置で再現する (フォールト/トラップ/アボート)。非同期割り込みは実行中の命令と無関係に外から到来し、どの命令境界で受けるかは CPU が選ぶ。この違いが、再開可能性とマスク可否を決める。
 
-2. **精密例外 (precise exception) はアウトオブオーダ実行との緊張関係で成立している。** 現代の CPU は命令を並べ替え・投機的に実行するが、例外を報告する時点では「その命令より前は完了、以降は未実行」という整然とした状態を見せねばならない。これを担うのが**リオーダバッファ (reorder buffer) によるインオーダ・リタイア**であり、例外は命令がリタイアする時点で確定する。
+2. **精密例外 (precise exception) はアウトオブオーダ実行との緊張関係で成立している。** 現代の CPU は命令を並べ替え・投機的に実行するが、例外を報告する時点では「その命令より前は完了、以降は未実行」という整然とした状態を見せねばならない。これを担うのが**リオーダバッファ (reorder buffer) によるインオーダ・リタイア**であり、例外は命令がリタイアする時点で確定する[^smith-pleszkun][^hp]。
 
-3. **制御移行は必ず特権レベルの遷移を伴いうる。** x86 の ring、ARM の Exception Level (EL0–EL3)、RISC-V の M/S/U モードは、いずれも「ユーザコードが触れない資源 (ページテーブル基点、割り込み制御、物理メモリ)」を守る同心円構造である。例外/割り込みは、この円の外側 (より高特権) へ制御を移す唯一の正規の入口である。
+3. **制御移行は必ず特権レベルの遷移を伴いうる。** x86 の ring、ARM の Exception Level (EL0–EL3)、RISC-V の M/S/U モードは、いずれも「ユーザコードが触れない資源 (ページテーブル基点、割り込み制御、物理メモリ)」を守る同心円構造である[^intel-sdm][^arm-arm][^riscv-priv]。例外/割り込みは、この円の外側 (より高特権) へ制御を移す唯一の正規の入口である。
 
 4. **システムコールは「意図的に起こす同期例外 (トラップ)」にすぎない。** `ecall`/`syscall`/`svc` は、例外機構を流用してユーザ→カーネルの越境を実現する。割り込みハンドラ進入と同じ経路 (ベクタ、特権遷移、コンテキスト保存) を通る。
 
@@ -36,7 +36,29 @@
 | アボート (abort) | 同期 | 回復不能なエラー | 不定 (多くは終了) | ハードウェアエラー、二重フォールト |
 | 割り込み (interrupt) | 非同期 | 外部デバイス/タイマ | **中断点の命令** | タイマ割り込み、デバイス完了通知 |
 
-「フォールトは障害命令へ戻る／トラップは次へ進む」という復帰先の差が決定的である。ページフォルトはページを供給してから**同じ命令を再実行**することで透過的にデマンドページングを成立させる (`virtual-memory-mmu.md`)。一方システムコールは処理を終えて**次の命令**から続ける。
+「フォールトは障害命令へ戻る／トラップは次へ進む」という復帰先の差が決定的である。ページフォルトはページを供給してから**同じ命令を再実行**することで透過的にデマンドページングを成立させる ([`virtual-memory-mmu.md`](virtual-memory-mmu.md)、OS 側は [`../../software/operating-systems/virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md))。一方システムコールは処理を終えて**次の命令**から続ける。
+
+### 制御移行の一巡 (トラップ進入から復帰まで)
+
+下図は、RISC-V の S モードで例外/割り込みを受けて復帰するまでを、ハードウェアが不可分に行う部分とソフトウェアが行う部分に分けて示す (x86 では `sepc`/`scause` の代わりにカーネルスタックへの push と IDT 参照、ARM では `ELR_ELx`/`ESR_ELx` と `VBAR_ELx` が対応する)[^riscv-priv][^intel-sdm][^arm-arm]。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as ユーザコード (U-mode)
+    participant HW as CPU ハードウェア
+    participant K as カーネル trap handler (S-mode)
+    U->>HW: 例外 (ecall / page fault) または割り込み到来
+    Note over HW: 命令境界を確定 (精密例外)<br/>ROB 先頭でリタイア時に確定
+    HW->>HW: PC→sepc, 原因→scause,<br/>付随情報→stval, SIE→SPIE, 特権→SPP
+    HW->>HW: 特権 U→S、割り込みマスク (SIE=0)
+    HW->>K: stvec (direct: BASE / vectored 割り込み: BASE+4×cause) へジャンプ
+    K->>K: sscratch でカーネルスタックへ切替、汎用レジスタ退避
+    K->>K: scause で分岐 (syscall / フォルト / デバイス)
+    K->>K: 本処理、レジスタ復元<br/>(syscall なら sepc += 4)
+    K->>HW: sret
+    HW->>U: PC←sepc, 特権←SPP, SIE←SPIE で再開
+```
 
 ### 特権レベル/例外レベルの同心円
 
@@ -84,10 +106,11 @@ CPU は「どの例外/割り込みか」を番号 (vector) で識別し、対�
   ──────────────────────────────────────────────────────────────
    trap base (mtvec) ──▶ [固定オフセット表]
         direct  : すべての trap が base へ (ソフトが原因レジスタで分岐)
-        vectored: base + 4*cause へ分岐 (原因ごとに別エントリ)
+        vectored: 割り込みのみ base + 4*cause へ分岐
+                  (同期例外は direct と同じく base へ)
 ```
 
-x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約の例外、32–255 がデバイス割り込みに割り当て可能)。RISC-V は `mtvec`/`stvec` が指すベース番地へ飛び、direct モードでは単一入口に集約してソフトウェアが `mcause`/`scause` を読んで分岐、vectored モードでは原因ごとにオフセットする。ARM は各 Exception Level に16エントリ (同期/IRQ/FIQ/SError × 現在EL/下位EL × 実行状態) のベクタ表を持つ。番号の刻みやエントリ数は実装依存だが、「番号 → 入口」という仕組みは共通である。
+x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約の例外、32–255 がデバイス割り込みに割り当て可能)[^intel-sdm]。RISC-V は `mtvec`/`stvec` が指すベース番地へ飛び、direct モードでは単一入口に集約してソフトウェアが `mcause`/`scause` を読んで分岐する。vectored モードで原因ごとにオフセット (`BASE + 4×cause`) されるのは**非同期割り込みだけ**で、同期例外は vectored モードでも常に `BASE` に入る[^riscv-priv]。ARM は各 Exception Level の `VBAR_ELx` が指す16エントリのベクタ表を持つ。エントリは例外種別 (同期/IRQ/FIQ/SError) × 発生元 (現在 EL で SP_EL0 使用 / 現在 EL で SP_ELx 使用 / 下位 EL が AArch64 / 下位 EL が AArch32) の組で、各 0x80 バイト間隔に並ぶ[^arm-arm]。番号の刻みやエントリ数は実装依存だが、「番号 → 入口」という仕組みは共通である。
 
 ## 技術詳細 (Technical Details)
 
@@ -101,9 +124,9 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 - 例外を起こした命令と**それ以降**の命令は、アーキテクチャ状態 (レジスタ/メモリ) に一切影響していない。
 - 保存される PC は、例外を起こしたまさにその命令を指す (フォールト) か、次を指す (トラップ)。
 
-これを成立させる標準的な仕組みが**リオーダバッファ (reorder buffer, ROB) によるインオーダ・リタイア**である。命令は乱れた順で実行・完了しうるが、アーキテクチャ状態への反映 (リタイア/コミット) はプログラム順に行う。例外フラグも命令に紐づいて ROB を流れ、その命令がリタイアの先頭に来た時点で初めて確定する。これにより、投機的に先走った後続命令はリタイア前に破棄でき、整然とした状態が保たれる。
+これを成立させる標準的な仕組みが**リオーダバッファ (reorder buffer, ROB) によるインオーダ・リタイア**である[^smith-pleszkun] (ROB の構造は [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md))。命令は乱れた順で実行・完了しうるが、アーキテクチャ状態への反映 (リタイア/コミット) はプログラム順に行う。例外フラグも命令に紐づいて ROB を流れ、その命令がリタイアの先頭に来た時点で初めて確定する。これにより、投機的に先走った後続命令はリタイア前に破棄でき、整然とした状態が保たれる。
 
-代償として、例外は「即座」ではなく「リタイア時点」まで遅延する。投機実行された後続命令がキャッシュ状態などのマイクロアーキテクチャ的痕跡を残しうる点が、後述の Meltdown 系脆弱性の温床となった。
+代償として、例外は「即座」ではなく「リタイア時点」まで遅延する。投機実行された後続命令がキャッシュ状態などのマイクロアーキテクチャ的痕跡を残しうる点が、後述の Meltdown 系脆弱性の温床となった[^meltdown] (投機実行一般は [`branch-prediction-speculation.md`](branch-prediction-speculation.md))。
 
 ### 2. コンテキスト保存とハンドラ進入
 
@@ -129,14 +152,14 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
   9. 復帰命令 (iret / eret / sret) で PC・特権・状態を atomic に巻き戻す
 ```
 
-要点は二つ。第一に、**スタックの切り替え**である。ユーザのスタックポインタは信用できない (壊れている、未マップ、悪意があるかもしれない) ため、カーネルは専用スタックへ切り替える。x86 はこの目的に TSS の特権スタックや IST (Interrupt Stack Table)、RISC-V は `sscratch` レジスタにカーネルスタックポインタを退避しておく慣用を持つ。第二に、汎用レジスタの保存は**多くがソフトウェアの責任**である点だ。関数呼び出しの callee-saved 規約 (`../hw-sw-interface/abi-syscalls.md`) と違い、非同期割り込みは任意の命令境界で割り込むため、ハンドラは「壊してよいレジスタ」を仮定できず、原則すべてを退避する。
+要点は二つ。第一に、**スタックの切り替え**である。ユーザのスタックポインタは信用できない (壊れている、未マップ、悪意があるかもしれない) ため、カーネルは専用スタックへ切り替える。x86 はこの目的に TSS の特権スタックや IST (Interrupt Stack Table)、RISC-V は `sscratch` レジスタにカーネルスタックポインタを退避しておく慣用を持つ。第二に、汎用レジスタの保存は**多くがソフトウェアの責任**である点だ。関数呼び出しの callee-saved 規約 ([`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md)) と違い、非同期割り込みは任意の命令境界で割り込むため、ハンドラは「壊してよいレジスタ」を仮定できず、原則すべてを退避する。
 
 ### 3. システムコール = トラップとしての例外
 
-システムコールは、例外機構を**意図的に起こして**ユーザ→カーネルへ越境する。`../hw-sw-interface/abi-syscalls.md` がレジスタ規約と越境コストを扱うのに対し、ここでは「なぜそれが例外と同じ経路を通るのか」を示す。
+システムコールは、例外機構を**意図的に起こして**ユーザ→カーネルへ越境する。[`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) がレジスタ規約と越境コストを扱うのに対し、ここでは「なぜそれが例外と同じ経路を通るのか」を示す。
 
 - `ecall` (RISC-V) / `svc` (ARM) は同期例外を発生させ、`mtvec`/ベクタ表経由でカーネルの trap handler に入る。トラップなので復帰は**次の命令**。
-- x86-64 の `syscall`/`sysret` は、毎回 IDT を引く一般的な例外経路より**軽量化した専用経路**である。`MSR` (`LSTAR` 等) にあらかじめ入口アドレスと遷移時のフラグを設定しておき、IDT 参照やスタック上のゲート処理を省く。それでも「特権を上げて固定入口へ飛ぶ同期トラップ」という本質は同じである。
+- x86-64 の `syscall`/`sysret` は、毎回 IDT を引く一般的な例外経路より**軽量化した専用経路**である。`MSR` (`LSTAR` 等) にあらかじめ入口アドレスと遷移時のフラグを設定しておき、IDT 参照やスタック上のゲート処理を省く[^intel-sdm]。それでも「特権を上げて固定入口へ飛ぶ同期トラップ」という本質は同じである。
 
 ```
   [User] a7=__NR_write; a0,a1,a2=引数        [Kernel S-mode trap handler]
@@ -149,7 +172,7 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 
 ### 4. ページフォルトの流れ (フォールトの典型)
 
-ページフォルトはフォールトの代表例であり、`virtual-memory-mmu.md` のデマンドページング/CoW/スワップを駆動する。CPU 内部の視点では次のように進む。
+ページフォルトはフォールトの代表例であり、[`virtual-memory-mmu.md`](virtual-memory-mmu.md) のデマンドページング/CoW/スワップを駆動する。CPU 内部の視点では次のように進む。
 
 ```
 1. ロード/ストア命令が VA を発行 → MMU が page walk
@@ -172,7 +195,7 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 非同期割り込みは「いつでも来うる」ため、CPU は**マスク (mask)** で受付を一時的に止められる。
 
 - **大域マスク**: x86 の `RFLAGS.IF` (`cli`/`sti`)、RISC-V の `mstatus.MIE`/`SIE`。クリティカルセクションや割り込み進入直後に割り込みを止め、競合や再入を防ぐ。なお x86 の **NMI (Non-Maskable Interrupt)** や、致命的フォールトはマスクできない (止めると検知不能になるため)。
-- **優先度 (priority)**: 割り込みコントローラ (APIC/GIC) と CPU が、低優先度の処理中でも高優先度割り込みを通す閾値を持つ。ARM の GIC は優先度レベルとプリエンプション閾値を、x86 APIC は TPR (Task Priority Register) を持つ。
+- **優先度 (priority)**: 割り込みコントローラ (APIC/GIC) と CPU が、低優先度の処理中でも高優先度割り込みを通す閾値を持つ。ARM の GIC は優先度レベルとプリエンプション閾値を、x86 APIC は TPR (Task Priority Register) を持つ[^gic][^intel-sdm]。
 - **ネスト割り込み (nested interrupt)**: 高優先度割り込みが、低優先度ハンドラの実行中に割り込むこと。これを許すにはハンドラ先頭で十分なコンテキストを保存してから割り込みを再許可する必要がある。ネストはレイテンシを改善する (緊急事象を待たせない) が、スタック消費と再入の複雑さが増す。
 
 ```
@@ -186,7 +209,7 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
                         ▼ 完了 → 通常実行へ復帰
 ```
 
-これは `../hw-sw-interface/mmio-dma-interrupts.md` の「上半分/下半分 (top half / bottom half)」と接続する。割り込み禁止区間を短く保つために、ISR の上半分は最小限にとどめ、重い処理は割り込み許可状態の下半分へ追い出す。
+これは [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) の「上半分/下半分 (top half / bottom half)」と接続する。割り込み禁止区間を短く保つために、ISR の上半分は最小限にとどめ、重い処理は割り込み許可状態の下半分へ追い出す。
 
 ### 6. 割り込みレイテンシとリアルタイム性
 
@@ -197,14 +220,14 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 - ソフトウェアのレジスタ退避・分岐。
 - より高優先度割り込みによる先行 (優先度設計次第)。
 
-数値は世代・実装依存だが、桁感として、ハードウェアの最小限の進入だけなら数十〜数百サイクル (ナノ秒オーダ) で済む一方、OS の汎用パスやキャッシュ/TLB が冷えた状態を含めると数マイクロ秒以上に膨らみうる。リアルタイムシステムが問題にするのは平均ではなく**最悪値の有界性**である。Linux の `PREEMPT_RT` のような構成は、割り込み禁止区間を縮め、ハンドラをスレッド化して優先度継承を適用することで、最悪レイテンシの予測可能性を高める。
+数値は世代・実装依存だが、桁感として、ハードウェアの最小限の進入だけなら数十〜数百サイクル (ナノ秒オーダ) で済む一方、OS の汎用パスやキャッシュ/TLB が冷えた状態を含めると数マイクロ秒以上に膨らみうる。リアルタイムシステムが問題にするのは平均ではなく**最悪値の有界性**である。Linux の `PREEMPT_RT` のような構成は、割り込み禁止区間を縮め、ハンドラをスレッド化して優先度継承を適用することで、最悪レイテンシの予測可能性を高める[^preempt-rt]。最悪値の解析とスケジューラ側の扱いは [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) と [`../../software/operating-systems/process-thread-scheduling.md`](../../software/operating-systems/process-thread-scheduling.md) を参照。
 
 ## セキュリティ考察 (Security Considerations)
 
 - **特権境界としての例外入口**: 例外/割り込みは低特権から高特権への正規の入口であり、入口でのスタック切替・レジスタ退避・状態の健全性確認を誤ると権限昇格に直結する。ユーザが制御するスタックポインタやセグメントを信用してハンドラに入ってはならない (x86 の IST はまさに信頼できるスタックを保証するための仕組み)。
-- **精密例外と投機実行の交差 (Meltdown 系)**: 精密例外は「例外を起こした命令以降をアーキテクチャ状態に反映しない」ことを保証するが、リタイア前に投機実行された命令はキャッシュ等のマイクロアーキテクチャ状態に痕跡を残しうる。Meltdown はこの隙を突いてカーネルメモリを漏らした。対策の KPTI は `virtual-memory-mmu.md` を参照。
-- **二重フォールトと枯渇攻撃**: フォルトハンドラ自体がフォルトする (例: ハンドラのスタックが未マップ) と二重フォールト→トリプルフォールトに至りシステムが落ちる。スタックオーバーフローを例外契機にする攻撃や、割り込み嵐 (interrupt storm) による DoS は、レート制限・専用スタック・閾値で防ぐ (`../hw-sw-interface/mmio-dma-interrupts.md`)。
-- **境界での引数検証**: トラップ (syscall) でユーザから渡されたポインタ・長さは信頼できない入力として検証する (`../hw-sw-interface/abi-syscalls.md` の `copy_from_user`/`copy_to_user`)。例外経路はカーネルが最初にユーザ入力に触れる地点であり、検証漏れは即座にカーネル権限での読み書きを許す。
+- **精密例外と投機実行の交差 (Meltdown 系)**: 精密例外は「例外を起こした命令以降をアーキテクチャ状態に反映しない」ことを保証するが、リタイア前に投機実行された命令はキャッシュ等のマイクロアーキテクチャ状態に痕跡を残しうる。Meltdown はこの隙を突いてカーネルメモリを漏らした[^meltdown]。対策の KPTI (原型は KAISER[^kaiser]) は [`virtual-memory-mmu.md`](virtual-memory-mmu.md) を参照。
+- **二重フォールトと枯渇攻撃**: フォルトハンドラ自体がフォルトする (例: ハンドラのスタックが未マップ) と二重フォールト→トリプルフォールトに至りシステムが落ちる。スタックオーバーフローを例外契機にする攻撃や、割り込み嵐 (interrupt storm) による DoS は、レート制限・専用スタック・閾値で防ぐ ([`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md))。
+- **境界での引数検証**: トラップ (syscall) でユーザから渡されたポインタ・長さは信頼できない入力として検証する ([`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) の `copy_from_user`/`copy_to_user`)。例外経路はカーネルが最初にユーザ入力に触れる地点であり、検証漏れは即座にカーネル権限での読み書きを許す。
 - **割り込みハンドラの再入性**: マスクとネストの設計を誤ると、ハンドラが自分自身や共有データに再入して破壊する。共有状態へのアクセスは割り込み禁止やロックで守る必要がある。
 
 ## 結論 (Conclusions)
@@ -217,15 +240,35 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 
 ### 次の接続先 (Related Topics)
 
-- `../hw-sw-interface/mmio-dma-interrupts.md` — デバイス側の割り込み発行機構 (MMIO/MSI、APIC/GIC、上半分/下半分)。本ドキュメントの「CPU に届いた後」の手前を扱う。
-- `../hw-sw-interface/abi-syscalls.md` — トラップとしてのシステムコールのレジスタ規約と越境コスト。
-- `virtual-memory-mmu.md` — ページフォルト例外を契機とするデマンドページング・CoW・KPTI。
+- [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) — デバイス側の割り込み発行機構 (MMIO/MSI、APIC/GIC、上半分/下半分)。本ドキュメントの「CPU に届いた後」の手前を扱う。
+- [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) — トラップとしてのシステムコールのレジスタ規約と越境コスト。
+- [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — ページフォルト例外を契機とするデマンドページング・CoW・KPTI。
+- [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md) — 精密例外を支える ROB とインオーダ・リタイア。
+- [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) — 割り込みレイテンシを含む最悪応答時間の解析。
+- [`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) — VM exit として現れる「もう一段外側」への制御移行。
 
 ## 参考文献 (References)
 
-**一次資料 (Primary — 仕様・論文)**
+**一次資料 (Primary — 仕様・論文・教科書)**
 
-- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 6 “Interrupt and Exception Handling”. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
-- Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487) — 例外レベル (EL0–EL3) とベクタテーブルの規範。 — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-07-02。
-- *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture* — trap/mcause/mtvec の規範。 — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。
-- Smith, J. E., & Pleszkun, A. R. (1988). Implementing Precise Interrupts in Pipelined Processors. *IEEE Transactions on Computers*, 37(5), 562–573. DOI: 10.1109/12.4607 — 精密例外の古典。
+[^intel-sdm]: Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A, Ch. 6 "Interrupt and Exception Handling"（IDT・ベクタ 0–31 の予約・特権スタック/IST）および Vol. 2B `SYSCALL`/`SYSRET`（`IA32_LSTAR` MSR）. — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+
+[^arm-arm]: Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487) — 例外レベル (EL0–EL3)、`VBAR_ELx` が指す16エントリのベクタテーブル、`ELR_ELx`/`ESR_ELx` の規範。 — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-07-02。
+
+[^riscv-priv]: RISC-V International. *The RISC-V Instruction Set Manual, Volume II: Privileged Architecture* — M/S/U モード、`mtvec`/`stvec` の direct/vectored モード（vectored は非同期割り込みのみ `BASE+4×cause`）、`mcause`/`mepc`/`mtval`・`sret`/`mret` の規範。 — [riscv.org/technical/specifications](https://riscv.org/technical/specifications/) — Accessed: 2026-07-02。
+
+[^gic]: Arm. *Arm Generic Interrupt Controller Architecture Specification, GIC architecture version 3 and version 4* (IHI 0069). — [developer.arm.com](https://developer.arm.com/documentation/ihi0069/latest) — Accessed: 2026-10-04。優先度・プリエンプション閾値・グループの規範。
+
+[^smith-pleszkun]: Smith, J. E., & Pleszkun, A. R. (1988). Implementing Precise Interrupts in Pipelined Processors. *IEEE Transactions on Computers*, 37(5), 562–573. DOI: 10.1109/12.4607 — 精密例外とリオーダバッファの古典。
+
+[^hp]: Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 3 と Appendix C（パイプラインにおける例外と精密性）。
+
+[^csapp]: Bryant, R. E., & O'Hallaron, D. R. (2016). *Computer Systems: A Programmer's Perspective* (3rd ed.). Pearson. — Ch. 8 "Exceptional Control Flow"（割り込み/トラップ/フォールト/アボートの分類）。
+
+[^meltdown]: Lipp, M., Schwarz, M., Gruss, D., Prescher, T., Haas, W., Fogh, A., Horn, J., Mangard, S., Kocher, P., Genkin, D., Yarom, Y., & Hamburg, M. (2018). Meltdown: Reading Kernel Memory from User Space. *27th USENIX Security Symposium*, 973–990. — [usenix.org](https://www.usenix.org/conference/usenixsecurity18/presentation/lipp) — Accessed: 2026-10-04。リタイア前の投機実行がマイクロアーキテクチャ状態に残す痕跡の悪用。
+
+[^kaiser]: Gruss, D., Lipp, M., Schwarz, M., Fellner, R., Maurice, C., & Mangard, S. (2017). KASLR is Dead: Long Live KASLR. *Engineering Secure Software and Systems (ESSoS 2017)*, LNCS 10379, 161–176. DOI: 10.1007/978-3-319-62105-0_11 — KPTI の原型 KAISER。
+
+**二次資料 (Secondary)**
+
+[^preempt-rt]: [Real-time preemption — The Linux Kernel documentation](https://docs.kernel.org/core-api/real-time/index.html) — Accessed: 2026-10-04。PREEMPT_RT のスレッド化割り込み・優先度継承・sleeping spinlock。

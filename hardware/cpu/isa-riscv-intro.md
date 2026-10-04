@@ -30,7 +30,7 @@
 | レジスタ (registers) | 汎用レジスタの本数と幅 | 32本 × 64bit (`x0`–`x31`) |
 | 命令形式 (instruction format) | 命令のビット配置 | 固定32bit（R/I/S/B/U/J 型） |
 | アドレッシング (addressing) | メモリ参照方法 | base + 12bit 即値オフセットのみ |
-| メモリモデル (memory model) | 順序保証 | RVWMO（弱順序、`memory-ordering-atomics.md` 参照） |
+| メモリモデル (memory model) | 順序保証 | RVWMO（弱順序、[`memory-ordering-atomics.md`](memory-ordering-atomics.md) 参照） |
 | 特権レベル (privilege) | 実行モード | M / S / U（マシン/スーパバイザ/ユーザ） |
 
 ### RISC vs CISC
@@ -52,7 +52,7 @@ RISC-V は単一の巨大 ISA ではなく、**基本整数命令セット + 任
 - **基本 (base)**: `RV32I` / `RV64I`（32/64bit 整数）、組込み向け `RV32E`。
 - **標準拡張 (standard extensions)**:
   - `M` — 乗除算 (multiply/divide)
-  - `A` — アトミック (atomic, `memory-ordering-atomics.md` の RMW)
+  - `A` — アトミック (atomic, [`memory-ordering-atomics.md`](memory-ordering-atomics.md) の RMW)
   - `F` / `D` — 単精度/倍精度浮動小数点
   - `C` — 圧縮命令 (16bit, コード密度向上)
   - `V` — ベクトル (vector / SIMD)
@@ -64,7 +64,7 @@ RISC-V は単一の巨大 ISA ではなく、**基本整数命令セット + 任
 
 ### RISC-V レジスタと呼び出し規約 (ABI)
 
-32本の汎用レジスタには ABI 上の役割名がある（詳細は `../hw-sw-interface/abi-syscalls.md`）。
+32本の汎用レジスタには ABI 上の役割名がある（詳細は [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md)）。
 
 | レジスタ | ABI名 | 役割 |
 |---|---|---|
@@ -160,20 +160,20 @@ sum:
 ```
 
 この5命令のループから次のことが読める。
-- 要素あたりロードは1回・逐次アクセス → プリフェッチが有効な形（`cache-memory-hierarchy.md`）。
-- 律速はロードのレイテンシと分岐（`bnez` はほぼ常に taken → 予測しやすい。`branch-prediction-speculation.md`）。
+- 要素あたりロードは1回・逐次アクセス → プリフェッチが有効な形（[`cache-memory-hierarchy.md`](cache-memory-hierarchy.md)）。
+- 律速はロードのレイテンシと分岐（`bnez` はほぼ常に taken → 予測しやすい。[`branch-prediction-speculation.md`](branch-prediction-speculation.md)）。
 - ポインタインクリメント (`addi a0, a0, 8`) に「型のサイズ」が埋め込まれている。これが C のポインタ演算の実体である。
 
-ループや配列アクセスを見ると、`ld`/`sd` の回数・アドレス計算がそのまま `cache-memory-hierarchy.md` のメモリ負荷に対応する。**アセンブリは性能の一次資料**であり、`godbolt`（Compiler Explorer）で C/C++/Rust の出力を即確認できる。
+ループや配列アクセスを見ると、`ld`/`sd` の回数・アドレス計算がそのまま [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) のメモリ負荷に対応する。**アセンブリは性能の一次資料**であり、`godbolt`（Compiler Explorer）で C/C++/Rust の出力を即確認できる。
 
 ### 特権レベル (Privilege Levels)
 
 RISC-V は3モードを定義する。
 - **M (Machine)**: 最高特権。ファームウェア/ブート。
-- **S (Supervisor)**: OS カーネル。仮想記憶 (`virtual-memory-mmu.md`) を司る。
+- **S (Supervisor)**: OS カーネル。仮想記憶 ([`virtual-memory-mmu.md`](virtual-memory-mmu.md)) を司る。
 - **U (User)**: アプリケーション。
 
-モード遷移（システムコール・例外・割り込み）が `../hw-sw-interface/abi-syscalls.md` のユーザ/カーネル境界を形作る。
+モード遷移（システムコール・例外・割り込み）が [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) のユーザ/カーネル境界を形作る。
 
 ### CSR — 制御・状態レジスタ (Control and Status Registers)
 
@@ -182,16 +182,16 @@ RISC-V は3モードを定義する。
 | CSR | 役割 |
 |---|---|
 | `mstatus` | グローバル状態（割り込み許可、前モードの記録） |
-| `mtvec` / `stvec` | トラップハンドラの入口アドレス（`interrupts-exceptions-traps.md` のベクタ） |
+| `mtvec` / `stvec` | トラップハンドラの入口アドレス（[`interrupts-exceptions-traps.md`](interrupts-exceptions-traps.md) のベクタ） |
 | `mepc` / `mcause` | トラップ発生時の PC と原因コード |
-| `satp` | ページテーブルのルート（S モード。`virtual-memory-mmu.md` のアドレス変換の起点） |
+| `satp` | ページテーブルのルート（S モード。[`virtual-memory-mmu.md`](virtual-memory-mmu.md) のアドレス変換の起点） |
 
 「OS がハードウェアを制御する」と言うとき、その具体的な操作対象はほぼ CSR である。ISA 仕様の Volume II（特権アーキテクチャ）が丸ごとこの層に充てられている。
 
 ## セキュリティ考察 (Security Considerations)
 
 - **ISA がメモリ安全機構を提供する**: NX 相当のページ実行権限（S モードの仮想記憶経由）、特権分離（U が直接ハードを触れない）が基盤。
-- **オープン ISA の利点と注意**: 仕様公開により独立した検証・形式手法が可能。一方、拡張の組み合わせ自由度ゆえ、実装ごとの脆弱性（投機実行など）は依然マイクロアーキテクチャ依存で、ISA が公開でも安全とは限らない。
+- **オープン ISA の利点と注意**: 仕様公開により独立した検証・形式手法が可能（[`formal-verification-landscape.md`](../../software/formal-methods/formal-verification-landscape.md)）。一方、拡張の組み合わせ自由度ゆえ、実装ごとの脆弱性（投機実行など。[`branch-prediction-speculation.md`](branch-prediction-speculation.md)）は依然マイクロアーキテクチャ依存で、ISA が公開でも安全とは限らない。
 - **カスタム命令のリスク**: RISC-V はカスタム拡張を許すため、独自命令が特権チェックを誤ると保護を破りうる。検証が必須。
 - **サプライチェーン**: オープンであることはコア IP の監査可能性を高めるが、製造・実装段階の信頼は別問題（ハードウェアトロイの懸念は ISA の外）。
 
@@ -204,9 +204,12 @@ RISC-V は3モードを定義する。
 
 ### 次の接続先 (Related Topics)
 
-- `../hw-sw-interface/abi-syscalls.md` — レジスタ規約・呼び出し規約・特権境界の詳細。
-- `memory-ordering-atomics.md` — RISC-V の弱順序メモリモデル (RVWMO) と `A` 拡張。
-- `virtual-memory-mmu.md` — S モードが司るアドレス変換。
+- [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) — レジスタ規約・呼び出し規約・特権境界の詳細。
+- [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — RISC-V の弱順序メモリモデル (RVWMO) と `A` 拡張。
+- [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — S モードが司るアドレス変換。
+- [`interrupts-exceptions-traps.md`](interrupts-exceptions-traps.md) — `mtvec`/`mcause` を使うトラップ処理の流れ。
+- [`../../software/compilers-runtimes/linkers-loaders-elf.md`](../../software/compilers-runtimes/linkers-loaders-elf.md) — 機械語がオブジェクトファイル・ELF・リロケーションとしてどう配置されるか（ソフトウェア側）。
+- [`../../foundations/mathematics/discrete-logic/propositional-boolean-logic.md`](../../foundations/mathematics/discrete-logic/propositional-boolean-logic.md) — 命令が最終的に実行されるブール論理回路の基礎。
 
 ## 参考文献 (References)
 

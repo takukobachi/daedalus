@@ -53,6 +53,26 @@
  CloudTrail: 全 API 呼び出し → 別アカウントの書き込み専用ストアへ (完全性・改竄困難)
 ```
 
+### アラームの状態機械
+
+上図の「アラーム（状態機械）」を展開する。第三状態 INSUFFICIENT_DATA への遷移と、そこから抜ける先を欠損データの扱い（breaching / notBreaching / ignore / missing）が決める点が、発見事項 5 の急所である。各状態遷移はイベントとして EventBridge へ流れ、自動化・通知の起点になる。
+
+```mermaid
+stateDiagram-v2
+    [*] --> INSUFFICIENT_DATA: 評価開始 (データ未到着)
+    INSUFFICIENT_DATA --> OK: データ到着・閾値内
+    INSUFFICIENT_DATA --> ALARM: データ到着・閾値超過
+    OK --> ALARM: 閾値超過
+    ALARM --> OK: 閾値内に回復
+    OK --> INSUFFICIENT_DATA: データ欠損 (扱いが missing の場合)
+    ALARM --> INSUFFICIENT_DATA: データ欠損 (扱いが missing の場合)
+    note right of INSUFFICIENT_DATA
+        欠損を breaching とみなせば ALARM 側、
+        notBreaching とみなせば OK 側へ倒れる。
+        fail-closed / fail-open の選択に相当する。
+    end note
+```
+
 ### 信号の経済 — 問いと単価の対応
 
 | 信号 | 課金の単位 | 得意な問い | カーディナリティ耐性 |
@@ -105,6 +125,7 @@ CloudTrail のイベントは「認可判定を通った (または拒否され�
 - [`event-driven-architecture.md`](event-driven-architecture.md) — アラーム状態遷移の配電 (EventBridge) と自動化の規律。
 - [`data-lakehouse-analytics.md`](data-lakehouse-analytics.md) — テレメトリの長期保存・分析が合流する先。
 - [`cloud-control-planes.md`](cloud-control-planes.md) — 一定作業・フィードバックの発振・復旧動作の統制という、観測と自動化の交点の一般論。
+- [`../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md) — 標本から母集団を推定する推定量と信頼区間。サンプリングされたトレースや集約メトリクスから全体像を言うときの統計的な限界。
 
 ## 参考文献 (References)
 

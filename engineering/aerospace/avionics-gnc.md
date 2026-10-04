@@ -4,7 +4,7 @@
 
 **アビオニクス (avionics, aviation electronics)** は、飛行を成立させる電子機器（飛行制御計算機、センサ、アクチュエータ駆動、データバス、通信）の総称であり、**GNC (Guidance, Navigation and Control, 誘導・航法・制御)** はその上で走る「機体をどこへ・どう動かすか」のソフトウェアである。
 
-この領域を貫くテーマは一つ: **止まることが許されない計算機をどう作るか**。フライバイワイヤ (fly-by-wire) の旅客機では、操縦桿と舵面の間に機械的な繋がりはなく、飛行制御計算機が止まれば操縦そのものが失われる。ロケットは数分の飛行中に計算機が止まれば機体もミッションも失う。ゆえにアビオニクスは、フォールトトレランス (fault tolerance) の工学が最も早く・最も徹底して発達した分野であり、車載の機能安全 (`../automotive/functional-safety-iso26262.md`) が範とした**先行者**である。
+この領域を貫くテーマは一つ: **止まることが許されない計算機をどう作るか**。フライバイワイヤ (fly-by-wire) の旅客機では、操縦桿と舵面の間に機械的な繋がりはなく、飛行制御計算機が止まれば操縦そのものが失われる。ロケットは数分の飛行中に計算機が止まれば機体もミッションも失う。ゆえにアビオニクスは、フォールトトレランス (fault tolerance) の工学が最も早く・最も徹底して発達した分野であり、車載の機能安全 ([`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md)) が範とした**先行者**である。
 
 本ドキュメントは、(1) GNC ループの構造（状態推定・軌道計画・追従制御）、(2) 冗長化とフォールトトレランスの設計空間、(3) 歴史的実例（Apollo AGC、Space Shuttle、Boeing 777、Airbus A320、SpaceX Falcon 9）の設計判断、(4) 航空宇宙データバスと開発保証 (DO-178C) を、ソフトエンジニアの視点で整理する。分析深度は Level 3。
 
@@ -28,29 +28,29 @@
 
 ### GNC ループの全体像
 
-```
-            ┌──────────── 航法 (Navigation) ─────────────────┐
-  センサ ───▶│ 状態推定: いまどこで・どう動いているか            │
-  IMU / GPS │ カルマンフィルタでセンサ融合 (不確かさ付きの推定)   │
-  星トラッカ └───────────────────┬───────────────────────────┘
-  レーダ高度計                    ▼ 状態推定値 x̂
-            ┌──────────── 誘導 (Guidance) ───────────────────┐
-            │ 軌道計画: 目標までどう行くか                      │
-            │ 例: 上昇誘導 (PEG)、凸最適化着陸誘導、軌道遷移      │
-            └───────────────────┬───────────────────────────┘
-                                 ▼ 目標軌道・姿勢指令
-            ┌──────────── 制御 (Control) ────────────────────┐
-            │ 追従: いまアクチュエータをどう動かすか             │
-            │ 姿勢レートループ (内側・高速) ＋ 誘導追従 (外側)    │
-            └───────────────────┬───────────────────────────┘
-                                 ▼
-        アクチュエータ: 舵面 / TVC ジンバル / RCS / グリッドフィン
-                                 │
-                                 ▼
-                機体動力学 (物理) ──────▶ センサへ戻る（ループ閉鎖）
+```mermaid
+flowchart TD
+    SENS["センサ<br/>IMU / GPS / 星トラッカ / レーダ高度計"] --> NAV
+    subgraph NAV["航法 (Navigation)"]
+        KF["状態推定: いまどこで・どう動いているか<br/>カルマンフィルタでセンサ融合"]
+    end
+    NAV -- "状態推定値 x̂ と共分散 P" --> GUID
+    subgraph GUID["誘導 (Guidance)"]
+        PLAN["軌道計画: 目標までどう行くか<br/>上昇 PEG / 凸最適化着陸誘導 / 軌道遷移"]
+    end
+    GUID -- "目標軌道・姿勢指令" --> CTRL
+    subgraph CTRL["制御 (Control)"]
+        OUTER["外側ループ: 誘導追従"] --> INNER["内側ループ: 姿勢レート<br/>数十〜数百 Hz"]
+    end
+    CTRL --> ACT["アクチュエータ<br/>舵面 / TVC ジンバル / RCS / グリッドフィン"]
+    ACT --> DYN["機体動力学 (物理)"]
+    DYN -- "ループ閉鎖" --> SENS
+    NAV -. "イノベーション監視<br/>センサ FDI" .-> SENS
 ```
 
-各層の時間スケールは分業されている: 内側の姿勢制御は数十〜数百 Hz、誘導の再計画は 1〜10 Hz 級、航法はセンサ依存（IMU は数百 Hz〜kHz、GPS は 1〜10 Hz）。**速いループほど内側で閉じる**構造は、電力系統の階層制御（`../energy/generation-grid-fundamentals.md`）や車載と共通の設計原則である。
+凡例: 実線は信号の流れ、破線は故障検出 (FDI) のための監視経路。航法は推定理論（[`../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md)）、誘導は最適化（[`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md)）、制御と機体動力学は常微分方程式の安定性（[`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md)）を理論的基礎とする。
+
+各層の時間スケールは分業されている: 内側の姿勢制御は数十〜数百 Hz、誘導の再計画は 1〜10 Hz 級、航法はセンサ依存（IMU は数百 Hz〜kHz、GPS は 1〜10 Hz）。**速いループほど内側で閉じる**構造は、電力系統の階層制御（[`../energy/generation-grid-fundamentals.md`](../energy/generation-grid-fundamentals.md)）や車載と共通の設計原則である。
 
 ### 冗長設計の設計空間
 
@@ -61,7 +61,7 @@
 | **3重 (TMR / 2oo3)** | 多数決 | 1故障を**マスクして継続** (fail-operational) | 777 PFC、Falcon 9 の3ストリング |
 | **4重＋** | 同期多数決 | Byzantine 故障1つまで継続 | Shuttle PASS ×4 |
 
-これに直交する軸が**相似 (similar) / 非相似 (dissimilar)**: ランダムなハード故障は同一設計のコピーで受けられるが、設計・実装のバグには別 CPU・別コンパイラ・別チームという多様性が要る。実機はこの2軸を組み合わせる。
+冗長構成の信頼度（N 重系・k-out-of-n 系の確率計算）は [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) で扱う。これに直交する軸が**相似 (similar) / 非相似 (dissimilar)**: ランダムなハード故障は同一設計のコピーで受けられるが、設計・実装のバグには別 CPU・別コンパイラ・別チームという多様性が要る。実機はこの2軸を組み合わせる。
 
 ### 実例アーキテクチャ — 4つの解
 
@@ -129,7 +129,7 @@ update (GPS 等の観測が届いたとき):
 ### 3. 誘導 — 上昇の PEG と着陸の凸最適化
 
 - **上昇誘導**: 大気圏内は構造荷重制約から事前設計した重力ターン (gravity turn) に近い開ループ、大気圏外は **PEG (Powered Explicit Guidance)** 系の閉ループ誘導が「残り推進剤と目標軌道条件」から最適な推力方向を毎周期解き直す。Shuttle 以来の標準形。
-- **着陸誘導 (powered descent guidance)**: 燃料最適な降下は、推力に**下限**がある（エンジンは深く絞れない）ため非凸の最適制御問題になる。**無損失凸化 (lossless convexification)** はこれを等価な凸問題 (SOCP) に変換できることを証明し (Açıkmeşe & Ploen 2007)、凸問題ゆえに**大域最適解へ有界時間で確実に収束**する内点法ソルバをオンボードで走らせる道を開いた。「必ず・時間内に・解ける」という保証が、やり直しのきかないホバスラング（`spacex-reusability.md`）を計算機に任せる根拠である (Blackmore 2016)。
+- **着陸誘導 (powered descent guidance)**: 燃料最適な降下は、推力に**下限**がある（エンジンは深く絞れない）ため非凸の最適制御問題になる。**無損失凸化 (lossless convexification)** はこれを等価な凸問題 (SOCP) に変換できることを証明し (Açıkmeşe & Ploen 2007)、凸問題ゆえに**大域最適解へ有界時間で確実に収束**する内点法ソルバをオンボードで走らせる道を開いた。「必ず・時間内に・解ける」という保証が、やり直しのきかないホバスラング（[`spacex-reusability.md`](spacex-reusability.md)）を計算機に任せる根拠である (Blackmore 2016)。
 - 運用形態は**逐次再計画**: 航法の推定が更新されるたびに残り軌道を解き直す、モデル予測制御 (MPC) 的なループ。誘導は「一度決めた軌道への固執」ではなく「最新の推定に対する再最適化」である。
 
 ### 4. 制御 — 内外ループ・ゲインスケジューリング・構造連成
@@ -137,7 +137,7 @@ update (GPS 等の観測が届いたとき):
 - **内側ループ**（姿勢レート、数十〜数百 Hz）が機体を安定化し、**外側ループ**が誘導指令（姿勢角・加速度）に追従する。古典的にはフェーズごとに調整された PID＋フィルタ群。
 - **ゲインスケジューリング**: 動圧・マッハ数・質量（燃料消費で刻々変わる）で機体の応答が大きく変わるため、飛行条件に応じて制御ゲインを切替・補間する。ロケットは1回の飛行で動圧ゼロ → max-Q → ゼロと環境が激変する。
 - **アクチュエータの使い分け**: 舵面（航空）、TVC ジンバル（推力方向）、RCS スラスタ（動圧ゼロの宇宙空間・エンジン停止時）、グリッドフィン（再突入の高動圧域）。どの飛行条件でどの操舵権限 (control authority) が生きているかが制御設計の前提になる。
-- **構造との連成**: 細長い機体は曲げ振動モード（ベンディングモード）を持ち、制御がこれを励振すると発散する。ノッチフィルタでモード周波数を避ける。制御ソフトの係数に**構造力学が焼き込まれる**箇所である。
+- **構造との連成**（振動モードの一般論は [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)）: 細長い機体は曲げ振動モード（ベンディングモード）を持ち、制御がこれを励振すると発散する。ノッチフィルタでモード周波数を避ける。制御ソフトの係数に**構造力学が焼き込まれる**箇所である。
 
 ### 5. 放射線とハードウェア
 
@@ -159,7 +159,7 @@ update (GPS 等の観測が届いたとき):
 | **AFDX (ARINC 664 p7)** | 100 Mbps | スイッチド Ethernet | Virtual Link ごとの帯域保証 (BAG) | A380 / 787 / A350 |
 | **TTEthernet** | ~1 Gbps | 時刻同期スケジュール | 「時刻表で話す」 | Orion 宇宙船 |
 
-決定性の実現方法が「一人しか話せない (1553)」→「帯域を予約する (AFDX)」→「時刻表に従う (TTE)」と進化してきた。車載 TSN (`../automotive/automotive-ethernet-tsn.md`) は AFDX/TTE の思想を IEEE 標準として一般化したものであり、車載ネットワークの系譜（CAN の調停 = `../automotive/in-vehicle-networks.md`）と直接比較して読める。
+決定性の実現方法が「一人しか話せない (1553)」→「帯域を予約する (AFDX)」→「時刻表に従う (TTE)」と進化してきた。車載 TSN ([`../automotive/automotive-ethernet-tsn.md`](../automotive/automotive-ethernet-tsn.md)) は AFDX/TTE の思想を IEEE 標準として一般化したものであり、車載ネットワークの系譜（CAN の調停 = [`../automotive/in-vehicle-networks.md`](../automotive/in-vehicle-networks.md)）と直接比較して読める。
 
 ### 7. 事例研究: Apollo AGC — ソフトウェアで生き残る
 
@@ -173,7 +173,7 @@ update (GPS 等の観測が届いたとき):
 
 ## セキュリティ考察 (Security Considerations)
 
-- **耐空セキュリティ標準**: 航空は安全 (DO-178C/ARP4761) と別軸で、意図的攻撃を扱う **DO-326A/ED-202A 系 (Airworthiness Security)** を持つ。ISO 26262 × ISO 21434 の車載の構図（`../automotive/cybersecurity-iso21434.md`）は、この航空の枠組みに約10年遅れて対応したものと読める。
+- **耐空セキュリティ標準**: 航空は安全 (DO-178C/ARP4761) と別軸で、意図的攻撃を扱う **DO-326A/ED-202A 系 (Airworthiness Security)** を持つ。ISO 26262 × ISO 21434 の車載の構図（[`../automotive/cybersecurity-iso21434.md`](../automotive/cybersecurity-iso21434.md)）は、この航空の枠組みに約10年遅れて対応したものと読める。
 - **GNSS 妨害・偽装 (jamming / spoofing)**: 民間航空で現実の運用問題であり、紛争地域周辺で日常的に観測される。防御の基盤は本文の航法アーキテクチャそのもの、つまり**妨害不能な IMU を軸にした多センサ融合**と、イノベーション監視による「ありえない観測」の棄却。GNC の正しさとセキュリティが同じ機構で守られる好例。
 - **ADS-B は無認証ブロードキャスト**: 航空機の位置放送 (ADS-B) は認証を持たず、偽トラフィックの注入が構造的に可能。CAN と同型の「単純さ・相互運用性のための無認証」であり、監視側の多元照合（レーダ・マルチラテレーション）で補う。
 - **宇宙機のコマンドリンク**: 地上局からのコマンドが無認証なら衛星の乗っ取りが成立する。CCSDS の **SDLS (Space Data Link Security)** がリンク層の認証・暗号を標準化しており、商用衛星でも採用が進む。
@@ -189,11 +189,14 @@ update (GPS 等の観測が届いたとき):
 
 ### 次の接続先 (Related Topics)
 
-- `spacex-reusability.md` — 凸最適化着陸誘導の応用先（ホバスラングの理論的中身）。
-- `orbital-mechanics.md` — 誘導が従う力学的基礎（Δv、軌道遷移）。
-- `../automotive/functional-safety-iso26262.md` — 同じ思想の車載版。ASIL 分解の独立性 ↔ 非相似冗長、ロックステップコア ↔ COM/MON ペア。
-- `../automotive/automotive-ethernet-tsn.md` — AFDX/TTEthernet の思想の車載標準化 (TSN)。
-- `../automotive/in-vehicle-networks.md` — バスの決定性設計の系譜比較 (CAN ↔ 1553)。
+- [`spacex-reusability.md`](spacex-reusability.md) — 凸最適化着陸誘導の応用先（ホバスラングの理論的中身）。
+- [`orbital-mechanics.md`](orbital-mechanics.md) — 誘導が従う力学的基礎（Δv、軌道遷移）。
+- [`range-safety-fts.md`](range-safety-fts.md) — 冗長計算機と fail-safe 設計の公衆安全への応用（AFSS）。
+- [`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md) — 無損失凸化・内点法の数学的背景。
+- [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — 冗長系の信頼度計算。
+- [`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) — 同じ思想の車載版。ASIL 分解の独立性 ↔ 非相似冗長、ロックステップコア ↔ COM/MON ペア。
+- [`../automotive/automotive-ethernet-tsn.md`](../automotive/automotive-ethernet-tsn.md) — AFDX/TTEthernet の思想の車載標準化 (TSN)。
+- [`../automotive/in-vehicle-networks.md`](../automotive/in-vehicle-networks.md) — バスの決定性設計の系譜比較 (CAN ↔ 1553)。
 
 ## 参考文献 (References)
 

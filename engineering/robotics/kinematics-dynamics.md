@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-ロボットの機構を制御するには、まず機構を**数学の対象**として書き下す必要がある。キネマティクス (kinematics) は「関節の角度と手先の位置・姿勢の関係」を力を考えずに扱う幾何の言語であり、動力学 (dynamics) は「トルクと運動の関係」を扱う力学の言語である。この2つが、`robotics-fundamentals.md` で見たハードウェア（モーター・減速機・エンコーダ）と、`control-systems.md` で扱う制御則をつなぐ**数学的インターフェース**になる。
+ロボットの機構を制御するには、まず機構を**数学の対象**として書き下す必要がある。キネマティクス (kinematics) は「関節の角度と手先の位置・姿勢の関係」を力を考えずに扱う幾何の言語であり、動力学 (dynamics) は「トルクと運動の関係」を扱う力学の言語である。この2つが、[`robotics-fundamentals.md`](robotics-fundamentals.md) で見たハードウェア（モーター・減速機・エンコーダ）と、[`control-systems.md`](control-systems.md) で扱う制御則をつなぐ**数学的インターフェース**になる。
 
 本ドキュメントは、直列リンクマニピュレータを主題材に、回転の表現 → 順運動学 → 逆運動学 → ヤコビアン → 運動方程式の順で、各概念を「制御で何に使うか」まで含めて整理する。数学的前提は [`../../foundations/mathematics/linear-algebra/`](../../foundations/mathematics/linear-algebra/) と [`../../foundations/mathematics/calculus-analysis/multivariable-calculus.md`](../../foundations/mathematics/calculus-analysis/multivariable-calculus.md) に置いており、本ドキュメントはその最も直接的な応用例である。
 
@@ -23,7 +23,7 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 4. **ヤコビアンがキネマティクスと力学を接続する中心的対象である。** 関節速度と手先速度を `v = J(q)·q̇` で結ぶだけでなく、双対関係 `τ = Jᵀ·F` によって手先力と関節トルクも結ぶ。速度・力・特異点・可操作性・数値逆運動学のすべてがヤコビアン一つの上に載っている。
 5. **特異点は「数値の問題」ではなく「機構の物理的性質」である。** ヤコビアンのランク落ちする配位では、ある方向に手先を動かすのに無限大の関節速度が要る。特異点近傍では小さな手先速度指令が巨大な関節速度に変換されるため、**特異点回避は安全要件**である。可操作性楕円体は `J` の特異値分解（[`../../foundations/mathematics/linear-algebra/svd-low-rank.md`](../../foundations/mathematics/linear-algebra/svd-low-rank.md)）そのものである[^yoshikawa]。
 6. **運動方程式 `M(q)q̈ + C(q,q̇)q̇ + g(q) = τ` は、成分は複雑でも構造は普遍である。** 慣性行列 `M` は対称正定値、`Ṁ − 2C` は歪対称（受動性）、重力項 `g` は位置のみに依存する。この構造的性質こそが制御則の安定性証明の基礎になる[^siciliano]。
-7. **動力学計算は再帰アルゴリズムで O(n) になり、1 kHz 制御に収まる。** ラグランジュ法の閉形式展開は自由度に対して急速に複雑化するが、ニュートン・オイラー法の再帰的定式化は自由度 `n` に線形な計算量で逆動力学を解く[^luh-walker-paul]。現代の動力学ライブラリ（Pinocchio 等）がリアルタイム MPC を可能にしている計算的基盤である。
+7. **動力学計算は再帰アルゴリズムで O(n) になり、1 kHz 制御に収まる。** ラグランジュ法の閉形式展開は自由度に対して急速に複雑化するが、ニュートン・オイラー法の再帰的定式化は自由度 `n` に線形な計算量で逆動力学を解く[^luh-walker-paul]（剛体の運動方程式の基礎は [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)）。現代の動力学ライブラリ（Pinocchio 等）がリアルタイム MPC を可能にしている計算的基盤である。
 
 ## アーキテクチャ (Architecture)
 
@@ -130,7 +130,7 @@ F_ext:  外力（接触力）
 
 - **ラグランジュ法**: エネルギー（`L = T − V`）から系統的に導出。構造の理解・少自由度の手計算向き。オイラー・ラグランジュ方程式は [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) の2階 ODE の連立系である。
 - **ニュートン・オイラー法（再帰形）**: 速度・加速度をベースから手先へ順伝播し、力・トルクを手先からベースへ逆伝播する2パスで逆動力学（`q, q̇, q̈ → τ`）を **O(n)** で解く[^luh-walker-paul]。順動力学（`τ → q̈`）は Featherstone の articulated-body algorithm が同じく O(n) を達成する[^featherstone]。
-- **反射慣性との接続**: `robotics-fundamentals.md` で見た `N²·J_m` は、この `M(q)` の対角項にモーター慣性が加算される形で現れる。高減速比機では `N²·J_m` がリンク由来の項を支配するため「各関節が独立した線形系」に近づき、単軸 PID で制御できてしまう。逆に QDD 機ではリンク間の連成が支配的になり、モデルベース制御が必要になる。この分岐が `control-systems.md` の主題である。
+- **反射慣性との接続**: [`robotics-fundamentals.md`](robotics-fundamentals.md) で見た `N²·J_m` は、この `M(q)` の対角項にモーター慣性が加算される形で現れる。高減速比機では `N²·J_m` がリンク由来の項を支配するため「各関節が独立した線形系」に近づき、単軸 PID で制御できてしまう。逆に QDD 機ではリンク間の連成が支配的になり、モデルベース制御が必要になる。この分岐が [`control-systems.md`](control-systems.md) の主題である。
 
 ## セキュリティ考察 (Security Considerations)
 

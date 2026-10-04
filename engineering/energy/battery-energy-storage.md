@@ -11,13 +11,13 @@ BESS は「大きな電池」ではなく、**セル（電気化学）→ モジ
 - BESS をハードウェア階層（セル → システム）と時間スケール（ミリ秒の周波数応答 → 時間のアービトラージ → 年の容量価値）の 2 軸で分解し、各層・各時間スケールがどの市場商品（[`electricity-markets-dispatch.md`](electricity-markets-dispatch.md)）に対応するかを対応づける。
 - 経済性を **$/kW（出力）と $/kWh（容量）の 2 軸**で捉える。継続時間 (duration) = kWh/kW がアプリケーションを規定し、技術間比較（電池 vs 揚水 vs その他）もこの軸で行う。
 - 実例は一次資料が公開されているものを優先する: Hornsdale Power Reserve（豪州、AEMO/ARENA の公開報告）と Moss Landing 火災（米国、EPA の対応記録）。
-- コスト・導入量は変動が速いため、絶対値ではなく桁感と傾向を示し、執筆時点 (2026-07) を明記する。
+- コスト・導入量は変動が速いため、絶対値ではなく桁感と傾向を示し、執筆時点 (2026-07、導入量と Moss Landing の経過は 2026-10 に更新) を明記する。導入量は IEA と BloombergNEF (BNEF) の二系統で突き合わせ、集計範囲の差を明示する。
 
 ## 発見事項 (Findings)
 
 1. **BESS の第一の商品価値は kWh ではなく「速さ」である。** インバータ経由の出力変更は 100 ミリ秒オーダで完了し、ガバナ応答（数秒〜数十秒）より 1〜2 桁速い。周波数調整市場ではこの速さがそのまま価値になる。豪州 Hornsdale (100 MW/129 MWh, 2017) は運転開始から数ヶ月で南オーストラリア州の周波数調整サービス (FCAS) の過半を担い、2019 年だけで約 1.16 億豪ドルの調整コスト削減をもたらしたと報告されている。
 
-2. **定置用の化学系は LFP（リン酸鉄リチウム）が主流になった。** EV で主流だった NMC（三元系）に比べ、LFP はエネルギー密度で劣るが、サイクル寿命（数千回以上）、熱安定性（熱暴走開始温度が高くコバルト不使用）、kWh 単価で勝る。設置面積が許す定置用途では、この交換条件は一方的に LFP に有利に働く。これは、**同じセル技術でも、システム要求が変わると最適解が反転する**例である。
+2. **定置用の化学系は LFP（リン酸鉄リチウム）が主流になった。** EV で主流だった NMC（三元系）に比べ、LFP はエネルギー密度で劣るが、サイクル寿命（数千回以上）、熱安定性（熱暴走開始温度が高くコバルト不使用）、kWh 単価で勝る。設置面積が許す定置用途では、この交換条件は一方的に LFP に有利に働く。IEA によれば、2025 年の系統用・需要家側を合わせた蓄電池導入の約 9 割が LFP である[^iea-ger-2026]。これは、**同じセル技術でも、システム要求が変わると最適解が反転する**例である。
 
 3. **単一用途では投資回収が難しく、経済性はレベニュースタッキングで成立する。** 調整力市場は速い資産に高い単価を払うが市場規模が小さく（BESS が増えるほど単価が下がる飽和が各国で観測されている）、アービトラージ（安く充電・高く放電）は市場規模が大きいが値差に依存する。実際の運用は、需給調整市場・スポット市場・容量市場・混雑緩和を EMS が時間帯ごとに使い分ける最適化になる。
 
@@ -25,28 +25,32 @@ BESS は「大きな電池」ではなく、**セル（電気化学）→ モジ
 
 5. **劣化管理は運用戦略そのものである。** 電池はカレンダー劣化（時間・温度・保存 SoC）とサイクル劣化（充放電深度・C レート）で容量が減る。EMS の充放電判断は「今の市場収益」と「寿命の消費」のトレードオフであり、SoC 運用窓・温度管理・充放電レートの制約として実装される。劣化モデルの精度が事業収益の精度を決める。
 
-6. **エネルギー貯蔵の絶対量では揚水発電が依然として支配的である。** 世界の貯蔵容量 (GWh) の大半（歴史的に約 9 割）は揚水であり、日本は約 27 GW と世界最大級の揚水設備を持つ。BESS の導入は出力 (GW) ベースで急拡大しているが継続時間は 1〜4 時間が中心で、**秒〜時間は電池、時間〜日は揚水**という時間スケールの分業が当面の構図である。
+6. **エネルギー貯蔵の絶対量では揚水発電が依然として支配的である。** 世界の貯蔵容量 (GWh) の大半（歴史的に約 9 割）は揚水であり、日本は約 27 GW と世界最大級の揚水設備を持つ。BESS の導入は出力 (GW) ベースで急拡大している。2025 年の世界の年間導入量は IEA 集計で 108 GW（前年比約 +40%、うち約 8 割が系統用、中国が約 6 割）[^iea-ger-2026]、BNEF 集計で 112 GW / 307 GWh（揚水除く、前年比 +48%、中国 54%）[^bnef-2026]と、初めて年 100 GW を超えた（両者の差は需要家側設備の捕捉範囲など集計方法の違いによる）。それでも継続時間は 1〜4 時間が中心で、**秒〜時間は電池、時間〜日は揚水**という時間スケールの分業が当面の構図である。
 
 ## アーキテクチャ (Architecture)
 
 ### ハードウェア階層 (Hardware Hierarchy)
 
+```mermaid
+flowchart LR
+    subgraph DCSIDE["DC 側 (直列で数百 V〜1,500 V DC)"]
+        CELL["セル<br/>LFP / NMC<br/>3〜4 V・数十〜300 Ah"] -->|"× 数十 直並列"| MOD["モジュール<br/>+ 監視基板"]
+        MOD -->|"× 数十 直列"| RACK["ラック / コンテナ<br/>空調・消火<br/>× 数十 = 数 MWh"]
+    end
+    RACK -->|"DC"| PCS["PCS<br/>双方向インバータ + フィルタ"]
+    PCS -->|"AC"| TR["昇圧変圧器"]
+    TR --> GRID["送配電網"]
+    BMS["BMS 階層<br/>cell → module → rack → system<br/>電圧・温度・SoC/SoH 推定・保護遮断"]
+    BMS -.- CELL
+    BMS -.- MOD
+    BMS -.- RACK
+    BMS -->|"状態・運用制約"| EMS["EMS<br/>運用最適化・入札・遠隔監視"]
+    EMS -->|"出力指令"| PCS
+    PCS -->|"計測値"| EMS
+    MKT["市場 / TSO 指令<br/>需給調整市場・スポット"] <-->|"入札・約定・発動指令"| EMS
 ```
- セル (cell)            モジュール          ラック/コンテナ           PCS               系統
- 3〜4 V, 数十〜300 Ah    直並列+セル監視     直列で数百V〜1500V DC    DC⇄AC 変換         │
- ┌──────┐            ┌──────────┐      ┌──────────────┐      ┌──────────┐      ┌─────┐
- │ LFP/  │ × 数十 →   │ モジュール │ × 数十│ ラック(空調·消火)│ ──→  │ インバータ │ ──→  │ 昇圧  │→ 送配電網
- │ NMC   │            │ +監視基板  │      │ × 数十 = 数MWh │ DC   │ +フィルタ  │ AC   │ 変圧器│
- └──────┘            └──────────┘      └──────────────┘      └──────────┘      └─────┘
-     ▲                     ▲                   ▲                    ▲
-     └─────────────────────┴───────────────────┘                    │
-              BMS 階層 (cell→module→rack→system)                    │
-              電圧・温度・SoC/SoH 推定、保護遮断                       │
-                              │                                     │
-                              └──────────→ EMS ←───────────────────┘
-                                   運用最適化・市場入札・遠隔監視
-                                   (需給調整市場/スポットへの接続点)
-```
+
+凡例: 実線は電力または指令・データの流れ、点線は BMS による監視・保護の対象。
 
 - **BMS (Battery Management System)**: セル電圧・温度の監視、SoC (State of Charge)/SoH (State of Health) 推定、直列セルのバランシング、閾値逸脱時の遮断を階層的に行う。EV の BMS（[`../automotive/ev/tesla-battery-powertrain.md`](../automotive/ev/tesla-battery-powertrain.md)）と機能は同型だが、定置用は数万〜数十万セルを扱う規模が異なる。
 - **PCS (Power Conversion System)**: 双方向インバータ。系統側から見ると BESS の「顔」はこの電力変換器であり、応答速度・グリッドフォーミング能力・故障時挙動（フォールトライドスルー設定）はすべてここで決まる。
@@ -80,10 +84,10 @@ BESS は「大きな電池」ではなく、**セル（電気化学）→ モジ
 ### 効率と劣化 (Efficiency & Degradation)
 
 - **往復効率 (round-trip efficiency)**: リチウムイオンは DC-DC で 90〜95 %、PCS・変圧器・空調の損失を含む AC-AC では 85〜90 % 程度。揚水の 70〜80 % より高い。
-- **劣化の二成分**:
+- **劣化の二成分**（SoC/SoH は直接測れない状態量であり、BMS はベイズ推定・カルマンフィルタ系の手法で推定する。基礎は [`estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md)）:
   - カレンダー劣化: 時間経過で進行。高温・高 SoC 保存で加速する（電解液・SEI の副反応）。
   - サイクル劣化: 充放電で進行。放電深度 (DoD)・C レート・温度が支配因子。
-- **運用への写像**: 「SoC を 10〜90 % の窓に制限」「高価格時のみ深放電を許す」「セル温度を空調で狭帯域に保つ」といった EMS の制約はすべて劣化モデルの裏返しである。市場収益の最大化は、劣化という**遅い状態変数**を含む最適制御問題になる。
+- **運用への写像**: 「SoC を 10〜90 % の窓に制限」「高価格時のみ深放電を許す」「セル温度を空調で狭帯域に保つ」といった EMS の制約はすべて劣化モデルの裏返しである。市場収益の最大化は、劣化という**遅い状態変数**を含む最適制御問題になる（劣化コストを凸近似した線形計画・MPC として解かれることが多い。[`convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md) 参照）。
 
 ### 事例: Hornsdale Power Reserve（豪州・南オーストラリア）
 
@@ -96,9 +100,9 @@ BESS は「大きな電池」ではなく、**セル（電気化学）→ モジ
 
 ### 事例: Moss Landing 火災（米国・カリフォルニア, 2025-01-16）
 
-- Vistra 社 Moss Landing の第 1 期棟（300 MW / 1,200 MWh、NMC 系・建屋収容型）で大規模火災が発生。約 10 万個のセルの過半が焼損し、周辺住民 1,000 人超の避難と長期の環境調査（EPA が対応支援）に至った。同サイトでは 2021〜2022 年にも過熱・スプリンクラー誤作動による損傷事故が起きていた。
+- Vistra 社 Moss Landing の第 1 期棟（300 MW / 1,200 MWh、NMC 系・建屋収容型）で大規模火災が発生。建屋内のバッテリーモジュールの過半が焼損し、周辺住民 1,000 人超の避難と長期の環境調査（EPA が対応支援）に至った。同サイトでは 2021〜2022 年にも過熱・スプリンクラー誤作動による損傷事故が起きていた。2026-09-18 には、撤去作業中だった焼損棟内の残存モジュール（充電状態が残るもの）が再発火した。2026-09 時点で約 3.4 万モジュールが搬出済み・約 5,000 が残存しており、初回火災の根本原因はカリフォルニア州公益事業委員会 (CPUC) の調査継続中で未公表である[^moss-2026]。
 - **構造的教訓**:
-  - 熱暴走 (thermal runaway) はセル内部短絡等で発熱が連鎖する現象で、消火が極めて難しく「燃え尽きるまで管理する」対応になりやすい。
+  - 熱暴走 (thermal runaway) はセル内部短絡等で発熱が連鎖する現象（発熱速度が放熱速度を上回る正帰還。伝熱の基礎は [`laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md)）で、消火が極めて難しく「燃え尽きるまで管理する」対応になりやすい。
   - 大量のセルを単一建屋に収容する初期世代の設計は延焼リスクを集中させた。以降の業界標準は屋外分散コンテナ＋区画化＋オフガス検知へ移行し、法規制（米 NFPA 855、大規模燃焼試験 UL 9540A）が設計を規定するようになった。
   - 安全事故は技術問題にとどまらず、立地の社会的受容 (social license) を毀損し、事業環境全体に波及する。これは原子力が辿った構図の縮小版である。
 
@@ -143,3 +147,9 @@ BESS は「大きな電池」ではなく、**セル（電気化学）→ モジ
 - IEC 62933 series, *Electrical energy storage (EES) systems*. International Electrotechnical Commission.
 - Cole, W., & Karmakar, A. (2023). *Cost Projections for Utility-Scale Battery Storage: 2023 Update* (NREL/TP-6A40-85332). National Renewable Energy Laboratory. — コスト水準・見通しの中立系ベンチマーク。
 - [DOE/EPRI — Energy Storage Handbook](https://www.sandia.gov/ess/) — Accessed: 2026-07-05。用途分類（アプリケーションスタッキング）の整理。
+
+[^iea-ger-2026]: [IEA (2026). *Global Energy Review 2026* — Technology: Battery storage](https://www.iea.org/reports/global-energy-review-2026/technology-battery-storage) — Accessed: 2026-10-04。2025 年の世界導入 108 GW（+40%）、系統用約 8 割、中国約 6 割、LFP 約 9 割。
+
+[^bnef-2026]: [BloombergNEF (2026-05-07). Energy Storage Enters the 100-Gigawatt Era: Three Things to Know](https://about.bnef.com/insights/clean-energy/energy-storage-enters-the-100-gigawatt-era-three-things-to-know/) — Accessed: 2026-10-04。2025 年 112 GW / 307 GWh（揚水除く、+48%）、中国 54%。
+
+[^moss-2026]: [CalMatters (2026-09). Moss Landing battery storage fire flares up again, raising new safety fears in California](https://calmatters.org/environment/2026/09/moss-landing-battery-fire-reignites-fears/) — Accessed: 2026-10-04。および [Canary Media — Vistra's Moss Landing grid battery is on fire yet again](https://www.canarymedia.com/articles/batteries/vistra-moss-landing-on-fire-again) — Accessed: 2026-10-04。2026-09-18 の再発火、搬出進捗、根本原因調査の継続（いずれも専門報道。一次の調査報告は未公表）。

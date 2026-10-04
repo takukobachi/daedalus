@@ -6,14 +6,14 @@ LLM (Large Language Model) 単体は「テキストを入れるとテキスト�
 
 重要な対比は**ワークフロー (workflow) とエージェント**の区別である。ワークフローは LLM とツールを**あらかじめ定義されたコードパス**で編成する（分岐・並列・直列はコードが決める）。エージェントは**モデル自身が制御フローを決める**（次にどのツールを呼ぶか、いつ終わるかをモデルが判断する）。この区別は学術的な分類ではなく、コスト・レイテンシ・予測可能性のトレードオフを決める実務上の第一の設計判断である。
 
-本ドキュメントは、エージェントの設計空間（推論と行動の交互実行 (ReAct)、計画と自己修正、メモリ、マルチエージェント、ツール統合の標準化 (MCP)、評価、セキュリティ）を、原論文と一次実装資料に基づいて整理する。ループそのものの工学（stop_reason の分岐、コンテキスト管理、キャッシュ、エラー処理）は対をなす `agent-loop-engineering.md` に委ねる。
+本ドキュメントは、エージェントの設計空間（推論と行動の交互実行 (ReAct)、計画と自己修正、メモリ、マルチエージェント、ツール統合の標準化 (MCP)、評価、セキュリティ）を、原論文と一次実装資料に基づいて整理する。ループそのものの工学（stop_reason の分岐、コンテキスト管理、キャッシュ、エラー処理）は対をなす [`agent-loop-engineering.md`](agent-loop-engineering.md) に委ねる。
 
 ## 方法論 (Methodology)
 
 - **一次資料優先**: 各設計パターンは原論文（ReAct, Toolformer, Reflexion, Voyager, SWE-bench, τ-bench）と、実運用者の一次技術文書（Anthropic のエージェント構築ガイド、MCP 仕様）に遡って記述する。二次的な解説記事は用いない。
 - **設計軸による分解**: 「エージェントフレームワーク X の使い方」ではなく、フレームワークに依存しない設計軸（制御フローの所在、ツールサーフェス、メモリ階層、検証ループ、信頼境界）で分析する。フレームワークは軸の実装例として言及するにとどめる。
 - **ベンダー資料の扱い**: LLM ベンダーの文書は自社製品のマーケティングでもあるため、仕様（API の形）と主張（性能・信頼性）を区別する。性能主張は独立ベンチマーク（SWE-bench 等の公開リーダーボード）と突き合わせる。
-- **急速に動く分野への対応**: 数値（ベンチマークスコア等）は特定時点のものと明記し、構造的な知見（同じ問題は同じ解に至る型）を優先して記録する。アクセス日は 2026-08-08。
+- **急速に動く分野への対応**: 数値（ベンチマークスコア等）は特定時点のものと明記し、構造的な知見（同じ問題は同じ解に至る型）を優先して記録する。初版のアクセス日は 2026-08-08、時点依存の事実（MCP 仕様版、ベンチマーク動向、標準化団体）は 2026-10-04 に再確認し「2026-10 時点」と明記した。
 
 ## 発見事項 (Findings)
 
@@ -133,7 +133,7 @@ Reflexion (Shinn et al., 2023) の構造は 3 役に分解される: 行動者 (
 
 - **評価者を先に作る。** エージェントタスクの成功率は、検証信号の質にほぼ律速される。テストが虚偽合格する環境では、自己修正ループは誤った状態に収束する。
 - **生成と検証の分離。** 自分の作業履歴を持つコンテキストは自己弁護に傾く。検証は履歴を持たない新鮮なコンテキスト（サブエージェント）で行うほうが偽陰性・偽陽性ともに減る。これは発見事項 4（外部信号の優位）のコンテキスト版である。
-- **テスト時計算 (test-time compute) との関係**: 試行回数 k を増やすと少なくとも 1 回成功する確率 (pass@k) は上がるが、**どれが成功か選べなければ意味がない**。選別器（検証器・多数決・採点モデル）の精度が、テスト時計算のスケーリングを実際の成功率に変換する係数になる。
+- **テスト時計算 (test-time compute) との関係**: 試行回数 k を増やすと少なくとも 1 回成功する確率 (pass@k) は上がるが、**どれが成功か選べなければ意味がない**。選別器（検証器・多数決・採点モデル）の精度が、テスト時計算のスケーリングを実際の成功率に変換する係数になる。テスト時計算を学習計算と並ぶスケーリング軸として扱う理論的整理は [`../../foundations/machine-learning/scaling-laws.md`](../../foundations/machine-learning/scaling-laws.md) §6 を参照。
 
 ### 4. マルチエージェント構成
 
@@ -155,7 +155,16 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 | resources | アプリが読む | URI で識別されるデータ（ファイル、DB スキーマ等） |
 | prompts | ユーザが選ぶ | テンプレート化された指示 |
 
-トランスポートは stdio（ローカル子プロセス）と Streamable HTTP（リモート）が定義される。能力交渉 (capability negotiation) により、クライアント・サーバは初期化時に対応機能を交換する。
+トランスポートは stdio（ローカル子プロセス）と Streamable HTTP（リモート）が定義される。2026-10 時点の最新版は **2026-07-28 版**（前版は 2025-11-25 版）で、プロトコルの性格が大きく変わった。
+
+- **ステートレス化**: `initialize` ハンドシェイクとプロトコルレベルのセッション（`Mcp-Session-Id` ヘッダ）が廃止され、各リクエストが `_meta` にプロトコル版とクライアント能力を載せる。能力交渉 (capability negotiation) は「接続時に 1 回」から「リクエストごと」になり、サーバは `server/discover` で対応版・能力を公開する。呼び出しを跨ぐ状態が必要なサーバは、サーバ発行のハンドルを通常のツール引数として受け渡す。
+- **サーバ発のリクエストの再設計**: サーバがクライアントに追加入力（ユーザへの確認 (elicitation) 等）を求める場合、サーバ側から要求を送るのではなく、`input_required` の中間結果を返し、クライアントが元のリクエストを入力付きで再送する Multi Round-Trip Requests (MRTR) パターンに統一された。
+- **整理と拡張機構**: Roots・Sampling・Logging は非推奨 (Deprecated) となり、長時間処理のタスク機構はコアから公式拡張 (`io.modelcontextprotocol/tasks`) に移された。12 か月以上の非推奨期間を定める機能ライフサイクル規定も導入された。
+- **キャッシュへの配慮**: `tools/list` は決定的な順序で返すことが推奨 (SHOULD) され、一覧系の結果には鮮度ヒント (`ttlMs`) が付く。ツール定義の並びが変わるとプロンプトキャッシュが無効化される問題（[`agent-loop-engineering.md`](agent-loop-engineering.md) §4）に、プロトコル側が対応した形である。
+
+この変更は、リモート MCP サーバを通常の HTTP サービスと同様に水平スケール・負荷分散できるようにする方向の再設計であり、LSP 型の「長寿命の対話セッション」から REST 型の「自己完結した要求」への移行と読める。
+
+**ガバナンス (2026-10 時点)**: MCP は 2025-12 に Linux Foundation 傘下で設立された Agentic AI Foundation (AAIF) に、Block の goose、OpenAI の AGENTS.md とともに寄贈され、ベンダー中立の管理下にある。エージェント間通信のプロトコル A2A (Agent2Agent) も 2025-06 から Linux Foundation のプロジェクトである。ツール接続 (MCP)、エージェント間通信 (A2A)、リポジトリ向け指示ファイル (AGENTS.md) という層の異なる標準が、いずれも単一ベンダーの管理を離れた。
 
 アーキテクチャ上の含意: ツールカタログが外部化されると、ハーネスは**ツール集合が動的**である前提で設計する必要が生じる（起動時に列挙し、多数なら検索・遅延読み込みで文脈に載せる）。同時に、サーバは第三者コードであるから、**ツール定義・ツール結果はいずれも信頼境界の外**にある（セキュリティ考察参照）。
 
@@ -163,7 +172,8 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 
 | ベンチマーク | 対象 | 測り方 | 特筆点 |
 |--------------|------|--------|--------|
-| SWE-bench / SWE-bench Verified | 実 GitHub issue の修正 | 隠しテストの合否 | Verified は人手検証済み 500 問のサブセット。スコアはモデル×スキャフォールドの積で決まり、モデル単独の能力ではない |
+| SWE-bench / SWE-bench Verified | 実 GitHub issue の修正 | 隠しテストの合否 | Verified は人手検証済み 500 問のサブセット。スコアはモデル×スキャフォールドの積で決まり、モデル単独の能力ではない。2026 年には飽和と汚染により最前線の指標としての役割を終えつつある（後述） |
+| SWE-bench Pro | 長期・複数ファイルの実務的修正（公開セット + 非公開セット） | 隠しテストの合否 | Deng et al. (2025)。専門家が数時間〜数日を要する規模のタスク。2026-10 時点で Verified の後継として推奨されつつある |
 | τ-bench | ツール + ポリシー準拠の対話（航空・小売） | pass^k（k 回全成功） | 一貫性の測定。ドメインポリシー文書への準拠を要求し、「規則に従う」能力を測る |
 | Terminal-Bench 等の端末系 | シェル環境での多段作業 | タスク完了判定 | 環境の状態を持つ評価。再現性の担保が難しい |
 
@@ -173,13 +183,15 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 - **能力評価と回帰評価を分ける。** ベンチマークは前者。運用では自ドメインのタスクから小さく確定的な回帰スイートを作り、ハーネス変更のたびに回す方が有効である。
 - **汚染 (contamination) を疑う。** 公開ベンチマークは学習データに漏れる。時系列で新設された問題（例: 提出日でフィルタしたもの）との乖離をチェックする。
 
+**事例: SWE-bench Verified の退役 (2026)**。Verified を作成した OpenAI 自身が 2026-02 に、同ベンチマークはもはや最前線のコーディング能力を測れないとして報告を停止し、SWE-bench Pro の報告を推奨した。理由は二つある。第一に、モデルが頻繁に失敗する難問サブセット（全体の 27.6%）を監査すると、少なくとも 59.4% に正しい解を棄却する欠陥テストがあった。第二に、学習時に問題を見たモデルほど、仕様不足のテストを通すための追加情報を持つため有利になる（汚染）。上位スコアが狭い帯に密集すると、残りの未解決問題が「モデルの限界」なのか「問題の欠陥」なのか区別できなくなる。これは上記 3 原則の失敗が同時に起きた実例である。後継の SWE-bench Pro は、2026-10-04 時点の Scale AI 公開セット・リーダーボード（統一条件）で最上位が 61.5 ± 3.1% にとどまり、まだ測定余地がある。ただしベンダーが自社スキャフォールドで報告する値はこれより大幅に高いことがあり、条件の異なる数値は直接比較できない（発見事項 1 の「モデル×ハーネス」の積がここでも効く）。
+
 ## セキュリティ考察 (Security Considerations)
 
 エージェントのセキュリティは通常のアプリケーションと質的に異なる。**命令とデータの境界が言語モデルの中で溶ける**からである。
 
 - **プロンプトインジェクション (prompt injection)**: 外部由来のテキスト（Web ページ、メール、ツール結果、ドキュメント）に埋め込まれた指示をモデルが実行してしまう問題。とくに**間接プロンプトインジェクション (indirect prompt injection)**（Greshake et al., 2023）は、攻撃者がエージェントの読む先にペイロードを置くだけで成立する。根本対策は未確立であり、**発生を前提に被害を限定する設計**が現実解である。
 - **危険な三点セット (lethal trifecta)**: (1) 非公開データへのアクセス、(2) 信頼できないコンテンツへの曝露、(3) 外部への送信経路の 3 つが同一エージェントに揃うと、インジェクション 1 つでデータ流出が完成する。設計時にこの 3 つが揃っていないか点検し、揃うなら少なくとも 1 つを外す（送信先をアローリストにする、非公開データを別セッションに隔離する等）。
-- **最小権限とゲーティング**: ツールは読み取り系と変更系を分離し、変更系・不可逆系（送信、削除、決済）は human-in-the-loop の承認ゲートを通す。bash のような万能ツールは強力だが、ハーネスから見ると中身が不透明な文字列であり、粒度の細かい権限裁定ができない。そのため権限設計上は専用ツールへの分解が優る（詳細は `agent-loop-engineering.md`）。
+- **最小権限とゲーティング**: ツールは読み取り系と変更系を分離し、変更系・不可逆系（送信、削除、決済）は human-in-the-loop の承認ゲートを通す。bash のような万能ツールは強力だが、ハーネスから見ると中身が不透明な文字列であり、粒度の細かい権限裁定ができない。そのため権限設計上は専用ツールへの分解が優る（詳細は [`agent-loop-engineering.md`](agent-loop-engineering.md)）。
 - **サンドボックス**: エージェントの実行環境はコンテナ等で隔離し、ファイルシステム・ネットワークのアクセス範囲を環境側で制約する。モデルへの指示（「〜するな」）は防御にならない。**制約は環境とハーネスで強制する**。
 - **信頼境界の明示**: MCP サーバのツール定義・ツール結果、Web 取得内容、リポジトリ内の指示ファイルはすべて信頼境界の外にあり、そこに書かれた指示に従う義務はない。ハーネスは出所メタデータを保ち、外部由来の指示がタスクを乗っ取ろうとする兆候をユーザに供覧できる形にする。
 
@@ -189,7 +201,7 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 2. 設計空間は「制御フローの所在」を軸にした連続体で捉えるのがよい。事前に分岐を書き切れるならワークフロー、書き切れないならエージェント。**単純な側から始めて、測定できる利得があるときだけ複雑側へ動く**。
 3. 歴史的パターン（ReAct、Reflexion、スキルライブラリ）は、プロンプト技法 → API 機能 → モデル内在能力へと層を降りながら生き続けている。フレームワークの抽象がどの層の代替物かを見極めることが、過剰な骨組みを避ける鍵である。
 4. 自己修正は外部検証信号の存在下でのみ信頼できる。**エージェントより先に採点器を作る**のが、コード以外のドメインにエージェントを広げるときの最重要投資である。
-5. セキュリティは付加機能ではなく構成の問題である。危険な三点セットの分解、最小権限、環境による強制、信頼境界の明示。これらはループ実装（`agent-loop-engineering.md`）の要求仕様になる。
+5. セキュリティは付加機能ではなく構成の問題である。危険な三点セットの分解、最小権限、環境による強制、信頼境界の明示。これらはループ実装（[`agent-loop-engineering.md`](agent-loop-engineering.md)）の要求仕様になる。
 
 ## 参考文献 (References)
 
@@ -198,8 +210,14 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 - Shinn, N. et al. (2023). Reflexion: Language Agents with Verbal Reinforcement Learning. *NeurIPS 2023*. arXiv:2303.11366
 - Wang, G. et al. (2023). Voyager: An Open-Ended Embodied Agent with Large Language Models. *TMLR 2024*. arXiv:2305.16291
 - Jimenez, C. E. et al. (2024). SWE-bench: Can Language Models Resolve Real-World GitHub Issues? *ICLR 2024*. arXiv:2310.06770
+- Deng, X., Da, J. et al. (2025). SWE-Bench Pro: Can AI Agents Solve Long-Horizon Software Engineering Tasks? arXiv:2509.16941
 - Yao, S. et al. (2024). τ-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains. arXiv:2406.12045
 - Greshake, K. et al. (2023). Not what you've signed up for: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection. *AISec 2023*. arXiv:2302.12173
-- [Building effective agents](https://www.anthropic.com/research/building-effective-agents) — Anthropic Engineering. Accessed: 2026-08-08
-- [Model Context Protocol Specification](https://modelcontextprotocol.io/specification) — Accessed: 2026-08-08
-- [The lethal trifecta for AI agents](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) — Simon Willison. Accessed: 2026-08-08
+- [Building effective agents](https://www.anthropic.com/research/building-effective-agents) — Anthropic Engineering. Accessed: 2026-10-04
+- [Model Context Protocol Specification (2026-07-28)](https://modelcontextprotocol.io/specification/2026-07-28) — Accessed: 2026-10-04
+- [MCP Specification Changelog: Key Changes (2026-07-28)](https://modelcontextprotocol.io/specification/2026-07-28/changelog) — Accessed: 2026-10-04
+- [Linux Foundation Announces the Formation of the Agentic AI Foundation (AAIF)](https://www.linuxfoundation.org/press/linux-foundation-announces-the-formation-of-the-agentic-ai-foundation) — Linux Foundation (2025-12). Accessed: 2026-10-04
+- [Linux Foundation Launches the Agent2Agent Protocol Project](https://www.linuxfoundation.org/press/linux-foundation-launches-the-agent2agent-protocol-project-to-enable-secure-intelligent-communication-between-ai-agents) — Linux Foundation (2025-06-23). Accessed: 2026-10-04
+- [Why SWE-bench Verified no longer measures frontier coding capabilities](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/) — OpenAI (2026-02). Accessed: 2026-10-04
+- [SWE-Bench Pro (Public Dataset) Leaderboard](https://labs.scale.com/leaderboard/swe_bench_pro_public) — Scale AI. Accessed: 2026-10-04
+- [The lethal trifecta for AI agents](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) — Simon Willison. Accessed: 2026-10-04

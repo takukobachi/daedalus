@@ -4,12 +4,12 @@
 
 電源投入時、CPU はメモリも初期化されておらず、OS もまだ存在しない「無の状態」から始まる。**ブート (boot)** とは、この何もないハードウェアを段階的に立ち上げ、最終的に OS カーネルへ制御を渡すまでの一連のシーケンスである。リセット直後の数命令が、信頼の連鎖 (chain of trust)・メモリの可用性・特権モードの確立といった、その後のシステム全体の前提を一つずつ組み上げていく。
 
-本ドキュメントは、**リセットベクタ (reset vector)** から OS 起動・**SMP (Symmetric Multi-Processing) bring-up** までの流れを、x86（レガシ BIOS / UEFI）と Arm・組込み（BL1/BL2/BL31, U-Boot）の対比で整理する。`abi-syscalls.md`（起動後にユーザ空間へ到達する経路）と `../cpu/virtual-memory-mmu.md`（保護モードと MMU 有効化）の手前、すなわち「それらが動き始める前提を作る段階」に位置づく。
+本ドキュメントは、**リセットベクタ (reset vector)** から OS 起動・**SMP (Symmetric Multi-Processing) bring-up** までの流れを、x86（レガシ BIOS / UEFI）と Arm・組込み（BL1/BL2/BL31, U-Boot）の対比で整理する。[`abi-syscalls.md`](abi-syscalls.md)（起動後にユーザ空間へ到達する経路）と [`virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md)（保護モードと MMU 有効化）の手前、すなわち「それらが動き始める前提を作る段階」に位置づく。
 
 ## 方法論 (Methodology)
 
 - ブートを「リセット直後の CPU 状態 → 初段ファームウェア → メモリ確保 → 多段ブートローダ → カーネル引き渡し → SMP bring-up」という時間軸の流れに分解する。
-- 各段について「直前に何が成立していて、その段が何を新たに確立するか」を対応づける（前段の確立物が次段の前提になる、という依存の積み上げで見る）。
+- 各段について「直前に何が成立していて、その段が何を新たに確立するか」を対応づける（前段の確立物が次段の前提になる、という依存の積み上げで見る）。電源・クロック・リセットの電気的立ち上げそのものは [`clock-power-reset.md`](clock-power-reset.md) に譲る。
 - x86 と Arm/組込みを対比し、用語や段の切り方が違っても「最小の信頼点から能力を増やしていく」構造は共通であることを示す。
 - 信頼の連鎖は全段を貫く縦糸として、各段に絡めて扱う。
 - 数値（アドレス・サイズ・電圧）は世代・実装依存であり、桁感として示す旨を都度断る。
@@ -18,13 +18,13 @@
 
 1. **ブートは「能力をゼロから積み上げる」段階的プロセス。** リセット直後は DRAM もスタックもキャッシュも当てにできない。各段が次段の前提（動くメモリ、確立した特権モード、検証済みコード）を一つずつ用意し、後段ほど豊かな環境で動く。
 
-2. **最初に実行されるのは ROM 上の不変コード。** リセットベクタが指すのは書き換え不能な**ブート ROM (boot ROM)** または不揮発フラッシュ上のコードで、これが信頼の連鎖の起点 **Root of Trust** になる。「最初のコードが信頼できる」ことだけは、ハードウェアで保証するしかない。
+2. **最初に実行されるのは ROM 上の不変コード。** リセットベクタが指すのは書き換え不能な**ブート ROM (boot ROM)** または不揮発フラッシュ上のコードで、これが信頼の連鎖の起点 **Root of Trust** になる[^nist193]。「最初のコードが信頼できる」ことだけは、ハードウェアで保証するしかない。
 
-3. **DRAM はソフトウェアが初期化するまで使えない。** メモリコントローラの設定と **DRAM トレーニング (DRAM training)** が済むまで主記憶は機能せず、初段はオンチップ SRAM など限られた領域だけで動く。「メモリを使うためにメモリが要る」というブートストラップ問題が、多段構成を生む主因の一つ。
+3. **DRAM はソフトウェアが初期化するまで使えない。** メモリコントローラの設定と **DRAM トレーニング (DRAM training)** が済むまで主記憶は機能せず、初段はオンチップ SRAM など限られた領域だけで動く。「メモリを使うためにメモリが要る」というブートストラップ問題が、多段構成を生む主因の一つ[^coreboot]。
 
-4. **x86 と Arm は用語が違うだけで構造は同型。** x86 の「リアルモード→保護→ロングモードの段階的昇格」や UEFI の SEC→PEI→DXE、Arm の BL1→BL2→BL31、組込みの U-Boot 多段は、いずれも「最小の信頼点から検証しつつ能力を拡張する」同じ構造である。
+4. **x86 と Arm は用語が違うだけで構造は同型。** x86 の「リアルモード→保護→ロングモードの段階的昇格」や UEFI PI の SEC→PEI→DXE[^pi]、Arm の BL1→BL2→BL31[^tfa]、組込みの U-Boot 多段は、いずれも「最小の信頼点から検証しつつ能力を拡張する」同じ構造である。
 
-5. **ハードウェア構成は「記述」としてカーネルに引き渡される。** どの CPU が何個あり、メモリがどこにあり、どのデバイスが繋がっているか。ファームウェアはこれを**デバイスツリー (Device Tree)** または **ACPI** でカーネルへ渡す。カーネルが多様なハードで動けるのは、構成を焼き込まず実行時に受け取るため。
+5. **ハードウェア構成は「記述」としてカーネルに引き渡される。** どの CPU が何個あり、メモリがどこにあり、どのデバイスが繋がっているか。ファームウェアはこれを**デバイスツリー (Device Tree)** または **ACPI** でカーネルへ渡す[^dt][^acpi]。カーネルが多様なハードで動けるのは、構成を焼き込まず実行時に受け取るため。
 
 ## アーキテクチャ (Architecture)
 
@@ -75,6 +75,43 @@
 
 要点は **縦の依存**である。各段は直前の段が確立した前提（クロック、信頼、DRAM、特権モード）の上にしか立てない。これがブートが「並行」ではなく「直列の積み上げ」になる理由。
 
+### 信頼の連鎖としてのブートチェーン (Boot Chain of Trust)
+
+同じ直列構造を、検証 (Secure Boot) と測定 (Measured Boot) の流れとして描くと次のようになる。x86 UEFI・Arm TF-A・RISC-V (OpenSBI) の3系統を並べ、各段が次段を**検証してから**制御を渡し、同時にハッシュを TPM の PCR へ**記録**する様子を示す。
+
+```mermaid
+flowchart TB
+    RV["リセットベクタ<br/>(x86: 0xFFFFFFF0 / AArch64: RVBAR_EL3)"] --> ROM["ブート ROM / 不変コード<br/>Hardware Root of Trust<br/>(Arm: BL1 / RISC-V: ZSBL)"]
+
+    subgraph X86["x86 UEFI (PI 仕様)"]
+        SEC["SEC<br/>CAR で動作"] --> PEI["PEI<br/>DRAM 初期化"] --> DXE["DXE / BDS<br/>ドライバ・ブート選択"]
+    end
+    subgraph ARM["Arm TF-A"]
+        BL2["BL2 (S-EL1)<br/>DRAM 初期化・イメージ読込"] --> BL31["BL31 (EL3 常駐)<br/>PSCI・セキュアモニタ"] --> BL33["BL33 (NS-EL2/EL1)<br/>U-Boot / UEFI"]
+    end
+    subgraph RISCV["RISC-V"]
+        SPL["U-Boot SPL<br/>DRAM 初期化"] --> OSBI["OpenSBI (M-mode 常駐)<br/>SBI: HSM 等"] --> UB["U-Boot (S-mode)"]
+    end
+
+    ROM -->|"検証 (Boot Guard 等)"| SEC
+    ROM -->|"署名検証"| BL2
+    ROM -->|"署名検証"| SPL
+
+    DXE -->|"署名検証 (db/dbx)"| LDR["OS ブートローダ<br/>(shim / GRUB / systemd-boot)"]
+    BL33 -->|"署名検証"| KERN
+    UB -->|"署名検証 (FIT)"| KERN
+    LDR -->|"署名検証"| KERN["OS カーネル<br/>+ DT / ACPI"]
+    KERN --> INIT["PID 1 (init)"]
+
+    TPM[("TPM PCR<br/>Measured Boot の記録")]
+    SEC -.->|"extend"| TPM
+    DXE -.->|"extend"| TPM
+    LDR -.->|"extend"| TPM
+    BL2 -.->|"extend"| TPM
+```
+
+凡例: 実線 = 制御移行（ラベルはその前に行う検証）。Arm の BL1 と RISC-V の ZSBL はブート ROM そのもの、x86 では初段 (SEC を含む初期ブートブロック) の検証を Intel Boot Guard 等の実装固有機構が担う。点線 = 測定値の PCR への extend（Measured Boot）。x86 の PCR 割り当ては TCG PC Client Platform Firmware Profile が規定する[^tcg-pfp]。Arm/RISC-V の測定は実装依存で、図では代表的な段のみ示した。OpenSBI の HSM 拡張は後述の SMP bring-up で AP（hart）を起こす経路になる[^sbi]。
+
 ### x86 と Arm/組込みの段の対比
 
 | 観点 | x86 (UEFI) | x86 (レガシ BIOS) | Arm (Trusted Firmware) | 組込み (U-Boot) |
@@ -86,7 +123,7 @@
 | セキュア常駐 | (SMM) | — | BL31 (EL3 常駐) | — |
 | OS 起動 | EFI アプリ → カーネル | MBR/VBR チェーン | BL33 → カーネル | bootm/booti |
 
-x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保護なし）で目覚め、保護モード（32bit, セグメント・ページング・特権リング）を経てロングモード（64bit）へと**動作モードを昇格**していく。Arm はリセット時の例外レベル（一般に最高権限の EL3）から、各ブートローダ段がより低い特権レベル（EL2: ハイパーバイザ, EL1: カーネル）へ制御を**降ろしていく**。方向の表現は逆だが、「強い特権の最小コードが、検証しつつ低特権の大きなコードへ橋渡しする」点で同型である。
+x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保護なし）で目覚め、保護モード（32bit, セグメント・ページング・特権リング）を経てロングモード（64bit）へと**動作モードを昇格**していく。Arm はリセット時の例外レベル（一般に最高権限の EL3）から、各ブートローダ段がより低い特権レベル（EL2: ハイパーバイザ, EL1: カーネル）へ制御を**降ろしていく**[^armarm]。厳密には TF-A の BL2 は Secure-EL1 で動き、BL31 が EL3 に戻って常駐したのち非セキュアの BL33 を EL2（または EL1）で起動する[^tfa]ので、単調な降下ではなく「EL3 を常駐させたまま下位へ委ねる」構造である。方向の表現は逆だが、「強い特権の最小コードが、検証しつつ低特権の大きなコードへ橋渡しする」点で同型である。
 
 ## 技術詳細 (Technical Details)
 
@@ -94,9 +131,9 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 
 リセットが解除されると、CPU のプログラムカウンタは**リセットベクタ (reset vector)** という固定アドレスを指す。ここは ROM/フラッシュにマップされ、最初の命令が必ず存在する。
 
-- **x86**: リセット直後はリアルモード相当だが、`CS:IP` は物理 `0xFFFFFFF0`（4GiB 直下の 16 バイト手前）を指す特殊状態で始まる。ここに普通は上位アドレスへの分岐が置かれ、ファームウェア本体へ飛ぶ。アドレス値は世代不変だが、実装はチップセット依存。
-- **Arm**: ベクタベースレジスタ（`VBAR` 系）または固定実装アドレスから開始。リセットは例外ベクタ表 (`../cpu/interrupts-exceptions-traps.md`) のリセットエントリに対応する。
-- **共通する直後の状態**: キャッシュ・MMU は無効、割り込みはマスク、レジスタは規定の既定値、スタックは未確立（スタックポインタを自分で設定するまで関数呼び出しすら危うい）。`abi-syscalls.md` のスタックフレームが成立するのは、初段がスタックを張った後である。
+- **x86**: リセット直後はリアルモード相当だが、`CS` のベースが `0xFFFF0000`、`IP` が `0xFFF0` に設定され、物理 `0xFFFFFFF0`（4GiB 直下の 16 バイト手前）を指す特殊状態で始まる[^sdm]。ここに普通は上位アドレスへの分岐が置かれ、ファームウェア本体へ飛ぶ。アドレス値は世代不変だが、実装はチップセット依存。
+- **Arm**: AArch64 では、リセット後の開始アドレスは実装定義で、最上位例外レベルの `RVBAR_EL3`（EL3 非実装なら `RVBAR_EL2`/`RVBAR_EL1`）で読める[^armarm]。AArch32 / 旧来の Arm ではリセットは例外ベクタ表のリセットエントリ（オフセット 0）だったが、AArch64 の `VBAR_ELx` の表にはリセットエントリがなく、ソフトが後から例外ベクタ表 ([`interrupts-exceptions-traps.md`](../cpu/interrupts-exceptions-traps.md)) を設定する。
+- **共通する直後の状態**: キャッシュ・MMU は無効、割り込みはマスク、レジスタは規定の既定値、スタックは未確立（スタックポインタを自分で設定するまで関数呼び出しすら危うい）。[`abi-syscalls.md`](abi-syscalls.md) のスタックフレームが成立するのは、初段がスタックを張った後である。
 
 ### ブート ROM と初段ファームウェア
 
@@ -108,7 +145,7 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 
 論理的なコード実行の手前に、電気的な立ち上げがある。
 
-- **電源シーケンス (power sequencing)**: SoC は複数の電源レール（コア, I/O, メモリ, アナログ等）を持ち、規定の**順序とタイミング**で投入する必要がある（例: コア電圧を確立してから I/O、という依存）。順序を誤るとラッチアップや起動失敗を招く。PMIC (Power Management IC) が制御する構成が一般的。
+- **電源シーケンス (power sequencing)**: SoC は複数の電源レール（コア, I/O, メモリ, アナログ等）を持ち、規定の**順序とタイミング**で投入する必要がある（例: コア電圧を確立してから I/O、という依存）。順序を誤るとラッチアップや起動失敗を招く。PMIC (Power Management IC) が制御する構成が一般的（[`clock-power-reset.md`](clock-power-reset.md)）。
 - **クロック初期化 (clock initialization)**: 起動直後は低速の基準発振器（数十 MHz オーダ、実装依存）で動き、**PLL (Phase-Locked Loop)** がロックして高速クロックが安定してから本来の周波数へ切り替える。PLL ロックには有限の待ち時間があり、ファームは安定を確認してから先へ進む。
 
 ### DRAM トレーニングとメモリコントローラ初期化
@@ -116,8 +153,8 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 主記憶 (DRAM) は、メモリコントローラを設定し**トレーニング (DRAM training)** を完了するまで一切使えない。これがブートの中でも独立して難しい部分である。
 
 - **コントローラ設定**: メモリの種別・容量・タイミングパラメータ（行/列アドレス遅延等。SPD という EEPROM から読むか、組込みでは焼き込み値を使う）を設定する。
-- **トレーニング**: 高速 DRAM（DDR4/DDR5/LPDDR）では、信号の遅延が配線長・温度・電圧で変動するため、コントローラが実際にテストパターンを送受信して**各データ線の最適なサンプリングタイミングを較正**する。世代が上がるほど（DDR5/LPDDR5）この較正は精緻で時間もかかる。
-- **ブートストラップ問題**: 「DRAM を初期化するコード自体はどこで動くのか」。答えはオンチップ **SRAM** や、x86 ではキャッシュを一時的に RAM として使う **CAR (Cache-as-RAM)**。容量が小さい（数十〜数百 KiB の桁、実装依存）ため、初段コードは厳しいサイズ制約下で書かれる。これが「多段ブートローダ」の根本動機の一つで、狭い SRAM 用の小さな段が DRAM を起こし、広い DRAM 上で大きな次段が走る。
+- **トレーニング**: 高速 DRAM（DDR4/DDR5/LPDDR）では、信号の遅延が配線長・温度・電圧で変動するため、コントローラが実際にテストパターンを送受信して**各データ線の最適なサンプリングタイミングを較正**する。世代が上がるほど（DDR5/LPDDR5）この較正は精緻で時間もかかる。DRAM とコントローラの側から見た詳細は [`dram-memory-controllers.md`](../cpu/dram-memory-controllers.md) を参照。
+- **ブートストラップ問題**: 「DRAM を初期化するコード自体はどこで動くのか」。答えはオンチップ **SRAM** や、x86 ではキャッシュを一時的に RAM として使う **CAR (Cache-as-RAM)**[^coreboot]。容量が小さい（数十〜数百 KiB の桁、実装依存）ため、初段コードは厳しいサイズ制約下で書かれる。これが「多段ブートローダ」の根本動機の一つで、狭い SRAM 用の小さな段が DRAM を起こし、広い DRAM 上で大きな次段が走る。
 
 ### ブートローダの多段構成
 
@@ -143,18 +180,18 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 ; ロングモード(64bit)へ。ここで MMU が本格稼働する。
 ```
 
-ここでページングを有効化する操作が、`../cpu/virtual-memory-mmu.md` の MMU・ページテーブルが「いつ動き始めるか」の答えである。ブートローダが最初のページテーブルを構築し、保護/ロングモードへ移ってから、カーネルがそれを引き継いで再構築する。
+ここでページングを有効化する操作が、[`virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) の MMU・ページテーブルが「いつ動き始めるか」の答えである[^sdm]。ブートローダが最初のページテーブルを構築し、保護/ロングモードへ移ってから、カーネルがそれを引き継いで再構築する。
 
 ### デバイスツリーと ACPI によるハードウェア記述
 
 カーネルは「どんなハードで動いているか」を実行時に知る必要がある。焼き込まずに**記述として受け取る**ため、同じカーネルが多様なボードで動く。
 
-- **デバイスツリー (Device Tree, DT)**: ハードウェア構成を木構造で記述したデータ（DTB: コンパイル済みバイナリ）。Arm/RISC-V の組込みで主流。CPU 数・メモリ範囲・周辺デバイスのアドレスと割り込み番号を静的に列挙する。`mmio-dma-interrupts.md` の MMIO アドレスや IRQ 番号は、ドライバが DT から取得する。
-- **ACPI (Advanced Configuration and Power Interface)**: x86 サーバ/PC で主流。静的テーブル群に加え、電源・熱管理のための**バイトコード (AML)** を含み、OS が解釈して実行する。DT が「静的記述」なのに対し ACPI は「能動的なメソッド」も持つ点が対照的。
+- **デバイスツリー (Device Tree, DT)**: ハードウェア構成を木構造で記述したデータ（DTB: コンパイル済みバイナリ）。Arm/RISC-V の組込みで主流。CPU 数・メモリ範囲・周辺デバイスのアドレスと割り込み番号を静的に列挙する。[`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) の MMIO アドレスや IRQ 番号は、ドライバが DT から取得する[^dt]。
+- **ACPI (Advanced Configuration and Power Interface)**: x86 サーバ/PC で主流。静的テーブル群に加え、電源・熱管理のための**バイトコード (AML)** を含み、OS が解釈して実行する。DT が「静的記述」なのに対し ACPI は「能動的なメソッド」も持つ点が対照的[^acpi]。UEFI 環境では ACPI テーブルや DTB の所在は UEFI のシステムテーブル（Configuration Table）経由で OS に渡される[^uefi]。
 
 ### カーネル引き渡しと AP の起動 (SMP bring-up)
 
-主ローダはカーネルを DRAM に展開し、**規約に従ってエントリへジャンプ**する。引数規約は ABI（`abi-syscalls.md`）の延長で、特定レジスタに DT/ACPI のポインタやブート引数を載せる（例: Arm64 Linux は x0 に DTB 物理アドレス）。
+主ローダはカーネルを DRAM に展開し、**規約に従ってエントリへジャンプ**する。引数規約は ABI（[`abi-syscalls.md`](abi-syscalls.md)）の延長で、特定レジスタに DT/ACPI のポインタやブート引数を載せる（例: Arm64 Linux は x0 に DTB 物理アドレス、x1〜x3 は 0[^arm64-boot]）。
 
 ここまで動いているのは **BSP (Bootstrap Processor)** 一つだけである。残りのコア **AP (Application Processor)** はリセット状態で待機している。**SMP bring-up** は、BSP が各 AP を一つずつ起こす手順である。
 
@@ -163,28 +200,29 @@ x86 はリアルモード（16bit, 1MiB 直接アクセス、ページング/保
 2. BSP が各 AP に起動信号を送る
      x86: APIC 経由で INIT-SIPI-SIPI シーケンス、起床ベクタを指定。
      Arm: PSCI(電源制御 IF)の CPU_ON 呼び出しでファーム経由起床。
+     RISC-V: SBI HSM 拡張の sbi_hart_start で M-mode ファーム経由起床。
 3. 起きた AP はエントリで自分用のスタック・MMU・割り込みを初期化し、
    オンライン化してスケジューラの管理下に入る。
 4. 全コアが揃ったら通常運用。最後に PID 1 (init) を起動し、ユーザ空間へ。
 ```
 
-PID 1 が起動した時点が、`abi-syscalls.md` のユーザ空間到達点である。以降、ユーザプロセスは syscall でカーネルへ越境して動く。
+x86 の手順は Intel SDM の MP 初期化プロトコル[^sdm]、Arm は PSCI[^psci]、RISC-V は SBI 仕様[^sbi]が規定する。PID 1 が起動した時点が、[`abi-syscalls.md`](abi-syscalls.md) のユーザ空間到達点である。Android ではこの PID 1 が `init` としてプロパティサービスや各デーモンを立ち上げる（[`boot-init-properties.md`](../../software/android/boot-init-properties.md)）。以降、ユーザプロセスは syscall でカーネルへ越境して動く。
 
 ## セキュリティ考察 (Security Considerations)
 
-ブートはシステムで最も特権の高いコードが動く段階であり、ここを奪われると後段の全防御（`../cpu/virtual-memory-mmu.md` の保護も）が無意味になる。中核概念が**信頼の連鎖 (chain of trust)** である。
+ブートはシステムで最も特権の高いコードが動く段階であり、ここを奪われると後段の全防御（[`virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) の保護も）が無意味になる。TEE・セキュアブートの攻撃面は [`side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) でさらに掘り下げる。中核概念が**信頼の連鎖 (chain of trust)** である。
 
-- **Root of Trust と信頼の連鎖**: 起点は書き換え不能なブート ROM（**Hardware Root of Trust**）。この不変コードが次段の**署名を検証**してからジャンプし、検証された次段がさらに次段を検証する。各段が次段を測定・検証しながらバトンを渡すことで、信頼が ROM からカーネルまで途切れず連鎖する。一段でも検証を飛ばすと、そこが連鎖の切断点（攻撃者の侵入口）になる。
+- **Root of Trust と信頼の連鎖**: 起点は書き換え不能なブート ROM（**Hardware Root of Trust**）。この不変コードが次段の**署名を検証**してからジャンプし、検証された次段がさらに次段を検証する。各段が次段を測定・検証しながらバトンを渡すことで、信頼が ROM からカーネルまで途切れず連鎖する。一段でも検証を飛ばすと、そこが連鎖の切断点（攻撃者の侵入口）になる[^nist193]。
 
-- **Secure Boot（検証ブート）**: 各段が次段の**デジタル署名**を、ROM/不揮発領域に焼かれた公開鍵で検証する。署名が不正なら起動を止める。改竄されたブートローダやカーネルの実行を防ぎ、ブートキット (bootkit) や永続的マルウェアの足場を断つ。鍵の保護（ヒューズに焼く、改変不能領域に置く）が前提。
+- **Secure Boot（検証ブート）**: 各段が次段の**デジタル署名**を、ROM/不揮発領域に焼かれた公開鍵で検証する。署名が不正なら起動を止める。改竄されたブートローダやカーネルの実行を防ぎ、ブートキット (bootkit) や永続的マルウェアの足場を断つ。UEFI Secure Boot では署名データベース (db) と失効リスト (dbx) を UEFI 変数として保持する[^uefi]。鍵の保護（ヒューズに焼く、改変不能領域に置く）が前提。
 
-- **Measured Boot（測定ブート）と TPM**: 検証して止める Secure Boot に対し、Measured Boot は各段のハッシュ（測定値）を **TPM (Trusted Platform Module)** の **PCR (Platform Configuration Register)** に積み上げて**記録**する。起動自体は止めず、後で「どんなコードが動いたか」を遠隔から検証 (remote attestation) でき、ディスク暗号鍵の封印 (sealing) 条件にも使える。両者は補完関係で、併用される。
+- **Measured Boot（測定ブート）と TPM**: 検証して止める Secure Boot に対し、Measured Boot は各段のハッシュ（測定値）を **TPM (Trusted Platform Module)** の **PCR (Platform Configuration Register)** に積み上げて（extend: 旧値と新測定値を連結してハッシュ）**記録**する[^tcg-pfp]。起動自体は止めず、後で「どんなコードが動いたか」を遠隔から検証 (remote attestation) でき、ディスク暗号鍵の封印 (sealing) 条件にも使える。両者は補完関係で、併用される。
 
-- **TEE と隔離実行**: Arm の BL31 は最高特権 (EL3) に**常駐**し、TrustZone のセキュアワールドや PSCI を司る。x86 にも SMM (System Management Mode) という OS から隠れた特権実行がある。これらは強力ゆえ攻撃対象でもあり、SMM の脆弱性や常駐ファームの欠陥は OS より深い権限を奪われうる。
+- **TEE と隔離実行**: Arm の BL31 は最高特権 (EL3) に**常駐**し、TrustZone のセキュアワールドや PSCI を司る。x86 にも SMM (System Management Mode) という OS から隠れた特権実行がある。これらは強力ゆえ攻撃対象でもあり[^tfa]、SMM の脆弱性や常駐ファームの欠陥は OS より深い権限を奪われうる。
 
-- **DMA とブート**: 初期化途上で IOMMU (`mmio-dma-interrupts.md`) がまだ有効でない区間は、外部デバイスの DMA 攻撃に弱い。ブート早期に DMA 保護を立てる設計（例: 早期 IOMMU 有効化）が要る。
+- **DMA とブート**: 初期化途上で IOMMU ([`mmio-dma-interrupts.md`](mmio-dma-interrupts.md)) がまだ有効でない区間は、外部デバイスの DMA 攻撃に弱い。ブート早期に DMA 保護を立てる設計（例: 早期 IOMMU 有効化）が要る。
 
-- **ロールバック攻撃**: 古い脆弱なファーム/カーネルへ差し戻して既知の穴を突く攻撃。対策はバージョンの単調増加を**ヒューズ等のモノトニックカウンタ**で強制し、旧版の署名が有効でも起動を拒否すること。
+- **ロールバック攻撃**: 古い脆弱なファーム/カーネルへ差し戻して既知の穴を突く攻撃。対策はバージョンの単調増加を**ヒューズ等のモノトニックカウンタ**で強制し、旧版の署名が有効でも起動を拒否すること[^nist193]。
 
 ## 結論 (Conclusions)
 
@@ -196,18 +234,42 @@ PID 1 が起動した時点が、`abi-syscalls.md` のユーザ空間到達点�
 
 ### 次の接続先 (Related Topics)
 
-- `abi-syscalls.md` — PID 1 起動後、ユーザ空間がカーネルへ到達する経路（syscall 規約）。
-- `../cpu/virtual-memory-mmu.md` — ブートローダによる MMU 有効化と保護/ロングモードへの移行。
-- `../cpu/interrupts-exceptions-traps.md` — リセットベクタと例外ベクタ表の設定。
+- [`abi-syscalls.md`](abi-syscalls.md) — PID 1 起動後、ユーザ空間がカーネルへ到達する経路（syscall 規約）。
+- [`virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) — ブートローダによる MMU 有効化と保護/ロングモードへの移行。
+- [`interrupts-exceptions-traps.md`](../cpu/interrupts-exceptions-traps.md) — リセットベクタと例外ベクタ表の設定。
+- [`clock-power-reset.md`](clock-power-reset.md) — 電源シーケンス・PLL・リセット解除の順序。
+- [`dram-memory-controllers.md`](../cpu/dram-memory-controllers.md) — DRAM トレーニングの対象となるメモリコントローラ。
+- [`side-channels-tee-secure-boot.md`](../security/side-channels-tee-secure-boot.md) — セキュアブートと TEE の攻撃・防御。
+- [`boot-init-properties.md`](../../software/android/boot-init-properties.md) — カーネル以降（init）のユーザ空間ブートの実例。
 
 ## 参考文献 (References)
 
 **一次資料 (Primary — 仕様・公式ドキュメント)**
 
-- UEFI Forum. *UEFI Specification* / *ACPI Specification*. — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。ファームウェアインタフェースとハードウェア記述 (ACPI) の規範。
-- *Devicetree Specification*. — [devicetree.org](https://www.devicetree.org/specifications/) — Accessed: 2026-07-02。組込み/Arm 系のハードウェア記述の規範。
-- Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A — リセット直後の CPU 状態と MP 初期化 (INIT-SIPI) の規範。 — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+[^uefi]: UEFI Forum. *Unified Extensible Firmware Interface (UEFI) Specification*. — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。ブートサービス・システムテーブル・Secure Boot (db/dbx) の規範。
+
+[^pi]: UEFI Forum. *UEFI Platform Initialization (PI) Specification*, Version 1.9. — [uefi.org/specs/PI/1.9](https://uefi.org/specs/PI/1.9/) — Accessed: 2026-10-04。SEC/PEI/DXE/BDS の各フェーズと PEI→DXE 引き渡しを定める（UEFI 本体仕様ではなく PI 仕様の範囲）。
+
+[^acpi]: UEFI Forum. *Advanced Configuration and Power Interface (ACPI) Specification*. — [uefi.org/specifications](https://uefi.org/specifications) — Accessed: 2026-07-02。ハードウェア記述テーブルと AML の規範。
+
+[^dt]: devicetree.org. *Devicetree Specification*. — [devicetree.org](https://www.devicetree.org/specifications/) — Accessed: 2026-07-02。組込み/Arm 系のハードウェア記述の規範。
+
+[^sdm]: Intel. *Intel 64 and IA-32 Architectures Software Developer's Manual*, Vol. 3A — リセット直後の CPU 状態、モード遷移、MP 初期化 (INIT-SIPI) の規範。 — [intel.com SDM](https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html) — Accessed: 2026-07-02。
+
+[^armarm]: Arm. *Arm Architecture Reference Manual for A-profile architecture* (DDI 0487). — [developer.arm.com](https://developer.arm.com/documentation/ddi0487/latest) — Accessed: 2026-10-04。例外レベル、リセット時の状態と `RVBAR_ELx` の規範。
+
+[^tfa]: Trusted Firmware. *Trusted Firmware-A Documentation — Firmware Design*. — [trustedfirmware-a.readthedocs.io](https://trustedfirmware-a.readthedocs.io/en/latest/design/firmware-design.html) — Accessed: 2026-10-04。BL1 (EL3, Trusted ROM)・BL2 (S-EL1)・BL31 (EL3 常駐)・BL33 (非セキュア) の段構成。
+
+[^psci]: Arm. *Power State Coordination Interface (PSCI)* (DEN 0022). — [developer.arm.com](https://developer.arm.com/documentation/den0022/latest) — Accessed: 2026-10-04。`CPU_ON` による AP 起床の標準インタフェース。
+
+[^sbi]: RISC-V International. *RISC-V Supervisor Binary Interface (SBI) Specification*. — [github.com/riscv-non-isa/riscv-sbi-doc](https://github.com/riscv-non-isa/riscv-sbi-doc) — Accessed: 2026-10-04。M-mode ファームウェアが S-mode に提供する呼び出し規約と HSM (Hart State Management) 拡張。
+
+[^arm64-boot]: Linux Kernel Documentation, *Booting AArch64 Linux*. — [docs.kernel.org](https://www.kernel.org/doc/html/latest/arch/arm64/booting.html) — Accessed: 2026-10-04。カーネルエントリ時のレジスタ規約（x0 = DTB 物理アドレス）。
+
+[^tcg-pfp]: Trusted Computing Group. *TCG PC Client Platform Firmware Profile Specification*. — [PDF](https://trustedcomputinggroup.org/wp-content/uploads/TCG_PCClient_PFP_r1p05_05_3feb20.pdf) — Accessed: 2026-10-04。プリブート環境での PCR 割り当てとイベントログの規範。
+
+[^nist193]: Regenscheid, A. (2018). *Platform Firmware Resiliency Guidelines* (NIST SP 800-193). National Institute of Standards and Technology. DOI: 10.6028/NIST.SP.800-193 — Root of Trust、ファームウェアの保護・検知・復旧、ロールバック防止の指針。
 
 **二次資料 (Secondary)**
 
-- coreboot project. *coreboot documentation*. — [doc.coreboot.org](https://doc.coreboot.org/) — Accessed: 2026-07-02。オープン実装から見た実際のブート段構成（romstage/ramstage、DRAM トレーニング）。
+[^coreboot]: coreboot project. *coreboot documentation*. — [doc.coreboot.org](https://doc.coreboot.org/) — Accessed: 2026-07-02。オープン実装から見た実際のブート段構成（bootblock/romstage/ramstage、CAR、DRAM トレーニング）。

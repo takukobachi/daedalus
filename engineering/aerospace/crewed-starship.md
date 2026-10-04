@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-Dragon の分析（`dragon-spacecraft.md`）は、**アボートシステムを持たない Starship を、どうやって有人認定するのか**という問いで終わった。Starship には脱出タワーも SuperDraco もない。上昇中にブースタが破局しても、乗員を切り離して逃がす専用系は存在せず、帰還はパラシュートのバックアップなしの動力着陸（ベリーフロップ→フリップ）に全面依存する。これは Mercury 以来60年の有人宇宙飛行が積み上げた「乗員は脱出系で守る」という設計原則からの、意図的な離脱である。
+Dragon の分析（[`dragon-spacecraft.md`](dragon-spacecraft.md)）は、**アボートシステムを持たない Starship を、どうやって有人認定するのか**という問いで終わった。Starship には脱出タワーも SuperDraco もない。上昇中にブースタが破局しても、乗員を切り離して逃がす専用系は存在せず、帰還はパラシュートのバックアップなしの動力着陸（ベリーフロップ→フリップ）に全面依存する。これは Mercury 以来60年の有人宇宙飛行が積み上げた「乗員は脱出系で守る」という設計原則からの、意図的な離脱である。
 
 本ドキュメントは、この問題を、(1) 脱出系パラダイム（カプセル+アボート）、(2) 信頼性設計パラダイム（Space Shuttle）、(3) 頻度実証パラダイム（航空機）という**有人安全の3つのパラダイム**の系譜に置いて分析する。Shuttle の教訓（アボートなし設計が2回の乗員喪失で払った代償）を確率論的リスク評価の実数で確認し、「無人で大量に飛ばして統計で証明する」という SpaceX の賭けが要求する飛行回数を、初等的な統計で定量化する。現在進行形の未解決問題であるため、確定した答えではなく**論点の構造**を提示する。分析深度は Level 3。
 
@@ -16,11 +16,11 @@ Dragon の分析（`dragon-spacecraft.md`）は、**アボートシステムを�
 ## 発見事項 (Findings)
 
 1. **Starship のアボート排除は帰結であって手抜きではない。** 100 t 級の上段を丸ごと脱出させる固体モータは非現実的で、カプセルを載せれば完全再使用と大容積という設計目的が崩れる。「アボートを付けられない」のではなく、**アボートが要らないほど信頼できる機体を目指す**という、目標水準の引き上げである。
-2. **先例は Shuttle であり、その教訓は重い。** Shuttle も全域アボートを持たなかった（SRB 燃焼中は脱出不能）。遡及 PRA は初期飛行の乗員喪失確率を **~1/10** と推定した。これは当時の経営層の認識 (1/10⁵ 級) と数桁乖離しており、実績は 135 飛行で 2 喪失 (1/67.5) だった[^shuttle-pra]。「解析と自信」は安全を証明しない、が Shuttle の中心的教訓である。
-3. **航空機は「頻度」で安全を証明した唯一の前例。** 民間航空の致死事故率は飛行回数 10⁷ 回あたり1件未満だが、これは設計の賜物であると同時に、**天文学的な飛行回数が統計的検証と故障モード発見を可能にした**結果である。Starship の「飛行機のように運用する」目標は、安全証明の方法まで航空機型にする賭けを含む。
-4. **統計的実証のコストは計算できる。** 「失敗ゼロで n 回連続成功」した場合、95% 信頼で言える故障率上限は概ね **3/n**（rule of three）。NASA の商業乗員要求 (上昇+突入 LOC ~1/500 級、ミッション全体 1/270[^nasa-req]) を統計だけで示すには **~1,500 回級の連続成功**が要る。Falcon 9 が15年で積んだ ~500 回の同型飛行は、この規模が不可能ではないことを初めて示したが、容易でもないことも示している。
-5. **現実の認定は「統計×解析×段階投入」の混成になる。** 純粋な頻度実証は遠いため、実際の経路は (1) 無人貨物飛行の大量蓄積、(2) HLS のように**最危険フェーズ（地球上昇・再突入）を回避した限定有人運用**から始める、(3) エンジンアウト耐性・冗長の解析と部分実証を組み合わせる、というものである。この経路は、リスクの高い区間を制度的に切り分ける設計になっている（`hls-lunar-architecture.md`）。
-6. **着陸が第二の急所である。** 上昇はエンジンアウト耐性（33基・3+3基の冗長）で縮退経路を作れるが、**着陸フリップ〜接地は毎回成功しなければならない**。パラシュートも予備着陸系もない。着陸の実証成功率がそのまま乗員リスクの下限に入る点で、Falcon 9 の着陸統計（99% 級、`spacex-reusability.md`）が到達すべき水準の参照点になる。
+2. **先例は Shuttle であり、その教訓は重い。** Shuttle も全域アボートを持たなかった（SRB 燃焼中は脱出不能）。遡及 PRA は初期飛行の乗員喪失確率を **~1/10** と推定した。これは当時の経営層の認識 (1/10⁵ 級)[^rogers] と数桁乖離しており、実績は 135 飛行で 2 喪失 (1/67.5) だった[^shuttle-pra]。「解析と自信」は安全を証明しない、が Shuttle の中心的教訓である。
+3. **航空機は「頻度」で安全を証明した唯一の前例。** 民間航空の死亡リスク（全損換算）は 100万便あたり 0.06（2024年）、5年平均 0.10、すなわち 10⁷ 便あたり1件前後以下だが[^iata]、これは設計の賜物であると同時に、**天文学的な飛行回数が統計的検証と故障モード発見を可能にした**結果である。Starship の「飛行機のように運用する」目標は、安全証明の方法まで航空機型にする賭けを含む。
+4. **統計的実証のコストは計算できる。** 「失敗ゼロで n 回連続成功」した場合、95% 信頼で言える故障率上限は概ね **3/n**（rule of three）[^hanley]。NASA の商業乗員要求 (上昇+突入 LOC ~1/500 級、ミッション全体 1/270[^nasa-req]) を統計だけで示すには **~1,500 回級の連続成功**が要る。Falcon 9 が約16年で積んだ ~690 回（as of 2026-10、うち Block 5 が600回超）の飛行は[^f9-record]、この規模が不可能ではないことを初めて示したが、容易でもないことも示している。
+5. **現実の認定は「統計×解析×段階投入」の混成になる。** 純粋な頻度実証は遠いため、実際の経路は (1) 無人貨物飛行の大量蓄積、(2) HLS のように**最危険フェーズ（地球上昇・再突入）を回避した限定有人運用**から始める、(3) エンジンアウト耐性・冗長の解析と部分実証を組み合わせる、というものである。この経路は、リスクの高い区間を制度的に切り分ける設計になっている（[`hls-lunar-architecture.md`](hls-lunar-architecture.md)）。
+6. **着陸が第二の急所である。** 上昇はエンジンアウト耐性（33基・3+3基の冗長）で縮退経路を作れるが、**着陸フリップ〜接地は毎回成功しなければならない**。パラシュートも予備着陸系もない。着陸の実証成功率がそのまま乗員リスクの下限に入る点で、Falcon 9 の着陸統計（99% 級、[`spacex-reusability.md`](spacex-reusability.md)）が到達すべき水準の参照点になる。
 7. **認定制度そのものが問われている。** NASA の有人格付け標準はアボート能力を原則要求とする（要求の適用除外には根拠提示が要る）[^nasa-req]。アボートなし機体の認定は、技術問題であると同時に **「安全をどう定義し誰が引き受けるか」という制度設計問題**であり、FAA（公衆）と NASA（乗員）と民間乗客（インフォームドコンセント）で要求体系が分かれていく可能性が高い。
 
 ## アーキテクチャ (Architecture)
@@ -48,9 +48,9 @@ Dragon の分析（`dragon-spacecraft.md`）は、**アボートシステムを�
 
 | フェーズ | 主リスク | 縮退・防護の設計 | 検証手段 |
 |---|---|---|---|
-| 上昇 | ブースタ/上段の破局故障 | エンジンアウト耐性（33基/6基）、FTS は公衆保護であり乗員は守らない (`range-safety-fts.md`) | 無人飛行の統計蓄積 |
+| 上昇 | ブースタ/上段の破局故障 | エンジンアウト耐性（33基/6基）、FTS は公衆保護であり乗員は守らない ([`range-safety-fts.md`](range-safety-fts.md)) | 無人飛行の統計蓄積 |
 | 軌道上 | ECLSS・MMOD・推進剤管理 | Dragon 系の実績設計の移植、艦隊的な救難（別機で迎えに行く）構想 | 長期無人・貨物運用 |
-| 再突入 | TPS 欠損 (`reentry-thermal-protection.md`) | タイル多重化＋下地ステンレスの裕度、軌道上検査 | 無人再突入の反復 |
+| 再突入 | TPS 欠損 ([`reentry-thermal-protection.md`](reentry-thermal-protection.md)) | タイル多重化＋下地ステンレスの裕度、軌道上検査 | 無人再突入の反復 |
 | **着陸** | **フリップ〜接地の単一シーケンス** | エンジン冗長（3基中どれでも着陸可の設計意図）、ヘッダタンク | **着陸統計そのもの** |
 
 ## 技術詳細 (Technical Details)
@@ -65,7 +65,7 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
 
 ### 統計的実証の算数 (The Arithmetic of Demonstration)
 
-「n 回連続成功・失敗ゼロ」が与える故障率の上限（95% 信頼、二項分布の初等的結果）を示す。
+「n 回連続成功・失敗ゼロ」が与える故障率の上限（95% 信頼、二項分布の初等的結果: `(1−p)ⁿ = 0.05` を解くと `p ≈ −ln(0.05)/n ≈ 3/n`）を示す[^hanley]。信頼性の確率モデル（指数分布・故障率・信頼区間）は [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md)、推定と信頼区間の一般論は [`../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md) で扱う。
 
 ```
  p_上限 ≈ 3/n   (rule of three)
@@ -75,7 +75,7 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
    n = 1,500 回        → p < 1/500   ← NASA の上昇+突入級の要求水準
 ```
 
-- **読み方**: 統計**だけ**で 1/500 を示すには 1,500 回級の無傷の連続実績が要る。Falcon 9 の同型 (Block 5) ~500 飛行は、単一設計のロケットとして史上初めてこの領域に近づいた実績であり[^f9-record]、Starship の目標飛行レート（年数百回・公称）が実現すれば**数年で統計が貯まる**。アーキテクチャの経済目標と安全実証は、同じ変数（飛行回数）に依存している。
+- **読み方**: 統計**だけ**で 1/500 を示すには 1,500 回級の無傷の連続実績が要る。Falcon 9 の同型 (Block 5) 600回超の飛行（全 Falcon 9 約690回から Block 5 以前の約60回を除いた概算、as of 2026-10）は、単一設計のロケットとして史上初めてこの領域に近づいた実績であり[^f9-record]、Starship の目標飛行レート（年数百回・公称）が実現すれば**数年で統計が貯まる**。アーキテクチャの経済目標と安全実証は、同じ変数（飛行回数）に依存している。
 - **統計の限界**: 連続成功は「その運用条件での」故障率しか語らない。設計変更（V2→V3→…）は統計をリセットしうるし、乗員系（ECLSS・座席・与圧）は無人飛行では実証されない。ゆえに現実の認定は統計＋解析＋地上/部分試験の混成にならざるを得ない。
 
 ### 段階的有人化の経路 (The Incremental Path)
@@ -83,8 +83,8 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
 公開情報から再構成される、リスク区間を順に狭める投入順序を示す。
 
 1. **無人貨物 (Starlink 展開・タンカー)** — 上昇・再突入・着陸の統計を商業運用として蓄積する。「実証コストを収益が払う」構図。
-2. **HLS (月周回↔月面のみ有人)** — 地球上昇・地球再突入という2大リスク区間を Orion に委ね、有人運用を真空区間に限定する（`hls-lunar-architecture.md`）。ECLSS・有人インタフェースの初実証がここになる。
-3. **地球発着の有人飛行** — 上昇と動力着陸に乗員を乗せる最終段階。民間ミッション構想が先行し、NASA 乗員の搭乗には格付け審査が立つ。時期は未確定であり、本ドキュメントでは予測しない。
+2. **HLS (月周回↔月面のみ有人)** — 地球上昇・地球再突入という2大リスク区間を Orion に委ね、有人運用を真空区間に限定する（[`hls-lunar-architecture.md`](hls-lunar-architecture.md)）。2026年2月の再編で Artemis III は2027年の LEO ドッキング実証となり、そこでも**乗員は Starship に入らない**。有人着陸は Artemis IV（2028年前半目標）に移った（as of 2026-10）[^artemis-replan]。段階投入の階段が1段増えた形である。ECLSS・有人インタフェースの初実証がここになる。
+3. **地球発着の有人飛行** — 上昇と動力着陸に乗員を乗せる最終段階。民間ミッション構想が先行し、NASA 乗員の搭乗には格付け審査が立つ。時期は未確定であり、本ドキュメントでは予測しない。as of 2026-10 で有人 Starship の飛行日は発表されておらず、SpaceX は2026年2月に火星より月を優先する方針を示して2026年末の火星ウィンドウへの無人機派遣も見送った[^nbc-moon]。前提となる Starship 自体も、軌道到達は2026年9月の Flight 14 が初で、Ship の回収・再飛行は未実証である（[`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)）。
 
 - **Soyuz の対照**: 脱出系パラダイムの側も進化を止めていない。Soyuz は2度、実際の打ち上げ失敗から脱出系で乗員を生還させた（1983, 2018）。「アボートは実際に人を救った」という実績が、排除論のハードルの高さを規定している。
 
@@ -94,7 +94,7 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
 
 - **「安全」の定義権**: NASA 基準 (LOC 1/270)・FAA（公衆保護のみで乗員保護は限定的）・民間乗客の同意ベースという3つの体系が並立する。アボートなし機体は、どの体系で誰が飛ぶかによって「認定済み」の意味が変わる。アボートなし機体は、制度の分岐点にある。
 - **エンジンアウトの実証範囲**: 「どのエンジンが何基止まっても着陸できる」は設計意図であり、全ての組合せ・タイミングでの実飛行実証は現実的でない。解析と部分実証で埋める領域が最後まで残る。
-- **救難という代替防護**: 脱出系の代わりに「軌道上で待避し、別の Starship で救助する」構想がある。成立には高い打ち上げ即応性が要り、`spacex-manufacturing.md`・`launch-ground-systems.md` の頻度能力が安全系の一部になる。これは、冗長を「系」でなく「艦隊」で持つ発想の極致である。
+- **救難という代替防護**: 脱出系の代わりに「軌道上で待避し、別の Starship で救助する」構想がある。成立には高い打ち上げ即応性が要り、[`spacex-manufacturing.md`](spacex-manufacturing.md)・[`launch-ground-systems.md`](launch-ground-systems.md) の頻度能力が安全系の一部になる。これは、冗長を「系」でなく「艦隊」で持つ発想の極致である。
 - **本分析の立場**: 本ドキュメントは是非を裁定しない。脱出系パラダイムの実績（Soyuz の生還）と、頻度パラダイムの論理（統計は嘘をつかないが、貯まるまで何も言わない）の**両方を並記**し、判断材料の構造を保存することを目的とする。
 
 ## 結論 (Conclusions)
@@ -111,20 +111,31 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
 
 **一次資料 (Primary — 標準・公式評価)**
 
-[^nasa-req]: NASA (2011–). *Human-Rating Requirements for Space Systems*. NPR 8705.2 — アボート能力の原則要求と適用除外の枠組み。／ NASA Commercial Crew の LOC 要求 (1/270、上昇+突入 1/500 級) は CCP 公式資料による。Accessed: 2026-07-26.
+[^nasa-req]: NASA (2017). [*Human-Rating Requirements for Space Systems*. NPR 8705.2C（2017-07-10 発効、2028-12-16 失効予定）](https://nodis3.gsfc.nasa.gov/displayDir.cfm?t=NPR&c=8705&s=2) — アボート能力の原則要求と適用除外の枠組み。／ NASA Commercial Crew の LOC 要求 (ミッション全体 1/270、上昇+突入 1/500 級) は CCP の要求文書 (CCT-REQ-1130, *ISS Crew Transportation and Services Requirements Document*) による。Accessed: 2026-10-04.
 
-[^shuttle-pra]: Hamlin, T., et al. (2011). *Shuttle Risk Progression: Use of the Shuttle Probabilistic Risk Assessment (PRA) to Show Reliability Growth*. AIAA / NASA — Shuttle 遡及 PRA。STS-1 時点の LOC ~1/10、末期 ~1/90 の推定。／ Columbia Accident Investigation Board (2003). *CAIB Report* — 異常の正常化の分析。
+[^shuttle-pra]: Hamlin, T. L., et al. (2011). *Shuttle Risk Progression: Use of the Shuttle Probabilistic Risk Assessment (PRA) to Show Reliability Growth*. AIAA SPACE 2011 Conference, Long Beach, CA — [NTRS 20110004917](https://ntrs.nasa.gov/citations/20110004917)（Accessed: 2026-10-04） — Shuttle 遡及 PRA。STS-1 時点の LOC ~1/10、末期 ~1/90 の推定。／ Columbia Accident Investigation Board (2003). *CAIB Report* — 異常の正常化の分析。
+
+[^rogers]: Presidential Commission on the Space Shuttle Challenger Accident (1986). *Report to the President*, Vol. 2, Appendix F: Feynman, R. P., "Personal Observations on the Reliability of the Shuttle" — 経営層の故障確率認識（~1/100,000）と技術者の見積もり（~1/100）の乖離。
+
+[^hanley]: Hanley, J. A., & Lippman-Hand, A. (1983). If Nothing Goes Wrong, Is Everything All Right? Interpreting Zero Numerators. *JAMA*, 249(13), 1743–1745. DOI: 10.1001/jama.1983.03330370053031 — 「n 回中失敗ゼロなら 95% 上限は ~3/n」という rule of three の標準的典拠。
 
 **実績・報告 (Records & Reports)**
 
-[^f9-record]: 本リポジトリ `spacex-reusability.md` の脚注群（Falcon 9 Block 5 の飛行・着陸統計）— 単一設計での数百回級連続運用の実績。
+[^iata]: [IATA (2025-02-26). IATA Releases 2024 Safety Report](https://www.iata.org/en/pressroom/2025-releases/2025-02-26-01/) — 2024年の死亡リスク 0.06（100万便あたり）、5年平均 0.10。Accessed: 2026-10-04.
+
+[^f9-record]: 本リポジトリ [`spacex-reusability.md`](spacex-reusability.md) の脚注群（Falcon 9 Block 5 の飛行・着陸統計）／ [List of Falcon 9 and Falcon Heavy launches — Wikipedia](https://en.wikipedia.org/wiki/List_of_Falcon_9_and_Falcon_Heavy_launches)（累計打ち上げ数の索引、Accessed: 2026-10-04）— 単一設計での数百回級連続運用の実績。
+
+[^artemis-replan]: [NASA — Artemis III News and Updates](https://www.nasa.gov/artemis-iii-news-and-updates/) ／ [NASA (2026-07-15). How NASA's Artemis III Lander Test Will Pave Way for Moon Landings](https://www.nasa.gov/directorates/esdmd/artemis-campaign-development-division/human-landing-system-program/how-nasas-artemis-iii-lander-test-will-pave-way-for-moon-landings/) — Artemis III の LEO 実証化、乗員は Starship 試験機に入らない、有人着陸は Artemis IV（2028年前半目標）。Accessed: 2026-10-04.
+
+[^nbc-moon]: [NBC News — SpaceX prioritizes Moon before Mars, Musk says (2026-02)](https://www.nbcnews.com/science/space/spacex-prioritizes-moon-before-mars-musk-says-rcna258168) — 月優先への方針転換と火星計画の後ろ倒し（企業側の表明）。Accessed: 2026-10-04.
 
 - NASA Aerospace Safety Advisory Panel (ASAP) 年次報告書群 — 商業有人・Starship 有人化に関する継続的な安全所見。Accessed: 2026-07-26.
 
 **本リポジトリ内参照**
 
-- `dragon-spacecraft.md` — 脱出系パラダイムの現行実装（本ドキュメントの前編）
-- `hls-lunar-architecture.md` — 最危険区間を回避した限定有人運用（段階投入の実例）
-- `spacex-reusability.md` — 着陸統計（頻度実証の参照点）
-- `range-safety-fts.md` — FTS は公衆を守り乗員を守らないという区別
-- `reentry-thermal-protection.md` — TPS 欠損リスクと多重防護
+- [`dragon-spacecraft.md`](dragon-spacecraft.md) — 脱出系パラダイムの現行実装（本ドキュメントの前編）
+- [`hls-lunar-architecture.md`](hls-lunar-architecture.md) — 最危険区間を回避した限定有人運用（段階投入の実例）
+- [`spacex-reusability.md`](spacex-reusability.md) — 着陸統計（頻度実証の参照点）
+- [`range-safety-fts.md`](range-safety-fts.md) — FTS は公衆を守り乗員を守らないという区別
+- [`reentry-thermal-protection.md`](reentry-thermal-protection.md) — TPS 欠損リスクと多重防護
+- [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — 故障率・信頼度の確率モデル（rule of three の背景）

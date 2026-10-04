@@ -65,6 +65,29 @@
    「このハッシュのコードとして起動した実行体にだけ、この鍵を使わせる」
 ```
 
+### attestation で縛った復号のシーケンス
+
+上の 2 図（エンベロープ暗号化と Nitro Enclaves）を合成し、包まれた DEK が enclave の中でだけ平文に戻るまでを時系列で示す。親インスタンスは中継するだけで、どの段階でも DEK 平文を持たない。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Parent as 親インスタンス (信頼しない)
+    participant Enc as Enclave (ネットワークなし)
+    participant Nitro as Nitro Hypervisor
+    participant KMS as KMS (HSM 内の KEK)
+    Nitro->>Enc: 起動時に PCR を計測
+    Parent->>Enc: vsock で [暗号文 ‖ DEK 暗号文 ‖ context] を渡す
+    Enc->>Nitro: attestation document を要求
+    Nitro-->>Enc: PCR + enclave 公開鍵 (AWS 署名)
+    Enc->>Parent: Decrypt 要求 + attestation document
+    Parent->>KMS: 中継 (vsock → ネットワーク)
+    KMS->>KMS: キーポリシー評価 (PCR0 == 既知ハッシュ?) + 監査
+    KMS-->>Parent: DEK を enclave 公開鍵で暗号化して返す
+    Parent->>Enc: 中継 (親には平文が見えない)
+    Enc->>Enc: DEK 復元 → AES-GCM でローカル復号
+```
+
 ## 技術詳細 (Technical Details)
 
 ### 1. KMS の鍵階層と HSM ドメイン

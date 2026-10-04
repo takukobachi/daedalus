@@ -33,7 +33,7 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 
 ### エンジンの深掘り (Engine Deep-Dives)
 
-- [`combustion-instability.md`](combustion-instability.md) — 燃焼安定性 (combustion instability)：レイリー基準、チャギング/バジング/スクリーチ、F-1 の1,000回試験とボム試験、バッフルと音響キャビティ、中型多数クラスタとガス-ガス噴射の安定上の利得
+- [`combustion-instability.md`](combustion-instability.md) — 燃焼安定性 (combustion instability)：レイリー基準、チャギング/バジング/スクリーチ、F-1 の約2,000回の安定化試験とボム試験、バッフルと音響キャビティ、中型多数クラスタとガス-ガス噴射の安定上の利得
 
 ### 衛星 (Satellites)
 
@@ -53,8 +53,8 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 ## 今後のテーマ候補
 
 衛星側の候補（デブリ・軌道交通管理、衛星の電力・熱設計）は
-`satellites/README.md` のロードマップに置く。衝撃波・極超音速の理論編は
-`foundations/physics/fluid-dynamics/shock-waves-hypersonics.md` として整備済み。
+[`satellites/README.md`](satellites/README.md) のロードマップに置く。衝撃波・極超音速の理論編は
+[`foundations/physics/fluid-dynamics/shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md) として整備済み。
 
-- 火星往還アーキテクチャ (Mars architecture) — ISRU 収支の全体設計、地球帰還までの閉じた質量・電力収支。`hls-lunar-architecture.md` と `propellant-fluid-systems.md` の合流点
-- 打ち上げ市場の経済分析 (launch economics) — 価格弾力性、需要の誘発、競合（再使用機の追随勢）。`spacex-reusability.md` の経済節の産業視点への拡張
+- 火星往還アーキテクチャ (Mars architecture) — ISRU 収支の全体設計、地球帰還までの閉じた質量・電力収支。[`hls-lunar-architecture.md`](hls-lunar-architecture.md) と [`propellant-fluid-systems.md`](propellant-fluid-systems.md) の合流点
+- 打ち上げ市場の経済分析 (launch economics) — 価格弾力性、需要の誘発、競合（再使用機の追随勢）。[`spacex-reusability.md`](spacex-reusability.md) の経済節の産業視点への拡張

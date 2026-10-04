@@ -6,7 +6,7 @@
 
 SpaceX は TPS の2つの系譜を実用している。**Dragon** カプセルは NASA Ames 由来のアブレータ **PICA** を自社改良した **PICA-X** で使い捨て熱を凌ぎつつカプセル再使用を成立させ、**Starship** 上段は Space Shuttle の系譜に連なる**再使用型セラミックタイル**を、六角形状・機械固定・ステンレス機体という新しい組み合わせで「最小整備の完全再使用」に挑んでいる。本ドキュメントは、再突入の物理（なぜ鈍頭か、熱はどこから来るか）から説き起こし、TPS の設計空間の中に Dragon と Starship を位置づける。分析深度は Level 3。
 
-> 前提: 軌道エネルギーと Δv は `orbital-mechanics.md`、Starship の機体側の文脈は `spacex-starship-superheavy.md`「耐熱防護システム」節。衝撃波・実在気体効果の理論的導出は `../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md` に置く。
+> 前提: 軌道エネルギーと Δv は [`orbital-mechanics.md`](orbital-mechanics.md)、Starship の機体側の文脈は [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)「耐熱防護システム」節。衝撃波・実在気体効果の理論的導出は [`../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md) に置く。
 
 ## 方法論 (Methodology)
 
@@ -45,7 +45,7 @@ SpaceX は TPS の2つの系譜を実用している。**Dragon** カプセル�
   地表付近 (数百 m/s) — パラシュート/動力降下で終端
 ```
 
-- **Falcon 9 第1段との違い**: 第1段の再突入は ~2 km/s 級で、エネルギーは軌道再突入の約 1/15（v² に比例）。だからこそ第1段は再突入燃焼＋耐熱塗装で凌げるが、**軌道速度から帰る上段・カプセルには本格的な TPS が必須**になる（`spacex-reusability.md`）。
+- **Falcon 9 第1段との違い**: 第1段の再突入は ~2 km/s 級で、エネルギーは軌道再突入の約 1/15（v² に比例）。だからこそ第1段は再突入燃焼＋耐熱塗装で凌げるが、**軌道速度から帰る上段・カプセルには本格的な TPS が必須**になる（[`spacex-reusability.md`](spacex-reusability.md)）。
 
 ### なぜ鈍頭か (Blunt Body Theory)
 
@@ -106,7 +106,7 @@ Space Shuttle のシリカタイル (LI-900) は再使用 TPS を史上初めて
 | 下地構造 | アルミ（~150 °C で軟化）＋断熱 | **ステンレス**（高温裕度が大きい） |
 | 欠損への裕度 | 小（Columbia 事故の教訓） | 下地の耐熱＋**アブレータ製バックアップ層**で多重化[^flight-tests] |
 
-- **下地がステンレスであることの意味**: TPS は単体では設計できず、**「タイル＋機体構造」の系**で耐熱裕度が決まる。アルミ機体の Shuttle はタイル欠損が即致命傷になりえたが、ステンレスの Starship は下地自体がある程度の過熱に耐え、欠損許容 (damage tolerance) の設計余地が生まれる（材料選定の連関は `spacex-starship-superheavy.md`「なぜステンレス鋼か」）。
+- **下地がステンレスであることの意味**: TPS は単体では設計できず、**「タイル＋機体構造」の系**で耐熱裕度が決まる。アルミ機体の Shuttle はタイル欠損が即致命傷になりえたが、ステンレスの Starship は下地自体がある程度の過熱に耐え、欠損許容 (damage tolerance) の設計余地が生まれる（材料選定の連関は [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)「なぜステンレス鋼か」）。
 - **発汗冷却の検討**: 開発初期には、ステンレス表面から液体（メタン等）を滲出させる**発汗冷却 (transpiration cooling)** も検討されたが、複雑さからタイル方式に落ち着いた。「まず枯れた原理を量産性で磨く」判断である[^transpiration]。
 - **反復検証**: 飛行試験では**意図的にタイルを除去した箇所**を設けて欠損時の熱流入を実測し、タイル下のアブレータ層や取付方式を世代ごとに変えている[^flight-tests]。
 
@@ -133,7 +133,7 @@ Starship 上段は、再突入後の大気圏内を**機体を水平に寝かせ
 ```
 
 - **狙い**: 投影面積を最大化して**空力だけで終端速度まで減速**し、着陸燃焼に必要な推進剤（＝ペイロード犠牲）を最小化する。翼で滑空する Shuttle と、逆噴射に頼る Falcon 9 の中間に位置する第3の解。
-- **フリップの難所**: 着陸直前の急回頭はタンク内推進剤の挙動（スロッシュ・吸込み不良）と結合し、初期の試験機 (SN8–SN15) の失敗の多くがここで起きた。専用の**ヘッダタンク**で着陸用推進剤を確保する設計は `propellant-fluid-systems.md` で扱う。
+- **フリップの難所**: 着陸直前の急回頭はタンク内推進剤の挙動（スロッシュ・吸込み不良）と結合し、初期の試験機 (SN8–SN15) の失敗の多くがここで起きた。専用の**ヘッダタンク**で着陸用推進剤を確保する設計は [`propellant-fluid-systems.md`](propellant-fluid-systems.md) で扱う。
 
 ### 通信ブラックアウトと Starlink
 

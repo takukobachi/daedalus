@@ -36,6 +36,40 @@
 
 要点: **低コスト＝LIN、汎用堅牢＝CAN、決定論＝FlexRay、高帯域＝Ethernet**。1台の車に複数が同居し、ゲートウェイ ECU が橋渡しする。
 
+### ドメイン型ネットワークの全体像 (Domain Architecture Topology)
+
+```mermaid
+flowchart LR
+    EXT["外部接続<br/>(テレマティクス / Wi-Fi / Bluetooth)"]
+    OBD["OBD-II ポート<br/>(UDS 診断)"]
+    GW{{"セントラルゲートウェイ ECU<br/>(フィルタ・ルーティング・レート制限)"}}
+    subgraph PT["パワートレイン CAN (500 kbps)"]
+        ENG["エンジン/モータ ECU"]
+        TCU["変速機 ECU"]
+    end
+    subgraph CH["シャシ CAN FD / FlexRay"]
+        BRK["ブレーキ (ESC)"]
+        EPS["電動パワステ"]
+    end
+    subgraph BD["ボディ CAN"]
+        BCM["ボディ制御 (BCM)"]
+        LIN["LIN サブバス<br/>(ドア・窓・シート)"]
+    end
+    subgraph IVI["インフォテインメント / ADAS (Ethernet)"]
+        HU["ヘッドユニット"]
+        CAM["カメラ / レーダ"]
+    end
+    EXT --> HU
+    OBD --> GW
+    GW --- PT
+    GW --- CH
+    GW --- BD
+    GW --- IVI
+    BCM --- LIN
+```
+
+凡例: 六角形はゲートウェイ、サブグラフは物理的に分かれたバス（ドメイン）。外部接続はインフォテインメント側に入り、ゲートウェイを越えなければ制御系バスへ到達できない。この分離が後述の「無認証 CAN」に対する主防御線になる（セキュリティ考察参照）。ゾーン型への移行後の構成は [`ee-architecture.md`](ee-architecture.md) を参照。
+
 ### ECU の構成
 
 典型的な ECU は組込みマイコン (microcontroller) を中核に持つ。
@@ -51,7 +85,7 @@
   エータ) └────────────────────────────────────────────────────┘
 ```
 
-ここで前提となるのが、`../../hardware/hw-sw-interface/mmio-dma-interrupts.md` の3機構そのものである。MMIO でペリフェラル（CAN コントローラ、ADC、PWM）を制御し、受信完了を割り込みで受け、まとめ転送に DMA を使う。**車載 ECU は HW・SW境界の実応用例**である。
+ここで前提となるのが、[`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) の3機構そのものである。MMIO でペリフェラル（CAN コントローラ、ADC、PWM）を制御し、受信完了を割り込みで受け、まとめ転送に DMA を使う。**車載 ECU は HW・SW境界の実応用例**である。
 
 ### CAN フレームの構造（標準フォーマット）
 
@@ -77,7 +111,7 @@
 ### 誤り検出と堅牢性
 
 - **差動信号 (differential signaling)**: CAN_H / CAN_L の電位差で 0/1 を表現。同相ノイズに強く、車載の過酷な電磁環境に適する。
-- **多重の誤り検出**: CRC、ビットスタッフィング、フレームチェック、ACK、ビットモニタリング。検出時はエラーフレームで全ノードに通知し再送。
+- **多重の誤り検出**: CRC（GF(2) 上の多項式除算。原理は [`finite-fields-coding.md`](../../foundations/mathematics/number-theory-algebra/finite-fields-coding.md) §4）、ビットスタッフィング、フレームチェック、ACK、ビットモニタリング。検出時はエラーフレームで全ノードに通知し再送。
 - **エラー閉じ込め (fault confinement)**: 各ノードが送信エラーカウンタ (TEC) と受信エラーカウンタ (REC) を持ち、故障ノードを段階的に隔離する。
 
   | 状態 | 条件 | 振る舞い |
@@ -102,13 +136,13 @@
 | 特記 | — | リモートフレーム廃止 | Ethernet フレームのトンネリング可 |
 
 - **CAN FD の核心は BRS (Bit Rate Switch)**: 調停フェーズは全ノード参加のため従来速度のまま、**調停が決着した後のデータフェーズだけ高速化**する。調停の仕組み（伝搬遅延がビット時間に収まる必要）を壊さずに帯域を稼ぐ、制約からの逆算設計。
-- 移行の現実: FD 非対応ノードは FD フレームをエラーとして扱うため、**バス単位での移行**が必要。ゾーン化 (`automotive-ethernet-tsn.md`) と並行して進む。
+- 移行の現実: FD 非対応ノードは FD フレームをエラーとして扱うため、**バス単位での移行**が必要。ゾーン化 ([`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md)) と並行して進む。
 
 ### ネットワークアーキテクチャの進化
 
 - **ドメイン型 (domain architecture)**: 機能ドメイン（パワートレイン/シャシ/ボディ/インフォテインメント）ごとにバスとドメインコントローラを置き、ゲートウェイで相互接続。
 - **ゾーン型 (zonal architecture)**: 車内の物理的位置（前/後/左/右ゾーン）でゾーン ECU に集約し、中央の高性能コンピュータ (HPC) と Automotive Ethernet バックボーンで結ぶ。配線重量の削減と、ソフトウェアの中央集約（**SDV: Software-Defined Vehicle**）を狙う。
-- ゾーン化により車載は「多数の小 ECU」から「少数の高性能計算機＋分散 I/O」へ向かい、`../../hardware/cpu/` の知見（メモリ階層・並行性・仮想化）がより重要になる。
+- ゾーン化により車載は「多数の小 ECU」から「少数の高性能計算機＋分散 I/O」へ向かい、[`../../hardware/cpu/`](../../hardware/cpu/) の知見（メモリ階層・並行性・仮想化）がより重要になる。
 
 ### 上位プロトコルとソフト基盤
 
@@ -125,13 +159,13 @@
   | `0x31` | RoutineControl | 自己診断・キャリブレーション等の起動 |
   | `0x34`–`0x37` | RequestDownload〜TransferExit | ECU リプログラミング（ファーム書き換え） |
 
-  近年は Ethernet 上の **DoIP (ISO 13400)** でも同じ UDS を運ぶ（`automotive-ethernet-tsn.md`）。
-- **AUTOSAR**: ECU ソフトの標準アーキテクチャ。通信スタック・OS・基本ソフト (BSW) を抽象化し、アプリを SWC として分離。Adaptive AUTOSAR は Ethernet/SOME-IP と高性能 SoC を前提とする。
+  近年は Ethernet 上の **DoIP (ISO 13400)** でも同じ UDS を運ぶ（[`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md)）。
+- **AUTOSAR**: ECU ソフトの標準アーキテクチャ。通信スタック・OS・基本ソフト (BSW) を抽象化し、アプリを SWC として分離。Adaptive AUTOSAR は Ethernet/SOME-IP と高性能 SoC を前提とする。詳細は [`autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) を参照。
 
 ### 物理的制約（ソフトで閉じない部分）
 
 - **ビットタイミング**: 1ビットは時間量子 (time quantum) 単位で SYNC_SEG / PROP_SEG / PHASE_SEG1 / PHASE_SEG2 に分割され、PHASE_SEG1 と 2 の境界が**サンプル点**（典型 75–87.5%）になる。全ノードがビットレートとこれらのパラメータを共有し、エッジ検出時に SJW (synchronization jump width) の範囲で再同期する。設定ミスは即通信不能。
-- **終端抵抗 (termination)**: CAN バス両端に 120Ω を入れて反射を抑える。欠落・過多はエラーの原因。
+- **終端抵抗 (termination)**: CAN バス両端に 120Ω を入れて反射を抑える。欠落・過多はエラーの原因。特性インピーダンスと終端整合による反射抑制の理論は [`transmission-lines-signal-integrity.md`](../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md) §2–3 を参照。
 - **バス長 vs 速度**: 調停が成立するには、信号がバス全体を往復して1ビット時間内に収まる必要がある。ゆえに高ビットレートほどバスを短くする。CiA の目安値を次に示す。
 
   | ビットレート | 最大バス長の目安 |
@@ -165,11 +199,16 @@
 
 ### 次の接続先 (Related Topics)
 
-- `automotive-ethernet-tsn.md` — CAN の外側：車載 Ethernet・TSN・FlexRay・LIN・SOME/IP（本書の対）。
-- `cybersecurity-iso21434.md` — 無認証問題への対策（SecOC・HSM・分離）と ISO 21434。
-- `functional-safety-iso26262.md` — 無認証・分離とゲートウェイが支える安全設計。
-- `../../hardware/hw-sw-interface/mmio-dma-interrupts.md` — ECU 内部のデバイス制御（MMIO/DMA/割り込み）。
-- `../../hardware/cpu/` — ゾーン型 HPC が要求する計算・並行性・仮想化の基礎。
+- [`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) — CAN の外側：車載 Ethernet・TSN・FlexRay・LIN・SOME/IP（本書の対）。
+- [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) — 無認証問題への対策（SecOC・HSM・分離）と ISO 21434。
+- [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 無認証・分離とゲートウェイが支える安全設計。
+- [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) — ECU 内部のデバイス制御（MMIO/DMA/割り込み）。
+- [`../../hardware/cpu/`](../../hardware/cpu/) — ゾーン型 HPC が要求する計算・並行性・仮想化の基礎。
+- [`ee-architecture.md`](ee-architecture.md) — 本書の上位: 分散 → ドメイン → ゾーン＋セントラルの構成論。
+- [`../../software/embedded/autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) — CAN 上の信号ベース通信と COM スタック・SecOC・E2E のソフトウェア側。
+- [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) — 優先度調停が支える応答時間解析の基礎。
+- [`../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md`](../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md) — 終端・反射・差動伝送の物理。
+- [`../../foundations/mathematics/number-theory-algebra/finite-fields-coding.md`](../../foundations/mathematics/number-theory-algebra/finite-fields-coding.md) — CRC の代数的基礎。
 
 ## 参考文献 (References)
 

@@ -49,6 +49,32 @@
         ログ受領 → 欠落分をゴシップで補完 → ページを非同期実体化 → S3 へ継続バックアップ
 ```
 
+### Aurora のクォーラム配置と AZ+1 故障
+
+上図の 6 レプリカを故障ドメイン（AZ）ごとに束ね直すと、W=4 / R=3 が「AZ 全損 + 1 ノード」から逆算された値であることが読める（発見事項 2）。凡例: 赤枠は想定故障（AZ-a 全損 + AZ-b の 1 ノード）、矢印は redo ログの送信。
+
+```mermaid
+flowchart LR
+    W["Writer ノード<br/>(LSN 順の redo ログ)"]
+    subgraph AZA["AZ-a"]
+        A1["SN 1"]
+        A2["SN 2"]
+    end
+    subgraph AZB["AZ-b"]
+        B1["SN 3"]
+        B2["SN 4"]
+    end
+    subgraph AZC["AZ-c"]
+        C1["SN 5"]
+        C2["SN 6"]
+    end
+    W --> A1 & A2 & B1 & B2 & C1 & C2
+    Q["10 GB 保護グループ単位<br/>W=4: AZ 全損 (残り 4) でも書ける<br/>R=3: AZ+1 (残り 3) でも読んで修復できる"]
+    C2 ~~~ Q
+    classDef failed stroke:#d33,stroke-width:3px,stroke-dasharray:4 2
+    class A1,A2,B1 failed
+```
+
 ### DynamoDB — 有界リクエストとパーティション複製
 
 ```

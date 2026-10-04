@@ -2,11 +2,11 @@
 
 ## 概要 (Overview)
 
-SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムといった個別技術と同じくらい、**それらを安く・速く・大量に作る能力**に由来する。再使用（`spacex-reusability.md`）が「捨てない」ことで、製造は「安く作る」ことでコスト方程式のもう半分を受け持ち、fly-fail-fix の反復開発（`spacex-starship-superheavy.md`）は、壊した分を素早く作り直せる**生産レート**があって初めて成立する。
+SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムといった個別技術と同じくらい、**それらを安く・速く・大量に作る能力**に由来する。再使用（[`spacex-reusability.md`](spacex-reusability.md)）が「捨てない」ことで、製造は「安く作る」ことでコスト方程式のもう半分を受け持ち、fly-fail-fix の反復開発（[`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)）は、壊した分を素早く作り直せる**生産レート**があって初めて成立する。
 
 本ドキュメントは、SpaceX の製造を、**垂直統合**（外注の内製化）、**設計と製造の一体化**（作りやすさが設計を駆動する）、**金属積層造形 (metal AM)**、**全数試験** (McGregor での受入燃焼試験) の4つの柱として整理し、その根底にある「**最良の部品は部品が無いこと**」という削除の哲学を、Merlin の量産・Raptor の世代交代・Starfactory の実例で分析する。分析深度は Level 3。数値の多くは SpaceX の公表値・発言に基づくため、本リポジトリの Source Hierarchy 方針に従い**主張 (claim) と実証 (demonstrated) を区別**して扱う。
 
-> 関連: 摩擦攪拌接合とステンレス製造性は `rocket-structures-tanks.md`、Raptor 3 の部品統合は `spacex-rocket-engines.md`、SuperDraco の積層造形は `dragon-spacecraft.md`。
+> 関連: 摩擦攪拌接合とステンレス製造性は [`rocket-structures-tanks.md`](rocket-structures-tanks.md)、Raptor 3 の部品統合は [`spacex-rocket-engines.md`](spacex-rocket-engines.md)、SuperDraco の積層造形は [`dragon-spacecraft.md`](dragon-spacecraft.md)。
 
 ## 方法論 (Methodology)
 
@@ -18,11 +18,11 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 ## 発見事項 (Findings)
 
 1. **垂直統合は「速度」への投資である。** SpaceX は機体・エンジン・アビオニクスの大部分を内製する（部品点数ベースで大半を自社製造とするのが同社の公称[^vertical]）。最大の利得はコストより**反復の速度**である。設計変更が外注の契約・リードタイムに律速されない。
-2. **設計と製造は同じ問題の両面として扱われる。** 「作りにくい設計」は性能と同格の欠陥として扱われ、設計者が製造現場に近接する。Raptor 1→3 の進化は性能向上と同時に**部品点数・工数・コストの削減**の歴史である（`spacex-rocket-engines.md`）[^raptor-iter]。
+2. **設計と製造は同じ問題の両面として扱われる。** 「作りにくい設計」は性能と同格の欠陥として扱われ、設計者が製造現場に近接する。Raptor 1→3 の進化は性能向上と同時に**部品点数・工数・コストの削減**の歴史である（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）[^raptor-iter]。
 3. **削除が最初の工程である。** 公開された設計プロセス論（(1) 要求を疑う、(2) **部品・工程を削除する**、(3) 単純化する、(4) 高速化する、(5) 自動化する）は、この順序が重要とされる。「存在しない部品は故障せず、コストもかからず、検査も要らない」[^algorithm]。
 4. **金属積層造形は「統合による削除」の道具。** SuperDraco (2014, DMLS 燃焼室) で人を乗せる部品に AM を使う判断をし、Raptor 3 では外部配管・ヒートシールドの多くを AM と部品統合で「内部化＝削除」した[^raptor-iter]。AM の価値は形状の自由度そのものより、**組立・接合・検査対象の削減**にある。
 5. **全数試験が品質哲学の中核。** 製造した全エンジンは McGregor 試験場で**受入燃焼試験 (acceptance test)** を経てから飛ぶ。統計的抜き取りではなく全数実燃焼であり、「試験されていないエンジンは飛ばない」が、量産と信頼性を両立させる前提になっている[^mcgregor]。
-6. **材料選択が工場の形を決める。** Starship のステンレス（`rocket-structures-tanks.md`）は、クリーンルーム・オートクレーブを要する複合材と違い、**屋外テントでの溶接から始められた**。Starfactory への段階的な工場化は、材料が許した「早く作り始めて、作りながら工場を作る」路線である[^starfactory]。
+6. **材料選択が工場の形を決める。** Starship のステンレス（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）は、クリーンルーム・オートクレーブを要する複合材と違い、**屋外テントでの溶接から始められた**。Starfactory への段階的な工場化は、材料が許した「早く作り始めて、作りながら工場を作る」路線である[^starfactory]。
 7. **生産レートは開発速度の下限を決める。** 高頻度の飛行試験（成功しても失敗しても機体を消費する）は、Raptor を日産1基級・機体を月数機級で作る能力が支える[^starfactory]。「たくさん作れるから、たくさん壊して学べる」。つまり製造能力が学習速度に変換される。
 
 ## アーキテクチャ (Architecture)
@@ -60,7 +60,7 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 |---|---|
 | エンジン全体、ターボポンプ | 反復速度の核心。外注リードタイムが開発を律速するため |
 | 機体構造（タンク・溶接） | 設計変更が頻繁。FSW・ステンレス溶接の工程知識が競争力 |
-| 飛行計算機・多くのアビオニクス | 民生部品×自社設計で桁違いに安く（`avionics-gnc.md`） |
+| 飛行計算機・多くのアビオニクス | 民生部品×自社設計で桁違いに安く（[`avionics-gnc.md`](avionics-gnc.md)） |
 | ソフトウェア全般 | 反復の最速レイヤ |
 
 | 購入するもの | 統制の方法 |
@@ -72,7 +72,7 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 
 ### Merlin — 「量産されるロケットエンジン」の先例
 
-ロケットエンジンは伝統的に年産数基〜十数基の工芸品だった。Merlin は Falcon 9 が1機で9基を消費する構成（`spacex-rocket-engines.md`）ゆえに、当初から**年産数百基級**を要求され、以下で応えた。
+ロケットエンジンは伝統的に年産数基〜十数基の工芸品だった。Merlin は Falcon 9 が1機で9基を消費する構成（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）ゆえに、当初から**年産数百基級**を要求され、以下で応えた。
 
 - **枯れたサイクルの選択**: ガスジェネレータサイクルは部品点数・開発リスクが小さく、量産・整備に向く。
 - **単一エンジンの多用途化**: 第1段9基・第2段（真空版）1基が基本を共有し、生産ラインを1本化。
@@ -83,7 +83,7 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 公開された機体外観の比較が最も雄弁である: Raptor 1 の外面を覆っていた配管・ハーネス・支持金具の多くが、Raptor 3 では**消えている**[^raptor-iter]。
 
 - **手段**: 機能の統合（複数部品の一体化）、AM による内部流路化、二次系（ヒートシールド、外部トーチ点火系等）の設計削除。
-- **効果 (公称)**: 推力重量比の倍増、製造工数・コストの大幅減、被覆部品が減ることによる**再使用時の点検箇所の削減**（Raptor 3 は 350 bar・280 tf 級を単純な外観で達成。`spacex-rocket-engines.md` の脚注参照）。
+- **効果 (公称)**: 推力重量比の倍増、製造工数・コストの大幅減、被覆部品が減ることによる**再使用時の点検箇所の削減**（Raptor 3 は 350 bar・280 tf 級を単純な外観で達成。[`spacex-rocket-engines.md`](spacex-rocket-engines.md) の脚注参照）。
 - **読み方**: 部品の追加は個別の担当者が正当化できるが、削除には「系全体を見て、無くても成立する」ことの証明が要る。削除を最優先工程に置くのは、**追加バイアスへの組織的対抗**である[^algorithm]。
 
 ### 金属積層造形 — どこに使い、どこに使わないか (Metal AM)
@@ -95,14 +95,14 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 ### 全数試験と「試験で品質を作る」 (Test-driven Manufacturing)
 
 - **受入試験 (acceptance)**: 量産エンジン全数を McGregor で実燃焼させ、性能・振動・立ち上がり特性を確認してから出荷する。設計の健全性を証明する**認定試験 (qualification)** とは別のゲートである[^mcgregor]。
-- **統合スタティックファイア**: 機体組立後、射点で全エンジン短時間燃焼（`launch-ground-systems.md`）。部品→エンジン→機体と、階層ごとに「実際に動かして確認」を積む。
-- **CRS-7 の教訓との接続**: 唯一この網をすり抜けたのが「仕様書を信じた購入部品」だった（定格の 1/5 で破断したストラット。`rocket-structures-tanks.md`）。以後、疑わしい購入部品は**個体ごとの受入試験**へ移行した。これは「試験していないものを信じない」原則の適用範囲がサプライチェーンまで拡張された事例である[^crs7-ref]。
+- **統合スタティックファイア**: 機体組立後、射点で全エンジン短時間燃焼（[`launch-ground-systems.md`](launch-ground-systems.md)）。部品→エンジン→機体と、階層ごとに「実際に動かして確認」を積む。
+- **CRS-7 の教訓との接続**: 唯一この網をすり抜けたのが「仕様書を信じた購入部品」だった（定格の 1/5 で破断したストラット。[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）。以後、疑わしい購入部品は**個体ごとの受入試験**へ移行した。これは「試験していないものを信じない」原則の適用範囲がサプライチェーンまで拡張された事例である[^crs7-ref]。
 
 ### Starfactory — 工場自体の反復 (Iterating the Factory)
 
 - **初期 (2019)**: 屋外・テントでのステンレス溶接から Starhopper・初期試験機を製造。「工場が無くても作り始められる」材料選択の効果。
 - **量産化**: 試験機の消費ペースに合わせ、テント→大規模屋内工場 (Starfactory) へ段階的に移行。機体設計 (V1→V2→V3) と並行して**工場も版を重ねる**[^starfactory]。
-- **目標と現実**: SpaceX は将来的に極めて高い機体生産レートを公言するが、これは target であり、現時点の実績レート（飛行試験の消費を支える月数機級）と区別して読む必要がある[^starfactory]。
+- **目標と現実**: SpaceX は将来的に極めて高い機体生産レートを公言するが、これは target であり、現時点の実績レート（飛行試験の消費を支える月数機級）と区別して読む必要がある[^starfactory]。as of 2026-10 で公表されている Starfactory の目標は「1日1機」級（年最大1,000機規模の能力）だが、これを実績として示す一次資料は確認できない。実績側の手がかりは飛行試験の消費ペースで、2026年は Block 3 の4機体セット（Flight 12〜15 用、各セット Raptor 39基）を約5か月で投入している[^starfactory][^robb][^starship-doc]。
 
 ## 品質・サプライチェーン考察 (Quality & Supply Chain Considerations)
 
@@ -131,7 +131,7 @@ SpaceX の製造哲学は一つの因果連鎖に要約できる: **削除が単
 
 [^algorithm]: [Starbase 工場見学インタビュー (Everyday Astronaut, 2021, 全3部)](https://everydayastronaut.com/starbase-tour-and-interview-with-elon-musk/) — 「要求を疑う→削除→単純化→高速化→自動化」の5段階プロセスと「最良の部品は部品が無いこと」の本人による説明。一次に準ずる長尺の技術対話。Accessed: 2026-07-26.
 
-[^raptor-iter]: [SpaceX — Raptor 3 公表資料・画像](https://www.spacex.com/updates/) — Raptor 1→3 の外部配管・二次系の削減、推力重量比の向上（`spacex-rocket-engines.md` の脚注群も参照）。Accessed: 2026-07-26.
+[^raptor-iter]: [SpaceX — Raptor 3 公表資料・画像](https://www.spacex.com/updates/) — Raptor 1→3 の外部配管・二次系の削減、推力重量比の向上（[`spacex-rocket-engines.md`](spacex-rocket-engines.md) の脚注群も参照）。Accessed: 2026-07-26.
 
 [^superdraco-am]: [SpaceX — SuperDraco 発表 (2014)](https://www.spacex.com/updates/) — DMLS によるインコネル燃焼室の積層造形と有人機部品への適用。Accessed: 2026-07-26.
 
@@ -139,10 +139,14 @@ SpaceX の製造哲学は一つの因果連鎖に要約できる: **削除が単
 
 [^starfactory]: [SpaceX — Starfactory / Starship 生産に関するアップデート](https://www.spacex.com/updates/) — テントから Starfactory への移行、機体版数と工場の並行反復、生産レート目標（target）。Accessed: 2026-07-26.
 
+[^robb]: [Robb Report — SpaceX's new Starfactory aims to build one rocket per day](https://robbreport.com/motors/aviation/spacex-new-star-factory-1-rocket-per-day-1235650057/) — Starfactory の生産目標（1日1機級、target）の報道。Accessed: 2026-10-04.
+
+[^starship-doc]: 本リポジトリ [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md) の飛行試験表（Flight 12: 2026-05-22、Flight 13: 07-24、Flight 14: 09-28、Flight 15: NET 10-19 の機体セット）。
+
 **本リポジトリ内参照**
 
-[^crs7-ref]: 本リポジトリ `rocket-structures-tanks.md` — CRS-7 の購入部品破断と個体受入試験への移行（NASA OIG 報告に基づく）。
+[^crs7-ref]: 本リポジトリ [`rocket-structures-tanks.md`](rocket-structures-tanks.md) — CRS-7 の購入部品破断と個体受入試験への移行（NASA OIG 報告に基づく）。
 
-- `spacex-rocket-engines.md` — Merlin の量産志向サイクル選択、Raptor 世代交代の性能側
-- `dragon-spacecraft.md` — SuperDraco の積層造形
-- `launch-ground-systems.md` — スタティックファイアと射点運用
+- [`spacex-rocket-engines.md`](spacex-rocket-engines.md) — Merlin の量産志向サイクル選択、Raptor 世代交代の性能側
+- [`dragon-spacecraft.md`](dragon-spacecraft.md) — SuperDraco の積層造形
+- [`launch-ground-systems.md`](launch-ground-systems.md) — スタティックファイアと射点運用

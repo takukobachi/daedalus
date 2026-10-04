@@ -2,11 +2,11 @@
 
 ## 概要 (Overview)
 
-液体ロケットエンジン開発の歴史で、最も多くのエンジンを壊してきた敵は、材料でも製造でもなく**燃焼不安定 (combustion instability)** である。燃焼室内の音響振動と熱発生が正のフィードバックで結合すると、圧力振動は数ミリ秒〜数百ミリ秒で壁面熱伝達を数倍に押し上げ、エンジンを焼損・破壊する。Apollo を月へ運んだ **F-1 エンジンは、この問題の克服だけに数年と1,000回超の実機燃焼試験を要した**。これは、ロケット開発が「解析だけでは閉じない」ことの古典的証明である[^f1-history]。
+液体ロケットエンジン開発の歴史で、最も多くのエンジンを壊してきた敵は、材料でも製造でもなく**燃焼不安定 (combustion instability)** である。燃焼室内の音響振動と熱発生が正のフィードバックで結合すると、圧力振動は数ミリ秒〜数百ミリ秒で壁面熱伝達を数倍に押し上げ、エンジンを焼損・破壊する。Apollo を月へ運んだ **F-1 エンジンは、この問題の克服のために数年と約2,000回の実機燃焼試験（安定化計画 Project First。開発全体では約3,200回）を要した**。これは、ロケット開発が「解析だけでは閉じない」ことの古典的証明である[^f1-history]。
 
-本ドキュメントは、不安定の物理(**レイリー基準**: 熱発生が圧力振動と同位相なら増幅される)と3つの類型(チャギング/バジング/スクリーチ)を整理し、抑制手段(バッフル、音響キャビティ、噴射器設計)の設計論理を解剖する。そのうえで、Merlin/Raptor の文脈として、多発クラスタ化という「中型エンジンを多数」戦略が安定性問題に与える利点、FFSC のガス-ガス噴射が持つ安定上の性質、そして McGregor の全数試験(`spacex-manufacturing.md`)が安定性保証で果たす役割を分析する。分析深度は Level 3。
+本ドキュメントは、不安定の物理(**レイリー基準**: 熱発生が圧力振動と同位相なら増幅される)と3つの類型(チャギング/バジング/スクリーチ)を整理し、抑制手段(バッフル、音響キャビティ、噴射器設計)の設計論理を解剖する。そのうえで、Merlin/Raptor の文脈として、多発クラスタ化という「中型エンジンを多数」戦略が安定性問題に与える利点、FFSC のガス-ガス噴射が持つ安定上の性質、そして McGregor の全数試験([`spacex-manufacturing.md`](spacex-manufacturing.md))が安定性保証で果たす役割を分析する。分析深度は Level 3。
 
-> 前提: エンジンサイクルと燃焼室の基本は `spacex-rocket-engines.md`、音響と共振の一般論は `../../foundations/physics/classical-mechanics/newton-laws-oscillations.md` の振動論。
+> 前提: 振動を支配する線形 ODE と固有値の考え方は [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md)、周波数分解は [`../../foundations/mathematics/fourier-signal-processing/fourier-series-transform.md`](../../foundations/mathematics/fourier-signal-processing/fourier-series-transform.md)。エンジンサイクルと燃焼室の基本は [`spacex-rocket-engines.md`](spacex-rocket-engines.md)、音響と共振の一般論は [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) の振動論。
 
 ## 方法論 (Methodology)
 
@@ -17,13 +17,13 @@
 
 ## 発見事項 (Findings)
 
-1. **不安定の本質はレイリー基準にある。** 「熱発生の揺らぎが圧力振動と同位相なら振動は成長し、逆位相なら減衰する」という、1878年にレイリーが定式化した条件が、今日も設計の出発点である[^rayleigh]。燃焼室は高エネルギー密度の音響共鳴器であり、燃焼はその中の「増幅器」になりうる。
+1. **不安定の本質はレイリー基準にある。** 「熱発生の揺らぎが圧力振動と同位相なら振動は成長し、逆位相なら減衰する」という、1878年にレイリーが定式化した条件が、今日も設計の出発点である[^rayleigh][^culick]。燃焼室は高エネルギー密度の音響共鳴器であり、燃焼はその中の「増幅器」になりうる。
 2. **周波数帯が犯人を教える。** 低周波(数十 Hz 級)のチャギングは供給系との結合、中間周波のバジングは供給系・構造との複合、高周波(数 kHz 級)のスクリーチは**燃焼室の音響モード**(接線・半径・縦)との結合である。高周波が最も破壊的で、壁面熱流束を数倍化しミリ秒〜秒オーダーでエンジンを破壊する[^sp194]。
-3. **F-1 は「試して壊して直す」で解いた。** 1960年代の解析力では接線モード不安定を予測できず、Rocketdyne/NASA は**爆薬で人工的に擾乱を与えて減衰を確認する「ボム試験」** という動的安定性実証法を確立、噴射器バッフルの形状を1,000回超の実機試験で反復した[^f1-history][^sp194]。SpaceX の fly-fail-fix(`spacex-starship-superheavy.md`)は、実はこの伝統の高速化と読める。
+3. **F-1 は「試して壊して直す」で解いた。** 1960年代の解析力では接線モード不安定を予測できず、Rocketdyne/NASA は**爆薬で人工的に擾乱を与えて減衰を確認する「ボム試験」** という動的安定性実証法を確立、噴射器バッフルの形状を約2,000回の実機試験（14種の噴射パターン×15種のバッフル構成を実機規模で試験）で反復した[^f1-history][^sp194]。SpaceX の fly-fail-fix([`spacex-starship-superheavy.md`](spacex-starship-superheavy.md))は、実はこの伝統の高速化と読める。
 4. **対策は「音を殺すか、位相をずらすか」。** バッフル(接線モードの分断)、音響キャビティ/レゾネータ(特定周波数の吸収)は音響系側への介入、噴射器の微粒化・混合設計は熱発生側の位相・分布への介入である。
-5. **大きな燃焼室ほど危なく、そこに多発クラスタの隠れた利点がある。** 不安定の主戦場である接線モードは燃焼室径で周波数が決まり、大径室ほど低周波化して燃焼の応答帯域と重なりやすい。F-1(単室・巨大)が苦しんだ問題を、SpaceX は**中型エンジンの多数クラスタ**(9基/33基)で構造的に回避している。「量産できるサイズ」の選択(`spacex-manufacturing.md`)は、安定性の面でも合理だった。
-6. **FFSC のガス-ガス噴射は安定側に働く。** Raptor は両推進剤をプリバーナで気化してから主燃焼室へ噴く(`spacex-rocket-engines.md`)。液滴の微粒化・蒸発という**時間遅れの大きい過程**が主燃焼室からほぼ消えるため、熱発生の応答が速く一様になり、位相遅れ由来の結合が起きにくい。これは FFSC の複雑さが買っている安定性上の利得である[^gas-gas]。
-7. **安定性は「証明」ではなく「実証」で保証される。** 現代でも高周波不安定の完全予測は難しく、保証の実体は試験にある。全エンジンを実燃焼させる McGregor の受入試験体制(`spacex-manufacturing.md`)は、製造品質と同時に**個体ごとの燃焼健全性**のゲートとして機能する。
+5. **大きな燃焼室ほど危なく、そこに多発クラスタの隠れた利点がある。** 不安定の主戦場である接線モードは燃焼室径で周波数が決まり、大径室ほど低周波化して燃焼の応答帯域と重なりやすい。F-1(単室・巨大)が苦しんだ問題を、SpaceX は**中型エンジンの多数クラスタ**(9基/33基)で構造的に回避している。「量産できるサイズ」の選択([`spacex-manufacturing.md`](spacex-manufacturing.md))は、安定性の面でも合理だった。
+6. **FFSC のガス-ガス噴射は安定側に働く。** Raptor は両推進剤をプリバーナで気化してから主燃焼室へ噴く([`spacex-rocket-engines.md`](spacex-rocket-engines.md))。液滴の微粒化・蒸発という**時間遅れの大きい過程**が主燃焼室からほぼ消えるため、熱発生の応答が速く一様になり、位相遅れ由来の結合が起きにくい。これは FFSC の複雑さが買っている安定性上の利得である[^gas-gas]。
+7. **安定性は「証明」ではなく「実証」で保証される。** 現代でも高周波不安定の完全予測は難しく、保証の実体は試験にある。全エンジンを実燃焼させる McGregor の受入試験体制([`spacex-manufacturing.md`](spacex-manufacturing.md))は、製造品質と同時に**個体ごとの燃焼健全性**のゲートとして機能する。
 
 ## アーキテクチャ (Architecture)
 
@@ -53,11 +53,11 @@
 
 | 類型 | 周波数帯 | 結合する系 | 主対策 |
 |---|---|---|---|
-| **チャギング (chugging)** | ~数十 Hz | 供給系(配管・ポンプ)と燃焼室の圧力 | 噴射器圧力降下を大きく取る(供給系を「硬く」する)、ポゴ対策と共通(`rocket-structures-tanks.md`) |
+| **チャギング (chugging)** | ~数十 Hz | 供給系(配管・ポンプ)と燃焼室の圧力 | 噴射器圧力降下を大きく取る(供給系を「硬く」する)、ポゴ対策と共通([`rocket-structures-tanks.md`](rocket-structures-tanks.md)) |
 | **バジング (buzzing)** | 中間帯 | 供給系・噴射器の局所振動 | 噴射器設計、配管の音響設計 |
 | **スクリーチ (screech)** | ~数 kHz | **燃焼室の音響モード**(特に接線) | バッフル、音響キャビティ、噴射パターン[^sp194] |
 
-- **噴射器圧力降下 (injector ΔP) の意味**: 噴射器前後の圧力差が大きいほど、室圧の揺らぎが流量に伝わりにくい(供給系と燃焼室が疎結合になる)。安定性の古典則「ΔP は室圧の 15–20% 以上」は、深いスロットリング時に室圧とともに ΔP が落ちて**低スロットルほど不安定に近づく**という、着陸バーン(`spacex-reusability.md`)に直結する制約を生む。
+- **噴射器圧力降下 (injector ΔP) の意味**: 噴射器前後の圧力差が大きいほど、室圧の揺らぎが流量に伝わりにくい(供給系と燃焼室が疎結合になる)。安定性の古典則「ΔP は室圧の 15–20% 以上」[^huzel]は、深いスロットリング時に室圧とともに ΔP が落ちて**低スロットルほど不安定に近づく**という、着陸バーン([`spacex-reusability.md`](spacex-reusability.md))に直結する制約を生む。
 
 ### 燃焼室の音響モード (Chamber Acoustic Modes)
 
@@ -69,7 +69,7 @@
                                                      数倍化し焼損させる
 ```
 
-- 接線1次モードの周波数は概ね `f ≈ 0.59·a/D`(a: 音速, D: 室径)。**室径が大きいほど低周波**になり、微粒化・蒸発・混合の特性時間と重なって結合しやすくなる。F-1(D ≈ 1 m 級)が接線モードに苦しみ、小径多数のクラスタが構造的に有利になる理由は、この1式に凝縮されている。
+- 接線1次モードの周波数は概ね `f ≈ 0.59·a/D`(a: 音速, D: 室径。0.59 は円筒音響の固有値 1.841/π)[^culick][^sp194]。**室径が大きいほど低周波**になり、微粒化・蒸発・混合の特性時間と重なって結合しやすくなる。F-1(D ≈ 1 m 級)が接線モードに苦しみ、小径多数のクラスタが構造的に有利になる理由は、この1式に凝縮されている。
 
 ## 技術詳細 (Technical Details)
 
@@ -77,7 +77,7 @@
 
 - **問題**: 開発初期の F-1 は全力燃焼中に自発的な接線モード不安定を起こし、数秒でエンジンを破壊した。当時の解析では発生条件を予測できなかった。
 - **解法の転換**: 「不安定が起きないことを祈る」から「**擾乱を与えても減衰することを実証する**」へ。燃焼中の室内で小型爆薬を起爆し(ボム試験)、圧力スパイクが規定時間内(~1/10秒級)に減衰することを合格条件とする**動的安定性評価 (dynamic stability rating)** を確立した[^sp194][^f1-history]。
-- **ハードウェアの解**: 噴射器面に放射状の**バッフル**を立てて接線モードを分断し、噴射孔パターン・衝突角を系統的に変えた実機試験を1,000回超反復。最終形は「擾乱を与えても確実に減衰する」ことを実証して有人飛行に進んだ[^f1-history]。
+- **ハードウェアの解**: 噴射器面に放射状の**バッフル**を立てて接線モードを分断し、噴射孔パターン・衝突角を系統的に変えた実機試験を約2,000回反復（Project First, 1962–1965 年頃）。最終形は「擾乱を与えても確実に減衰する」ことを実証して有人飛行に進んだ[^f1-history]。
 - **現代への遺産**: (1) 安定性は設計値ではなく**実証項目**である、(2) 音響系への介入(バッフル・キャビティ)は解析が不完全でも有効な頑健な対策である、(3) 大量の実機試験を許す試験場と予算が、そのまま開発能力である。McGregor の試験体制はこの系譜上にある。
 
 ### 抑制手段の設計論理 (Suppression Devices)
@@ -90,16 +90,16 @@
 
 公開情報が限られる領域のため、確実な事実からの構造的推論として整理する。
 
-- **中型×多数という回避**: Merlin(海面推力 ~845 kN)も Raptor(~2,750 kN)も、F-1(~6,770 kN)級の単室巨大化を避けている。理由の第一は量産性(`spacex-manufacturing.md`)だが、室径を抑えることは接線モード周波数を高く保ち、最も危険な不安定域から距離を取ることでもある。
+- **中型×多数という回避**: Merlin(海面推力 ~845 kN)も Raptor(~2,750 kN)も、F-1(~6,770 kN)級の単室巨大化を避けている。理由の第一は量産性([`spacex-manufacturing.md`](spacex-manufacturing.md))だが、室径を抑えることは接線モード周波数を高く保ち、最も危険な不安定域から距離を取ることでもある。
 - **ガス-ガス噴射の利得**: FFSC の主燃焼室には両推進剤が気体で入る。液体噴流の微粒化・液滴蒸発という遅れ要素(スクリーチの位相条件を作る主因)が消えるため、燃焼応答は速く分布は一様になる。ガス-ガス燃焼の安定上の優位は燃焼研究でも指摘されており、FFSC の開発難度(2つのプリバーナ)と引き換えに得ている性質である[^gas-gas]。
-- **深いスロットリングとの緊張**: 着陸バーン(`spacex-reusability.md`)は室圧を大きく下げ、噴射器 ΔP 比を悪化させる。スロットリング能力と安定余裕は本質的にトレードオフであり、Merlin の深絞り・再着火の実績は、この領域の設計・試験の蓄積を意味する。
+- **深いスロットリングとの緊張**: 着陸バーン([`spacex-reusability.md`](spacex-reusability.md))は室圧を大きく下げ、噴射器 ΔP 比を悪化させる。スロットリング能力と安定余裕は本質的にトレードオフであり、Merlin の深絞り・再着火の実績は、この領域の設計・試験の蓄積を意味する。
 - **全数試験という保証**: 不安定は個体差(製造ばらつき・噴射器の微小差)に敏感でありうる。全エンジンの受入燃焼試験(McGregor)は、安定性を**個体ごとに実測で確認する**体制として、F-1 の動的安定性実証の思想を量産に埋め込んだものと読める。
 
 ## 信頼性考察 (Reliability Considerations)
 
 > 本分野の「セキュリティ考察」は、燃焼安定性では**開発リスクと保証の方法**として読み替える。
 
-- **予測の限界を認める設計**: 高周波不安定は今日でも第一原理からの完全予測が難しい。信頼性は「不安定にならない設計の証明」ではなく、**マージン(ΔP・モード分離)＋頑健な抑制デバイス＋実機実証**の三層で構成するのが現実解である。
+- **予測の限界を認める設計**: 高周波不安定は今日でも第一原理からの完全予測が難しい[^yang-anderson][^culick]。信頼性は「不安定にならない設計の証明」ではなく、**マージン(ΔP・モード分離)＋頑健な抑制デバイス＋実機実証**の三層で構成するのが現実解である。
 - **運転域の端が危ない**: 定格点で安定でも、始動・停止の過渡、深いスロットリング、推進剤温度の端(サブクール条件)で安定余裕は変わる。再使用エンジンは毎飛行でこれらの過渡を反復するため、**運転域全体での安定実証**が使い捨て時代より重い要求になる。
 - **クラスタの新しい問い**: 33基が至近距離で燃える Super Heavy では、単体で安定なエンジンが、隣接エンジンの音響・排気と結合しないかが問われる。多発化は単室巨大化の問題を回避する一方、**エンジン間結合**という新しい検証項目を生む(飛行試験での多数基同時燃焼データの価値がここにもある)。
 
@@ -107,7 +107,7 @@
 
 燃焼不安定は、燃焼室という高エネルギー密度の音響共鳴器に「位相」という一見か細い条件で火が付く現象であり、レイリー基準の単純さと裏腹に、その予測は今日も工学の最前線にある。F-1 が残した最大の遺産はバッフルという部品ではなく、**「擾乱を与えて減衰を実証する」という保証の方法論**だった。
 
-SpaceX はこの問題に対し、正面からの解析勝負ではなく構造的な回避と実証で臨んでいる。具体的には、室径を抑えた中型エンジンの多数クラスタ、液滴の遅れを消すガス-ガス噴射(FFSC)、そして全数受入燃焼という個体実証である。エンジンサイクル(`spacex-rocket-engines.md`)・製造戦略(`spacex-manufacturing.md`)・再使用の深絞り要求(`spacex-reusability.md`)がすべてこの一点で交差しており、燃焼安定性は「SpaceX がなぜその設計を選んだか」を裏側から説明する補助線である。
+SpaceX はこの問題に対し、正面からの解析勝負ではなく構造的な回避と実証で臨んでいる。具体的には、室径を抑えた中型エンジンの多数クラスタ、液滴の遅れを消すガス-ガス噴射(FFSC)、そして全数受入燃焼という個体実証である。エンジンサイクル([`spacex-rocket-engines.md`](spacex-rocket-engines.md))・製造戦略([`spacex-manufacturing.md`](spacex-manufacturing.md))・再使用の深絞り要求([`spacex-reusability.md`](spacex-reusability.md))がすべてこの一点で交差しており、燃焼安定性は「SpaceX がなぜその設計を選んだか」を裏側から説明する補助線である。
 
 ---
 
@@ -117,19 +117,27 @@ SpaceX はこの問題に対し、正面からの解析勝負ではなく構造�
 
 **一次資料・標準文献 (Primary & Standard references)**
 
-[^rayleigh]: Rayleigh, J. W. S. (1878). The Explanation of Certain Acoustical Phenomena. *Nature*, 18, 319–321 — レイリー基準の原典。熱発生と圧力振動の位相関係が増幅/減衰を決めることの定式化。
+[^rayleigh]: Rayleigh, J. W. S. (1878). The Explanation of Certain Acoustical Phenomena. *Nature*, 18, 319–321. DOI: 10.1038/018319a0 — レイリー基準の原典。熱発生と圧力振動の位相関係が増幅/減衰を決めることの定式化。
 
 [^sp194]: Harrje, D. T., & Reardon, F. H. (eds.) (1972). *Liquid Propellant Rocket Combustion Instability*. NASA SP-194 — 液体ロケット燃焼不安定の包括的標準文献。3類型、音響モード、バッフル・キャビティ設計、動的安定性評価。
 
-[^f1-history]: Oefelein, J. C., & Yang, V. (1993). Comprehensive Review of Liquid-Propellant Combustion Instabilities in F-1 Engines. *Journal of Propulsion and Power*, 9(5), 657–677 — F-1 の不安定問題と克服(1,000回超の試験、バッフル、ボム試験)の査読レビュー。
+[^f1-history]: Oefelein, J. C., & Yang, V. (1993). Comprehensive Review of Liquid-Propellant Combustion Instabilities in F-1 Engines. *Journal of Propulsion and Power*, 9(5), 657–677 — F-1 の不安定問題と克服(全開発で約3,200回の実機試験のうち約2,000回が安定化計画 Project First、14種の噴射パターン×15種のバッフル構成、ボム試験と減衰時間の記録)の査読レビュー。DOI: 10.2514/3.23674 ／ [enginehistory.org 掲載 PDF](https://www.enginehistory.org/Rockets/RPE08.11/F-1CombustionInstabilityComprehensiveReview.pdf) Accessed: 2026-10-04.
+
+[^culick]: Culick, F. E. C. (2006). *Unsteady Motions in Combustion Chambers for Propulsion Systems*. RTO AGARDograph AG-AVT-039. NATO Research and Technology Organisation — [NATO STO](https://www.sto.nato.int/document/unsteady-motions-in-combustion-chambers-for-propulsion-systems/) — 燃焼不安定の歴史・機構・空間平均法による理論枠組みと古典音響（円筒室の音響モード）の包括的解説。Accessed: 2026-10-04.
+
+[^yang-anderson]: Yang, V., & Anderson, W. (eds.) (1995). *Liquid Rocket Engine Combustion Instability*. Progress in Astronautics and Aeronautics, Vol. 169. AIAA. DOI: 10.2514/4.866371 — SP-194 以降の研究成果をまとめた標準的論文集（F-1 の事例、噴射器応答、予測手法の限界）。
+
+[^huzel]: Huzel, D. K., & Huang, D. H. (1992). *Modern Engineering for Design of Liquid-Propellant Rocket Engines*. Progress in Astronautics and Aeronautics, Vol. 147. AIAA. DOI: 10.2514/4.866197 — 噴射器圧力降下と供給系結合（チャギング）の設計指針。
 
 **技術解説 (Technical explainers)**
 
-[^gas-gas]: Sutton, G. P., & Biblarz, O. (2016). *Rocket Propulsion Elements* (9th ed.). Wiley — 噴射器設計と安定性、ガス-ガス噴射の応答特性。FFSC の主燃焼室噴射条件は `spacex-rocket-engines.md` の典拠(SpaceX 公式)による。
+[^gas-gas]: Sutton, G. P., & Biblarz, O. (2016). *Rocket Propulsion Elements* (9th ed.). Wiley — 噴射器設計と安定性、ガス-ガス噴射の応答特性。FFSC の主燃焼室噴射条件は [`spacex-rocket-engines.md`](spacex-rocket-engines.md) の典拠(SpaceX 公式)による。
 
 **本リポジトリ内参照**
 
-- `spacex-rocket-engines.md` — エンジンサイクル、FFSC、Merlin/Raptor 諸元
-- `spacex-manufacturing.md` — McGregor 全数受入試験、中型多数戦略の製造側の理由
-- `spacex-reusability.md` — 深いスロットリング(着陸バーン)の要求
-- `../../foundations/physics/classical-mechanics/newton-laws-oscillations.md` — 共振・減衰の一般論
+- [`spacex-rocket-engines.md`](spacex-rocket-engines.md) — エンジンサイクル、FFSC、Merlin/Raptor 諸元
+- [`spacex-manufacturing.md`](spacex-manufacturing.md) — McGregor 全数受入試験、中型多数戦略の製造側の理由
+- [`spacex-reusability.md`](spacex-reusability.md) — 深いスロットリング(着陸バーン)の要求
+- [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) — 共振・減衰の一般論
+- [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) — 線形振動の安定性（固有値の実部の符号）
+- [`../../foundations/mathematics/fourier-signal-processing/fourier-series-transform.md`](../../foundations/mathematics/fourier-signal-processing/fourier-series-transform.md) — 周波数帯による類型分けの数学

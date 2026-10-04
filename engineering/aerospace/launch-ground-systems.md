@@ -8,7 +8,7 @@
 
 本ドキュメントは、推進剤供給（タンクファーム・サブクール・急速充填）、機体保持と離昇（ホールドダウン・T-0 アンビリカル）、音響・熱環境の制御（デリュージ・火炎偏向）、統合と再飛行（トランスポーターエレクター、タワー）という地上系の4機能を整理し、Falcon 9 と Starbase の設計判断を分析する。分析深度は Level 3。
 
-> 前提: 高密度化推進剤と load-and-go は `propellant-fluid-systems.md`、Mechazilla キャッチの機体側は `spacex-starship-superheavy.md`。
+> 前提: 高密度化推進剤と load-and-go は [`propellant-fluid-systems.md`](propellant-fluid-systems.md)、Mechazilla キャッチの機体側は [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)。
 
 ## 方法論 (Methodology)
 
@@ -24,7 +24,7 @@
 3. **IFT-1 は「省いた地上系」の授業料だった。** 火炎偏向器なし・デリュージなしの初期 Starbase 射点は、33基の排気でコンクリート基礎が掘削・飛散する結果に終わった。是正の**水冷鋼板デッキ**（下から大量の水を噴出する二重鋼板）は IFT-2 以降で機能を実証した[^ift1]。
 4. **Falcon 9 の水平統合は整備性の勝利。** 格納庫で水平のまま機体を統合・点検し、トランスポーターエレクター (TE) で射点へ運んで起立させる方式は、巨大な垂直統合棟 (VAB) とクローラを不要にし、射点占有時間を短くする。頻度のための選択である[^f9-guide]。
 5. **ホールドダウンは「最後の健全性ゲート」。** Falcon 9 はエンジンを T-3 秒で点火し、**9基の健全性を確認してから**クランプを解放する。異常があれば点火後でも射点上で中止できる（液体ロケット固有の能力。点火したら止まらない固体ブースタとの本質差）[^f9-guide]。
-6. **タンクファームは「地上の第0タンク」。** 高密度化推進剤（`propellant-fluid-systems.md`）は、地上側に液体窒素による過冷却器と大流量配管を要求する。load-and-go の35分は、タンクファームの熱交換・ポンプ能力が決めている。
+6. **タンクファームは「地上の第0タンク」。** 高密度化推進剤（[`propellant-fluid-systems.md`](propellant-fluid-systems.md)）は、地上側に液体窒素による過冷却器と大流量配管を要求する。load-and-go の35分は、タンクファームの熱交換・ポンプ能力が決めている。
 7. **タワーは「打つ・受ける・積み直す」の三役機械へ。** Starbase の射点タワーは、打ち上げ台であると同時にブースタを空中キャッチする回収装置であり、チョップスティックで機体を吊って再スタックするクレーンでもある。「射点＝再飛行工場」への転換である[^starbase]。
 
 ## アーキテクチャ (Architecture)
@@ -46,6 +46,32 @@
     Starship: タワー+チョップスティックで吊り上げ・スタック
               → 打ち上げ → ブースタをキャッチ → 再スタック
 ```
+
+### 再飛行サイクル — 射点を中心とした状態遷移 (Reflight Cycle)
+
+Falcon 9 と Starship の地上系は、どちらも「射点占有時間」を削るために設計されている。下図は両者の再飛行サイクルを並べたものである（Starship の帰還段キャッチは Super Heavy では実証済み、Ship 側は計画段階。数値と現況は [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md) を参照）。
+
+```mermaid
+flowchart LR
+    subgraph F9["Falcon 9 (水平統合)"]
+        direction LR
+        H["格納庫で水平統合・点検"] --> TE["TE で射点へ移送・起立"]
+        TE --> LF["充填 load-and-go<br/>T-3 秒点火・健全性ゲート"]
+        LF --> FL["飛行・第1段着陸<br/>(RTLS / ASDS)"]
+        FL --> RF["回収・整備"]
+        RF --> H
+    end
+    subgraph SS["Starship (タワー統合)"]
+        direction LR
+        ST["チョップスティックで<br/>Booster・Ship をスタック"] --> FD["充填・デリュージ作動<br/>水冷鋼板デッキ"]
+        FD --> LO["打ち上げ"]
+        LO --> CA["帰還ブースタを<br/>タワーで空中キャッチ"]
+        CA --> IN["点検・再整備"]
+        IN --> ST
+    end
+```
+
+凡例: 矢印は作業の流れ。両サイクルとも、点検を射点の外（格納庫）に出すか、射点そのものを回収・積み直し機械にするかで、射点占有時間を削っている。
 
 ### 統合方式の対比 (Integration Philosophies)
 
@@ -81,7 +107,7 @@
 
 ### 音響荷重と水デリュージ (Acoustic Loads & Deluge)
 
-離昇時のロケット排気は極めて強力な音源であり（Saturn V 級で音響パワー ~2×10⁸ W のオーダー）、射点面・偏向器で反射した音響エネルギーは**機体構造・ペイロードへの振動荷重**として返ってくる。設計論は NASA SP-8072 に体系化されており、排気流の速度・射点形状から音響環境を予測する[^sp8072]。
+離昇時のロケット排気は極めて強力な音源であり（Saturn V 級で音響パワー ~2×10⁸ W のオーダー。排気の機械的出力のうち 1% 未満が音響に変換されるという経験則からの概算）、射点面・偏向器で反射した音響エネルギーは**機体構造・ペイロードへの振動荷重**として返ってくる。設計論は NASA SP-8072 に体系化されており、排気流の速度・射点形状から音響環境を予測する[^sp8072]。SP-8072 以後50年の超音速ジェット騒音研究（予測モデル、デリュージの効果、射点形状の影響）は Lubert らのレビューがまとめている[^lubert]。超音速排気と衝撃波の物理は [`../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md`](../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md) と [`../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md)、構造の音響応答（共振）は [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) を参照。
 
 - **水の役割は二重**: (1) 排気・輻射から設備を守る**冷却**、(2) 水滴・水膜が音響エネルギーを吸収・散乱する**音響抑制**。Shuttle の Pad 39 は T-0 前後に大量の水を放出して音響環境を大幅に低減した実績を持つ。
 - **火炎偏向器 (flame deflector/trench)**: 排気を水平方向へ逃がし、反射と基礎侵食を防ぐ従来解。巨大な土木構造になる。
@@ -96,8 +122,8 @@
 ### 保持・解放と T-0 系 (Hold-down, Release & T-0 Umbilicals)
 
 - **点火→確認→解放**: Falcon 9 は T-3 秒で Merlin 9基を点火し、立ち上がりの推力・燃焼室圧などの健全性をコンピュータが確認してからホールドダウンを解放する。基準を外れれば**点火済みでも中止**（射点アボート）でき、実運用でも発生している。これは「飛んでから気づく」事態を地上で防ぐ最後のゲートである[^f9-guide]。
-- **T-0 アンビリカル**: 電力・通信・推進剤トップオフ・空調を離昇の瞬間まで供給し、リフトオフと同時に切り離す。高密度化推進剤は温まり続けるため、**直前までのトップオフ（補充）** が性能保証の一部になっている（`propellant-fluid-systems.md`）。
-- **スタティックファイア**: 射点でのエンジン短時間燃焼試験は、機体・地上系・手順を通しで検証する統合試験である。AMOS-6（`rocket-structures-tanks.md`）はまさにこの試験の充填中に起きた。これは、地上作業も飛行と同じ真剣さで設計・解析すべきことを示す。
+- **T-0 アンビリカル**: 電力・通信・推進剤トップオフ・空調を離昇の瞬間まで供給し、リフトオフと同時に切り離す。高密度化推進剤は温まり続けるため、**直前までのトップオフ（補充）** が性能保証の一部になっている（[`propellant-fluid-systems.md`](propellant-fluid-systems.md)）。
+- **スタティックファイア**: 射点でのエンジン短時間燃焼試験は、機体・地上系・手順を通しで検証する統合試験である。AMOS-6（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）はまさにこの試験の充填中に起きた。これは、地上作業も飛行と同じ真剣さで設計・解析すべきことを示す。
 
 ### タンクファームと過冷却 (Tank Farm & Subcooling)
 
@@ -110,14 +136,14 @@
 > 本分野の「セキュリティ考察」は、地上系では**射点安全と巻き添え範囲の管理**として読み替える。
 
 - **射点は常設の爆発危険区域である**: 充填済みロケットは大型爆発物に等しく、AMOS-6 型の地上事故は人員・設備・隣接射点に及ぶ。退避区域 (exclusion zone)、遠隔運用、避雷塔（射点を囲む避雷網）は、頻度が上がるほど設計負荷が増す。
-- **IFT-1 の環境影響**: 飛散したコンクリート片・粉塵は射点外にも達し、規制審査（FAA・環境当局）の論点となった。地上系の故障は**公衆と環境への影響経路**を持つ点で機体故障と質が異なり、飛行安全 (`range-safety-fts.md`) と並ぶ規制対象である[^faa-mishap]。
+- **IFT-1 の環境影響**: 飛散したコンクリート片・粉塵は射点外にも達し、規制審査（FAA・環境当局）の論点となった。地上系の故障は**公衆と環境への影響経路**を持つ点で機体故障と質が異なり、飛行安全 ([`range-safety-fts.md`](range-safety-fts.md)) と並ぶ規制対象である[^faa-mishap]。
 - **単一射点依存のリスク**: 高頻度運用は少数の射点への依存を生む。射点損傷は艦隊全体の停止に直結するため（IFT-1 後の数ヶ月、Shuttle 時代の射点補修）、SpaceX は Starbase・KSC の複数射点整備で冗長化を進めている。
 
 ## 結論 (Conclusions)
 
 「Stage 0」という呼称は誇張ではない。推進剤の温度はタンクファームの熱交換器が、離昇の可否はホールドダウンの健全性ゲートが、機体が浴びる音響荷重はデリュージが、そして再飛行の速さはタワーの三役（打つ・受ける・積み直す）が決める。つまり、**機体性能のかなりの部分は、地上に据え付けられている**。
 
-IFT-1 の射点破壊は、この領域を軽く見た場合の授業料が機体1機分では済まないことを示し、同時に、水冷鋼板デッキという数ヶ月での是正は、SpaceX の反復開発が地上系にも通用することを示した。Falcon 9 の水平統合と Starship のタワーキャッチは、見かけは対照的だが、どちらも「**射点の占有時間を削り、打ち上げ頻度を上げる**」という同じ一つの要求の解である。次の分析対象は、この頻度を公衆安全の側から支える仕組み、つまり飛行安全と自律飛行中断 (`range-safety-fts.md`) である。
+IFT-1 の射点破壊は、この領域を軽く見た場合の授業料が機体1機分では済まないことを示し、同時に、水冷鋼板デッキという数ヶ月での是正は、SpaceX の反復開発が地上系にも通用することを示した。Falcon 9 の水平統合と Starship のタワーキャッチは、見かけは対照的だが、どちらも「**射点の占有時間を削り、打ち上げ頻度を上げる**」という同じ一つの要求の解である。次の分析対象は、この頻度を公衆安全の側から支える仕組み、つまり飛行安全と自律飛行中断 ([`range-safety-fts.md`](range-safety-fts.md)) である。
 
 ---
 
@@ -127,7 +153,9 @@ IFT-1 の射点破壊は、この領域を軽く見た場合の授業料が機�
 
 **一次資料 (Primary — 公式・規制・基準)**
 
-[^sp8072]: NASA (1971). *Acoustic Loads Generated by the Propulsion System*. NASA SP-8072 — 排気流音響の発生・予測と射点設計（偏向器・デリュージ）の古典的設計基準書。
+[^sp8072]: Eldred, K. M. (1971). *Acoustic Loads Generated by the Propulsion System*. NASA SP-8072 — [NTRS 19710023719](https://ntrs.nasa.gov/citations/19710023719) — 排気流音響の発生・予測（音響効率）と射点設計（偏向器・デリュージ）の古典的設計基準書。Accessed: 2026-10-04.
+
+[^lubert]: Lubert, C. P., Gee, K. L., & Tsutsumi, S. (2022). Supersonic jet noise from launch vehicles: 50 years since NASA SP-8072. *The Journal of the Acoustical Society of America*, 151(2), 752–791. DOI: 10.1121/10.0009160 — 打ち上げ音響の予測・計測・抑制（水デリュージ等）の査読レビュー。
 
 [^faa-mishap]: [FAA — SpaceX Starship IFT-1 Mishap Investigation Closure (2023-09)](https://www.faa.gov/newsroom) — IFT-1 の事故調査クローズと是正措置（射点強化・デリュージ導入を含む63項目）。Accessed: 2026-07-26.
 
@@ -139,4 +167,4 @@ IFT-1 の射点破壊は、この領域を軽く見た場合の授業料が機�
 
 [^ift1]: [SpaceX begins repairs, upgrades to Starbase launch pad after Starship debut — NASASpaceflight / SpaceNews (2023)](https://www.nasaspaceflight.com/) — IFT-1 での射点基礎の掘削・飛散の状況と、水冷鋼板デッキ（deluge plate）による是正、IFT-2 での実証。Accessed: 2026-07-26.
 
-[^densified-ref]: 本リポジトリ `propellant-fluid-systems.md` — サブクール高密度化と load-and-go の機体側要求（地上側の過冷却器・急速充填はその鏡像）。
+[^densified-ref]: 本リポジトリ [`propellant-fluid-systems.md`](propellant-fluid-systems.md) — サブクール高密度化と load-and-go の機体側要求（地上側の過冷却器・急速充填はその鏡像）。

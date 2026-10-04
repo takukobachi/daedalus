@@ -52,6 +52,32 @@
    経路交換なし・相手のネットワークは見えない・繋がるのはこのサービスだけ
 ```
 
+### 到達性の二層 — 経路表のセグメントと点の公開
+
+上の全体像を、到達性の政策として描き直す。実線は経路交換を伴う到達（Transit Gateway の経路表が範囲を決める）、点線は経路交換を伴わない PrivateLink の単方向の点である。dev 系から prod 系への矢印が存在しないことが、経路表 B の政策を表す。
+
+```mermaid
+flowchart TB
+    ONP["オンプレミス DC<br/>(BGP で集約広告)"] <-->|"Direct Connect / VPN"| TGW
+    subgraph TGW["Transit Gateway (ハブ)"]
+        RTA["経路表 A (本番)"]
+        RTB["経路表 B (開発)"]
+    end
+    RTA <--> P1["prod-1 VPC"]
+    RTA <--> P2["prod-2 VPC"]
+    RTA <--> SH["shared VPC<br/>(共有サービス・egress 集約)"]
+    RTB <--> D1["dev-1 VPC"]
+    RTB <--> D2["dev-2 VPC"]
+    RTB --> SH
+    subgraph PROV["provider VPC"]
+        SVC["service"] --- NLB["NLB"]
+    end
+    subgraph CONS["consumer VPC (CIDR 重複可)"]
+        EP["endpoint ENI<br/>(1 つの点)"]
+    end
+    EP -.->|"PrivateLink (単方向・経路交換なし)"| NLB
+```
+
 ### 接続方式の比較 — 4 軸
 
 | 軸 | ピアリング | Transit Gateway | PrivateLink | VPN/Direct Connect |
@@ -105,6 +131,7 @@ TGW の経路表設計は、実質的に小さなポリシー言語である：�
 - [`../networking/dns-resolution.md`](../networking/dns-resolution.md) — 分割解決の前提となる DNS の一般機構。
 - [`cloud-iam-authorization.md`](cloud-iam-authorization.md) — 到達性と対を成すもう一方の柵 (認可)。`aws:SourceVpce` による両者の結合。
 - [`infrastructure-as-code.md`](infrastructure-as-code.md) — トポロジーの変更管理・drift・到達可能性検証の CI 統合。
+- [`../../foundations/mathematics/discrete-logic/graphs-trees-algorithms.md`](../../foundations/mathematics/discrete-logic/graphs-trees-algorithms.md) — 到達性をグラフとして読むための語彙 (頂点・辺・到達可能性・探索)。ピアリング全結合の O(n²) とハブ&スポークの比較、推移性の有無が到達集合を変える構図をグラフの言葉で読む基礎。
 
 ## 参考文献 (References)
 

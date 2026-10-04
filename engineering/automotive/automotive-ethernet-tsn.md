@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-`in-vehicle-networks.md` は車載ネットワークの中核である **CAN (Controller Area Network)** を軸に扱った。しかし ADAS・自動運転・**ゾーン型 E/E アーキテクチャ (zonal architecture)** の進展で、車載通信の要求は「数 kbps のスイッチ信号」から「Gbps 級のカメラ/LiDAR 映像」へと桁が変わった。CAN（最大 1 Mbps、CAN FD でも ~8 Mbps）では帯域が根本的に足りない。
+[`in-vehicle-networks.md`](in-vehicle-networks.md) は車載ネットワークの中核である **CAN (Controller Area Network)** を軸に扱った。しかし ADAS・自動運転・**ゾーン型 E/E アーキテクチャ (zonal architecture)** の進展で、車載通信の要求は「数 kbps のスイッチ信号」から「Gbps 級のカメラ/LiDAR 映像」へと桁が変わった。CAN（最大 1 Mbps、CAN FD でも ~8 Mbps）では帯域が根本的に足りない。
 
 本ドキュメントは、CAN の「外側」を扱う。**Automotive Ethernet** と **TSN (Time-Sensitive Networking, 時間高感度ネットワーク)** を主役に、FlexRay・LIN・CAN FD/XL を含む非 CAN プロトコル群を整理する。なぜ 1 台に複数のネットワークが共存し続け、なぜゾーン型のバックボーンが Ethernet + TSN に収束していくのかを、ソフトウェアと物理（帯域・タイミング・冗長）の接点として明らかにする。
 
@@ -52,7 +52,7 @@ graph TD
     ZR -- "LIN" --> A4["ボディ系アクチュエータ"]
 ```
 
-高帯域・決定論の**幹**を Ethernet + TSN が担い、末端 (edge) の低速・低コスト I/O は CAN/LIN が受け持つ。これにより配線重量を削減しつつ、計算を中央に集約する（`in-vehicle-networks.md` のゾーン化・SDV の続き）。
+高帯域・決定論の**幹**を Ethernet + TSN が担い、末端 (edge) の低速・低コスト I/O は CAN/LIN が受け持つ。これにより配線重量を削減しつつ、計算を中央に集約する（[`in-vehicle-networks.md`](in-vehicle-networks.md) のゾーン化・SDV の続き）。
 
 ### Single Pair Ethernet の物理 (SPE Physical Layer)
 
@@ -78,7 +78,7 @@ graph TD
 
 TSN は Ethernet を置き換えるのではなく、IEEE 802.1 の一連の拡張として**既存 Ethernet に決定論を付加**する。前身は音響/映像同期用の **AVB (Audio Video Bridging)**。
 
-- **時刻同期 — IEEE 802.1AS (gPTP)**: 全機器のクロックをサブマイクロ秒で同期する。以降のスケジュール制御すべての前提。自動車の映像・音声・ECU 間の共通時間基盤。
+- **時刻同期 — IEEE 802.1AS (gPTP)**: 全機器のクロックをサブマイクロ秒で同期する。以降のスケジュール制御すべての前提（PTP がハードウェアタイムスタンプで精度を得る仕組みは [`clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md)）。自動車の映像・音声・ECU 間の共通時間基盤。
 - **スケジュール — IEEE 802.1Qbv (Time-Aware Shaper, TAS)**: 送信を時間サイクルに区切り、各クラスに**時間ゲート**を開閉して帯域を予約する。時刻同期の上で「この時間窓は制御トラフィック専用」と確保し、遅延を有界化する。
 - **フレームプリエンプション — IEEE 802.1Qbu + IEEE 802.3br**: 送信中の非緊急フレームを**中断**して緊急フレームを割り込ませ、再開する。長いベストエフォートフレームによるヘッドオブラインブロッキングを断つ。
 - **冗長 — IEEE 802.1CB (FRER, Frame Replication and Elimination for Reliability)**: 重要フレームを**複数経路へ複製**送信し、受信側は最初の 1 個を採用して重複を破棄する。無瞬断の経路冗長を実現。
@@ -110,14 +110,14 @@ Ethernet 化が進んでも、実績と低コストゆえ CAN 系は残る。
 
 ### 6. 信号ベースから サービスベースへ (SOME/IP)
 
-CAN の通信は「信号を周期的にブロードキャストする」信号ベースだが、Ethernet 上では **SOME/IP (Scalable service-Oriented MiddlewarE over IP)** による**サービス指向**が主流になる。
+CAN の通信は「信号を周期的にブロードキャストする」信号ベースだが、Ethernet 上では **SOME/IP (Scalable service-Oriented MiddlewarE over IP)** による**サービス指向**が主流になる（Adaptive AUTOSAR 側の実装は [`autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md)）。
 
 - **サービスディスカバリ**で提供側と要求側を動的に結び、必要時のみ通信（要求/応答、イベント購読）。
-- **Adaptive AUTOSAR** や **DDS (Data Distribution Service)** と組み合わせ、機能を車全体で疎結合に配置できる。ECU をまたぐソフトウェア再配置（SDV）の通信基盤であり、`../../hardware/cpu/` の分散・並行性の知見が直接活きる領域。
+- **Adaptive AUTOSAR** や **DDS (Data Distribution Service)** と組み合わせ、機能を車全体で疎結合に配置できる。ECU をまたぐソフトウェア再配置（SDV）の通信基盤であり、[`../../hardware/cpu/`](../../hardware/cpu/) の分散・並行性の知見が直接活きる領域。
 
 ## セキュリティ考察 (Security Considerations)
 
-- **攻撃面が IT 化する**: Ethernet 化により、スイッチング・VLAN・IP スタックの脆弱性、**MAC スプーフィング**、フラッディング、SOME/IP-SD のなりすましなど、従来の IT 型攻撃が車載に持ち込まれる。CAN の「無認証」問題（`in-vehicle-networks.md`）に加え、プロトコルスタックの実装脆弱性が新たなリスクになる。
+- **攻撃面が IT 化する**: Ethernet 化により、スイッチング・VLAN・IP スタックの脆弱性、**MAC スプーフィング**、フラッディング、SOME/IP-SD のなりすましなど、従来の IT 型攻撃が車載に持ち込まれる。CAN の「無認証」問題（[`in-vehicle-networks.md`](in-vehicle-networks.md)）に加え、プロトコルスタックの実装脆弱性が新たなリスクになる。
 - **リンク層の防御**: **MACsec (IEEE 802.1AE)** でリンクごとの暗号化・完全性・送信元認証を付与。VLAN とゾーン境界での分離、ゲートウェイでのフィルタ・レート制限、IDS/IPS を併用する。
 - **決定論そのものが標的**: TSN は時刻同期 (gPTP) に依存するため、**同期を妨害するとスケジュール (TAS) が崩壊**し、決定論保証が失われうる。時刻同期の認証・監視、境界での保護が必要。一方で FRER/TAS の冗長・分離は安全 (safety) 機構としても機能する二面性を持つ。
 - **標準の適用**: **ISO/SAE 21434**（車両サイバーセキュリティ）と **UNECE WP.29 (R155/R156)** は Ethernet 系にも同様に適用され、CAN 同様に **ISO 26262（機能安全）との両立**が必須。攻撃が安全機構を突破しない設計（safety × security）が求められる。
@@ -131,11 +131,15 @@ CAN の通信は「信号を周期的にブロードキャストする」信号�
 
 ### 次の接続先 (Related Topics)
 
-- `in-vehicle-networks.md` — CAN の非破壊調停・無認証問題。本書はその対（CAN の外側）。
-- `cybersecurity-iso21434.md` — MACsec・gPTP 同期の保護、IT 化した攻撃面への対策。
-- `functional-safety-iso26262.md` — 決定論・冗長 (TSN の TAS/FRER) が支える安全設計。
-- `../../hardware/hw-sw-interface/mmio-dma-interrupts.md` — MAC/DMA によるパケット送受信の実装基盤。
-- `../../hardware/cpu/` — ゾーン型 HPC が要求する計算・並行性・仮想化。
+- [`in-vehicle-networks.md`](in-vehicle-networks.md) — CAN の非破壊調停・無認証問題。本書はその対（CAN の外側）。
+- [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) — MACsec・gPTP 同期の保護、IT 化した攻撃面への対策。
+- [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 決定論・冗長 (TSN の TAS/FRER) が支える安全設計。
+- [`../../hardware/hw-sw-interface/mmio-dma-interrupts.md`](../../hardware/hw-sw-interface/mmio-dma-interrupts.md) — MAC/DMA によるパケット送受信の実装基盤。
+- [`../../hardware/cpu/`](../../hardware/cpu/) — ゾーン型 HPC が要求する計算・並行性・仮想化。
+- [`ee-architecture.md`](ee-architecture.md) — Ethernet/TSN 幹線が支えるゾーン＋セントラル構成の全体像。
+- [`../../software/embedded/autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) — SOME/IP・Adaptive Platform のソフトウェア側。
+- [`../../hardware/timekeeping/clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md) — PTP/gPTP の時刻同期原理。
+- [`../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md`](../../foundations/physics/electromagnetism/transmission-lines-signal-integrity.md) — 1 対差動線で高速伝送を成立させる信号完全性の理論。
 
 ## 参考文献 (References)
 

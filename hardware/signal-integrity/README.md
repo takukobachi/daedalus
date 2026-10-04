@@ -1,6 +1,6 @@
 # 高速シリアルリンクとシグナルインテグリティ (SerDes & Signal Integrity)
 
-PCIe (`../hw-sw-interface/bus-interconnect.md`)・USB/ディスプレイ (`../peripherals/`)・
+PCIe ([`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md))・USB/ディスプレイ (`../peripherals/`)・
 Ethernet (`../networking/`)・車載 Ethernet (`../../engineering/automotive/`) が論理層で共有している
 **共通の物理層**の分析。数十 Gbit/s の信号を損失だらけの銅線で運ぶための送受信器
 (SerDes: serializer/deserializer) の構造と、リンクが「本当に動く」ことを定義・検証する

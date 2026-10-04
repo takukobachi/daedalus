@@ -52,6 +52,28 @@
 - 構成は「望ましい状態の宣言 + 調停ループ (reconciliation loop)」で伝播する。命令の逐次実行と違い、取りこぼしは次周期の全量比較で自己修復する（Kubernetes のコントローラと同型の普遍パターン）。
 - 伝播は結果整合でよい（[`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md)）。データプレーンに要るのは最新性ではなく**単調な収束**である。
 
+### コントロール/データプレーン分離とセルの全体像
+
+上の分離図と次節のセル構成を 1 枚に重ねると、依存の向きとブラストラディウスの単位が同時に読める。実線は同期呼び出し、点線は非同期・冪等な構成の伝播を表す。データプレーンからコントロールプレーンへ向かう同期矢印が存在しないことが、静的安定性の図上の表現である。
+
+```mermaid
+flowchart TB
+    OP["Operator<br/>(管理 API: 低頻度・強一貫)"] --> CP
+    subgraph CP["Control Plane"]
+        API["検証・記録"] --> DS[("望ましい状態<br/>(desired state)")]
+        DS --> REC["調停ループ<br/>(reconciliation)"]
+    end
+    U["End users<br/>(高頻度・単純)"] --> R["thin router<br/>(最小・変更しない)"]
+    REC -. "push (非同期・冪等・再送可)" .-> C1
+    REC -.-> C2
+    REC -.-> C3
+    subgraph DP["Data Plane (最後の既知構成で自立動作)"]
+        R --> C1["cell-1<br/>完結したスタック"]
+        R --> C2["cell-2<br/>完結したスタック"]
+        R --> C3["cell-3<br/>完結したスタック"]
+    end
+```
+
 ### セルとシャッフルシャード
 
 ```

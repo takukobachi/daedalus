@@ -6,7 +6,7 @@
 
 本ドキュメントは、固定翼機 (fixed-wing aircraft) を題材に、航空工学の4つの中核分野である**空力 (aerodynamics)・推進 (propulsion)・構造 (structures)・安定と制御 (stability & control)** を、ソフト/ハードのエンジニアが「なぜこの設計になるのか」を理解できる粒度で整理する。後続の SpaceX ロケット工学ドキュメント群の基礎として、航空機とロケットの設計思想の連続性・断絶を見渡せるようにすることを狙う。
 
-CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし、各主張には標準的な航空工学の教科書（Anderson, Raymer ほか）を典拠として付す。
+CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし、各主張には標準的な航空工学の教科書（Anderson, Raymer ほか）と規制文書（14 CFR Part 25、FAA AC）を典拠として付す。力学の基礎は [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)、圧縮性流れは [`../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md`](../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md) を理論編とする。
 
 ## 方法論 (Methodology)
 
@@ -20,11 +20,11 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 
 1. **飛行は4つの力の動的な釣り合いである。** 水平等速の巡航では「揚力＝重力」「推力＝抗力」が成り立つ。上昇・加速・旋回はこの釣り合いを意図的に崩す操作にほかならない。
 2. **揚力は「翼上下の圧力差」であり、その本質は流れの循環 (circulation) である。** 「上面の経路が長いから速くなる (equal transit time)」という俗説は誤り。揚力は翼が空気を下向きに曲げた反作用（運動量変化）として理解するのが正しい[^anderson-flight]。
-3. **抗力はゼロにできない。** 摩擦・形状による**有害抗力 (parasitic drag)** と、揚力を生む代償としての**誘導抗力 (induced drag)** が必ず残る。両者の和は速度に対し U 字を描き、最良点が最大 L/D（航続性能の鍵）を与える。
-4. **すべては重量との戦いである。** 揚力・推力・構造強度はいずれも「重量を支える/動かす/壊さない」ために要求が決まる。構造設計は「強度を満たす最小重量」を探す最適化であり、材料選択 (アルミ合金→複合材) もこの軸で進化した。
-5. **推進は媒質を後方へ加速した反作用である。** プロペラは大量の空気を緩やかに、ジェットは少量を高速に加速する。同じ推力でも「多くをゆっくり」加速する方が効率が良く、これが**高バイパス比ターボファン (high-bypass turbofan)** が主流になった理由である。
-6. **速度域 (マッハ数) が設計を支配する。** 低速では非圧縮性として扱えるが、遷音速 (transonic) で衝撃波 (shock wave) と造波抗力 (wave drag) が現れ、後退翼 (swept wing) や面積則 (area rule) といった別の設計言語が必要になる。
-7. **航空機は壊れないのではなく、壊れ方を設計してある。** 安全率 (safety factor)、疲労 (fatigue)、フラッタ (flutter)、冗長性、そして型式証明 (FAR/CS-25) により、確率的に許容できる故障率に追い込んでいる。
+3. **抗力はゼロにできない。** 摩擦・形状による**有害抗力 (parasitic drag)** と、揚力を生む代償としての**誘導抗力 (induced drag)** が必ず残る。両者の和は速度に対し U 字を描き、最良点が最大 L/D（航続性能の鍵）を与える[^anderson-aero][^raymer]。
+4. **すべては重量との戦いである。** 揚力・推力・構造強度はいずれも「重量を支える/動かす/壊さない」ために要求が決まる。構造設計は「強度を満たす最小重量」を探す最適化であり、材料選択 (アルミ合金→複合材) もこの軸で進化した[^raymer][^megson]。
+5. **推進は媒質を後方へ加速した反作用である。** プロペラは大量の空気を緩やかに、ジェットは少量を高速に加速する。同じ推力でも「多くをゆっくり」加速する方が効率が良く、これが**高バイパス比ターボファン (high-bypass turbofan)** が主流になった理由である[^hill-peterson]。
+6. **速度域 (マッハ数) が設計を支配する。** 低速では非圧縮性として扱えるが、遷音速 (transonic) で衝撃波 (shock wave) と造波抗力 (wave drag) が現れ、後退翼 (swept wing) や面積則 (area rule) といった別の設計言語が必要になる[^anderson-aero][^whitcomb]。
+7. **航空機は壊れないのではなく、壊れ方を設計してある。** 安全率 (safety factor)、疲労 (fatigue)、フラッタ (flutter)、冗長性、そして型式証明 (FAR/CS-25) により、確率的に許容できる故障率に追い込んでいる[^cfr25][^ac1309]。
 
 ## アーキテクチャ (Architecture)
 
@@ -42,7 +42,7 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
                  重力 (Weight)
 ```
 
-- **巡航（水平等速）**: `Lift = Weight`、`Thrust = Drag`。4力が釣り合い、機体は等速直線運動を続ける（ニュートン第1法則）。
+- **巡航（水平等速）**: `Lift = Weight`、`Thrust = Drag`。4力が釣り合い、機体は等速直線運動を続ける（ニュートン第1法則。運動方程式の一般論は [`newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)）[^anderson-flight]。
 - **上昇**: 推力に余裕を持たせ、機首を上げて揚力ベクトルを傾ける。余剰推力 (excess thrust) が位置エネルギーに変換される。
 - **旋回**: 機体をバンク (bank) させ揚力を水平方向に分力。求心力を得るが、鉛直成分が減るため揚力を増やす（＝抗力増・失速余裕減）必要がある。
 
@@ -78,7 +78,7 @@ CLAUDE.md の方針に従い分析深度は Level 3（完全）を既定とし�
 | **ロール (roll)** | 左右の傾き | 補助翼 (aileron) | 縦軸 (longitudinal) |
 | **ヨー (yaw)** | 機首左右 | 方向舵 (rudder) | 垂直軸 (vertical) |
 
-旋回はロール（バンク）とピッチ・ヨーの協調で行う「協調旋回 (coordinated turn)」が基本。動翼は操縦索／油圧／**フライ・バイ・ワイヤ (fly-by-wire)** で駆動され、現代機ではこの境界が車載 ECU と同様の「HW・SW 境界」になる（`../../hardware/hw-sw-interface/` 参照）。
+旋回はロール（バンク）とピッチ・ヨーの協調で行う「協調旋回 (coordinated turn)」が基本。動翼は操縦索／油圧／**フライ・バイ・ワイヤ (fly-by-wire)** で駆動され、現代機ではこの境界が車載 ECU と同様の「HW・SW 境界」になる（[`../../hardware/hw-sw-interface/`](../../hardware/hw-sw-interface/README.md) 参照）。
 
 ## 技術詳細 (Technical Details)
 
@@ -105,13 +105,13 @@ L = ½ · ρ · V² · S · C_L
 
 揚力の本質は、**翼が空気を下向きに偏向させ、その反作用 (downwash の反動) を上向きに受ける**ことである（ニュートン第3法則）。これは流体力学的には翼まわりの**循環 (circulation) `Γ`** と等価で、**クッタ・ジュコフスキーの定理 (Kutta–Joukowski theorem)** が単位翼幅あたりの揚力を `L' = ρ·V·Γ` と与える[^anderson-aero]。
 
-- **俗説の否定**: 「上面が長いので等時間で通過するため速くなる」という説明（equal transit time theory）は実験と合わず誤り。実際には上面の流れは下面より「速く・早く」通過する[^anderson-flight]。
+- **俗説の否定**: 「上面が長いので等時間で通過するため速くなる」という説明（equal transit time theory）は実験と合わず誤り。実際には上面の流れは下面より「速く・早く」通過する。上下面の長さが等しい対称翼や薄板翼でも揚力が出る（背面飛行も可能）ことも反証になる[^anderson-flight][^nasa-lift]。
 - 翼後縁で流れが滑らかに離れる**クッタ条件 (Kutta condition)** が循環の大きさを決め、これが揚力を確定させる。
 
 #### 迎角と失速 (Angle of Attack & Stall)
 
 - **迎角 (AoA, angle of attack) `α`**: 翼弦線と相対風のなす角。`C_L` は `α` にほぼ比例して増加する。
-- **失速 (stall)**: ある臨界迎角（一般に ~15°前後）を超えると、翼上面で**境界層 (boundary layer) が剥離 (separation)** し、`C_L` が急減して揚力を失う。速度ではなく**迎角が失速を決める**点が重要（高速でも高荷重旋回で失速しうる）。
+- **失速 (stall)**: ある臨界迎角（一般的な翼型で ~15°前後）を超えると[^anderson-aero]、翼上面で**境界層 (boundary layer) が剥離 (separation)** し、`C_L` が急減して揚力を失う。速度ではなく**迎角が失速を決める**点が重要（高速でも高荷重旋回で失速しうる）。
 - **高揚力装置**: フラップ (flap) は翼面積とキャンバを増やし `C_L,max` を上げ、スラット (slat) は前縁で境界層を再付着させ失速を遅らせる。離着陸の低速で揚力を稼ぐための装置。
 
 ### 2. 空力 — 抗力 (Aerodynamics: Drag)
@@ -135,7 +135,7 @@ L = ½ · ρ · V² · S · C_L
 
 有害抗力（速度²で増）と誘導抗力（速度²で減）の和は**U 字**を描き、その底で **L/D が最大**になる。L/D は「1の揚力を何の抗力コストで得るか」の効率指標である。
 
-- 旅客機の巡航 L/D は概ね **15〜20**。グライダーは **40〜60** に達する。
+- 旅客機の巡航 L/D は概ね **15〜20**。グライダーは **40〜60** に達する[^raymer]。
 - 後述の **ブレゲー航続距離式 (Breguet range equation)** に L/D が直接影響するため、航続性能の核心指標となる。
 
 ### 3. 速度域と圧縮性 (Speed Regimes & Compressibility)
@@ -148,10 +148,12 @@ L = ½ · ρ · V² · S · C_L
 | 超音速 (supersonic) | 1.2 < M < 5 | 機体前方に衝撃波。抗力急増 |
 | 極超音速 (hypersonic) | M > 5 | 空力加熱 (aerodynamic heating) が支配的 |
 
+衝撃波・極超音速の理論は [`../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md)、ノズルを含む圧縮性流れの基礎は [`../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md`](../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md) で扱う。
+
 - **マッハ数 (Mach number) `M = V/a`**（`a` は音速）が圧縮性の度合いを表す。
 - **臨界マッハ数 (critical Mach)** を超えると翼上面に局所超音速域ができ、**衝撃波**が発生して造波抗力が立ち上がる（drag divergence）。
 - **後退翼 (swept wing)**: 翼前縁を後退させると、翼に直交する有効マッハ数が下がり、衝撃波の発生を遅らせる。亜音速ジェット旅客機が後退翼を持つ主因。
-- **面積則 (area rule)**: 機体の断面積を滑らかに変化させると遷音速抗力を低減できる。
+- **面積則 (area rule)**: 機体の断面積を滑らかに変化させると遷音速抗力を低減できる。NACA の Whitcomb が風洞試験で体系化した[^whitcomb]。
 - **レイノルズ数 (Reynolds number) `Re = ρVL/μ`**: 慣性力と粘性力の比。境界層が層流 (laminar) か乱流 (turbulent) かを左右し、模型試験と実機のスケーリングを支配する。
 
 ### 4. 推進 (Propulsion)
@@ -178,7 +180,7 @@ F = ṁ · (V_e − V_0)        （+ 圧力項）
 
 #### ガスタービンの熱力学 — ブレイトンサイクル
 
-ジェットエンジンの中核はガスタービンであり、**ブレイトンサイクル (Brayton cycle)** で動く。
+ジェットエンジンの中核はガスタービンであり、**ブレイトンサイクル (Brayton cycle)** で動く[^hill-peterson]。熱機関の効率上限（カルノー効率）と第二法則は [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) を参照。
 
 ```
  吸気 ──▶ 圧縮機 ──▶ 燃焼器 ──▶ タービン ──▶ ノズル ──▶ 排気
@@ -188,12 +190,12 @@ F = ṁ · (V_e − V_0)        （+ 圧力項）
         └──── タービンが圧縮機を駆動 ◀┘
 ```
 
-1. **圧縮機 (compressor)**: 空気を断熱圧縮（圧力比は現代機で 30〜50）。
+1. **圧縮機 (compressor)**: 空気を断熱圧縮（全体圧力比は現代機で 30〜60。GE9X は約 60:1[^ge9x]）。
 2. **燃焼器 (combustor)**: 燃料を噴いて等圧で加熱、高温高圧ガスに。
 3. **タービン (turbine)**: ガスを膨張させて仕事を取り出し、同軸の圧縮機を駆動。
 4. **ノズル (nozzle)**: 残るエネルギーで排気を加速し推力を得る（ターボファンではバイパス流が推力の大半）。
 
-- **バイパス比 (bypass ratio, BPR)**: ファンが流す「コアを迂回する空気」と「コアを通る空気」の比。最新旅客エンジンは BPR 10〜12。高 BPR ほど推進効率↑・騒音↓だが、ファン径が大きくなり重量・抵抗が増える。
+- **バイパス比 (bypass ratio, BPR)**: ファンが流す「コアを迂回する空気」と「コアを通る空気」の比。最新旅客エンジンは BPR 10〜12 級（GE9X で約 10:1[^ge9x]）。高 BPR ほど推進効率↑・騒音↓だが、ファン径が大きくなり重量・抵抗が増える。
 - **比推力消費率 (TSFC, thrust specific fuel consumption)**: 推力1あたりの燃料消費。燃費の指標で、構造の軽量化と並ぶ航続性能の柱。
 
 ### 5. 構造と材料 (Structures & Materials)
@@ -203,9 +205,9 @@ F = ṁ · (V_e − V_0)        （+ 圧力項）
 #### 荷重と応力
 
 - **荷重 (loads)**: 揚力（飛行荷重）、突風 (gust)、着陸衝撃、与圧 (cabin pressurization) の繰返しなど。
-- **荷重倍数 (load factor) `n`**: 機体に働く加速度を g で表したもの。旅客機 (FAR/CS-25) は概ね **+2.5g / −1.0g** の制限荷重で設計される。
+- **荷重倍数 (load factor) `n`**: 機体に働く加速度を g で表したもの。旅客機 (FAR/CS-25) は概ね **+2.5g / −1.0g** の制限荷重で設計される（14 CFR 25.337。正の値は最大離陸重量に応じて 2.5〜3.8）[^cfr25]。
 - **応力とひずみ (stress & strain)**: `σ = F/A`（応力）、フックの法則 `σ = E·ε`（弾性域）。材料が降伏 (yield) しない範囲で使う。
-- **安全率 (safety factor)**: 航空では通常 **1.5**。制限荷重 (limit load) の 1.5 倍の終極荷重 (ultimate load) まで破壊しないことを要求。自動車・建築より低いのは、重量制約が厳しく、かつ解析・試験・検査が高精度だから。
+- **安全率 (safety factor)**: 航空では通常 **1.5**。制限荷重 (limit load) の 1.5 倍の終極荷重 (ultimate load) まで破壊しないことを要求（14 CFR 25.303 / 25.305）[^cfr25]。自動車・建築より低いのは、重量制約が厳しく、かつ解析・試験・検査が高精度だから。
 
 #### 翼は「梁 (beam)」である
 
@@ -221,7 +223,7 @@ F = ṁ · (V_e − V_0)        （+ 圧力項）
    機体側(付け根)で曲げモーメント最大 → 構造重量が集中
 ```
 
-これは**セミモノコック構造 (semi-monocoque)** と呼ばれ、外板 (skin) と骨組 (frame/stringer/rib) が協調して荷重を負担する形式である。胴体も同様。外板が荷重を分担するため軽量化できる。
+これは**セミモノコック構造 (semi-monocoque)** と呼ばれ[^megson]、外板 (skin) と骨組 (frame/stringer/rib) が協調して荷重を負担する形式である。胴体も同様。外板が荷重を分担するため軽量化できる。
 
 #### 材料の進化
 
@@ -232,11 +234,11 @@ F = ṁ · (V_e − V_0)        （+ 圧力項）
 | 鋼 (steel) | 高強度・重い | 脚・取付金具など局所 |
 | 複合材 (CFRP) | 比強度・比剛性が高い、疲労に強い | B787/A350 で主翼・胴体の過半 |
 
-複合材 (carbon-fiber reinforced polymer) は「強度/重量」「剛性/重量」でアルミを上回り、現代の大型機は構造重量の50%超を複合材が占める。一方で損傷検出や修理、雷対策が新たな課題となる。
+複合材 (carbon-fiber reinforced polymer) は「強度/重量」「剛性/重量」でアルミを上回り、B787 は構造重量の約50%（NASA は「50% 超」と表現）を複合材が占める[^nasa-composites]。一方で損傷検出や修理、雷対策が新たな課題となる。
 
 ### 6. 安定と制御 (Stability & Control)
 
-- **静安定 (static stability)**: 擾乱から元の姿勢へ戻ろうとする性質。**重心 (CG, center of gravity)** が**空力中心 (AC, aerodynamic center)** より前にあると縦の正の静安定が得られる。重心が後ろすぎると不安定（戦闘機はあえて不安定にし FBW で安定化＝運動性向上）。
+- **静安定 (static stability)**: 擾乱から元の姿勢へ戻ろうとする性質。**重心 (CG, center of gravity)** が**空力中心 (AC, aerodynamic center)** より前にあると縦の正の静安定が得られる。重心が後ろすぎると不安定（戦闘機はあえて不安定にし FBW で安定化＝運動性向上）[^anderson-flight]。
 - **トリム (trim)**: 操縦力をゼロにする釣り合い状態。水平尾翼・トリムタブで設定。
 - **操縦と安定のトレードオフ**: 安定すぎる機体は操縦が鈍く、不安定な機体は機敏だが制御系（FBW）に依存する。
 
@@ -272,13 +274,13 @@ R = (V / TSFC) · (L/D) · ln(W_initial / W_final)
 | 故障モード | 機構 | 設計上の対策 |
 |---|---|---|
 | **失速・スピン (stall/spin)** | 臨界迎角超過で揚力喪失、左右非対称で錐揉み | 迎角警報、スティックシェイカ、失速特性の良い翼設計 |
-| **疲労 (fatigue)** | 与圧/荷重の繰返しで微小亀裂が進展（コメット機事故の教訓） | 損傷許容設計 (damage tolerance)、定期点検、フェイルセーフ構造 |
-| **フラッタ (flutter)** | 空力と構造弾性が連成した自励振動。発散すると瞬時に破壊 | 剛性確保、質量バランス、フラッタ速度を運用域外に設定 |
+| **疲労 (fatigue)** | 与圧/荷重の繰返しで微小亀裂が進展（コメット機事故の教訓[^withey]） | 損傷許容設計 (damage tolerance)、定期点検、フェイルセーフ構造 |
+| **フラッタ (flutter)** | 空力と構造弾性が連成した自励振動。発散すると瞬時に破壊 | 剛性確保、質量バランス、フラッタ速度を運用域外に設定（14 CFR 25.629）[^cfr25][^bisplinghoff] |
 | **バードストライク/異物吸込** | エンジン損傷・推力喪失 | エンジン耐衝撃試験、多発化による冗長 |
 | **システム故障** | 油圧・電気・FBW の喪失 | **冗長化 (redundancy)**：多重系統・異種冗長、フェイルオペレーショナル設計 |
 
-- **安全率と確率**: 構造安全率1.5に加え、致命的故障の許容確率を **10⁻⁹/飛行時間** 級に抑えるよう、冗長度と点検間隔を設計する（FAR/CS-25.1309 の考え方）。
-- **型式証明 (certification)**: FAA の **FAR Part 25**、欧州の **EASA CS-25** が大型機の耐空性基準を定める。荷重・疲労・システム・避難など多面的な要求を満たして初めて運航できる。「壊れないこと」ではなく「許容可能な確率まで危険を下げたこと」を証明する枠組みである。
+- **安全率と確率**: 構造安全率1.5に加え、致命的故障の許容確率を **10⁻⁹/飛行時間** 級に抑えるよう、冗長度と点検間隔を設計する（FAR/CS-25.1309 の考え方。FAA AC 25.1309-1A は「extremely improbable」を 1×10⁻⁹ 程度以下と定量化）[^ac1309]。振動・共振の一般論は [`newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md)、故障確率の扱いは [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) を参照。
+- **型式証明 (certification)**: FAA の **FAR Part 25**、欧州の **EASA CS-25** が大型機の耐空性基準を定める。荷重・疲労・システム・避難など多面的な要求を満たして初めて運航できる[^cfr25]。「壊れないこと」ではなく「許容可能な確率まで危険を下げたこと」を証明する枠組みである。
 
 ## 結論 (Conclusions)
 
@@ -304,15 +306,43 @@ R = (V / TSFC) · (L/D) · ln(W_initial / W_final)
 
 ## 参考文献 (References)
 
-[^anderson-aero]: Anderson, J. D. (2017). *Fundamentals of Aerodynamics* (6th ed.). McGraw-Hill. — 揚力方程式・抗力極・循環理論の標準的典拠。
+> 原理は標準教科書、規制値は 14 CFR / FAA AC の一次資料、機体・エンジン固有の数値は製造者または NASA の公表値に基づく。
 
-[^anderson-flight]: Anderson, J. D. (2016). *Introduction to Flight* (8th ed.). McGraw-Hill. — 4つの力・揚力発生機構・equal transit time 説の否定。
+**教科書 (Textbooks)**
+
+[^anderson-aero]: Anderson, J. D. (2017). *Fundamentals of Aerodynamics* (6th ed.). McGraw-Hill. — 揚力方程式・抗力極・循環理論（Kutta–Joukowski）・失速・遷音速流れの標準的典拠。
+
+[^anderson-flight]: Anderson, J. D. (2016). *Introduction to Flight* (8th ed.). McGraw-Hill. — 4つの力・揚力発生機構・equal transit time 説の否定・静安定。
 
 [^anderson-perf]: Anderson, J. D. (1999). *Aircraft Performance and Design*. McGraw-Hill. — ブレゲー航続距離式・性能解析。
 
-その他の標準的典拠を以下に挙げる。
+[^raymer]: Raymer, D. P. (2018). *Aircraft Design: A Conceptual Approach* (6th ed.). AIAA Education Series. — 機体設計・重量配分・L/D の代表値・材料選択のトレードオフ。
 
-- Raymer, D. P. (2018). *Aircraft Design: A Conceptual Approach* (6th ed.). AIAA. — 機体設計・重量配分・トレードオフ。
-- Hill, P. & Peterson, C. (1991). *Mechanics and Thermodynamics of Propulsion* (2nd ed.). Addison-Wesley. — ブレイトンサイクル・推進効率・ジェット推進。
-- Megson, T. H. G. (2016). *Aircraft Structures for Engineering Students* (6th ed.). Butterworth-Heinemann. — セミモノコック構造・荷重・材料。
-- U.S. Federal Aviation Administration. *14 CFR Part 25 — Airworthiness Standards: Transport Category Airplanes*. — 型式証明・荷重倍数・安全率の規定。
+[^hill-peterson]: Hill, P. G., & Peterson, C. R. (1992). *Mechanics and Thermodynamics of Propulsion* (2nd ed.). Addison-Wesley. — ブレイトンサイクル・推進効率・バイパス比。
+
+[^megson]: Megson, T. H. G. (2016). *Aircraft Structures for Engineering Students* (6th ed.). Butterworth-Heinemann. — セミモノコック構造・荷重・材料。
+
+[^bisplinghoff]: Bisplinghoff, R. L., Ashley, H., & Halfman, R. L. (1996). *Aeroelasticity*. Dover（1955年 Addison-Wesley 版の再刊）. — フラッタを含む空力弾性の古典的教科書。
+
+**一次資料 (Primary — 規制・技術報告・製造者)**
+
+[^cfr25]: [14 CFR Part 25 — Airworthiness Standards: Transport Category Airplanes (LII, Cornell)](https://www.law.cornell.edu/cfr/text/14/part-25) — §25.303（安全率 1.5）、§25.305（強度と変形）、§25.337（制限運動荷重倍数: 正 2.5 以上〜3.8、負 −1.0 以上）、§25.629（空力弾性安定・フラッタ）。Accessed: 2026-10-04.
+
+[^ac1309]: [FAA (1988). AC 25.1309-1A — System Design and Analysis](https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_25.1309-1A.pdf) — 致命的故障状態を「extremely improbable」（1×10⁻⁹/飛行時間程度以下）とする定量指針。後継の [AC 25.1309-1B](https://www.faa.gov/documentLibrary/media/Advisory_Circular/AC_25.1309-1B.pdf) も同じ基準を維持。Accessed: 2026-10-04.
+
+[^whitcomb]: Whitcomb, R. T. (1956). *A Study of the Zero-Lift Drag-Rise Characteristics of Wing-Body Combinations Near the Speed of Sound*. NACA Report 1273. — 遷音速面積則の原典。
+
+[^withey]: Withey, P. A. (1997). Fatigue failure of the de Havilland Comet I. *Engineering Failure Analysis*, 4(2), 147–154. DOI: 10.1016/S1350-6307(97)00005-8 — コメット機与圧胴体の疲労破壊の破壊力学的再解析。
+
+[^nasa-lift]: [NASA Glenn Research Center — Beginner's Guide to Aeronautics: Equal Transit Theory Interactive](https://www1.grc.nasa.gov/beginners-guide-to-aeronautics/foilw1/) — equal transit time 説の誤りの解説（上面流速は等時間通過に要する値よりはるかに速い）。Accessed: 2026-10-04.
+
+[^nasa-composites]: [NASA (2014-12-16). Advanced Composites "Coming of Age" in Aviation with Help from NASA](https://www.nasa.gov/aeronautics/advanced-composites-coming-of-age-in-aviation-with-help-from-nasa) — B787 は「50% 超が複合材」。Accessed: 2026-10-04.
+
+[^ge9x]: [GE Aerospace — GE9X Engine](https://www.geaerospace.com/commercial/aircraft-engines/ge9x) — バイパス比 約 10:1、全体圧力比 約 60:1（製造者公表値）。Accessed: 2026-10-04.
+
+**本リポジトリ内参照**
+
+- [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) — 運動方程式・振動と共振（4つの力、フラッタの背景）
+- [`../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md`](../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md) / [`shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md) — 圧縮性流れ・衝撃波
+- [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) — ブレイトンサイクルの熱力学的背景
+- [`spacex-rocket-engines.md`](spacex-rocket-engines.md) / [`orbital-mechanics.md`](orbital-mechanics.md) — ロケットへの橋渡しの続編

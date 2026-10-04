@@ -36,14 +36,29 @@ OT の制御という点で、本ドキュメントは [`../automotive/in-vehicl
 
 電力の制御システムは、フィールドの物理機器から企業 IT まで階層化される。下位ほどリアルタイムで決定的、上位ほど広域で情報指向である。
 
+```mermaid
+flowchart TB
+    subgraph ENT["企業ゾーン (IT)"]
+        L45["Level 4/5 企業 IT<br/>ERP・業務系<br/>インターネット接続あり"]
+    end
+    DMZ["Level 3.5 IT/OT DMZ<br/>ファイアウォール・一方向ゲートウェイ<br/>踏み台 (ジャンプサーバ)"]
+    subgraph OT["制御ゾーン (OT)"]
+        L3["Level 3 運用管理<br/>historian・MES<br/>パッチ / AV 配信"]
+        L2["Level 2 監視制御<br/>SCADA HMI・DCS 操作卓・EMS"]
+        L1["Level 1 制御<br/>PLC・RTU・IED・保護リレー"]
+        L0["Level 0 フィールド<br/>センサ・アクチュエータ<br/>遮断器・計器用変成器"]
+    end
+    SIS["安全計装系 SIS<br/>(BPCS から独立)"]
+    L45 ---|"conduit"| DMZ
+    DMZ ---|"conduit"| L3
+    L3 --- L2
+    L2 ---|"DNP3 / IEC 104 / IEC 61850 MMS"| L1
+    L1 ---|"Modbus / GOOSE / SV / 配線"| L0
+    SIS -.->|"独立した検出・緊急停止"| L0
+    VENDOR["ベンダ遠隔保守"] -.->|"MFA・時限化・DMZ 経由のみ"| DMZ
 ```
- Level 4/5  企業IT (Enterprise / IT)        … ERP, 業務系。インターネット接続あり
- ──────────────── IT / OT 境界 (DMZ, ファイアウォール, 一方向GW) ────────────────
- Level 3   運用管理 (Operations)           … 履歴DB(historian), MES, パッチ/AV配信
- Level 2   監視制御 (Supervisory)          … SCADA HMI, DCS オペレータ卓, EMS
- Level 1   制御 (Control)                  … PLC, RTU, IED, 保護リレー (閉ループ制御)
- Level 0   フィールド (Process / Field)     … センサ, アクチュエータ, 遮断器, 計器用変成器
-```
+
+凡例: 上ほど広域・情報指向、下ほどリアルタイム・決定的。実線はゾーン間の通信経路 (IEC 62443 の conduit)、点線は通常制御から独立させるべき経路を示す。
 
 | 層 | 代表機器 | 主機能 | 時間スケール |
 |---|---|---|---|
@@ -103,7 +118,7 @@ IEC 61850 は変電所自動化を標準化し、機器を**論理ノード (Log
 - **保護 (protection)**: 故障電流の検出からトリップまで数ミリ秒〜数十ミリ秒。遅れれば機器が焼損するため、最も厳しい決定性が要る。ここに汎用 OS の不確定な遅延は許されない。
 - **閉ループ制御 (DCS)**: 制御周期は数十〜数百ミリ秒。スキャン → 演算 → 出力を周期的に回す。
 - **監視制御 (SCADA)**: ポーリング周期は秒オーダ。広域のテレメトリを集約する。
-- この階層により、**速い決定的制御は下位（フィールド近く）で閉じ**、上位の不確定な通信に依存しない。下位が自律的に安全を保てる設計が原則である。
+- この階層により、**速い決定的制御は下位（フィールド近く）で閉じ**、上位の不確定な通信に依存しない（最悪応答時間の保証という考え方は [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) と同じ）。下位が自律的に安全を保てる設計が原則である。
 
 ### 広域監視と時刻同期 — PMU / シンクロフェーザ (WAMS)
 
@@ -130,7 +145,7 @@ SCADA のポーリング（秒オーダ・タイムスタンプは粗い）で�
   物理的防護 (機械式リリーフ弁、遮断器の機械的限界 等)
 ```
 
-- SIS は通常制御 (BPCS) から**独立**して設計される。制御系が誤動作・侵害されても、SIS が物理的限界を超えさせない（IEC 61508 / IEC 61511 の安全度水準 SIL に基づく）。
+- SIS は通常制御 (BPCS) から**独立**して設計される。制御系が誤動作・侵害されても、SIS が物理的限界を超えさせない（IEC 61508 / IEC 61511 の安全度水準 SIL に基づく。SIL は要求時危険側故障確率 (PFD) の桁で定義され、その計算は [`reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) の冗長系・共通原因故障モデルに依拠する）。
 - これは [`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) の「制御が壊れても安全側へ倒す」思想と同根。ただし後述の TRITON のように **SIS 自体が攻撃対象**になった事例があり、安全層も保安の対象である。
 
 ## セキュリティ考察 (Security Considerations)

@@ -13,6 +13,7 @@
 
 ## 今後のテーマ候補
 
-- 非同期ランタイムの実装 (async runtime internals) — event loop, work-stealing
+- 非同期ランタイムの実装は [`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md)
+  で扱い済み（event loop, work-stealing）。残る候補は以下
 - 構造化並行性 (structured concurrency) とキャンセル伝播
 - アクターモデル (actor model) とメッセージパッシング

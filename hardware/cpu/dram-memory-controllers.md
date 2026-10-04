@@ -4,7 +4,7 @@
 
 [`cache-memory-hierarchy.md`](cache-memory-hierarchy.md) はキャッシュ階層を「DRAM が遅いから」という前提の上に描いた。本ドキュメントはその前提の内側、つまり**DRAM はなぜ遅く、なぜその遅さが 30 年ほとんど改善していないのか**を扱う。
 
-中心テーゼは、**DRAM とは「キャパシタというアナログ物理を、タイミングパラメータという契約書でディジタルに見せかける装置」** だということ。1 個のトランジスタと 1 個のキャパシタ (1T1C) に電荷として蓄えたビットは、読むと壊れ (破壊読み出し)、放っておくと漏れ (リフレッシュ)、隣を叩くと化ける (Rowhammer)。tCL・tRCD・tRP という呪文のようなパラメータ群は、この物理が要求する待ち時間の目録であり、メモリコントローラ (memory controller) はこの契約の範囲内で並列性を絞り出すスケジューラである。
+中心テーゼは、**DRAM とは「キャパシタというアナログ物理を、タイミングパラメータという契約書でディジタルに見せかける装置」** だということ。1 個のトランジスタと 1 個のキャパシタ (1T1C) に電荷として蓄えたビットは（アクセストランジスタの物理は [`mosfet-cmos.md`](../../foundations/physics/quantum-solid-state/mosfet-cmos.md)、キャパシタの RC 放電は [`circuit-theory.md`](../../foundations/physics/electromagnetism/circuit-theory.md)）、読むと壊れ (破壊読み出し)、放っておくと漏れ (リフレッシュ)、隣を叩くと化ける (Rowhammer)。tCL・tRCD・tRP という呪文のようなパラメータ群は、この物理が要求する待ち時間の目録であり、メモリコントローラ (memory controller) はこの契約の範囲内で並列性を絞り出すスケジューラである。
 
 DDR 世代が進むたびに「メモリが速くなった」と言われるが、速くなったのは**帯域** (インタフェースの転送率と並列性) であって、**レイテンシ** (行を開けて読む物理時間) は約 10〜15ns のままほぼ動いていない。この「帯域は買えるがレイテンシは買えない」という非対称が、キャッシュ階層・アウトオブオーダ実行・プリフェッチ・HBM といった計算機構造の大半を説明する。
 
@@ -129,6 +129,8 @@ stateDiagram-v2
 - [`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md) — CXL によるメモリ拡張。チャネル直結という前提の再交渉。
 - [`../hw-sw-interface/storage-nvm-interface.md`](../hw-sw-interface/storage-nvm-interface.md) — 揮発と永続の境界。NVDIMM・持続性メモリの文脈。
 - [`../accelerators/gpu-simt-architecture.md`](../accelerators/gpu-simt-architecture.md) — 同じ物理への別解 (HBM: 広く・近く・積む)。
+- [`../../software/operating-systems/virtual-memory-paging.md`](../../software/operating-systems/virtual-memory-paging.md) — 物理フレームの割当とページ管理。DRAM に落ちるアドレスを OS が決める層（ソフトウェア側）。
+- [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — ソフトエラー率・故障の偏りを扱う信頼性理論の基礎。
 
 ## 参考文献 (References)
 

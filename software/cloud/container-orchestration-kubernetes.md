@@ -58,6 +58,25 @@
  各矢印は「呼び出し」ではなく「etcd 上の状態を見て動く」。部品間の直接通信はない。
 ```
 
+### コントローラ 1 つの調停ループ
+
+上の連鎖を構成する各コントローラは、同じ標準形のループを回している（技術詳細の「標準形」に対応）。watch 通知は差分を早く見つけるための最適化にすぎず、定期的な resync が取りこぼしを拾うので、正しさは水位差 (level) の比較だけに依存する。
+
+```mermaid
+flowchart LR
+    ETCD[("etcd<br/>(Raft・唯一の真実)")] -->|"watch / list"| API["API Server"]
+    API -->|"差分 watch"| INF["informer キャッシュ<br/>(ローカル複製)"]
+    INF -->|"変化したキー"| Q["ワークキュー"]
+    RS["定期 resync<br/>(全量再同期)"] -.-> Q
+    Q --> REC{"spec と status の差分<br/>(level の比較)"}
+    REC -->|"差あり"| ACT["差分を埋める API 呼び出し<br/>(冪等・resourceVersion 付き CAS)"]
+    REC -->|"差なし"| DONE["何もしない"]
+    ACT -->|"成功"| API
+    ACT -->|"失敗 / CAS 衝突"| BO["指数バックオフで再キュー"]
+    BO --> Q
+    API --> ETCD
+```
+
 ### 抽象度のスペクトル — どこまでを機械に任せるか
 
 | | EC2 直 | EKS + ノード管理 | EKS Fargate | Lambda |

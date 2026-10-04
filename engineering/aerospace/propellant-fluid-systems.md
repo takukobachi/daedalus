@@ -2,14 +2,14 @@
 
 ## 概要 (Overview)
 
-ロケットの離陸質量の 9 割超は推進剤である。したがって「推進剤をどう積み、どう送り、どう使い切るか」という**流体システム**の設計は、エンジン（`spacex-rocket-engines.md`）や構造（`rocket-structures-tanks.md`）と並ぶ、機体性能の第三の柱になる。しかもその難しさの多くは、推進剤が**沸点近傍の極低温液体**であることに由来する。極低温液体は、放っておけば蒸発し、揺れれば暴れ、無重力では浮遊する。
+ロケットの離陸質量の 9 割超は推進剤である。したがって「推進剤をどう積み、どう送り、どう使い切るか」という**流体システム**の設計は、エンジン（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）や構造（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）と並ぶ、機体性能の第三の柱になる。しかもその難しさの多くは、推進剤が**沸点近傍の極低温液体**であることに由来する。極低温液体は、放っておけば蒸発し、揺れれば暴れ、無重力では浮遊する。
 
 本ドキュメントは、SpaceX が流体システムで打った3つの特徴的な手、すなわち (1) **推進剤の高密度化（サブクール充填）**、(2) ヘリウムを廃した**自生加圧 (autogenous pressurization)**、(3) 完全再使用と火星の前提となる**軌道上推進剤移送 (on-orbit propellant transfer)** を、極低温流体管理 (cryogenic fluid management, CFM) の一般論の中に位置づけて分析する。分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
 - 推進剤の旅を**地上（タンクファーム→充填）→上昇（加圧・供給）→軌道（滞留・移送）→着陸（ヘッダタンク）** のフェーズに分け、各フェーズの物理的難所を特定する。
-- 加圧方式を**ヘリウム外部加圧 vs 自生加圧**の設計空間として比較し、AMOS-6（`rocket-structures-tanks.md`）からの教訓の連続として読む。
+- 加圧方式を**ヘリウム外部加圧 vs 自生加圧**の設計空間として比較し、AMOS-6（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）からの教訓の連続として読む。
 - 高密度化・load-and-go・軌道上移送は、SpaceX/NASA の一次情報（公式発表、NASA 契約・報告書、諮問委員会報告）に基づき、目標値と実証済みの区別を明示する。
 - 一般理論は推進工学の標準教科書と NASA の CFM 技術資料を典拠とする。
 
@@ -20,33 +20,38 @@
 3. **load-and-go は有人安全論争を経て標準になった。** 乗員搭乗後に充填する運用は NASA 諮問委員会で安全性が議論されたが、「充填中の地上要員を排せる」等の利点も含めて評価され、Crew Dragon の標準手順として承認された[^asap]。
 4. **自生加圧はヘリウムという単一障害点を消す。** タンク押しガスに自機の推進剤の気化ガス（CH₄/O₂）を使う Raptor/Starship の方式は、He 調達・充填・COPV（CRS-7/AMOS-6 の当事者）をシステムごと廃する。単純化こそ最大の信頼性向上、という設計哲学の典型[^raptor-autogenous]。
 5. **無重力では「液体がどこにあるか」が問題になる。** 加速度がなければ推進剤はタンク内を浮遊し、エンジンは気体を吸い込みかねない。着火前の**沈底 (settling)**、着陸専用の**ヘッダタンク**、移送時の微小加速は、すべて「液体を出口に寄せる」ための技法である。
-6. **軌道上移送は Starship アーキテクチャの要石。** 月着陸 (HLS) も火星も、LEO でタンカー機から推進剤を移し替える前提で成立する。2024年の飛行試験で機体内タンク間の極低温移送が NASA 契約下で実証されたが、**機体間 (ship-to-ship) の移送は未実証**であり、必要タンカー数の見積もりも幅がある（1回のミッションに10機超の充填飛行という試算もある）[^tipping-point][^gao]。
-7. **メタンは火星で「現地生産できる燃料」。** CO₂ 大気と水の電気分解から Sabatier 反応で CH₄ を合成できることが、メタン採用（`spacex-rocket-engines.md`）の最終的な根拠であり、流体システムの設計（長期滞留・移送）はこの往還アーキテクチャから逆算されている[^isru]。
+6. **軌道上移送は Starship アーキテクチャの要石。** 月着陸 (HLS) も火星も、LEO でタンカー機から推進剤を移し替える前提で成立する。2024年の飛行試験で機体内タンク間の極低温移送が NASA 契約下で実証されたが、**機体間 (ship-to-ship) の移送は as of 2026-10 で未実証かつ実施日未定**であり、必要タンカー数の見積もりも幅がある（1回のミッションに10機超の充填飛行という試算もある）[^tipping-point][^gao][^ptd]。
+7. **メタンは火星で「現地生産できる燃料」。** CO₂ 大気と水の電気分解から Sabatier 反応で CH₄ を合成できることが、メタン採用（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）の最終的な根拠であり、流体システムの設計（長期滞留・移送）はこの往還アーキテクチャから逆算されている[^isru]。
 
 ## アーキテクチャ (Architecture)
 
 ### 推進剤の旅 — 地上から着陸まで (The Propellant Journey)
 
+推進剤は、地上から着陸まで「どの相で・どこに・何度で」あるかを管理され続ける。下図はその状態遷移である。
+
+```mermaid
+stateDiagram-v2
+    [*] --> TankFarm: 受入・貯蔵
+    TankFarm: 地上タンクファーム<br/>LN2 でサブクール化
+    TankFarm --> Loaded: QD 経由で高速充填<br/>(load-and-go)
+    Loaded: 充填済みタンク<br/>液相=下部 / アレージ=上部
+    Loaded --> Ascent: 離昇
+    Ascent: 上昇・供給<br/>加圧で NPSP を確保
+    Ascent --> Coast: 主エンジン停止
+    Coast: 軌道滞留 (微小重力)<br/>ボイルオフ・液位置の管理
+    Coast --> Transfer: タンカーとドッキング
+    Transfer: 機体間移送<br/>沈底加速+差圧 (未実証)
+    Transfer --> Coast
+    Coast --> Landing: 再突入・フリップ
+    Landing: 着陸燃焼<br/>ヘッダタンクの推進剤
+    Landing --> [*]
 ```
-[地上] タンクファーム（貯蔵・サブクール化）
-   │  クイックディスコネクト (QD) 経由で高速充填
-   ▼    … 高密度化推進剤は温まる前に飛ぶ必要 → load-and-go
-[充填済みタンク]
-   │  液体: タンク下部 ／ アレージ(気相): タンク上部
-   ▼
-[上昇] 加圧ガスがアレージ圧を維持しつつ液面が下がる
-   │  ・ヘリウム加圧 (Falcon 9) or 自生加圧 (Starship)
-   │  ・ターボポンプへ気泡なしの液を連続供給 (NPSP 確保)
-   ▼
-[軌道] 滞留 — ボイルオフ管理、姿勢と液体位置の管理
-   │  （Starship: タンカーからの推進剤移送はこのフェーズ）
-   ▼
-[帰還・着陸] ヘッダタンクの沈底済み推進剤で着陸燃焼
-```
+
+凡例: 状態は推進剤の置かれた環境、遷移ラベルはその間に行う操作。「未実証」は as of 2026-10 の状況。加圧方式は Falcon 9 がヘリウム、Starship が自生加圧（次節）。ボイルオフ（熱侵入による蒸発）と二相系の熱力学的背景は [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) を参照。
 
 ### 加圧アーキテクチャの対比 (Pressurization Architectures)
 
-タンクは、液体が抜けた分だけ気相（アレージ）を押しガスで満たし続けなければ、圧力低下でポンプ供給が破綻し、構造的にも座屈耐力を失う（`rocket-structures-tanks.md`）。
+タンクは、液体が抜けた分だけ気相（アレージ）を押しガスで満たし続けなければ、圧力低下でポンプ供給が破綻し、構造的にも座屈耐力を失う（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）。
 
 | 観点 | ヘリウム加圧 (Falcon 9) | 自生加圧 (Starship/Raptor) |
 |---|---|---|
@@ -72,7 +77,7 @@ Falcon 9 Full Thrust (2015-) 以降、SpaceX は推進剤を沸点よりさら�
 
 - **何が嬉しいか**: (1) 同じタンク容積により多くの推進剤を積め、ロケット方程式の質量比 `m0/mf` を機体を伸ばさずに稼げる、(2) 密度が上がるとポンプの体積流量当たり質量流量も増え、推力側にも寄与する[^densified]。
 - **代償 — 時間との勝負**: サブクール液は地上で待つほど温まって膨張し、性能前提が成り立たなくなる。ゆえに充填は**打ち上げ約35分前から一気に行い、完了後すみやかに離昇する** (load-and-go)。カウントダウン保留 (hold) の柔軟性が下がり、リサイクル（仕切り直し）には再冷却が要る。これは**運用の硬さと引き換えに性能を買う**判断である。
-- **AMOS-6 との接続**: 高速充填の温度・速度プロファイルは COPV の故障モードと結合した（`rocket-structures-tanks.md`）。流体運用の変更は構造の故障モードを変える。つまり両者は独立に設計できない。
+- **AMOS-6 との接続**: 高速充填の温度・速度プロファイルは COPV の故障モードと結合した（[`rocket-structures-tanks.md`](rocket-structures-tanks.md)）。流体運用の変更は構造の故障モードを変える。つまり両者は独立に設計できない。
 
 ### Load-and-Go と有人安全 (Crew Load-and-Go)
 
@@ -86,13 +91,13 @@ Falcon 9 Full Thrust (2015-) 以降、SpaceX は推進剤を沸点よりさら�
 
 軌道上・惰行中は加速度がなく、液体推進剤はタンク内で浮遊・分裂する。エンジンが気体を吸えば燃焼停止・ポンプ破損に直結するため、「**出口に液体を確実に置く**」ことが要件になる。
 
-- **沈底 (ullage settling)**: 着火前に小さな加速度（スラスタ噴射など）をかけ、液体をタンク後方へ寄せてから主エンジンを着火する。ホットステージング（`spacex-starship-superheavy.md`）は「前段が押している間に着火する」ため、沈底問題を副次的に回避する利点もある。
-- **ヘッダタンク (header tanks)**: Starship は着陸燃焼専用の小型タンク（LOX 用は主タンク内、CH₄ 用は共通隔壁部）を持つ。狙いは (1) 長い惰行・再突入・ベリーフロップ（`reentry-thermal-protection.md`）の間、**着陸分の推進剤を満タンの小容器に隔離**して沈底・温度を保証する、(2) 主タンクの残液がスロッシュで暴れても着陸燃焼に影響させない。初期試験機 (SN8–SN11) の着陸失敗の一部はこのヘッダタンク系の圧力・供給問題であり、反復で解消された[^sn-tests]。
+- **沈底 (ullage settling)**: 着火前に小さな加速度（スラスタ噴射など）をかけ、液体をタンク後方へ寄せてから主エンジンを着火する。ホットステージング（[`spacex-starship-superheavy.md`](spacex-starship-superheavy.md)）は「前段が押している間に着火する」ため、沈底問題を副次的に回避する利点もある。
+- **ヘッダタンク (header tanks)**: Starship は着陸燃焼専用の小型タンク（LOX 用は主タンク内、CH₄ 用は共通隔壁部）を持つ。狙いは (1) 長い惰行・再突入・ベリーフロップ（[`reentry-thermal-protection.md`](reentry-thermal-protection.md)）の間、**着陸分の推進剤を満タンの小容器に隔離**して沈底・温度を保証する、(2) 主タンクの残液がスロッシュで暴れても着陸燃焼に影響させない。初期試験機 (SN8–SN11) の着陸失敗の一部はこのヘッダタンク系の圧力・供給問題であり、反復で解消された[^sn-tests]。
 - **ボイルオフ (boil-off)**: 極低温液は熱侵入で蒸発し続ける。短期ミッションでは損失として許容するが、軌道滞留が長い HLS・火星ミッションでは断熱・遮光・冷凍機による**長期貯蔵 (long-duration CFM)** が成立条件になる。これは NASA が技術成熟を投資対象とする未解決領域である[^tipping-point]。
 
 ### 軌道上推進剤移送 — Starship アーキテクチャの要石 (On-orbit Propellant Transfer)
 
-Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙船にタンカー機が推進剤を補給する**前提で設計されている（LEO 到達で Δv 予算を使い切るという軌道力学的な理由は `orbital-mechanics.md`）。
+Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙船にタンカー機が推進剤を補給する**前提で設計されている（LEO 到達で Δv 予算を使い切るという軌道力学的な理由は [`orbital-mechanics.md`](orbital-mechanics.md)）。
 
 ```
  [タンカー Starship] ──┐ ドッキング（尾部の移送インタフェース）
@@ -101,7 +106,7 @@ Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙�
      × Nフライト分を反復 → 満タンにして月/火星へ出発
 ```
 
-- **実証状況 (as of 2026-07)**: NASA の Tipping Point 契約（2020, $53.2M）のもと、2024年3月の飛行試験 (IFT-3) で**同一機体内のタンク間 LOX 移送**を実証した[^tipping-point]。**機体間 (ship-to-ship) 移送は未実証**で、HLS 計画の律速要素の一つとされる。
+- **実証状況 (as of 2026-10)**: NASA の Tipping Point 契約（2020, $53.2M）のもと、2024年3月の飛行試験 (IFT-3) で**同一機体内のタンク間 LOX 移送**を実証した[^tipping-point]。**機体間 (ship-to-ship) 移送は未実証**で、予定は2025年3月から2026年3月へずれ込んだ後、新たな確定日は公表されていない（NASA OIG, 2026-03 の指摘として報じられる）[^ptd]。前提となる Starship の軌道到達は2026年9月28日の Flight 14 で初めて達成され、次の Flight 15 では移送に関連するドッキング・ハッチ機構のハードウェア試験が報じられている（計画）[^ptd]。HLS 計画の律速要素の一つであることに変わりはない。
 - **規模の見積もり**: 1回の月着陸ミッションに必要なタンカー飛行数は、公表情報の幅が大きい（1桁台後半〜16回程度の試算が併存）[^gao]。ボイルオフ率・タンカー搭載量・軌道上滞在期間に依存するためで、確定値ではなく**感度の高い設計変数**として扱うべき数字である。
 - **技術的難所**: (1) 極低温流体の空中給油に相当する**ドッキング＋配管接続**、(2) 移送中の二相流管理（気液分離、蒸気戻し）、(3) 受け側タンクの熱管理（温かいタンクに注ぐと激しく蒸発する→事前冷却 chilldown）、(4) 長期滞留のボイルオフ最小化。
 
@@ -148,6 +153,8 @@ Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙�
 
 [^gao]: U.S. Government Accountability Office — NASA Human Landing System に関する報告書 — HLS ミッションに必要なタンカー飛行数の見積もり幅（1桁台後半〜16回程度）と軌道上移送の技術リスク評価。Accessed: 2026-07-26.
 
+[^ptd]: [Starship Propellant Transfer Demonstration — Wikipedia](https://en.wikipedia.org/wiki/Starship_Propellant_Transfer_Demonstration) ／ [Starship flight 15 — Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_15) — 機体間移送実証の予定変遷（2025-03→2026-03、NASA OIG IG-26-004 の記載を引用）と未実施の現況、Flight 15 での関連ハードウェア試験計画。一次資料（OIG 報告本文）は未確認のため索引として扱う。Accessed: 2026-10-04.
+
 **技術解説・教科書 (Textbooks & technical explainers)**
 
 [^raptor-autogenous]: Sutton, G. P., & Biblarz, O. (2016). *Rocket Propulsion Elements* (9th ed.). Wiley — 加圧方式（不活性ガス加圧 vs 自生加圧）の一般論。Raptor の自生加圧採用は SpaceX 公式の Starship 技術説明による。
@@ -158,6 +165,8 @@ Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙�
 
 **本リポジトリ内参照**
 
-- `spacex-rocket-engines.md` — メタン採用の理由（すす・ISRU・Isp）、Raptor の熱交換器
-- `rocket-structures-tanks.md` — COPV と CRS-7/AMOS-6、内圧と構造安定
-- `orbital-mechanics.md` — LEO 給油が Δv 予算上必然である理由
+- [`spacex-rocket-engines.md`](spacex-rocket-engines.md) — メタン採用の理由（すす・ISRU・Isp）、Raptor の熱交換器
+- [`rocket-structures-tanks.md`](rocket-structures-tanks.md) — COPV と CRS-7/AMOS-6、内圧と構造安定
+- [`orbital-mechanics.md`](orbital-mechanics.md) — LEO 給油が Δv 予算上必然である理由
+- [`hls-lunar-architecture.md`](hls-lunar-architecture.md) — 給油キャンペーンの計画側（タンカー数の感度）
+- [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) — 熱侵入・相変化・断熱の熱力学
