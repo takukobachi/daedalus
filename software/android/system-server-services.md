@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-[`boot-init-properties.md`](boot-init-properties.md) は、init が Zygote を起動し、Zygote が `--start-system-server` を受けて **system_server** を fork するところで終わる。本ドキュメントはその続き——`SystemServer.main()` の最初の行から、約百のフレームワークサービスが段階的に立ち上がり、`sys.boot_completed=1` が設定されるまで——を追い、さらに起動後の system_server を支配する三つの構造、**スレッドモデル・大きなロック・Watchdog による自己監視**を分析する。
+[`boot-init-properties.md`](boot-init-properties.md) は、init が Zygote を起動し、Zygote が `--start-system-server` を受けて **system_server** を fork するところで終わる。本ドキュメントはその続き、つまり `SystemServer.main()` の最初の行から、約百のフレームワークサービスが段階的に立ち上がり、`sys.boot_completed=1` が設定されるまでを追い、さらに起動後の system_server を支配する三つの構造、**スレッドモデル・大きなロック・Watchdog による自己監視**を分析する。
 
 system_server は UID `system` で動く単一の Java プロセスで、ActivityManager・WindowManager・PackageManager・InputManager・PowerManager などフレームワーク層の中枢をほぼすべて抱える([`platform-architecture.md`](platform-architecture.md) の「カーネルの外のカーネル」)。本ドキュメントが答える問い: 数百のサービスの起動順序は何で決まり、互いの依存はどう解決されるのか。サービスはなぜ「Binder で公開するもの」と「プロセス内でだけ共有するもの」に分かれるのか。数十本の Binder スレッドが同時に叩く巨大プロセスは、どうやってデッドロックと停滞を検出し、自力で立ち直るのか。そしてこの設計は、なぜ Android で最も価値の高い攻撃対象を生むのか。分析深度は Level 3。
 
@@ -15,13 +15,13 @@ system_server は UID `system` で動く単一の Java プロセスで、Activit
 
 ## 発見事項 (Findings)
 
-1. **system_server の起動は「クラス名のリスト」と「単調増加する boot phase」の二軸で制御される。** `SystemServer.run()` は `startBootstrapServices` → `startCoreServices` → `startOtherServices` → `startApexServices` の順にサービスを生成し、各サービスの `onStart()` を呼ぶ。サービス間の依存は生成順だけでは表現しきれないため、`SystemServiceManager.startBootPhase()` が `PHASE_WAIT_FOR_DEFAULT_DISPLAY`(100)から `PHASE_BOOT_COMPLETED`(1000)までの**番号付きの同期点**を全サービスに一斉配信する。`startBootPhase` は新しい phase が現在値より大きいことを強制し、後戻りを許さない——依存グラフを解く代わりに**全順序の「段」で近似する**割り切りである。
-2. **サービスはリフレクションで生成される。** `SystemServiceManager.startService(Class)` は `getConstructor(Context.class)` → `newInstance(mContext)` でインスタンス化し、`startService(String className)` はビルド時に解決できないクラスを `SYSTEMSERVERCLASSPATH` から名前で読む。さらに `startServiceFromJar()` は `SystemServerClassLoaderFactory` で APEX 内の `service-*.jar`(例: `/apex/com.android.wifi/javalib/service-wifi.jar`)を別 ClassLoader で読み込む。**system_server の中身は、もはや system イメージだけで決まらない**——Mainline モジュールが system_server 内にコードを持ち込む。
-3. **公開には二系統ある: Binder と LocalServices。** `publishBinderService()` は `ServiceManager.addService(name, binder, allowIsolated, dumpPriority)` で servicemanager に登録し、アプリから `getSystemService()` 経由で到達可能にする。`publishLocalService()` は `LocalServices.addService(Class, impl)`——プロセス内の型→実装マップ——に登録するだけで、**Binder を経由しない・権限検査を持たない・プロセス外から見えない**内部 API(`ActivityManagerInternal`、`PackageManagerInternal` 等)を提供する。system_server の「サービス間は普通のメソッド呼び出し」という性質は、この二系統の使い分けで成り立つ。
+1. **system_server の起動は「クラス名のリスト」と「単調増加する boot phase」の二軸で制御される。** `SystemServer.run()` は `startBootstrapServices` → `startCoreServices` → `startOtherServices` → `startApexServices` の順にサービスを生成し、各サービスの `onStart()` を呼ぶ。サービス間の依存は生成順だけでは表現しきれないため、`SystemServiceManager.startBootPhase()` が `PHASE_WAIT_FOR_DEFAULT_DISPLAY`(100)から `PHASE_BOOT_COMPLETED`(1000)までの**番号付きの同期点**を全サービスに一斉配信する。`startBootPhase` は新しい phase が現在値より大きいことを強制し、後戻りを許さない。これは、依存グラフを解く代わりに**全順序の「段」で近似する**割り切りである。
+2. **サービスはリフレクションで生成される。** `SystemServiceManager.startService(Class)` は `getConstructor(Context.class)` → `newInstance(mContext)` でインスタンス化し、`startService(String className)` はビルド時に解決できないクラスを `SYSTEMSERVERCLASSPATH` から名前で読む。さらに `startServiceFromJar()` は `SystemServerClassLoaderFactory` で APEX 内の `service-*.jar`(例: `/apex/com.android.wifi/javalib/service-wifi.jar`)を別 ClassLoader で読み込む。**system_server の中身は、もはや system イメージだけで決まらない**。Mainline モジュールが system_server 内にコードを持ち込む。
+3. **公開には二系統ある: Binder と LocalServices。** `publishBinderService()` は `ServiceManager.addService(name, binder, allowIsolated, dumpPriority)` で servicemanager に登録し、アプリから `getSystemService()` 経由で到達可能にする。`publishLocalService()` は `LocalServices.addService(Class, impl)`(プロセス内の型→実装マップ)に登録するだけで、**Binder を経由しない・権限検査を持たない・プロセス外から見えない**内部 API(`ActivityManagerInternal`、`PackageManagerInternal` 等)を提供する。system_server の「サービス間は普通のメソッド呼び出し」という性質は、この二系統の使い分けで成り立つ。
 4. **system_server の内部は「共有シングルトンスレッド」と「31 本の Binder プール」の二層である。** メインスレッドのほか、`android.fg`(FgThread)・`android.ui`(UiThread)・`android.io`(IoThread)・`android.display`(DisplayThread)・`android.anim`(AnimationThread)・`android.bg`(BackgroundThread)など、用途と優先度の異なる Looper スレッドがプロセス内で共有される。外部からの呼び出しは `BinderInternal.setMaxThreads(sMaxBinderThreads)`(`sMaxBinderThreads = 31`)で上限付けされた Binder スレッドが受ける。**Binder スレッドは短く受けてロックを取るか Handler に回す**のが原則で、この規律が破れると全アプリの呼び出しが詰まる。
 5. **最大の設計負債は「少数の大きなロック」である。** ActivityManagerService 自身のモニタ(いわゆる AMS lock)、ActivityTaskManagerService と WindowManagerService が共有する `WindowManagerGlobalLock`、PackageManagerService の `mLock`/`mInstallLock`/`mSnapshotLock` が、プロセス内の多数のコードパスを直列化する。PMS はロック順序をコメントで規定し(`mInstallLock` は `mLock` を保持したまま取ってはならない)、メソッド名の接尾辞 `LI`/`LIF`/`LPr`/`LPw` で「呼ぶ前に持つべきロック」を型のように表す。近年の改善は、ロックを細かく割るのではなく**読み取りをロックの外に出す**方向(PMS の `Computer`/snapshot)で進んでいる。
 6. **Watchdog は system_server の「自殺装置」であり、その先には Zygote の道連れがある。** `Watchdog` は各共有スレッドに `HandlerChecker` を置き、`postAtFrontOfQueue` で空の確認メッセージを先頭に積んで応答を測り、モニタスレッド上では登録された `Monitor.monitor()`(実質「このロックを取れるか」)を順に呼ぶ。既定タイムアウトは 60 秒(`DEFAULT_TIMEOUT`、デバッグビルドは 10 秒)で、その 1/4 経過時点(`PRE_WATCHDOG_TIMEOUT_RATIO = 4`)で全スレッドのスタックを採取し、期限切れで `Process.killProcess(Process.myPid())` → `System.exit(10)` する。Zygote の SIGCHLD ハンドラは system_server の死を検知すると `"Exit zygote because system server (pid %d) has terminated"` を記録して自らを `SIGKILL` し、init が Zygote を再起動する。結果は**カーネルを再起動しない「ランタイム再起動 (soft reboot)」** である。
-7. **ネイティブサービスの多くは system_server の外にある——が、全部ではない。** surfaceflinger・servicemanager・installd・vold・netd・audioserver・cameraserver 等は init が起動する独立プロセスで、system_server が死んでも生き残る(Zygote の `onrestart` で再起動されるものを除く)。一方、`libandroid_servers` を通じて system_server 内に載るネイティブ部品(InputReader/InputDispatcher、SensorService 等)もあり、**「Java のサービス = system_server、ネイティブ = 別プロセス」という単純な対応は成り立たない**。
+7. **ネイティブサービスの多くは system_server の外にあるが、全部ではない。** surfaceflinger・servicemanager・installd・vold・netd・audioserver・cameraserver 等は init が起動する独立プロセスで、system_server が死んでも生き残る(Zygote の `onrestart` で再起動されるものを除く)。一方、`libandroid_servers` を通じて system_server 内に載るネイティブ部品(InputReader/InputDispatcher、SensorService 等)もあり、**「Java のサービス = system_server、ネイティブ = 別プロセス」という単純な対応は成り立たない**。
 
 ## アーキテクチャ (Architecture)
 
@@ -105,13 +105,13 @@ sequenceDiagram
 
 - `main()` は `new SystemServer().run()` を呼ぶだけである。コンストラクタは `sys.system_server.start_count` を読み、`mRuntimeRestart = mStartCount > 1` で「これはランタイム再起動か」を判定する(起動時間メトリクスの記録をこれで分ける)。
 - `run()` の前半は**プロセスの性格付け**である: `Process.setThreadPriority(THREAD_PRIORITY_FOREGROUND)` と `setCanSelfBackground(false)` でメインスレッドが背景優先度に落ちないようにし、`VMRuntime.getRuntime().clearGrowthLimit()` でアプリ用のヒープ上限を外し、`Binder.setWarnOnBlocking(true)` で system_server から他プロセスへの**同期 Binder 呼び出しに警告**を出させる(アプリに同期で呼ばれて待たされることは、system_server にとって可用性上の危険だからである)。
-- `Looper.prepareMainLooper()` の後、`setSlowLogThresholdMs(SLOW_DISPATCH_THRESHOLD_MS = 100, SLOW_DELIVERY_THRESHOLD_MS = 200)` でメインループの遅延ログを有効にする([`looper-handler-message-loop.md`](looper-handler-message-loop.md) §6)。`System.loadLibrary("android_servers")` で JNI 層(`services/core/jni/`)を読み込み、`createSystemContext()` で `ActivityThread.systemMain()` を経由した**システム用の Context**を作る——system_server は「framework-res.apk をリソースとして持つ特殊なアプリ」として自分を初期化する。
+- `Looper.prepareMainLooper()` の後、`setSlowLogThresholdMs(SLOW_DISPATCH_THRESHOLD_MS = 100, SLOW_DELIVERY_THRESHOLD_MS = 200)` でメインループの遅延ログを有効にする([`looper-handler-message-loop.md`](looper-handler-message-loop.md) §6)。`System.loadLibrary("android_servers")` で JNI 層(`services/core/jni/`)を読み込み、`createSystemContext()` で `ActivityThread.systemMain()` を経由した**システム用の Context**を作る。system_server は「framework-res.apk をリソースとして持つ特殊なアプリ」として自分を初期化する。
 - 起動中の並列化には `SystemServerInitThreadPool.start()` が使われ、`SystemServiceManager` は `PHASE_BOOT_COMPLETED` 到達時にこのプールを畳む。末尾は `Looper.loop()` と `throw new RuntimeException("Main thread loop unexpectedly exited")` で、メインループの終了はプロセスの異常と同義である。
 
 ### 2. SystemServiceManager — リフレクション・順序・計時
 
-- `startService(SystemService)` は `mServices` に追加し、`mServiceClassnames` で重複起動を防ぎ、`onStart()` を呼んで所要時間を `SERVICE_CALL_WARN_TIME_MS`(50ms)と比較して警告する。`startBootPhase()` も各サービスの `onBootPhase()` を同じ 50ms 閾値で計時する——**遅いサービスを名指しで記録する**ことが、起動時間の回帰を防ぐ第一の手段になっている。
-- リフレクションの意味: `SystemServer.java` はクラス名文字列(`startService(String)`)で生成するサービスを多数含み、ビルド構成によって存在しないサービス(Wear・Auto・TV 固有)を同じ起動コードから扱える。代償は**コンパイル時の依存検査が効かない**ことで、依存の正しさは boot phase の規律とテストに委ねられる。
+- `startService(SystemService)` は `mServices` に追加し、`mServiceClassnames` で重複起動を防ぎ、`onStart()` を呼んで所要時間を `SERVICE_CALL_WARN_TIME_MS`(50ms)と比較して警告する。`startBootPhase()` も各サービスの `onBootPhase()` を同じ 50ms 閾値で計時する。**遅いサービスを名指しで記録する**ことが、起動時間の回帰を防ぐ第一の手段になっている。
+- リフレクションの意味: `SystemServer.java` はクラス名文字列(`startService(String)`)で生成するサービスを多数含み、ビルド構成によって存在しないサービス(Wear・Auto・TV 固有)を同じ起動コードから扱える。代償は**コンパイル時の依存検査が働かない**ことで、依存の正しさは boot phase の規律とテストに委ねられる。
 - 典型的な実装パターンは `Lifecycle` 内部クラスである: `ActivityManagerService.Lifecycle`・`InputManagerService.Lifecycle` のように、`SystemService` を継承した薄い殻が本体を生成して `onStart()` で publish する。本体クラスが `SystemService` の単一継承に縛られず、既存の `IFoo.Stub` 継承を保てる。
 - ただし WMS は例外的に `WindowManagerService.main(context, inputManager, ...)` で生成され、`ServiceManager.addService(Context.WINDOW_SERVICE, wm, false, DUMP_FLAG_PRIORITY_CRITICAL | ...)` で**直接** servicemanager に登録される。SystemService 化以前の古い形が中枢サービスに残っている例である。
 
@@ -183,7 +183,7 @@ sequenceDiagram
 
 - **`postAtFrontOfQueue` の意味**: 確認メッセージをキューの先頭に置くので、測っているのは「キューの長さ」ではなく「**今処理中のメッセージが終わらない**」ことである。モニタ(`Monitor.monitor()` の典型的実装は対象ロックを取って即座に離すだけ)は「このロックが永遠に取れない」ことを測る。監視対象は foreground・main・ui・i/o・display・animation・surface animation の各スレッドと、モニタ専用チェッカである。
 - **Nougat との差**: 書籍時点の Watchdog は 60 秒の半分(30 秒)で `WAITED_HALF` として事前ダンプを取った。現行は 1/4(15 秒)時点の `WAITED_UNTIL_PRE_WATCHDOG` に前倒しされ、停滞の早い段階の状態を残せるようになった。
-- **死後の連鎖**: system_server が死ぬ(Watchdog による自殺でも、未捕捉例外でも)と、Zygote の `SigChldHandler` が `pid == gSystemServerPid` を検知して自らを `kill(getpid(), SIGKILL)` する。init は Zygote の死に対して `init.zygote64.rc` の `onrestart` を実行し(`restart audioserver`・`cameraserver`・`media`・`netd`・`wificond`、`write /sys/power/state on` 等)、Zygote を再起動する。新しい Zygote が新しい system_server を fork し、`sys.system_server.start_count` が増えて `mRuntimeRestart` が真になる。**全アプリは(Zygote の子なので)この過程で失われるが、カーネル・surfaceflinger・vold 等は生き残る**——これが「soft reboot」の正体である。
+- **死後の連鎖**: system_server が死ぬ(Watchdog による自殺でも、未捕捉例外でも)と、Zygote の `SigChldHandler` が `pid == gSystemServerPid` を検知して自らを `kill(getpid(), SIGKILL)` する。init は Zygote の死に対して `init.zygote64.rc` の `onrestart` を実行し(`restart audioserver`・`cameraserver`・`media`・`netd`・`wificond`、`write /sys/power/state on` 等)、Zygote を再起動する。新しい Zygote が新しい system_server を fork し、`sys.system_server.start_count` が増えて `mRuntimeRestart` が真になる。**全アプリは(Zygote の子なので)この過程で失われるが、カーネル・surfaceflinger・vold 等は生き残る**。これが「soft reboot」の正体である。
 - **連続失敗の行き先**: Zygote は `critical window=${zygote.critical_window.minute:-off} target=zygote-fatal` を持ち、窓が設定されていれば短時間の繰り返し失敗は init の fatal reboot 経路に落ちる([`boot-init-properties.md`](boot-init-properties.md) §5)。
 
 ### 9. 権限検査の型 — getCallingUid と clearCallingIdentity
@@ -193,7 +193,7 @@ sequenceDiagram
 
 ### 10. ネイティブサービス・Mainline・起動時間計測
 
-- **system_server の外**: servicemanager(Binder の名前解決、Android 11 以降は AIDL の C++ 実装)、surfaceflinger(合成)、installd(パッケージのファイル操作)、vold(ストレージ・暗号化)、netd、audioserver・cameraserver・mediaserver 系、lmkd 等は init.rc から起動される独立プロセスである。system_server に比べて小さく、SELinux ドメインで権限を絞りやすい——**特権の強い仕事ほど小さな別プロセスへ**という方向([`platform-architecture.md`](platform-architecture.md))。
+- **system_server の外**: servicemanager(Binder の名前解決、Android 11 以降は AIDL の C++ 実装)、surfaceflinger(合成)、installd(パッケージのファイル操作)、vold(ストレージ・暗号化)、netd、audioserver・cameraserver・mediaserver 系、lmkd 等は init.rc から起動される独立プロセスである。system_server に比べて小さく、SELinux ドメインで権限を絞りやすい。これは**特権の強い仕事ほど小さな別プロセスへ**という方向である([`platform-architecture.md`](platform-architecture.md))。
 - **APEX サービス**: `startApexServices` は APEX が宣言したシステムサービスを列挙し、`startServiceFromJar(className, jarPath)` で `SystemServerClassLoaderFactory` が作る ClassLoader から生成する。モジュールごとの ClassLoader により、Mainline モジュールの jar を system イメージの OTA なしに Play 経由で更新できる([`package-management.md`](package-management.md))。代償として system_server の起動経路に「`/data` 上の更新済み APEX が正しく活性化されていること」が加わる。
 - **起動時間計測**: `TimingsTraceAndSlog` は区間ごとに `Trace` のスライスとログ(タグ `SystemServerTiming`)を同時に出す。`adb logcat -s SystemServerTiming` で各サービスの `onStart`・各 phase の所要時間が得られ、Perfetto では同名スライスとして見える。EventLog の `boot_progress_*`(`boot_progress_system_run`・`boot_progress_pms_start`・`boot_progress_ams_ready`・`boot_progress_enable_screen` 等)は起動の里程標である。
 
@@ -223,7 +223,7 @@ sequenceDiagram
 
 - system_server は「数百のサービスを一つのプロセスに入れ、呼び出しを安くする」という設計判断の実体であり、その起動は**クラス名のリストと単調な boot phase**という単純な二軸で制御される。依存グラフを解かずに全順序の段で近似する割り切りが、多数のサービスを同じ起動コードに収めることを可能にしている。
 - 同一プロセスであることの利益(LocalServices による検査なしの直接呼び出し、共有 Looper スレッド)と代償(大きなロックとロック順序、Binder プール枯渇、単一障害点)は表裏一体であり、Watchdog → Zygote 道連れ → ランタイム再起動という**自殺による自己修復**が、この代償を可用性の面で受け止めている。
-- Nougat から現在までの変化は、骨格の置き換えではなく**Mainline によるコードの出所の多様化**(APEX サービス)と、**ロック競合の局所的な解消**(ATMS の分離、PMS の snapshot)に集中している。「単一の巨大な特権プロセス」という構造は 10 年間維持されており、セキュリティ上の課題もそこに根差したまま残っている。
+- Nougat から現在までの変化は、基本構造の置き換えではなく**Mainline によるコードの出所の多様化**(APEX サービス)と、**ロック競合の局所的な解消**(ATMS の分離、PMS の snapshot)に集中している。「単一の巨大な特権プロセス」という構造は 10 年間維持されており、セキュリティ上の課題もそこに根差したまま残っている。
 
 ### 次の接続先 (Related Topics)
 

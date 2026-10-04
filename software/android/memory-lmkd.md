@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀な異常事態」という前提を**反転**させたところから始まる。スワップ先のディスクを持たず、数十のアプリがバックグラウンドに居座るスマートフォンでは、メモリ逼迫は**毎分起こる平常運転**である。そこで Android は、カーネルのページ回収 (page reclaim) と OOM killer の上に、「どのプロセスなら殺してよいか」をフレームワークが知らせる経路——`oom_score_adj`——を通し、逼迫の早い段階で**重要度の低いプロセスから計画的に kill する** Low Memory Killer (LMK) を載せた。
+Android のメモリ管理は、汎用 Linux の「メモリ不足 (OOM) は稀な異常事態」という前提を**反転**させたところから始まる。スワップ先のディスクを持たず、数十のアプリがバックグラウンドに居座るスマートフォンでは、メモリ逼迫は**毎分起こる平常運転**である。そこで Android は、カーネルのページ回収 (page reclaim) と OOM killer の上に、「どのプロセスなら殺してよいか」をフレームワークが知らせる経路として `oom_score_adj` を通し、逼迫の早い段階で**重要度の低いプロセスから計画的に kill する** Low Memory Killer (LMK) を載せた。
 
 [`platform-architecture.md`](platform-architecture.md) の「lmkd と『プロセス＝キャッシュ』」節はこれを 1 段落で要約した。本書はその節を Level 3 まで掘り下げ、次の問いに答える。
 
@@ -74,7 +74,7 @@ flowchart TB
 
 凡例: 実線は制御・データの流れ、破線は通知または最終手段の経路。
 
-- **計算・伝達・執行の三分割**が書籍時代から一貫した骨格である。計算は AMS 側（プロセスの意味を知る唯一の場所）、伝達は root 権限を持つ最小デーモン lmkd、執行は Nougat ではカーネル（lowmemorykiller と OOM killer）、現在は lmkd 自身（カーネル OOM killer は最後の砦として残る）。
+- **計算・伝達・執行の三分割**が書籍時代から一貫した基本構成である。計算は AMS 側（プロセスの意味を知る唯一の場所）、伝達は root 権限を持つ最小デーモン lmkd、執行は Nougat ではカーネル（lowmemorykiller と OOM killer）、現在は lmkd 自身（カーネル OOM killer は最後の砦として残る）。
 - lmkd は kill 後に AMS へ `LMK_PROCKILL` 等を返し、AMS は ProcessRecord を掃除する。ActivityRecord と保存状態は残るため、ユーザが戻ればプロセスが再生成される（[`app-components-lifecycle.md`](app-components-lifecycle.md) の「二重の台帳」）。
 
 ### メモリ逼迫の段階と各機構の担当
@@ -98,9 +98,9 @@ flowchart TB
 
 ### 1. カーネルのページ回収 — Android で何が「捨てられる」のか
 
-- **回収は確保と対応しない。** プロセス A の割当が回収を誘発しても、回収されるのは無関係なプロセス B の古いページでありうる。回収はゾーンの水位 (watermark) を契機に、(a) 割当経路の直接回収 (direct reclaim) と (b) バックグラウンドの kswapd で起こる（有野 (2017) Ⅱ巻 3.2.2、一般論は [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) §3）。direct reclaim は割当スレッド——UI スレッドかもしれない——を止めるため、**ジャンクの直接原因**になる。
+- **回収は確保と対応しない。** プロセス A の割当が回収を誘発しても、回収されるのは無関係なプロセス B の古いページでありうる。回収はゾーンの水位 (watermark) を契機に、(a) 割当経路の直接回収 (direct reclaim) と (b) バックグラウンドの kswapd で起こる（有野 (2017) Ⅱ巻 3.2.2、一般論は [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) §3）。direct reclaim は割当スレッド（UI スレッドかもしれない）を止めるため、**ジャンクの直接原因**になる。
 - **ページの 4 分類とスワップの有無。** 書籍の分類（同期可能＝ファイル一致の clean、破棄可能＝未使用キャッシュ、回収不能＝anon dirty、スワップ可能）で言えば、ディスクスワップの無い Android では anon dirty は回収不能である。ゆえに「コードを mmap で clean にする」「Zygote で shared にする」が Android の省メモリ設計の二本柱になった（Ⅰ巻 7.3.2〜7.3.4）。
-- **zram による部分的な解禁。** 書籍のコラムが触れた、メモリ上の圧縮領域へスワップする方式が現在の標準 zram である。anon ページを RAM 内で圧縮して保持するため、ディスクスワップの欠点（書込寿命・レイテンシ・電力。フラッシュの消去単位と書込回数制限は [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md)）を避けつつ、anon dirty を「一部回収可能」にした。ただし 2 次記憶の容量は増えないので、**zram は kill を遅らせる装置であって無くす装置ではない**——書籍のコラムの結論は現在も有効である。
+- **zram による部分的な解禁。** 書籍のコラムが触れた、メモリ上の圧縮領域へスワップする方式が現在の標準 zram である。anon ページを RAM 内で圧縮して保持するため、ディスクスワップの欠点（書込寿命・レイテンシ・電力。フラッシュの消去単位と書込回数制限は [`../../hardware/hw-sw-interface/storage-nvm-interface.md`](../../hardware/hw-sw-interface/storage-nvm-interface.md)）を避けつつ、anon dirty を「一部回収可能」にした。ただし 2 次記憶の容量は増えないので、**zram は kill を遅らせる装置であって無くす装置ではない**。これは書籍のコラムの結論であり、現在も有効である。
 - **MGLRU (Multi-Gen LRU)。** active/inactive の 2 リストでは「最近使われたか」の粒度が粗く、kswapd がページテーブル走査に CPU を費やしていた。MGLRU（Linux 6.1 で mainline）はページを世代で管理し、Android 14 の GKI カーネル (android14-5.15/6.1) で既定有効化された。Google は Pixel 6 での評価としてアプリ起動時間 約 6.6% 短縮、バックグラウンド kill 約 8% 減、kswapd CPU 約 54% 減を報告している（first-party 計測・二次報道経由、独立再現は未確認）。
 
 ### 2. `oom_score_adj` と AMS の重要度計算
@@ -126,7 +126,7 @@ flowchart TB
 ### 3. lowmemorykiller ドライバから userspace lmkd へ
 
 - **Nougat の仕組み**: `drivers/staging/android/lowmemorykiller.c` が shrinker として登録され、`shrink_slab()` の度に空きページ数を `parameters/minfree` と比較、対応する `parameters/adj` 以上のプロセスを kill した（書籍の例: minfree "1024,4096"・adj "0,8" なら空き 4096 ページ未満で adj≥8 を kill）。lmkd は adj/minfree を書く係に過ぎなかった。
-- **廃止の理由**: (a) 空き量の固定閾値は「大きなページキャッシュ（実は捨てられる）」を持つ負荷で誤爆し、低 RAM 端末では過剰なチューニングを要した（source.android.com lmkd）、(b) 回収経路の内側で任意プロセスを殺す設計は mm 側から見て筋が悪く、staging の「将来 mainline 化するための置き場」という役割にも合わなかった。Michal Hocko の削除パッチ (2017-02) が Linux 4.12 に取り込まれ、Android 9 以降は in-kernel ドライバが無ければ userspace lmkd が kill を担う。
+- **廃止の理由**: (a) 空き量の固定閾値は「大きなページキャッシュ（実は捨てられる）」を持つ負荷で誤判定し、低 RAM 端末では過剰なチューニングを要した（source.android.com lmkd）、(b) 回収経路の内側で任意プロセスを殺す設計は mm 側から見て筋が悪く、staging の「将来 mainline 化するための置き場」という役割にも合わなかった。Michal Hocko の削除パッチ (2017-02) が Linux 4.12 に取り込まれ、Android 9 以降は in-kernel ドライバが無ければ userspace lmkd が kill を担う。
 - **PSI への移行**: userspace lmkd の初期は memcg の vmpressure イベントを監視したが誤検知が多く、Android 10 で PSI モードが導入された（PSI は Linux 4.20 mainline、Android 共通カーネル 4.9/4.14/4.19 へバックポート）。Android 11 では thrashing（ページキャッシュの refault 率）と swap 残量を判断に加えた。
 
 **擬似コード — 現行 lmkd の判断ループ（簡略化、`lmkd.cpp` の `__mp_event_psi()` / `find_and_kill_process()` を要約）**
@@ -166,7 +166,7 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 ### 6. 16 KB ページと Android 17 Memory Limiter
 
 - **16 KB ページ (Android 15〜)**: ページが大きいと TLB 到達範囲が広がり、ページフォルトとページテーブル操作が減る。Google 公表値でアプリ起動 平均 3.16% 短縮、起動時電力 4.56% 減、システム起動 約 8%（約 950ms）短縮、その代償は「平均してやや多いメモリ使用」（内部断片化: 4 KB 単位なら 1 ページで済む小さなマッピングが 16 KB を占有）。ネイティブライブラリは ELF LOAD セグメントの 16 KB 整列が必須。lmkd の minfree・zram・PSS のように「ページ数」で語られる量はすべて単位が 4 倍になる点に注意（書籍注 5 が置く 1 ページ 4K という前提は変わる）。Google Play の対応必須期限は、2025-05 の告知では 2025-11-01（延長申請で 2026-05-31）、2026-09-27 時点の developer.android.com では「2027-02-01 以降、非対応の更新はリリース不可」と記載されており、**期限は告知ごとに変動している**。
-- **Memory Limiter (Android 17〜)**: UID ≥ 10000 のアプリプロセスに、端末 RAM 階層ごとの上限を cgroup v2 で課す（例: 8 GB 機で可視 5 GiB / 背面 3 GiB、4 GB 機で 2 GiB / 1 GiB。3,200 MiB 未満と 18,432 MiB 以上の端末は対象外）。`memory.high` 到達で当該 cgroup に回収が集中し（clean ファイルページ破棄と非活性 anon の zram 退避＝ジャンクとして顕在化）、それでも増え続ければ kill される。lmkd が「全体の逼迫時に弱い者から殺す」のに対し、Memory Limiter は「逼迫していなくても暴走者を隔離する」——**重要度順の kill では、前面で漏れ続けるアプリから他を守れない**という「プロセス＝キャッシュ」モデルの穴を塞ぐ追加である。Pixel から開始し、他メーカーは順次採用と告知されている。
+- **Memory Limiter (Android 17〜)**: UID ≥ 10000 のアプリプロセスに、端末 RAM 階層ごとの上限を cgroup v2 で課す（例: 8 GB 機で可視 5 GiB / 背面 3 GiB、4 GB 機で 2 GiB / 1 GiB。3,200 MiB 未満と 18,432 MiB 以上の端末は対象外）。`memory.high` 到達で当該 cgroup に回収が集中し（clean ファイルページ破棄と非活性 anon の zram 退避＝ジャンクとして顕在化）、それでも増え続ければ kill される。lmkd が「全体の逼迫時に弱い者から殺す」のに対し、Memory Limiter は「逼迫していなくても暴走者を隔離する」。これは、**重要度順の kill では、前面で漏れ続けるアプリから他を守れない**という「プロセス＝キャッシュ」モデルの穴を塞ぐ追加である。Pixel から開始し、他メーカーは順次採用と告知されている。
 
 ### 7. 何が変わり、何が変わっていないか (2016 Nougat → 現在)
 
@@ -193,9 +193,9 @@ on PSI event (some or full stall exceeded):          # ro.lmk.psi_partial_stall_
 
 ## 結論 (Conclusions)
 
-- Android のメモリ管理は「スワップできない RAM を、多数のアプリでどう分け合うか」という一つの制約から導かれる。clean と shared を最大化する実行形式・Zygote、殺される前提のライフサイクル契約、アプリ知識をカーネルに渡す `oom_score_adj`——この三点は Nougat の書籍時代から**一切変わっていない**骨格である。
+- Android のメモリ管理は「スワップできない RAM を、多数のアプリでどう分け合うか」という一つの制約から導かれる。clean と shared を最大化する実行形式・Zygote、殺される前提のライフサイクル契約、アプリ知識をカーネルに渡す `oom_score_adj` の三点は、Nougat の書籍時代から**一切変わっていない**基本構成である。
 - 変わったのは執行の場所と尺度である。カーネル内 shrinker の目的外使用は userspace lmkd に移り、空き量の閾値は PSI の停滞時間に置き換わった。Low Memory Killer という呼び名が指す範囲が曖昧になりつつあると書籍が指摘した変遷は、**方針はユーザ空間、機構は mainline カーネル**という分業として完成した。
-- 近年の追加（freezer・圧縮・MGLRU・16 KB・Memory Limiter）は、どれも「プロセス＝キャッシュ」モデルの弱点を補う方向にある: 背面キャッシュが CPU を食う（→凍結）、殺すのが早すぎる（→圧縮と良い LRU）、前面の暴走は重要度で止められない（→per-app 上限）。モデル自体は放棄されず、**キャッシュの管理が精密になり続けている**と総括できる。
+- 近年の追加（freezer・圧縮・MGLRU・16 KB・Memory Limiter）は、どれも「プロセス＝キャッシュ」モデルの弱点を補う方向にある: 背面キャッシュが CPU を消費する（→凍結）、殺すのが早すぎる（→圧縮と良い LRU）、前面の暴走は重要度で止められない（→per-app 上限）。モデル自体は放棄されず、**キャッシュの管理が精密になり続けている**と総括できる。
 
 ### 次の接続先 (Related Topics)
 

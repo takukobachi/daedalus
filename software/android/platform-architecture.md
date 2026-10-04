@@ -15,11 +15,11 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 
 ## 発見事項 (Findings)
 
-1. **Android のサンドボックス単位は「Linux ユーザ」である。** アプリごとに一意の UID を割り当て、カーネルの由緒ある UID 分離をアプリ間の壁として使う。上に SELinux (MAC)・seccomp・権限モデルを重ねる多層構造で、**最も古い機構が最も土台**にある。
-2. **アプリの起動が速いのは Zygote の COW 分岐だから。** 起動時に VM・コアライブラリ・共有リソースをプリロードした Zygote プロセスを常駐させ、全アプリを**そこから `fork`** する。ページは copy-on-write で共有され、起動コストとメモリの両方を節約する——[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の COW の、プラットフォーム設計レベルでの活用。
+1. **Android のサンドボックス単位は「Linux ユーザ」である。** アプリごとに一意の UID を割り当て、カーネルの由緒ある UID 分離をアプリ間の壁として使う。上に SELinux (MAC)・seccomp・権限モデルを重ねる多層構造で、**最も古い機構が最下層**にある。
+2. **アプリの起動が速いのは Zygote の COW 分岐だから。** 起動時に VM・コアライブラリ・共有リソースをプリロードした Zygote プロセスを常駐させ、全アプリを**そこから `fork`** する。ページは copy-on-write で共有され、起動コストとメモリの両方を節約する。これは [`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の COW を、プラットフォーム設計のレベルで活用したものである。
 3. **Binder は「ファイルディスクリプタ的なケイパビリティ」を渡せる RPC である。** Binder ハンドルは偽造できない参照＝権限そのもので、カーネルドライバが送信元 UID/PID を保証する。「誰から来たか」をカーネルが証明する IPC が、権限チェックとサンドボックスの通用門になっている。
 4. **ART は「測ってからコンパイルする」。** インストール時全 AOT（初期）→ インタープリタ＋JIT＋**プロファイル誘導の充電時 AOT**（Android 7+）へと進化した。ホットパスだけを最適化する判断をランタイムの実測に委ねる設計で、JIT/AOT の古典的トレードオフに対する運用込みの答えである。
-5. **swap の代わりにプロセスを殺す。** ディスク swap は行わず（zram による圧縮 RAM swap は併用）、メモリ逼迫時は **lmkd** が重要度の低いプロセスから SIGKILL する。アプリのライフサイクル（onCreate/onStop…）が「いつ殺されてもよい」前提で設計されているため、**プロセスはキャッシュ**として扱える——`onDestroy` は保証されない、はこの帰結。
+5. **swap の代わりにプロセスを殺す。** ディスク swap は行わず（zram による圧縮 RAM swap は併用）、メモリ逼迫時は **lmkd** が重要度の低いプロセスから SIGKILL する。アプリのライフサイクル（onCreate/onStop…）が「いつ殺されてもよい」前提で設計されているため、**プロセスはキャッシュ**として扱える。「`onDestroy` は保証されない」という性質はこの帰結である。
 6. **Project Treble はカーネル/ベンダ層と OS 更新を分離した。** HAL を安定した Binder インタフェース (HIDL→AIDL) の背後に隔離し、SoC ベンダのコードを差し替えずに Android 本体を更新可能にした。組込みの宿痾「ベンダ依存で更新が止まる」への構造的な対処。
 7. **セキュリティは「起動の検証」から「実行時の隔離」まで一本の鎖である。** Verified Boot (dm-verity) がブート段とシステムパーティションの改竄を拒み、その上で UID+SELinux+権限が実行時を隔離し、鍵は Keystore/StrongBox がハード側に隔離する。車載の HSM・セキュアブート（[`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md)）と同じ設計文法である。
 
@@ -59,7 +59,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 ```
 
 - 汎用 Linux の `fork`+`exec` はアドレス空間を捨てて作り直すが、Zygote 分岐は**プリロード済みのアドレス空間をそのまま引き継ぐ**。数百ミリ秒級の VM 初期化が省け、共有ページ（フレームワーククラス・リソース）は全アプリで物理 1 部になる。
-- 代償と対策: fork 元が単一なのでアドレス空間レイアウト (ASLR) が全アプリで似る——Zygote 起動ごとの乱数化に加え、要求時に事前 fork したプールから払い出す USAP など、分岐点の工夫が続く。**「速さのための共有」と「分離のための多様性」の緊張**がここにも現れる。
+- 代償と対策: fork 元が単一なのでアドレス空間レイアウト (ASLR) が全アプリで似る。そのため、Zygote 起動ごとの乱数化に加え、要求時に事前 fork したプールから払い出す USAP など、分岐点の工夫が続く。**「速さのための共有」と「分離のための多様性」の緊張**がここにも現れる。
 
 ### Binder — ケイパビリティ型 IPC
 
@@ -73,8 +73,8 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 ```
 
 - **名前解決は ServiceManager**（ハンドル 0 の well-known オブジェクト）が担い、システムサービスはここに登録される。
-- **送信元の真正性**: サーバは `getCallingUid()` で「カーネルが保証する呼び出し元」を取得して権限判定する。ソケットのような自己申告ではない——Android の権限モデルはこの一点に多くを負っている。
-- 特性: 同期呼び出しが基本（`oneway` で非同期化）、トランザクションバッファは小さい（~1MB、大きなデータは fd/ashmem を**ハンドルとして**渡す）、**死亡通知 (linkToDeath)** で相手プロセスの消滅を購読できる——「相手がいつでも殺される」世界の必需品。
+- **送信元の真正性**: サーバは `getCallingUid()` で「カーネルが保証する呼び出し元」を取得して権限判定する。ソケットのような自己申告ではない。Android の権限モデルはこの一点に多くを負っている。
+- 特性: 同期呼び出しが基本（`oneway` で非同期化）、トランザクションバッファは小さい（~1MB、大きなデータは fd/ashmem を**ハンドルとして**渡す）、**死亡通知 (linkToDeath)** で相手プロセスの消滅を購読できる。死亡通知は「相手がいつでも殺される」世界の必需品である。
 - [`../../hardware/hw-sw-interface/abi-syscalls.md`](../../hardware/hw-sw-interface/abi-syscalls.md) の視点では、Binder は「syscall 境界の上にもう一つ張られた、オブジェクト指向の特権境界」である。
 
 ## 技術詳細 (Technical Details)
@@ -82,27 +82,27 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 ### 1. ART — DEX・AOT/JIT ハイブリッド・GC
 
 - **DEX**: Java/Kotlin は JVM バイトコードではなく、レジスタベースの DEX に変換されて APK に載る。
-- **コンパイル戦略の変遷**: Dalvik (JIT のみ) → ART 初期 (インストール時に全 AOT: インストールが遅くストレージを食う) → **Android 7+ のハイブリッド**——初回はインタープリタ＋JIT で走らせ、ホットメソッドのプロファイルを記録し、**充電中・アイドル時に profile-guided AOT** (`speed-profile`) を行う。よく使う画面は速く、触らないコードはコンパイルすらされない。アプリ配布側はベースラインプロファイル (Baseline Profiles) で「初回からホットパスを AOT 済み」にできる。
+- **コンパイル戦略の変遷**: Dalvik (JIT のみ) → ART 初期 (インストール時に全 AOT: インストールが遅くストレージを多く使う) → **Android 7+ のハイブリッド**。ハイブリッドでは、初回はインタープリタ＋JIT で走らせ、ホットメソッドのプロファイルを記録し、**充電中・アイドル時に profile-guided AOT** (`speed-profile`) を行う。よく使う画面は速く、触らないコードはコンパイルすらされない。アプリ配布側はベースラインプロファイル (Baseline Profiles) で「初回からホットパスを AOT 済み」にできる。
 - **GC**: 並行コピー GC (Concurrent Copying, Android 8+)。リージョンベースのヒープを、読み取りバリアを使って**アプリを止めずに**コンパクションする。Android 10+ で世代別化され、短命オブジェクト優先の回収になった。その後 Android 13 で userfaultfd ベースの並行マークコンパクト (CMC) が導入され、ART の Mainline 更新により対応カーネルの端末では既定 GC になった（[`art-runtime-internals.md`](art-runtime-internals.md) 参照）。UI スレッドを 16ms のフレーム予算内に保つことが GC 設計の支配的要求で、「スループットよりポーズ時間」という組込み寄りの選択である。
 
 ### 2. メモリ管理 — lmkd と「プロセス＝キャッシュ」
 
 - **swap しない、殺す**: ディスク swap はフラッシュの寿命・レイテンシ・電力で割に合わない。代わりに (a) **zram**（圧縮 RAM swap）で匿名ページを RAM 内に圧縮退避し、(b) それでも足りなければ **lmkd** がプロセスを殺す。
-- **重要度は ActivityManager が決める**: 前面 (foreground) > 可視 > サービス > **cached**（画面から消えたアプリ）の順で `oom_score_adj` を動的に更新し、lmkd は**低重要度から**殺す。cached プロセスは「次の起動を速くするためのキャッシュ」であり、殺されることが正常系——[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の OOM killer が「破綻処理」なのに対し、Android では**平常運転の仕組み**に昇格している。
+- **重要度は ActivityManager が決める**: 前面 (foreground) > 可視 > サービス > **cached**（画面から消えたアプリ）の順で `oom_score_adj` を動的に更新し、lmkd は**低重要度から**殺す。cached プロセスは「次の起動を速くするためのキャッシュ」であり、殺されることが正常系である。[`../operating-systems/virtual-memory-paging.md`](../operating-systems/virtual-memory-paging.md) の OOM killer が「破綻処理」なのに対し、Android では**平常運転の仕組み**に昇格している。
 - **逼迫の検知は PSI**: 現代の lmkd はカーネルの PSI (Pressure Stall Information) を監視して「回収で停滞し始めた」を早期検知して動く（旧カーネル lowmemorykiller の置き換え）。
 - **アプリ側の契約**: ライフサイクルコールバック（onStop で状態保存、onDestroy は当てにしない）は、この「いつ殺されてもよい」メモリ管理と表裏一体の API 設計である。
-- **CPU 側の対応物**: cgroup/cpuset で `top-app`（前面アプリ）に広いコア集合と高い優先度を与え、`background` を絞る。big.LITTLE の非対称コアへの配置もここで決まる——[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 階層の実プロダクト適用（プロセス/スレッドと cgroup・task profile の対応は [`process-thread-model.md`](process-thread-model.md)）。
+- **CPU 側の対応物**: cgroup/cpuset で `top-app`（前面アプリ）に広いコア集合と高い優先度を与え、`background` を絞る。big.LITTLE の非対称コアへの配置もここで決まる。これは [`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) の cgroup 階層を実プロダクトに適用したものである（プロセス/スレッドと cgroup・task profile の対応は [`process-thread-model.md`](process-thread-model.md)）。
 
 ### 3. HAL と Project Treble — 更新可能性の構造改革
 
-- Treble (Android 8) 以前、ベンダ実装は Android 本体と密結合で、OS 更新にはベンダの再作業が必須だった——更新が止まる構造的原因。
+- Treble (Android 8) 以前、ベンダ実装は Android 本体と密結合で、OS 更新にはベンダの再作業が必須だった。これが更新が止まる構造的原因である。
 - Treble は **HAL を Binder ベースの安定インタフェース (HIDL、現在は AIDL) の背後に置き**、`system`（Google/AOSP 管理）と `vendor`（SoC ベンダ管理）をパーティションごと分離した。VTS (Vendor Test Suite) が境界の互換性を機械検証する。
-- さらに **APEX** (Android 10+) がランタイムや個別モジュールを Play 経由で更新可能にし（Project Mainline）、「OS 全体の更新」を待たずにセキュリティ修正を配れるようにした。**更新可能性はアーキテクチャの問題である**——車載 SDV が同じ課題（[`../../engineering/automotive/in-vehicle-networks.md`](../../engineering/automotive/in-vehicle-networks.md) のゾーン化・中央集約）に向かっているのは偶然ではない。
+- さらに **APEX** (Android 10+) がランタイムや個別モジュールを Play 経由で更新可能にし（Project Mainline）、「OS 全体の更新」を待たずにセキュリティ修正を配れるようにした。**更新可能性はアーキテクチャの問題である**。車載 SDV が同じ課題（[`../../engineering/automotive/in-vehicle-networks.md`](../../engineering/automotive/in-vehicle-networks.md) のゾーン化・中央集約）に向かっているのは偶然ではない。
 
 ### 4. 起動の検証 — Verified Boot
 
 - ブート ROM → ブートローダ → `boot` パーティション（カーネル）→ `system` と、各段が次段の署名を検証する信頼の連鎖（[`../../hardware/hw-sw-interface/boot-initialization.md`](../../hardware/hw-sw-interface/boot-initialization.md) のセキュアブートの実装例）。
-- システムパーティションは **dm-verity** でブロック単位のハッシュ木により**読むたびに**検証される——起動時 1 回の検証ではなく、実行中の改竄も検出する。
+- システムパーティションは **dm-verity** でブロック単位のハッシュ木により**読むたびに**検証される。起動時 1 回の検証ではなく、実行中の改竄も検出する。
 - **ロールバック保護**: 既知の脆弱性を持つ旧バージョンへの差し戻しを、単調カウンタで拒否する。鍵とカウンタの根はハードウェア（TEE/専用チップ）に置かれる。
 
 ### 5. アプリから見た全体像 — 1 タップの旅
@@ -121,7 +121,7 @@ Android は「Linux カーネルの上に、**汎用 Linux とはまるで異な
 ## セキュリティ考察 (Security Considerations)
 
 - **多層サンドボックス**: ①カーネル UID 分離（アプリ間はファイルシステム・プロセスレベルで他人）→ ② **SELinux** が「root でもできないこと」を規定（`untrusted_app` ドメイン、Android 5 以降全面 enforcing）→ ③ seccomp が使える syscall を制限 → ④ 権限モデル（install 時/実行時/署名権限、Android 6+ で実行時付与）がフレームワーク API を制御。**1 層の突破が即全損にならない**構成で、車載の多層防御（[`../../engineering/automotive/cybersecurity-iso21434.md`](../../engineering/automotive/cybersecurity-iso21434.md)）と同型。
-- **メディアスタックの教訓 (Stagefright, 2015)**: MMS で届く動画の解析だけで RCE に至る脆弱性群は、「巨大な C++ パーサが高権限プロセスに同居する」ことの危険を実証した。以後 Android はメディア処理を**権限の異なる複数プロセスへ分割**し、コーデックを制約の強いサンドボックスに隔離した——攻撃面の分割という古典原則の大規模適用例。
+- **メディアスタックの教訓 (Stagefright, 2015)**: MMS で届く動画の解析だけで RCE に至る脆弱性群は、「巨大な C++ パーサが高権限プロセスに同居する」ことの危険を実証した。以後 Android はメディア処理を**権限の異なる複数プロセスへ分割**し、コーデックを制約の強いサンドボックスに隔離した。攻撃面の分割という古典原則を大規模に適用した例である。
 - **鍵の隔離**: Keystore は鍵操作を TEE (TrustZone) 内で行い、鍵素材を Android 側に出さない。**StrongBox** (Android 9+) はさらに独立したセキュアエレメントへ隔離する。「OS が侵害されても鍵は出ない」を目指す点で、車載 HSM・航空宇宙の耐タンパ設計と同じ文法。
 - **Binder はカーネル攻撃面でもある**: 全プロセスが直接叩けるカーネルドライバであるため、Binder 実装の UAF・競合は権限昇格の常連クラスである（[`../concurrency/lock-free-data-structures.md`](../concurrency/lock-free-data-structures.md) の「カーネル内競合＝昇格」の系譜）。到達可能性の高さゆえ、ここの監査・fuzzing は継続的に行われている。
 - **アプリ間の残る経路**: UID 分離があっても、エクスポートされたコンポーネント・暗黙の Intent・ContentProvider の設定ミスは、アプリ自身が開ける穴として残る。プラットフォームの壁とアプリの設計責任は別物である。

@@ -2,9 +2,9 @@
 
 ## 概要 (Overview)
 
-指が画面に触れてから `View.onTouchEvent()` が呼ばれるまでの経路——**タッチコントローラ → カーネル入力サブシステム (input core / evdev) → `/dev/input/eventN` → InputFlinger (EventHub → InputReader → 中間ステージ群 → InputDispatcher) → InputChannel (socketpair) → アプリの InputEventReceiver → ViewRootImpl の InputStage 連鎖 → View ツリー**——を通しで追う。[`graphics-pipeline.md`](graphics-pipeline.md) が「アプリ → 画面」の出力経路であるのに対し、本書はその逆向きの入力経路であり、両者は Choreographer の `CALLBACK_INPUT` → animation → traversal という 1 フレームの先頭で合流する。
+指が画面に触れてから `View.onTouchEvent()` が呼ばれるまでの経路、すなわち**タッチコントローラ → カーネル入力サブシステム (input core / evdev) → `/dev/input/eventN` → InputFlinger (EventHub → InputReader → 中間ステージ群 → InputDispatcher) → InputChannel (socketpair) → アプリの InputEventReceiver → ViewRootImpl の InputStage 連鎖 → View ツリー**を通しで追う。[`graphics-pipeline.md`](graphics-pipeline.md) が「アプリ → 画面」の出力経路であるのに対し、本書はその逆向きの入力経路であり、両者は Choreographer の `CALLBACK_INPUT` → animation → traversal という 1 フレームの先頭で合流する。
 
-有野 (2017) Ⅰ巻 第 2 章は、この経路を、Linux がデバイスをファイルとして公開し、そのファイルと Java の世界の間をシステムサービスが取り持つという、Android のデバイス対応の典型例として描いた。本書はその Nougat (Android 7.0) 時点の骨格を基準線に置き、**何が変わらず、何が変わったか**——特に InputReader と InputDispatcher の間に挿入された処理段、ウィンドウ情報の出どころの SurfaceFlinger への移動、タッチ遮蔽 (occlusion) によるセキュリティ判定、VSYNC に揃えたバッチングとリサンプリング——を現行 AOSP のソースで確かめる。
+有野 (2017) Ⅰ巻 第 2 章は、この経路を、Linux がデバイスをファイルとして公開し、そのファイルと Java の世界の間をシステムサービスが取り持つという、Android のデバイス対応の典型例として描いた。本書はその Nougat (Android 7.0) 時点の基本構造を基準線に置き、**何が変わらず、何が変わったか**を現行 AOSP のソースで確かめる。特に注目するのは、InputReader と InputDispatcher の間に挿入された処理段、ウィンドウ情報の出どころの SurfaceFlinger への移動、タッチ遮蔽 (occlusion) によるセキュリティ判定、VSYNC に揃えたバッチングとリサンプリングである。
 
 本ドキュメントが答える問い: なぜ入力はカーネルから直接アプリへ届かず、system_server 内のサービスを必ず経由するのか。なぜ InputReader と InputDispatcher は別スレッドなのか。アプリへの経路が Binder ではなく socketpair なのはなぜか。「どのウィンドウに届けるか」の判定はどこで、何の情報に基づいて行われ、それがなぜセキュリティ境界になるのか。分析深度は Level 3。
 
@@ -17,7 +17,7 @@
 
 ## 発見事項 (Findings)
 
-1. **カーネルとの境界は 2016 年から一切変わっていない。** Android は今も `/dev/input` を inotify で監視し、各 `eventN` を epoll で待ち、`read()` で `struct input_event`（time, type, code, value）の列を取り出す。マルチタッチは slot と tracking ID で指の同一性を運ぶ **Type B プロトコル**で、`SYN_REPORT` が「ここまでが同一時刻の 1 フレーム」を示す。多様なデバイスへの対応の大半はカーネルの標準抽象に任せられる、という有野 (2017) Ⅰ巻 2.2 の指摘は、現在も入力スタックの土台である。
+1. **カーネルとの境界は 2016 年から一切変わっていない。** Android は今も `/dev/input` を inotify で監視し、各 `eventN` を epoll で待ち、`read()` で `struct input_event`（time, type, code, value）の列を取り出す。マルチタッチは slot と tracking ID で指の同一性を運ぶ **Type B プロトコル**で、`SYN_REPORT` が「ここまでが同一時刻の 1 フレーム」を示す。多様なデバイスへの対応の大半はカーネルの標準抽象に任せられる、という有野 (2017) Ⅰ巻 2.2 の指摘は、現在も入力スタックの基盤である。
 2. **InputReader と InputDispatcher の間は「空洞」から「パイプライン」になった。** Nougat では InputReader の listener がそのまま InputDispatcher だったが、現行の `InputManager` は `InputReader → UnwantedInteractionBlocker → InputFilter → PointerChoreographer → InputProcessor → InputDeviceMetricsCollector → InputDispatcher` という `InputListener` のデコレータ連鎖を組む（`services/inputflinger/InputManager.cpp` 冒頭コメント）。パーム除去 (Android 13〜)、ジェスチャ分類 HAL 呼び出し (InputClassifier → Android 14 で InputProcessor に改名)、マウスポインタ管理 (Android 15〜)、アクセシビリティ用キーフィルタ (Rust 実装、Android 15〜) が、**Reader/Dispatcher の責務を汚さず差し込める**構造になった。
 3. **「どのウィンドウか」の真実は WindowManager から SurfaceFlinger に移った。** Nougat では WindowManagerService が `InputWindowHandle` の一覧を InputDispatcher に登録した（有野 (2017) Ⅰ巻 2.5.2）。Android 10 頃から SurfaceFlinger がレイヤ木から入力ウィンドウ情報 (`InputWindowInfo`) を作って InputFlinger に送る方式に移り、Android 13 では `WindowInfosListener` として InputDispatcher が SurfaceFlinger の更新を購読する形になった。**画面に実際に合成されている形状・変換・可視性**と、入力のヒットテストに使う幾何を同一ソースにするための移動であり、アニメーション中や BLAST トランザクション適用前後で「見えている場所と触れる場所がずれる」問題の根本対策である。
 4. **アプリへの配送路が Binder でなく socketpair なのは、流量と完了通知の性質が違うからである。** InputChannel は `socketpair(AF_UNIX, SOCK_SEQPACKET)` の両端で、送信バッファは意図的に 32KB に絞られている（`libs/input/InputTransport.cpp`）。サーバ側 InputPublisher が `InputMessage` を書き、アプリ側 InputConsumer が読み、処理完了を **finished シグナルとして同じソケットで返す**。高頻度（120Hz 超のタッチ報告）で小さい固定長メッセージを、メッセージ境界を保ったまま順序通りに流し、かつ双方向に完了を返す用途には、トランザクション単位で同期を取る Binder より、fd 1 本の SEQPACKET の方が素直に合う。
@@ -50,7 +50,7 @@ flowchart LR
 ```
 
 - **境界①（カーネル ↔ ユーザ空間）**: 標準の文字デバイス + epoll。Android 固有物はない。
-- **境界②③（system_server ↔ アプリ）**: ウィンドウごとの InputChannel。サーバ端は InputDispatcher、クライアント端は ViewRootImpl が持つ。チャネルの生成は WindowManagerService（[`window-manager.md`](window-manager.md)）が `addWindow`（アプリ側 `WindowManager.addView`）時に InputManagerService へ依頼し、片端を Binder の out 引数としてアプリに渡す——**fd は Binder で一度だけ運ばれ、以後のイベント本体は fd 上を流れる**という、[`binder-internals.md`](binder-internals.md) の「大物は fd で」の入力版である。
+- **境界②③（system_server ↔ アプリ）**: ウィンドウごとの InputChannel。サーバ端は InputDispatcher、クライアント端は ViewRootImpl が持つ。チャネルの生成は WindowManagerService（[`window-manager.md`](window-manager.md)）が `addWindow`（アプリ側 `WindowManager.addView`）時に InputManagerService へ依頼し、片端を Binder の out 引数としてアプリに渡す。これは、**fd は Binder で一度だけ運ばれ、以後のイベント本体は fd 上を流れる**という、[`binder-internals.md`](binder-internals.md) の「大物は fd で」の入力版である。
 - **ウィンドウ情報の流れ（破線ではない第三の入力）**: WMS → SurfaceControl トランザクション → SurfaceFlinger → WindowInfosListener → InputDispatcher。入力の宛先決定は、画面合成と同じ真実（レイヤ木）を参照する。
 
 ### スレッド構成 — 読むスレッドと配るスレッドを分ける理由
@@ -77,7 +77,7 @@ flowchart LR
 - ドライバは割り込みで接触座標を取得し、`input_mt_slot()`（`ABS_MT_SLOT`）→ `ABS_MT_TRACKING_ID` → `ABS_MT_POSITION_X/Y` → … → `input_sync()`（`SYN_REPORT`）を送るだけでよい。ノード生成・バッファリング・タイムスタンプ付与は input core と evdev が行う（有野 (2017) Ⅰ巻 2.2.2〜2.2.3、kernel `input.rst`）。
 - **Type B の要点は状態差分**: slot ごとの状態は受信側（Android の `MultiTouchMotionAccumulator`）が保持し、ドライバは変化分だけ送る。tracking ID が新しく現れれば接触開始、`-1` になれば離脱。kernel 文書は Type A（全接触を毎フレーム匿名で再送）を旧式とし、現行ドライバは Type B を使う。これが Android の `MotionEvent` における **pointer ID の安定性**（ピンチ中に 2 本の指が入れ替わらない）の出どころで、有野 (2017) Ⅰ巻 2.2.2 の図 2.4 が描く、軌跡がどちらの指のものかという保証はハードウェア／ドライバ層で既に確定している。
 - デバイス能力の問い合わせは `ioctl`（`EVIOCGBIT`、`EVIOCGABS` 等）で行う。EventHub は `ABS_MT_POSITION_X/Y` の有無でマルチタッチデバイスと判定し、デバイスクラス（KEYBOARD / CURSOR / TOUCH / TOUCH_MT / …）を付与する（有野 (2017) Ⅰ巻 2.4.3 表 2.1、現行は `InputDeviceClass` の `ftl::Flags`）。
-- 時刻は `EVIOCSCLOCKID` で `CLOCK_MONOTONIC` に揃えられ（センサ系のみ `CLOCK_BOOTTIME`）、`MotionEvent.getEventTime()` と Choreographer のフレーム時刻が同じ時計で比較可能になる——後述のリサンプリングの前提である。
+- 時刻は `EVIOCSCLOCKID` で `CLOCK_MONOTONIC` に揃えられ（センサ系のみ `CLOCK_BOOTTIME`）、`MotionEvent.getEventTime()` と Choreographer のフレーム時刻が同じ時計で比較可能になる。これが後述のリサンプリングの前提である。
 
 ### 2. EventHub と InputReader — RawEvent から NotifyMotionArgs へ
 
@@ -139,7 +139,7 @@ flowchart LR
 - **バッチングの意味**: タッチコントローラは 120〜240Hz 以上で報告しうるが、アプリは 1 フレームに 1 回しか描けない。MOVE を VSYNC ごとに 1 つにまとめる（中間サンプルは `MotionEvent` の履歴として残す）ことで、UI スレッドの仕事量を報告レートではなくフレームレートに比例させる。これが [`graphics-pipeline.md`](graphics-pipeline.md) の「Choreographer は input → animation → traversal の順」の input 段の中身である。
 - **リサンプリング**: バッチの最終サンプルをそのまま使うと、報告時刻とフレーム時刻の位相差が毎フレーム変わり、スクロール量が不均一になる。InputConsumer は `frameTime − RESAMPLE_LATENCY (5ms)` の時刻の座標を、隣接 2 サンプル間の内挿、または（サンプル間隔 2〜20ms の条件下で）最大 8ms までの外挿で合成する（`libs/input/InputConsumer.cpp`、現行は `Resampler.cpp`・`InputConsumerNoResampling.cpp` への分離も進行中）。「5ms のレイテンシを払ってジッタを買う」設計で、Swappy と同じ思想。予測をさらに進める `android.view.MotionPredictor`（TFLite モデル、API 34 = Android 14 で追加: `core/java/android/view/MotionPredictor.java` は android-14.0.0_r1 に存在し 13.0.0_r1 には無い。Jetpack 側のラッパは `androidx.input` の `MotionEventPredictor`）はスタイラス描画向けに別レイヤで提供される。
 - **`requestUnbufferedDispatch()`**（`requestUnbufferedDispatch(MotionEvent)` は API 21 = Android 5.0 から (android-5.0.0_r1 の `View.java` line 9560)。ソースクラス単位で常時指定できる `requestUnbufferedDispatch(int source)` が API 30 = Android 11 で追加 (android-11.0.0_r1 の `View.java` line 16004; 10.0.0_r1 には無い)）: ゲームや描画アプリはバッチングを無効化し、報告レートのまま受け取れる。既定がバッチであることは、「多数派のアプリには省電力となめらかさ、少数派には明示的オプトイン」という Android の既定値設計の典型である。
-- **InputStage 連鎖**（有野 (2017) Ⅰ巻 6.5.6 では `doProcessInputEvents()` での IME 横取りとして概説）: IME がキーを先に食う段（ImeInputStage）、ネイティブアクティビティ向けの段、View ツリーへ渡す段、トラックボール等を合成イベントに変換する段を責務の連鎖（Chain of Responsibility）として並べる。タッチは IME 段を事実上素通りして ViewPostImeInputStage に至る。
+- **InputStage 連鎖**（有野 (2017) Ⅰ巻 6.5.6 では `doProcessInputEvents()` での IME 横取りとして概説）: IME がキーを先に消費する段（ImeInputStage）、ネイティブアクティビティ向けの段、View ツリーへ渡す段、トラックボール等を合成イベントに変換する段を責務の連鎖（Chain of Responsibility）として並べる。タッチは IME 段を事実上素通りして ViewPostImeInputStage に至る。
 - **View ツリー内の配送**: `ViewGroup.dispatchTouchEvent()` は DOWN 時に `onInterceptTouchEvent()` で横取りの機会を得、子を Z 順の逆（手前から）にヒットテストして `TouchTarget` 連結リストに記録し、以後の MOVE/UP をその子へ送る。親が途中で intercept すると子には `ACTION_CANCEL` が送られる。「DOWN で対象を固定し、横取りは CANCEL で明示する」という規則は、**InputDispatcher（ウィンドウ間）と ViewGroup（View 間）で同型**であり、spy ウィンドウの `pilferPointers()` と `onInterceptTouchEvent()` はそれぞれの階層での同じ操作である。詳細は [`view-system-layout.md`](view-system-layout.md)。
 
 ### 7. 何が変わり、何が変わっていないか (2016 Nougat → 現在)
@@ -156,7 +156,7 @@ flowchart LR
 | フレーム同期 | ViewRootImpl がキューイング後まとめて処理（Ⅰ巻 6.5.6） | `CALLBACK_INPUT` バッチ + 5ms リサンプリング + unbuffered オプトイン + 予測 API | 高リフレッシュ（90/120Hz）と高報告レート化で位相ずれが目立つ |
 | 実装言語 | C++ + Java | C++ 主体、InputFilter など一部 Rust（Android 15〜） | 新規段からのメモリ安全化 |
 
-- 総じて、**ファイルとして公開し、システムサービスが仲介し、チャネルで各ウィンドウへ届けるという有野 (2017) の三段構造は完全に生きており**、変化はすべて (a) 中間段の挿入、(b) 宛先決定の情報源の置換、(c) 時間軸（VSYNC）への整列、という骨格を保った拡張である。
+- 総じて、**ファイルとして公開し、システムサービスが仲介し、チャネルで各ウィンドウへ届けるという有野 (2017) の三段構造は完全に生きており**、変化はすべて (a) 中間段の挿入、(b) 宛先決定の情報源の置換、(c) 時間軸（VSYNC）への整列、という基本構造を保った拡張である。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -164,14 +164,14 @@ flowchart LR
 - **注入 (injection) は権限で区切る**: `InputManager.injectInputEvent` は `INJECT_EVENTS`（署名/特権）を要し、アクセシビリティサービス経由の注入には `POLICY_FLAG_INJECTED_FROM_ACCESSIBILITY` が付く。アプリが受け取るイベントの出自（ハードウェア由来か注入か）を区別できる印が残される。アクセシビリティは入力を観測・再注入できる最強の権限の一つであり、Android 13 以降の「制限付き設定」（サイドロードアプリのアクセシビリティ有効化制限）と組で運用される（[`security-model.md`](security-model.md)）。
 - **タップジャッキングとオーバーレイ**: 半透明の `TYPE_APPLICATION_OVERLAY` で重要ボタンを偽装し、`FLAG_NOT_TOUCHABLE` でタッチを下へ通す古典攻撃に対し、Android 12 の untrusted touch 遮断は判定点を InputDispatcher へ移した。例外（同一 UID、IME・アクセシビリティ・アシスタントの trusted ウィンドウ、不可視・完全透明、合成不透明度 0.8 以下）の境界設計が攻撃面であり、trusted overlay の付与が system 権限に限られることが要となる。重要操作を持つアプリは依然として `filterTouchesWhenObscured` / `FLAG_WINDOW_IS_PARTIALLY_OBSCURED` による二重防御が推奨される。
 - **spy ウィンドウとモニタの権限**: 全タッチを覗ける spy は、誤って非特権プロセスに許せば全画面キーロガーになる。`MONITOR_INPUT` 権限の検査（WMS `sanitizeInputFeatures()`）と、`pilferPointers()` による横取りのログ（CANCEL がアプリに届く）が防壁である。
-- **入力はウェイクと電力の攻撃面でもある**: `EPOLLWAKEUP` はイベントごとにウェイクロックを取るため、壊れた（あるいは悪意ある）USB/Bluetooth HID がイベントを連射すればサスペンドを阻害できる。外部入力デバイスは [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) の HID 自己記述性ゆえにドライバなしで接続でき、BadUSB 型のキーストローク注入はこの経路をそのまま使う——カーネルから見て正規の入力デバイスである限り、Android の入力スタックは区別できない。
+- **入力はウェイクと電力の攻撃面でもある**: `EPOLLWAKEUP` はイベントごとにウェイクロックを取るため、壊れた（あるいは悪意ある）USB/Bluetooth HID がイベントを連射すればサスペンドを阻害できる。外部入力デバイスは [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) の HID 自己記述性ゆえにドライバなしで接続でき、BadUSB 型のキーストローク注入はこの経路をそのまま使う。カーネルから見て正規の入力デバイスである限り、Android の入力スタックは区別できない。
 - **パーサとしての InputFlinger**: EventHub・Mapper はカーネルが伝えるデバイス能力（軸範囲・キー配列）と IDC/KL/KCM ファイルを解釈する、system_server 内のネイティブコードである。未知のデバイスが提示する異常な軸範囲などは入力の信頼境界上の値であり、新規段の Rust 実装はこの攻撃面を小さくする方向に沿う。
 
 ## 結論 (Conclusions)
 
 - Android の入力パイプラインは、有野 (2017) が 2016 年に描いた三段構造、すなわちカーネルがファイルとして公開し、システムサービスが仲介し、ウィンドウごとのチャネルで届ける構造をそのまま保っている。カーネル境界（evdev・Type B・epoll）と配送路（socketpair の InputChannel）は 10 年近く不変であり、それは両者が問題に対してほぼ最小の抽象だからである。
-- 変化は骨格の**内側**で起きた: Reader と Dispatcher の間は横断的関心事（パーム除去・アクセシビリティ・ポインタ管理・分類）を差し込むデコレータ連鎖になり、宛先決定の情報源は WMS から SurfaceFlinger のレイヤ木へ移って「見えている場所＝触れる場所」を構造的に保証するようになった。
-- 時間軸の設計——読むスレッドと配るスレッドの分離、finished による ANR 計測、VSYNC に揃えたバッチングと 5ms リサンプリング——は、[`graphics-pipeline.md`](graphics-pipeline.md) の出力側と対をなし、「スループットではなく等間隔性となめらかさ」という Android の知覚品質設計が入力側でも貫かれていることを示す。
+- 変化は基本構造の**内側**で起きた: Reader と Dispatcher の間は横断的関心事（パーム除去・アクセシビリティ・ポインタ管理・分類）を差し込むデコレータ連鎖になり、宛先決定の情報源は WMS から SurfaceFlinger のレイヤ木へ移って「見えている場所＝触れる場所」を構造的に保証するようになった。
+- 時間軸の設計（読むスレッドと配るスレッドの分離、finished による ANR 計測、VSYNC に揃えたバッチングと 5ms リサンプリング）は、[`graphics-pipeline.md`](graphics-pipeline.md) の出力側と対をなし、「スループットではなく等間隔性となめらかさ」という Android の知覚品質設計が入力側でも貫かれていることを示す。
 - 配送判断はセキュリティ判断でもある。遮蔽判定・spy・注入フラグはすべて InputDispatcher という単一の関所に集約されており、タップジャッキング対策の重心が View の属性から配送ポリシーへ移ったことは、「全アプリ共通の判定は共通の通過点で行う」という設計原則の適用である。
 
 ### 次の接続先 (Related Topics)

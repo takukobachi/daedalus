@@ -8,7 +8,7 @@
 
 ## 方法論 (Methodology)
 
-- ベースラインは有野 (2017) Ⅰ巻 第 4 章 (View ツリーとレイアウト)・6.5 節 (ViewRootImpl)、Ⅱ巻 Appendix (View ツリーの状態保存) とする。同書は Android 7.0 Nougat (android-7.0.0_r6) 準拠で、掲載コードは著者による簡略化擬似コードであるため、機構の骨格の把握に用い、現行の詳細は AOSP ソースと Android Developers の公式文書で確認する。
+- ベースラインは有野 (2017) Ⅰ巻 第 4 章 (View ツリーとレイアウト)・6.5 節 (ViewRootImpl)、Ⅱ巻 Appendix (View ツリーの状態保存) とする。同書は Android 7.0 Nougat (android-7.0.0_r6) 準拠で、掲載コードは著者による簡略化擬似コードであるため、機構の大枠の把握に用い、現行の詳細は AOSP ソースと Android Developers の公式文書で確認する。
 - 現在の状態は AOSP `frameworks/base/core/java/android/view/` (`View`・`ViewGroup`・`ViewRootImpl`・`WindowManagerGlobal`・`LayoutInflater`・`IWindow.aidl`・`IWindowSession.aidl`) と、Android 15/16/17 の behavior changes、Compose / AAPT2 の公式文書に置く (Accessed: 2026-09-27)。バージョン依存の機構には導入版を付記する。
 - 「データ (リソース・状態) はどの形式で・どのプロセス境界を通るか」「制約はどちら向きに流れるか (親→子／子→親)」を常に区別する。前者は [`binder-internals.md`](binder-internals.md)、後者は Compose との比較の軸になる。
 - 入力配送 (InputChannel → dispatchTouchEvent) は [`input-pipeline.md`](input-pipeline.md)、メインスレッドの Looper/同期バリアは [`looper-handler-message-loop.md`](looper-handler-message-loop.md) に詳説を譲り、本書では接続点のみ扱う。
@@ -16,12 +16,12 @@
 ## 発見事項 (Findings)
 
 1. **View ツリーは Composite パターンによる「領域の委譲」である。** 親は常に子の領域を包含するので、ヒット判定・描画・レイアウトはいずれも自分の直接の子にだけ仕事を振る再帰で書ける (有野 (2017) Ⅰ巻 4.1)。ViewGroup は外から見れば「自分の矩形を処理する View」にすぎず、階層の深さは呼び出し側から隠蔽される。この単純さが、後述の「多重 measure が入れ子で指数的に膨らむ」問題の裏面でもある。
-2. **リソースがバイナリなのは「実行時パース」を前提に、そのコストをゼロに近づけるためである。** Android は 1 つの APK を画面密度・言語・向きの異なる無数の端末で動かすため、代替リソースの選択を**ビルド時ではなく実行時**に行う必要がある。そこで aapt/aapt2 は XML を属性 ID・型付き整数に前処理したバイナリ XML と `resources.arsc` に変換し、`ResXMLParser` はオフセットを進めるだけで木を辿る。Android 11 (API 30) 以降、`resources.arsc` は非圧縮・4 バイト境界整列でなければインストールできない——**mmap してページキャッシュを全プロセスで共有する**ことが設計の前提として明文化された。
+2. **リソースがバイナリなのは「実行時パース」を前提に、そのコストをゼロに近づけるためである。** Android は 1 つの APK を画面密度・言語・向きの異なる無数の端末で動かすため、代替リソースの選択を**ビルド時ではなく実行時**に行う必要がある。そこで aapt/aapt2 は XML を属性 ID・型付き整数に前処理したバイナリ XML と `resources.arsc` に変換し、`ResXMLParser` はオフセットを進めるだけで木を辿る。Android 11 (API 30) 以降、`resources.arsc` は非圧縮・4 バイト境界整列でなければインストールできない。この規則により、**mmap してページキャッシュを全プロセスで共有する**ことが設計の前提として明文化された。
 3. **AttributeSet は「現在位置を持つ 1 個のパーサ」を全 View で使い回している。** LayoutInflater は要素ごとに属性オブジェクトを作らず、同一の XmlResourceParser (= AttributeSet) をカーソルだけ進めて各 View のコンストラクタに渡す (有野 (2017) Ⅰ巻 4.3.6)。GC を起こさない設計であり、コンストラクタの外で AttributeSet を保持してはならない理由でもある。スタイル・テーマの解決は `obtainStyledAttributes()` が JNI 越しに一括で行い、`TypedArray` で返す。
 4. **measure は「親→子の制約 (MeasureSpec)」と「子→親の申告 (setMeasuredDimension)」の 2 方向で、layout は位置を決めるだけである。** MeasureSpec はモード 2bit (UNSPECIFIED / EXACTLY / AT_MOST) とサイズ 30bit を 1 つの int に詰める。LinearLayout の weight・RelativeLayout・wrap_content 親の下の weight 子などは同じ子を**複数回 measure** し、それが入れ子になると回数が乗算される ("double taxation")。Compose はこれを**型システムと実行時例外で禁止**した (子の measure は 1 回、事前情報は intrinsics で問う)。
 5. **ViewRootImpl は View ではなく、ツリーとウィンドウシステムの間の「アダプタ兼ドライバ」である。** `WindowManagerGlobal.addView()` で生成され、`IWindowSession` (アプリ→WMS、同期) でウィンドウを登録・relayout し、`IWindow` (WMS→アプリ、**oneway**) でリサイズ・インセット変化を受ける。ツリーから見れば「親」だが、実体は Choreographer の TRAVERSAL コールバックで `performTraversals()` (measure → layout → draw) を回すスケジューラである。
-6. **`requestLayout()` / `invalidate()` は「親を辿って ViewRootImpl に届くフラグ」であり、即時には何もしない。** 各 View はフラグを立てて親に伝播し、根の ViewRootImpl が `scheduleTraversals()` で次の VSYNC に 1 回だけ走査を予約する。何度呼んでもフレームあたり 1 回にまとめられる (coalescing) のは、この「汚れ印 + 予約」設計による。同時に `checkThread()` がメインスレッド以外からの呼び出しを拒否する——単一スレッド UI モデルの関所である。
-7. **2016 年の骨格はほぼそのまま残り、変化は「上に載るもの」と「ウィンドウ境界の契約」に集中した。** MeasureSpec・2 パス・DecorView/`android:id/content`・ViewRootImpl・saveHierarchyState はそのままで、Compose も `ComposeView` という 1 個の View として ViewRootImpl の下に住む。一方、ウィンドウとアプリの境界では、edge-to-edge が API 35 で既定化・API 36 でオプトアウト不能となり、大画面では API 36/37 で向き・リサイズ制限が無視される——「**アプリは自分の矩形とインセットを動的に受け入れよ**」という契約の強化である。
+6. **`requestLayout()` / `invalidate()` は「親を辿って ViewRootImpl に届くフラグ」であり、即時には何もしない。** 各 View はフラグを立てて親に伝播し、根の ViewRootImpl が `scheduleTraversals()` で次の VSYNC に 1 回だけ走査を予約する。何度呼んでもフレームあたり 1 回にまとめられる (coalescing) のは、この「汚れ印 + 予約」設計による。同時に `checkThread()` がメインスレッド以外からの呼び出しを拒否する。これが単一スレッド UI モデルの関所である。
+7. **2016 年の基本構造はほぼそのまま残り、変化は「上に載るもの」と「ウィンドウ境界の契約」に集中した。** MeasureSpec・2 パス・DecorView/`android:id/content`・ViewRootImpl・saveHierarchyState はそのままで、Compose も `ComposeView` という 1 個の View として ViewRootImpl の下に住む。一方、ウィンドウとアプリの境界では、edge-to-edge が API 35 で既定化・API 36 でオプトアウト不能となり、大画面では API 36/37 で向き・リサイズ制限が無視される。これは「**アプリは自分の矩形とインセットを動的に受け入れよ**」という契約の強化である。
 
 ## アーキテクチャ (Architecture)
 
@@ -70,17 +70,17 @@ ViewRootImpl  ← View ではない。IWindow(W)・Surface・InputChannel を 1 
 
 ### 1. コンパイル済みリソースと AssetManager — なぜバイナリか
 
-- **型付き整数への前処理**: aapt が出力するバイナリ XML では、属性名は `android:orientation` → `0x010100c4` のような**リソース ID**に、値は (型, データ) の組に置換される。例えば `"horizontal"` は (type 0x10 = 整数, 0x0)、`"50dp"` は (type 0x05 = dimension, `0x3201`) で、上位ビットが数値 50、下位ニブルが単位 (0=px, 1=dp, 2=sp) を表す (有野 (2017) Ⅰ巻 4.2.3、`aapt dump xmltree` による観察)。`@dimen/...` や `?attr/...` のような**実行時にしか決まらない参照は型タグ付きで温存**し、構成 (密度・言語・向き) に応じた解決を AssetManager に委ねる。つまり「ビルド時に潰せるものはすべて潰し、端末依存の選択だけを残す」分業である。
+- **型付き整数への前処理**: aapt が出力するバイナリ XML では、属性名は `android:orientation` → `0x010100c4` のような**リソース ID**に、値は (型, データ) の組に置換される。例えば `"horizontal"` は (type 0x10 = 整数, 0x0)、`"50dp"` は (type 0x05 = dimension, `0x3201`) で、上位ビットが数値 50、下位ニブルが単位 (0=px, 1=dp, 2=sp) を表す (有野 (2017) Ⅰ巻 4.2.3、`aapt dump xmltree` による観察)。`@dimen/...` や `?attr/...` のような**実行時にしか決まらない参照は型タグ付きで温存**し、構成 (密度・言語・向き) に応じた解決を AssetManager に委ねる。つまり「ビルド時に解決できるものはすべて解決し、端末依存の選択だけを残す」分業である。
 - **ResXMLParser とオフセット走査**: Java の `XmlResourceParser` はネイティブ `ResXMLParser` (libandroidfw) の薄いラッパで、ノード間はヘッダのサイズを足すだけで移動できる。文字列比較なしに数値比較だけで進むため、`ListView`/`RecyclerView` の各行を毎回 inflate する設計が実用速度で成立した (有野 (2017) Ⅰ巻 4.3 コラム)。
-- **aapt → aapt2**: AAPT2 は処理を **compile** (各リソースを `.flat` 中間形式へ、変更ファイルだけ再コンパイル可能) と **link** (全 `.flat` を統合して APK・`R` を生成) に分割し、App Bundle 向けには `--proto-format` で Protobuf 表現を出す。`--enable-sparse-encoding` は `resources.arsc` のエントリを疎表現にし、サイズ・メモリ・起動遅延を減らす代わりに個々の参照をわずかに遅くする——ここでも最適化対象は「実行時に mmap された表の常駐コスト」である。
+- **aapt → aapt2**: AAPT2 は処理を **compile** (各リソースを `.flat` 中間形式へ、変更ファイルだけ再コンパイル可能) と **link** (全 `.flat` を統合して APK・`R` を生成) に分割し、App Bundle 向けには `--proto-format` で Protobuf 表現を出す。`--enable-sparse-encoding` は `resources.arsc` のエントリを疎表現にし、サイズ・メモリ・起動遅延を減らす代わりに個々の参照をわずかに遅くする。ここでも最適化対象は「実行時に mmap された表の常駐コスト」である。
 - **mmap 前提の明文化 (Android 11〜)**: targetSdk 30 以上では、圧縮された、または 4 バイト境界に整列していない `resources.arsc` を含む APK はインストールできない。圧縮されていると mmap できず各プロセスが RAM に展開する必要があるためで、**リソース表は全アプリで共有されるページキャッシュ**であるという Nougat 期からの設計意図が、インストール時検証に格上げされた。
 
 ### 2. LayoutInflater・Factory2・テーマ解決
 
 - **タグ → クラス**: `createViewFromTag()` はタグ名に `.` がなければ `onCreateView()` (Phone 用実装が `android.widget.`・`android.webkit.`・`android.app.` を順に前置) を、あれば完全修飾名で `createView()` を呼ぶ。クラスはリフレクションでロードし、`(Context, AttributeSet)` コンストラクタを取り出して**静的マップにキャッシュ**する (有野 (2017) Ⅰ巻 4.3.4–4.3.5)。カスタム View にこの 2 引数コンストラクタが必須なのはこのためである。
 - **Factory2 による差し替え**: `createViewFromTag()` はまず `Factory2`/`Factory` に生成を委ねる。AppCompat は自らを Factory2 として登録し、`AppCompatViewInflater` が `Button`→`AppCompatButton`、`TextView`→`AppCompatTextView` など十数種を**タグはそのままにクラスだけ差し替える**。テーマ属性 `viewInflaterClass` で差し替え器自体を交換でき、Material Components はこれで `MaterialButton` 等へ置換する。書籍はこの層を扱わないが (当時も存在)、現在の Views アプリでは「XML に書いたクラスと実際に生成されるクラスが違う」のが常態であり、バックポートとデザインシステム適用の主要な挿入点になっている。
-- **LayoutParams は親の語彙**: `layout_` で始まる属性は子に書かれるが、解釈するのは親である。inflater は子の生成時に親の `generateLayoutParams(attrs)` を呼び、親固有の LayoutParams サブクラス (LinearLayout なら weight 付き) を子にぶら下げる (有野 (2017) Ⅰ巻 4.8.1)。子クラスは weight の存在を知らない——**レイアウト規則を親の実装に閉じ込める**設計で、ConstraintLayout もこの枠内で制約を LayoutParams として受け取る。
-- **スタイル解決の優先順位**: `obtainStyledAttributes(attrs, R.styleable.X, defStyleAttr, defStyleRes)` は「XML 直書き → `style=` 属性 → テーマ中の defStyleAttr が指すスタイル → defStyleRes → テーマ直下の値」の順で解決し、必要な属性群を**1 回の JNI 呼び出しで配列にまとめて**返す。`TypedArray.recycle()` はこの配列をプール再利用するための作法である。テーマとスタイルの唯一の違いは、`windowNoTitle` などの Window Style がテーマ経由でしか効かず、DecorView 下のテンプレート選択 (`screen_simple`・`screen_title` 等) に使われる点である (同 4.4.2)。
+- **LayoutParams は親の語彙**: `layout_` で始まる属性は子に書かれるが、解釈するのは親である。inflater は子の生成時に親の `generateLayoutParams(attrs)` を呼び、親固有の LayoutParams サブクラス (LinearLayout なら weight 付き) を子にぶら下げる (有野 (2017) Ⅰ巻 4.8.1)。子クラスは weight の存在を知らない。これは**レイアウト規則を親の実装に閉じ込める**設計で、ConstraintLayout もこの枠内で制約を LayoutParams として受け取る。
+- **スタイル解決の優先順位**: `obtainStyledAttributes(attrs, R.styleable.X, defStyleAttr, defStyleRes)` は「XML 直書き → `style=` 属性 → テーマ中の defStyleAttr が指すスタイル → defStyleRes → テーマ直下の値」の順で解決し、必要な属性群を**1 回の JNI 呼び出しで配列にまとめて**返す。`TypedArray.recycle()` はこの配列をプール再利用するための作法である。テーマとスタイルの唯一の違いは、`windowNoTitle` などの Window Style がテーマ経由でしか適用されず、DecorView 下のテンプレート選択 (`screen_simple`・`screen_title` 等) に使われる点である (同 4.4.2)。
 
 ### 3. MeasureSpec と 2 パスレイアウト — 何がコストを生むか
 
@@ -99,14 +99,14 @@ makeMeasureSpec(size, mode) = (size & ~MODE_MASK) | (mode & MODE_MASK)
 - **子のモードは「親のモード × 子の LayoutParams」の表で決まる**: 例えば親が EXACTLY 700px で子が `wrap_content` なら子には AT_MOST(残り幅)、`match_parent` なら EXACTLY(残り幅) が渡る (`ViewGroup.getChildMeasureSpec()`)。子は受けた制約の範囲でサイズを計算し `setMeasuredDimension()` で申告し、親はその合計から自分のサイズを決める (有野 (2017) Ⅰ巻 4.6–4.7)。
 - **多重 measure の発生源**: weight 付き LinearLayout は「weight なしの子を先に measure → 余りを weight 比で配り、weight 子を EXACTLY で再 measure」する。親が `wrap_content` なら、最大サイズで一度測って本来のサイズを得たうえで再度測る (同 4.8 コラム)。RelativeLayout は依存関係の解決のため水平・垂直で 2 回測る。公式文書はこれを **double taxation** と呼び、ルート付近・深い階層・RecyclerView の各行で致命的になるとする。入れ子の深さ d で各段が 2 回測れば最悪 O(2^d) 回の measure になる。
 - **ViewRootImpl 側の追加測定**: `performTraversals()` は `WRAP_CONTENT` の窓 (ダイアログ等) では `measureHierarchy()` で好ましい幅を試しながら複数回測ることがあり、`View.measure()` は `(widthSpec, heightSpec)` をキーにした measure キャッシュ (`mMeasureCache`, `LongSparseLongArray`) と `PFLAG_FORCE_LAYOUT` フラグで「同じ制約・汚れなし」の再測定を省く (`ViewRootImpl.measureHierarchy` は `core/java/android/view/ViewRootImpl.java` line 3264、`View.measure` は `View.java` lines 28320-28402 でキャッシュ参照は `forceLayout ? -1 : mMeasureCache.indexOfKey(key)` (line 28358); いずれも aosp-mirror snapshot (2025-11) の main)。カスタム View の `onMeasure()` が**複数回呼ばれても最後の結果が正となるよう冪等に**書く必要があるのはこのためである。
-- **layout と gravity**: measure 完了後の layout パスは各子の left/top を決めるだけで、`gravity` (自分の中身の寄せ方) と `layout_gravity` (親に対する自分の寄せ方、LayoutParams) はほぼここで処理される——ただし RelativeLayout のように onMeasure 内で計算する例外がある (同 4.8.2 コラム)。
+- **layout と gravity**: measure 完了後の layout パスは各子の left/top を決めるだけで、`gravity` (自分の中身の寄せ方) と `layout_gravity` (親に対する自分の寄せ方、LayoutParams) はほぼここで処理される。ただし RelativeLayout のように onMeasure 内で計算する例外がある (同 4.8.2 コラム)。
 
 ### 4. ViewRootImpl・WindowManagerGlobal・IWindow/IWindowSession
 
 - **生成と登録**: `ActivityThread.handleResumeActivity()` が `getWindow().getDecorView()` を `WindowManager.addView()` に渡し、アプリプロセス内のシングルトン `WindowManagerGlobal` が ViewRootImpl を生成して `setView()` する (有野 (2017) Ⅰ巻 6.5.2)。`setView()` は `IWindowSession.addToDisplayAsUser()` (同期 Binder) で内部クラス `W` (IWindow の実装) を WMS に登録し、InputChannel を受け取る。以後、1 ViewRootImpl につき窓・Surface・InputChannel が 1 組対応する。`onCreate()` 終了までに `setContentView()` を呼ぶ慣習は、この時点で DecorView が揃っている必要から来る。
 - **非対称な Binder 契約**: `IWindowSession` の `relayout()` は「新しい窓パラメータを渡し、画面上の frame と surface を返す」同期呼び出しだが、現行 AIDL では `relayoutAsync` (line 110)・`finishDrawing` (140)・`updateRequestedVisibleTypes` (271) など多くが oneway になった (`core/java/android/view/IWindowSession.aidl`, aosp-mirror snapshot (2025-11) の main)。逆向きの `IWindow` は**インタフェース全体が oneway** (`IWindow.aidl` line 44 `oneway interface IWindow`) で、`resized()`・`insetsControlChanged()`・`dispatchAppVisibility()` などを WMS が一方的に通知する。system_server が任意のアプリに引きずられないという [`app-components-lifecycle.md`](app-components-lifecycle.md) と同じ原理が窓の層でも貫かれている。
 - **Surface の出自**: 書籍は Java の `mSurface` と native バッファの接続 (relayout 経由の SurfaceControl 生成) を追い切れなかったと率直に記している (同 6.5.4 コラム)。現在は relayout が `SurfaceControl` を返し、ViewRootImpl がそれを親に **BLASTBufferQueue** を作ってバッファを Transaction で提出する構造が明確になっている (Android 12 頃〜、詳細は [`graphics-pipeline.md`](graphics-pipeline.md))。
-- **performTraversals の骨格**: 初回・窓サイズ変更・インセット変化時は `relayoutWindow()` を挟み、`performMeasure()` → `performLayout()` (layout 中の追加 `requestLayout()` は第 2 ラウンドで処理) → `performDraw()` (ThreadedRenderer 経由で表示リストを記録し RenderThread へ) の順に進む。入力は同じ ViewRootImpl の InputChannel から `dispatchPointerEvent()` → `dispatchTouchEvent()` の再帰に入る (同 6.5.6、[`input-pipeline.md`](input-pipeline.md))。
+- **performTraversals の流れ**: 初回・窓サイズ変更・インセット変化時は `relayoutWindow()` を挟み、`performMeasure()` → `performLayout()` (layout 中の追加 `requestLayout()` は第 2 ラウンドで処理) → `performDraw()` (ThreadedRenderer 経由で表示リストを記録し RenderThread へ) の順に進む。入力は同じ ViewRootImpl の InputChannel から `dispatchPointerEvent()` → `dispatchTouchEvent()` の再帰に入る (同 6.5.6、[`input-pipeline.md`](input-pipeline.md))。
 
 ### 5. requestLayout / invalidate の伝播
 
@@ -125,7 +125,7 @@ ViewRootImpl.requestLayout()                  ViewRootImpl.onDescendantInvalidat
 ```
 
 - **coalescing と優先度**: `ViewRootImpl.scheduleTraversals()` (`ViewRootImpl.java` lines 2980-2983, aosp-mirror snapshot (2025-11) の main) は `mTraversalScheduled` を立てたうえで `mHandler.getLooper().getQueue().postSyncBarrier()` を呼ぶ。`mTraversalScheduled` により 1 フレーム内の多数の要求は 1 回の走査にまとまる。同期バリアは、走査が VSYNC に遅れないよう通常の Handler メッセージ (アプリのポスト) を一時的に後回しにし、非同期フラグ付きの VSYNC メッセージだけを通す仕組みで、[`looper-handler-message-loop.md`](looper-handler-message-loop.md) の同期バリアの最大の利用者である。
-- **invalidate は measure を起こさない**: 見た目だけの変化は `invalidate()` で draw だけを、サイズが変わりうる変化 (テキスト長の変化など) は `requestLayout()` で measure/layout も要求する。RenderNode のプロパティ (translation・alpha) の変更は再記録すら不要で RenderThread 側で反映される——**変化の種類ごとに再実行範囲を最小化する**という原則は、Compose の「状態を読んだフェーズだけ再実行」に一般化される (§7)。
+- **invalidate は measure を起こさない**: 見た目だけの変化は `invalidate()` で draw だけを、サイズが変わりうる変化 (テキスト長の変化など) は `requestLayout()` で measure/layout も要求する。RenderNode のプロパティ (translation・alpha) の変更は再記録すら不要で RenderThread 側で反映される。**変化の種類ごとに再実行範囲を最小化する**という原則は、Compose の「状態を読んだフェーズだけ再実行」に一般化される (§7)。
 
 ### 6. View ツリーの状態保存
 
@@ -166,7 +166,7 @@ ViewRootImpl.requestLayout()                  ViewRootImpl.onDescendantInvalidat
 
 ## セキュリティ考察 (Security Considerations)
 
-- **窓の追加は権限である**: `WindowManager.addView()` を他アプリの上に向けて呼ぶには `SYSTEM_ALERT_WINDOW` と設定画面での許可が要り (Android 6.0〜、書籍 6.6.1)、Android 8.0 以降は `TYPE_APPLICATION_OVERLAY` 型に限定された。オーバーレイは UI 偽装・タップジャッキングの主要手段であり、`filterTouchesWhenObscured` や Android 12 の「信頼できないオーバーレイ越しのタッチ遮断」は、IWindow 単位の Z 順を WMS が握っていることを利用した対策である（WMS の窓階層は [`window-manager.md`](window-manager.md)） ([`graphics-pipeline.md`](graphics-pipeline.md)・[`security-model.md`](security-model.md))。
+- **窓の追加は権限である**: `WindowManager.addView()` を他アプリの上に向けて呼ぶには `SYSTEM_ALERT_WINDOW` と設定画面での許可が要り (Android 6.0〜、書籍 6.6.1)、Android 8.0 以降は `TYPE_APPLICATION_OVERLAY` 型に限定された。オーバーレイは UI 偽装・タップジャッキングの主要手段であり、`filterTouchesWhenObscured` や Android 12 の「信頼できないオーバーレイ越しのタッチ遮断」は、IWindow 単位の Z 順を WMS が管理していることを利用した対策である（WMS の窓階層は [`window-manager.md`](window-manager.md)、関連して [`graphics-pipeline.md`](graphics-pipeline.md)・[`security-model.md`](security-model.md)）。
 - **リソースパーサは不信入力を読む**: `resources.arsc` とバイナリ XML は APK から来る攻撃者制御のバイト列で、それを解釈する libandroidfw (C++) はアプリだけでなく PackageManager・ランチャー・system_server からも呼ばれる。オフセット走査という高速化の設計は、境界検査の欠落が即メモリ破壊になる設計でもあり、ネイティブパーサの堅牢化・ファジング ([`../security/fuzzing-program-analysis.md`](../security/fuzzing-program-analysis.md)) の対象領域である。インストール時の構造検証 (整列要求など) は性能要件であると同時に入口の正規化として働く。
 - **インフレーションはコード実行である**: レイアウトのタグ名はクラス名としてリフレクションでロードされる。通常は自 APK 内のリソースだが、`createPackageContext()` で他パッケージのレイアウトを inflate すると相手のクラスを自プロセスで実行しうる (`CONTEXT_INCLUDE_CODE` を伴う場合)。RemoteViews が inflate 可能なクラスを `@RemoteView` 注釈付きの許可リストに限定しているのは、この経路を閉じるためである。
 - **状態保存は漏洩経路になりうる**: saveHierarchyState は ID 付きの EditText の内容を自動で Bundle に入れ、Bundle は system_server に退避される。機密を表示する EditText や独自 View の `onSaveInstanceState()` は、明示しない限り内容をそのまま保存対象にしうるため、意図せず永続・転送される。`saveEnabled=false` と `FLAG_SECURE` (最近のタスクのサムネイル・スクリーンショット抑止) は別層の対策として併用する必要がある。
@@ -174,9 +174,9 @@ ViewRootImpl.requestLayout()                  ViewRootImpl.onDescendantInvalidat
 
 ## 結論 (Conclusions)
 
-- Android の View システムの中核は、**実行時に代替リソースを選ぶ**という要件から逆算された「mmap 可能なバイナリ表 + カーソル共有パーサ + リフレクション生成」と、**親子の制約を int 1 個で伝える 2 パスレイアウト**である。どちらも「毎フレーム・毎行で呼ばれる経路から割り当てと文字列処理を消す」という同じ原理に立ち、2016 年から今日まで骨格は変わっていない。
+- Android の View システムの中核は、**実行時に代替リソースを選ぶ**という要件から逆算された「mmap 可能なバイナリ表 + カーソル共有パーサ + リフレクション生成」と、**親子の制約を int 1 個で伝える 2 パスレイアウト**である。どちらも「毎フレーム・毎行で呼ばれる経路から割り当てと文字列処理を消す」という同じ原理に立ち、2016 年から今日まで基本構造は変わっていない。
 - ViewRootImpl は View ではなく、ツリーを窓として WMS に登録し (IWindowSession 同期 / IWindow oneway)、`requestLayout`/`invalidate` の汚れ印を VSYNC ごとの 1 回の `performTraversals()` に集約するドライバである。単一スレッド検査と同期バリアは、このドライバが UI スレッドの Looper を占有するための仕組みである。
-- 10 年間の変化は、骨格を置き換えるのではなく**上に載せる**形で起きた: AppCompat/Material は Factory2 でクラスを差し替え、ConstraintLayout は入れ子を平坦化し、Compose は ComposeView として ViewRootImpl の下に住みつつ、多重 measure を例外化し再実行範囲を状態読み取りから自動導出した。
+- 10 年間の変化は、基本構造を置き換えるのではなく**上に載せる**形で起きた: AppCompat/Material は Factory2 でクラスを差し替え、ConstraintLayout は入れ子を平坦化し、Compose は ComposeView として ViewRootImpl の下に住みつつ、多重 measure を例外化し再実行範囲を状態読み取りから自動導出した。
 - 最も強い変化はウィンドウ境界の契約にある。edge-to-edge の強制 (API 35/36) と大画面での向き・比率制限の無視 (API 36/37) は、根に渡る MeasureSpec とインセットが「任意に変わる入力」であることをアプリに受け入れさせた。これはライフサイクルにおける「プロセスはいつ殺されてもよい」と同型の、**環境の変動を例外ではなく常態として扱わせる契約**である。
 
 ### 次の接続先 (Related Topics)
