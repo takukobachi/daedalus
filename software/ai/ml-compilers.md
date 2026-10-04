@@ -201,6 +201,8 @@ flowchart TD
 - [`ml-training-systems.md`](ml-training-systems.md) — AOTAutograd の再計算判断と、Inductor による計算・通信の重畳が効く学習基盤。
 - [`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md) — タイリングが前提とする SM・共有メモリ・Tensor Core と roofline。
 - [`../../hardware/accelerators/tpu-systolic-arrays.md`](../../hardware/accelerators/tpu-systolic-arrays.md) — 静的形状と XLA を前提とするシストリックアレイ。
+- [`../compilers-runtimes/compiler-middle-end-ir-optimization.md`](../compilers-runtimes/compiler-middle-end-ir-optimization.md) — SSA・CSE・ループ変換・LLVM/MLIR のパス構造。グラフレベル最適化が汎用コンパイラの中盤から受け継いだ道具立て。
+- [`../compilers-runtimes/compiler-backend-code-generation.md`](../compilers-runtimes/compiler-backend-code-generation.md) — 命令選択・レジスタ割り当て・命令スケジューリング。カーネル生成の最終段（PTX 以降）が依拠する一般論。
 - [`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md) — ガード・投機・deoptimization という JIT の共通構造。
 - [`../compilers-runtimes/webassembly-portable-binary-sandbox.md`](../compilers-runtimes/webassembly-portable-binary-sandbox.md) — 「検証済みの移植可能な中間形式 + ホストでの最終コンパイル」という、StableHLO と同型の分業。
 - [`../../hardware/cpu/simd-vector.md`](../../hardware/cpu/simd-vector.md) — CPU バックエンドのベクトル化の対象。
