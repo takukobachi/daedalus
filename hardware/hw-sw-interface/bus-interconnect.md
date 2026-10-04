@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-`mmio-dma-interrupts.md` が扱った MMIO・DMA・割り込み (interrupt) は、「何が」CPU とデバイスの間を流れるかを定めた。本ドキュメントはその**物理経路**——MMIO のロード／ストア、DMA のデータ、MSI のメッセージが、実際にどの配線・プロトコルの上を流れて相手に届くか——を扱う。すなわち**バス (bus)** と**相互接続 (interconnect)** である。
+`mmio-dma-interrupts.md` が扱った MMIO・DMA・割り込み (interrupt) は、「何が」CPU とデバイスの間を流れるかを定めた。本ドキュメントはその**物理経路**、つまり MMIO のロード／ストア、DMA のデータ、MSI のメッセージが、実際にどの配線・プロトコルの上を流れて相手に届くかを扱う。すなわち**バス (bus)** と**相互接続 (interconnect)** である。
 
 主役は3つ。チップ間 (off-chip) を結ぶ **PCIe (PCI Express)**、SoC 内 (on-chip) を結ぶ **AMBA (Advanced Microcontroller Bus Architecture)** とその主役 **AXI (Advanced eXtensible Interface)**、そして PCIe の物理層の上にコヒーレンシ (coherence) を載せてメモリとアクセラレータを束ねる **CXL (Compute Express Link)**。
 
@@ -19,7 +19,7 @@
 
 1. **歴史は「共有パラレルバス」から「点対点シリアルリンク」へ一方向に進んだ。** 共有バス（旧 PCI、フロントサイドバス）は配線を共有するため、スキュー (skew)・アービトレーション・容量負荷が周波数を頭打ちにした。PCIe は1対1の差動シリアルレーン (differential serial lane) を束ね、各リンクを独立にクロックすることでスケールさせた。同じ力学が SoC 内でも働き、共有バスは AXI のような点対点・スイッチ接続へ移った。
 
-2. **現代の相互接続は「パケット交換ネットワーク」である。** PCIe の TLP (Transaction Layer Packet)、AXI の独立チャネル、NoC (Network-on-Chip) のフリット (flit)——いずれもアドレス＋データを**パケット**として運び、スイッチ／ルータで経路制御する。バスというより小さなネットワークと見るのが正確。
+2. **現代の相互接続は「パケット交換ネットワーク」である。** PCIe の TLP (Transaction Layer Packet)、AXI の独立チャネル、NoC (Network-on-Chip) のフリット (flit) は、いずれもアドレス＋データを**パケット**として運び、スイッチ／ルータで経路制御する。バスというより小さなネットワークと見るのが正確。
 
 3. **「列挙と発見 (enumeration & discovery)」が動的な接続を可能にする。** PCIe ではコンフィグ空間 (configuration space) と BAR (Base Address Register) を介して、OS が起動時にデバイスを探索し、アドレス空間を割り当てる。`mmio-dma-interrupts.md` の MMIO アドレスは、この列挙の結果として決まる。
 
@@ -168,9 +168,9 @@ AXI の特徴は、読み・書きを**5つの独立チャネル**に分け、�
 
 CXL は PCIe の物理層・電気仕様を共有しつつ、上に3つのサブプロトコルを多重化する (CXL は PCIe コネクタ／PHY 上で動作し、リンク確立時に折衝する; 詳細は世代・実装依存)。
 
-- **`cxl.io`**: 実質 PCIe 互換の I/O。列挙・コンフィグ・割り込みなど、従来 PCIe と同じ役割（後方互換の足場）。
+- **`cxl.io`**: 実質 PCIe 互換の I/O。列挙・コンフィグ・割り込みなど、従来 PCIe と同じ役割（後方互換の基盤）。
 - **`cxl.cache`**: デバイスがホストメモリをコヒーレントにキャッシュできる。アクセラレータがホスト DRAM を、明示 flush/invalidate なしに一貫した状態で読み書きできる。
-- **`cxl.mem`**: ホストがデバイス側メモリを、自分のメモリ空間の一部としてコヒーレントにアクセスする。**メモリ拡張 (memory expansion)** の中核——CXL メモリエクスパンダ (memory expander) を挿せば、DRAM 容量・帯域をスロット経由で増設できる。
+- **`cxl.mem`**: ホストがデバイス側メモリを、自分のメモリ空間の一部としてコヒーレントにアクセスする。**メモリ拡張 (memory expansion)** の中核であり、CXL メモリエクスパンダ (memory expander) を挿せば、DRAM 容量・帯域をスロット経由で増設できる。
 
 これらの組み合わせで、CXL は3タイプのデバイスを定義する（桁感の整理; 規格上の Type 1/2/3 に対応）。
 
