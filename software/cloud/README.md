@@ -35,6 +35,14 @@ AWS を全体を通した主要な事例 (running example) とし、標準・論
   level-triggered reconciliation, etcd と楽観並行制御による振り付けなし協調,
   スケジューリングパイプライン, EKS の接合部 (IRSA/VPC CNI/Karpenter),
   namespace はテナント境界ではないという等級論
+- `kubernetes-networking.md` — Kubernetes ネットワーキング：3 行の network model と
+  4 層の分担 (CNI/Service/DNS/NetworkPolicy), Service はプロキシではなく EndpointSlice を
+  各ノードの規則へ調停する分散ループ, iptables → nftables/eBPF の世代交代, `ndots:5` の
+  クエリ増幅, 許可の和集合しか書けない NetworkPolicy, Ingress → Gateway API の役割分割
+- `kubernetes-storage.md` — Kubernetes ストレージ：要求 (PVC)・供給 (PV)・方針
+  (StorageClass)・製品 (CSI) の分離, ボリュームの一生を担う調停者の連鎖と CSI の
+  stage/publish, `WaitForFirstConsumer` と「状態には場所がある」, RWO はノード単位,
+  強制 detach と non-graceful shutdown による fencing, VolumeAttributesClass とスナップショット
 - `multi-region-global-architecture.md` — マルチリージョンとグローバルサービス：
   リージョン独立性という資産と隠れ結合 (2021-12 us-east-1), 光速が引く同期/非同期境界,
   RTO/RPO の値段表, 競合解決の 4 択 (回避/LWW/CRDT/合意, Spanner 対比),

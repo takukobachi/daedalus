@@ -132,6 +132,8 @@ filter 段は述語の連言 (資源要求・nodeSelector・affinity/anti-affini
 ### 次の接続先 (Related Topics)
 
 - [`cloud-control-planes.md`](cloud-control-planes.md) — 本書の設計原則の一般論 (望ましい状態・静的安定性・アドミッション制御)。
+- [`kubernetes-networking.md`](kubernetes-networking.md) — CNI・Service と kube-proxy・クラスタ DNS・NetworkPolicy・Gateway API の詳細。
+- [`kubernetes-storage.md`](kubernetes-storage.md) — PV/PVC・StorageClass・CSI とボリュームの一生、ノード障害時の fencing の詳細。
 - [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) — コンテナの隔離実体と「テナント境界には microVM」の根拠。
 - [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — etcd/Raft と故障検出の非決定性。
 - [`../networking/service-mesh.md`](../networking/service-mesh.md) — Pod 間通信の上に載るもう一段の制御平面。
