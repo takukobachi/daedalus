@@ -236,7 +236,7 @@ Gateway がどの namespace のルートを受け入れるかを宣言し、ル�
 - [CNI Specification v1.1.0](https://www.cni.dev/docs/spec/) — Accessed: 2026-10-07。操作・環境変数・chaining・IPAM・GC/STATUS。
 - [Gateway API](https://gateway-api.sigs.k8s.io/) — Accessed: 2026-10-07。役割別リソースモデル、ReferenceGrant。
 - [Network Policy API: ClusterNetworkPolicy replaces AdminNetworkPolicy and BaselineAdminNetworkPolicy (v1alpha2)](https://network-policy-api.sigs.k8s.io/blog/2025/10/09/api-update-for-v1alpha2-clusternetworkpolicy-replaces-adminnetworkpolicy-and-baselineadminnetworkpolicy/) — Accessed: 2026-10-07。
-- [NVD: CVE-2020-8554](https://nvd.nist.gov/vuln/detail/CVE-2020-8554) — Accessed: 2026-10-07。Service の externalIPs / LoadBalancer IP による中間者攻撃。
+- [CVE-2020-8554: Man in the middle using LoadBalancer or ExternalIPs (kubernetes/kubernetes#97076)](https://github.com/kubernetes/kubernetes/issues/97076) — Accessed: 2026-10-07。設計上の欠陥でパッチはなく、admission webhook と RBAC による制限が推奨策。
 - Eisenbud, D. E., Yi, C., Contavalli, C., Smith, C., Kononov, R., Mann-Hielscher, E., Cilingiroglu, A., Cheyney, B., Shang, W., & Hosein, J. D. (2016). Maglev: A Fast and Reliable Software Network Load Balancer. *NSDI '16*, 523–535. — eBPF 実装が採用する一貫性ハッシュの原典。
 - Gross, J., Ganga, I., & Sridhar, T. (Eds.). (2020). Geneve: Generic Network Virtualization Encapsulation. *RFC 8926*. DOI: 10.17487/RFC8926
 - Mahalingam, M., et al. (2014). Virtual eXtensible Local Area Network (VXLAN). *RFC 7348*. DOI: 10.17487/RFC7348
