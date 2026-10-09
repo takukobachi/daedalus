@@ -131,7 +131,7 @@ End Collection
 
 実際の主要コントローラーは、標準の Game Pad usage だけでは表せない機能（IMU、タッチパッド、アダプティブトリガー、LED）を持つ。その扱い方は大きく2パターンに分かれる。
 
-- **HID の枠内でベンダ固有レポートを使う（PlayStation・Nintendo 系）**: HID クラスとして列挙されるので汎用ドライバでも基本操作はできるが、拡張機能はホスト側の専用ドライバ（Linux の `hid-playstation`・`hid-nintendo` 等）がレポートのバイト配置を直接解釈する。たとえば DualSense の Input Report は、USB では ID `0x01`（64 バイト）で全機能を運ぶ。Bluetooth では ID `0x01` が最小限のレポートで、全機能は ID `0x31`（78 バイト）で運ばれ、末尾に CRC32 が付く（Linux `drivers/hid/hid-playstation.c` の定義とコメントによる。Sony の公開仕様ではない）。
+- **HID の枠内でベンダ固有レポートを使う（PlayStation・Nintendo 系）**: HID クラスとして列挙されるので汎用ドライバでも基本操作はできるが、拡張機能はホスト側の専用ドライバ（Linux の `hid-playstation`・`hid-nintendo` 等）がレポートのバイト配置を直接解釈する。たとえば DualSense の Input Report は、USB では ID `0x01`（64 バイト）で全機能を運ぶ。Bluetooth では ID `0x01` が最小限のレポートで、全機能は ID `0x31`（78 バイト）で運ばれ、末尾に CRC32 が付く（Linux `drivers/hid/hid-playstation.c` の定義とコメントによる。このドライバは Sony Interactive Entertainment 自身がカーネルに提供したもので、メーカー由来の実装として最も信頼できる公開資料だが、プロトコル仕様書として公開されたものではない）。
 - **そもそも HID クラスではない（Xbox 系）**: Microsoft によれば XInput の伝送プロトコルには XUSB（Xbox 360 世代）、XInputHID、GIP (Game Input Protocol、Xbox One 以降) の3つがあり、Xbox 本体は GIP デバイスのみをサポートする。XUSB と GIP は USB 2.0 上の独自拡張として仕様が公開されており (MS-XUSBI / MS-GIPUSB)、OS の汎用 HID ドライバでは扱えない。Linux では `xpad`（や外部ドライバ `xone`）がこれを処理する。
 
 「HID だから完全に汎用」ではない点が実務上の落とし穴になる。
@@ -160,6 +160,32 @@ HID Interrupt チャネル (PSM 0x0013): Input / Output Report の本体
 ```
 
 （値は Bluetooth HID Profile 仕様と Linux `net/bluetooth/hidp/hidp.h` の定義による。）DualSense の Bluetooth レポート末尾の CRC32 は、このヘッダ値（入力は `0xA1`、出力は `0xA2`）を先頭に含めて計算される（`hid-playstation.c` の `PS_INPUT_CRC32_SEED` / `PS_OUTPUT_CRC32_SEED`）。
+
+#### タイミングモデル — 誰が送信の機会を決めるか
+
+伝送路の違いは、突き詰めると「デバイスがいつ送ってよいか」を誰が決めるかの違いである。USB だけでなく Bluetooth も、デバイスが好きな時に送れる仕組みではない。
+
+```text
+USB (Full-Speed)      |— 1 ms —|— 1 ms —|— 1 ms —|
+  ホスト:               IN?      IN?      IN?
+  デバイス:              DATA     NAK      DATA      ← 問われたときだけ答える
+
+BR/EDR                |625µs|625µs|625µs|625µs|
+  central (ホスト):      送 →        送 →
+  peripheral (デバイス):       ← 返        ← 返      ← central から受けた直後のスロットだけ送れる
+
+BLE                   |←— 接続間隔 —→|←— 接続間隔 —→|
+  接続イベント:          [C→ ←P]          [C→ ←P C→ ←P]  ← MD ビットで同じイベント内に追加送信
+```
+
+| 伝送路 | 送信の機会を決めるもの | 失敗時の再送 |
+|---|---|---|
+| USB | ホストの IN トークン（`bInterval` ごと） | 次の問い合わせで再送 |
+| BR/EDR | central のポーリング。時分割複信 (TDD) で、peripheral は central からのパケットの直後のスロットでのみ送信する | 次に送信の機会が回ってきたときに再送 (ARQ) |
+| BLE | 接続イベント（接続間隔ごと）。各イベントは central の送信で始まり、More Data (MD) ビットで延長できる | 同じイベント内か、次のイベントで再送 |
+| 独自 2.4 GHz | 製品ごとの独自プロトコル（専用ドングル） | 製品次第 |
+
+BR/EDR のスロットは 625 µs と細かく、central が頻繁に順番を回せば高いレートが出せる。上の DS4 の約 1 kHz はその例である。BLE は「決まった時刻にだけ会う」ことで無線を止める時間を作る設計で、遅延は「次の接続イベントまでの待ち」で決まる。独自 2.4 GHz 無線は用途に合わせて高レート・低遅延を作り込める反面、暗号化・認証の品質がベンダ次第になる（セキュリティ考察の MouseJack を参照）。
 
 無線で遅延を左右するのは省電力機構である。BR/EDR の**スニフモード (sniff mode)** では、デバイスは決まった間隔でだけ受信窓を開くため、間隔が数十 ms に設定されると、その分だけ入力が待たされる。スニフ間隔の設定は電池の持ちと入力遅延のトレードオフであり、ゲーム用途では遅延側を優先する必要がある。BLE の接続間隔も同じトレードオフ（間隔が長いほど電池が持ち、応答が遅れる）を持つ。
 
@@ -193,7 +219,15 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 + ゲームループ(フレーム同期) + 表示遅延(V-Sync, パネル応答)
 ```
 
-ポーリングを 1000 Hz → 8000 Hz にしても縮むのは「伝送待ち」の項（平均 0.5 ms → 62.5 µs）だけで、**60 Hz ゲームループ（~16.7 ms）や表示側が支配的な環境では体感差は小さい**。遅延を語るときは必ずどの区間の話かを特定する必要がある。
+**「平均 = 間隔/2」の理由**: ボタンを押す瞬間は問い合わせの周期 T と無関係なので、周期内のどこにでも同じ確率で落ちる。待ち時間は 0〜T の一様分布になり、平均は T/2、最悪は T である（250 Hz なら平均 2 ms・最悪 4 ms）。
+
+**周期的な待ちは何段も重なる**: この「次の区切りまで待つ」構造は伝送区間だけでなく、ファームウェアのスキャン周期、伝送の周期、ゲームが入力を読む周期（多くは1フレームに1回。60 Hz なら平均 8.3 ms・最悪 16.7 ms）にもある。各段の周期は互いに同期していないため、待ちは段ごとに足し合わされ、押すたびにばらつく。遅延は1つの値ではなく**分布**として扱う必要がある。
+
+ポーリングを 1000 Hz → 8000 Hz にしても縮むのは「伝送待ち」の項（平均 0.5 ms → 62.5 µs）だけで、**60 Hz ゲームループ（~16.7 ms）や表示側が支配的な環境では体感差は小さい**。
+
+ただし「コントローラー区間は無視できる」とは限らない。第三者測定の Gamepadla は DualSense の有線ボタン遅延を約 7.8 ms と掲載している（同サイトは比較機能を「テスト中」としており、目安の値）。1000 Hz ポーリングの平均待ち 0.5 ms と比べると、コントローラー区間の大半はポーリング以外（スキャン、デバウンス、ファームウェア処理）が占めうる。遅延を語るときは必ずどの区間の話かを特定する必要がある。
+
+**無線のジッター**: 干渉でパケットが失われると、上表のとおり次の機会に再送される。平均遅延はほとんど変わらなくても、ときどき「1間隔分遅れた入力」が混ざる裾 (tail) が生じ、操作の違和感として現れる。AFH が混雑チャネルを避けて頻度を下げるが、2.4 GHz の Wi-Fi が混んだ環境ではゼロにはならない。
 
 ### ハプティクス — ERM から LRA、ボイスコイルへ
 
@@ -203,7 +237,26 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 | **LRA** (Linear Resonant Actuator) | バネ質量系を共振周波数(~150–250 Hz)で駆動 | ERM より速い（応答 ~30 ms。オーバードライブ・アクティブブレーキで起動・停止を短縮） | 共振点近傍のみ | スマホのタップ感、精密な「クリック」 |
 | **ボイスコイル型 (VCM)** | スピーカーと同構造で広帯域波形を再生 | 速い | 広い（波形をそのまま鳴らせる） | DualSense のハプティクス |
 
-進化の方向は「回す」から「波形を再生する」へ、つまり**モーターからスピーカーへ**の接近である。加えて DualSense のアダプティブトリガーは、トリガー軸にギヤモーターで可変抵抗を与える**力覚 (force feedback)** で、振動とは別系統になる。駆動指令はいずれも HID 出力レポート（またはベンダ固有レポート）で届く。
+進化の方向は「回す」から「波形を再生する」へ、つまり**モーターからスピーカーへ**の接近である。加えて DualSense のアダプティブトリガーは、トリガー軸にモーターとウォームギヤで可変抵抗を与える**力覚 (force feedback)** で、振動とは別系統になる。
+
+#### 出力経路 — 状態はレポートで、波形は音声で
+
+ホストからデバイスへの指令は、基本的には Output Report として入力と同じ伝送路を逆向きに流れる。
+
+| 伝送路 | Output Report の送り方 |
+|---|---|
+| USB | インタラプト OUT エンドポイント、または `SET_REPORT`（コントロール転送） |
+| BR/EDR | Interrupt チャネルで、HIDP ヘッダ `0xA2` (DATA + Output) のメッセージ |
+| BLE (HOGP) | Report キャラクタリスティックへの書き込み |
+
+インタラプト OUT にも `bInterval` があるため、出力側にも入力と同じ「次の区切りまでの待ち」がある。
+
+ただし、すべての出力が Output Report で運べるわけではない。ERM の振動やアダプティブトリガーの設定は「強さ」「抵抗をかける位置と強さ」のような**パラメータ**なので、毎秒数百〜千回程度のレポートに収まる。一方、ボイスコイルのハプティクスは数百 Hz の振動を**波形として再生する**ため、毎秒数千サンプルの連続データが必要になり、状態を通知するレポートの頻度では運べない。
+
+- Sony のエンジニアによる Linux カーネルのコミット (2021) は、DualSense のハプティクスについて「ボイスコイルモーターによるハプティクスは PCM データ（Bluetooth では特別な HID パケット）を必要とする」と説明している。同コミットは、それを表現する適切なカーネル API がないため、後方互換用の従来型ランブルだけを実装した。
+- USB 接続時の DualSense は、HID と並んで4チャネルの USB Audio デバイスとして列挙される（Linux の PipeWire では "Analog Surround 4.0" として現れる）。ハプティクスの波形はこのオーディオストリームで運ばれ、4チャネルのうち後ろの2チャネルが使われると広く報告されている。ただしチャネル割り当ては公式に文書化されておらず、コミュニティの観察による（as of 2026-10）。
+- USB Audio はアイソクロナス転送で運ばれる。`usb-architecture.md` の「転送タイプは QoS クラス」の具体例で、状態の通知はインタラプト転送（確実に届けて再送する）、波形はアイソクロナス転送（再送しない代わりに帯域と周期を保証する）という使い分けになっている。
+- Xbox 系は HID ではないため、振動指令も GIP のメッセージで送られる（上の「ベンダ固有の拡張 — 2つのパターン」を参照）。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -218,7 +271,8 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - HID のレポートディスクリプタによる自己記述が「ドライバ不要」を実現するが、実際の製品は「HID の枠内でベンダ固有レポートを使う」(PlayStation・Nintendo 系) か「HID ではない独自プロトコルを使う」(Xbox 系の XUSB / GIP) のどちらかで拡張されており、いずれもホスト側の専用スタックが解釈する。
 - スティックドリフトは接触式センシングの構造的問題で、ホール効果/TMR への移行が根本対策。デッドゾーンはあくまで対症療法。
 - 入力遅延は直列パイプラインの総和で、ポーリングレートは一項にすぎない。高ポーリング化の効果は他の区間（フレームレート・表示）との相対で決まる。
-- HID はトランスポート非依存であり、無線化の本質的な差は伝送区間の遅延と信頼性、そしてリンクのセキュリティに現れる。
+- HID はトランスポート非依存であり、無線化の本質的な差は伝送区間の遅延と信頼性、そしてリンクのセキュリティに現れる。USB も Bluetooth も「デバイスが送ってよい機会をホスト側が決める」構造で、遅延は周期的な待ちが段ごとに重なった分布として現れる。
+- 出力はパラメータなら Output Report で足りるが、ボイスコイルのハプティクスのような波形はレポートの頻度では運べず、DualSense は USB ではオーディオストリーム（アイソクロナス転送）を使う。
 
 ### 次の接続先 (Related Topics)
 
@@ -241,7 +295,9 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - Microsoft. *Interfacing with the different GameInput device types* (Microsoft Game Development Kit). — [learn.microsoft.com](https://learn.microsoft.com/en-us/gaming/gdk/docs/features/common/input/hardware/input-hardware-interfaces) — Accessed: 2026-10-10。XInput の3つの伝送プロトコル (XUSB / XInputHID / GIP) と、本体が GIP のみをサポートする点。
 - Microsoft. *[MS-GIPUSB]: Gaming Input Protocol (GIP) USB Extension* / *[MS-XUSBI]: Xbox USB Interface Extension* (2024-09-16 公開). — [learn.microsoft.com Open Specifications](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-winprotlp/e168a474-7de2-421c-b460-91adf87692a3) — Accessed: 2026-10-10。Xbox 系コントローラーの USB プロトコル仕様（一覧ページから参照）。
 - Linux Kernel Documentation. *HID subsystem / hid-playstation, hid-nintendo drivers*. — [kernel.org HID docs](https://www.kernel.org/doc/html/latest/hid/index.html) — Accessed: 2026-07-05。ベンダ固有レポートをホストがどう扱うかの実装一次資料。
-- Linux kernel source. `drivers/hid/hid-playstation.c`（`DS_INPUT_REPORT_USB`/`DS_INPUT_REPORT_BT`、`PS_INPUT_CRC32_SEED` の定義）, `net/bluetooth/hidp/hidp.h`（`HIDP_TRANS_*`・`HIDP_DATA_RTYPE_*` の定義）. — [github.com/torvalds/linux](https://github.com/torvalds/linux) — Accessed: 2026-10-10。DualSense のレポート ID・サイズ・CRC と HIDP ヘッダ値の実装上の確認。
+- Colenbrander, R. (Sony Interactive Entertainment). *HID: playstation: add DualSense classic rumble support.* Linux kernel commit 51151098d7ab (2021-02-07). — [github.com/torvalds/linux](https://github.com/torvalds/linux/commit/51151098d7ab832f2a8b8f5c51fe224a9c98fdd5) — Accessed: 2026-10-10。DualSense のボイスコイル型ハプティクスが PCM データ（Bluetooth では特別な HID パケット）を必要とするというメーカー側エンジニアの説明。
+- Bluetooth SIG. *Bluetooth Core Specification*（BR/EDR のスロット・TDD・ARQ、LE の接続イベントと MD ビット）. — [bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/) — Accessed: 2026-10-10。伝送路ごとのタイミングモデルの規範。
+- Linux kernel source. `drivers/hid/hid-playstation.c`（Copyright Sony Interactive Entertainment）（`DS_INPUT_REPORT_USB`/`DS_INPUT_REPORT_BT`、`PS_INPUT_CRC32_SEED` の定義）, `net/bluetooth/hidp/hidp.h`（`HIDP_TRANS_*`・`HIDP_DATA_RTYPE_*` の定義）. — [github.com/torvalds/linux](https://github.com/torvalds/linux) — Accessed: 2026-10-10。DualSense のレポート ID・サイズ・CRC と HIDP ヘッダ値の実装上の確認。
 - Linux kernel patches. *HID: hid-sony: Fix DS4 controller reporting rate issues* (2015) および *HID: sony: Make DS4 bt poll interval adjustable*. — [lkml.iu.edu](https://lkml.iu.edu/hypermail/linux/kernel/1507.3/02465.html) / [git.disroot.org](https://git.disroot.org/kpriv/linux-hardened/commit/77b499e739ed5561e5026fa7140ae53f6c4d1d8e) — Accessed: 2026-10-10。DS4 の Bluetooth レポート間隔（最大約 1 kHz、1〜62 ms で設定可能、旧設定の約 20.83 Hz）。
 
 **二次資料 (Secondary)**
@@ -250,4 +306,5 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - Texas Instruments. *Haptic Energy Consumption* (SLOA194A, 2014, rev. 2022-01, アプリケーションノート). — [ti.com](https://www.ti.com/lit/an/sloa194/sloa194.pdf) — Accessed: 2026-10-10。ERM / LRA / ピエゾの応答時間の比較（ERM ~50 ms、LRA ~30 ms、ピエゾ 0.5 ms）と、自動共振による LRA の起動・停止時間の改善の実測。
 - Dixon, T. (iFixit). *PlayStation 5 Teardown* (2020-11-05, Steps 12–19: DualSense). — [ifixit.com](https://www.ifixit.com/Teardown/PlayStation+5+Teardown/138280) — Accessed: 2026-10-10。Foster 製ボイスコイルアクチュエータ2基と、モーター＋ウォームギヤによるアダプティブトリガー機構の確認。
 - Nintendo Life. *It's Official, Switch 2 Joy-Con Will Not Feature Hall Effect Sticks* (2025-04). — [nintendolife.com](https://www.nintendolife.com/news/2025/04/its-official-switch-2-joy-con-will-not-feature-hall-effect-sticks) — Accessed: 2026-10-10。Nintendo of America の Nate Bihldorff 氏への取材。スティック方式の選定が各社で分かれている例。
+- PipeWire issue #2486. *Some non-haptic sound is played through DualSense's haptic feedback*. — [gitlab.freedesktop.org](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/2486) — Accessed: 2026-10-10。USB 接続の DualSense が4チャネルのオーディオシンクとして現れ、ハプティクス用チャネルの扱いが議論されている例（コミュニティの観察）。
 - Gamepadla. *Methodology / controller comparisons*. — [gamepadla.com](https://gamepadla.com/) — Accessed: 2026-10-10。ポーリングレート（OS がレポートを受け取る頻度）と入力遅延（ハードウェア測定）を別の指標として測る第三者測定の例。
