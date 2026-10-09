@@ -199,8 +199,8 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 
 | 方式 | 原理 | 立ち上がり | 帯域 | 例 |
 |---|---|---|---|---|
-| **ERM** (Eccentric Rotating Mass) | 偏心錘付きDCモーター | 遅い（数十 ms、慣性） | 振幅と周波数が連動し独立制御不可 | 従来型ゲームパッドの「ゴロゴロ」 |
-| **LRA** (Linear Resonant Actuator) | バネ質量系を共振周波数(~150–250 Hz)で駆動 | 速い（アクティブブレーキ併用で ~ms 級） | 共振点近傍のみ | スマホのタップ感、精密な「クリック」 |
+| **ERM** (Eccentric Rotating Mass) | 偏心錘付きDCモーター | 遅い（応答 ~50 ms、慣性） | 振幅と周波数が連動し独立制御不可 | 従来型ゲームパッドの「ゴロゴロ」 |
+| **LRA** (Linear Resonant Actuator) | バネ質量系を共振周波数(~150–250 Hz)で駆動 | ERM より速い（応答 ~30 ms。オーバードライブ・アクティブブレーキで起動・停止を短縮） | 共振点近傍のみ | スマホのタップ感、精密な「クリック」 |
 | **ボイスコイル型 (VCM)** | スピーカーと同構造で広帯域波形を再生 | 速い | 広い（波形をそのまま鳴らせる） | DualSense のハプティクス |
 
 進化の方向は「回す」から「波形を再生する」へ、つまり**モーターからスピーカーへ**の接近である。加えて DualSense のアダプティブトリガーは、トリガー軸にギヤモーターで可変抵抗を与える**力覚 (force feedback)** で、振動とは別系統になる。駆動指令はいずれも HID 出力レポート（またはベンダ固有レポート）で届く。
@@ -247,7 +247,7 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 **二次資料 (Secondary)**
 
 - Bastille Networks. *MouseJack: Injecting Keystrokes into Wireless Mice* (2016). — [mousejack.com](https://www.mousejack.com/) — Accessed: 2026-07-05。非 Bluetooth 無線入力機器への注入攻撃の実証（研究発表、技術白書付き）。
-- Texas Instruments. *Haptics: Solutions for ERM and LRA Actuators* (アプリケーションノート). — [ti.com](https://www.ti.com/lit/an/sloa194/sloa194.pdf) — Accessed: 2026-07-05。ERM/LRA の駆動特性・立ち上がり時間・アクティブブレーキ。
+- Texas Instruments. *Haptic Energy Consumption* (SLOA194A, 2014, rev. 2022-01, アプリケーションノート). — [ti.com](https://www.ti.com/lit/an/sloa194/sloa194.pdf) — Accessed: 2026-10-10。ERM / LRA / ピエゾの応答時間の比較（ERM ~50 ms、LRA ~30 ms、ピエゾ 0.5 ms）と、自動共振による LRA の起動・停止時間の改善の実測。
 - Dixon, T. (iFixit). *PlayStation 5 Teardown* (2020-11-05, Steps 12–19: DualSense). — [ifixit.com](https://www.ifixit.com/Teardown/PlayStation+5+Teardown/138280) — Accessed: 2026-10-10。Foster 製ボイスコイルアクチュエータ2基と、モーター＋ウォームギヤによるアダプティブトリガー機構の確認。
 - Nintendo Life. *It's Official, Switch 2 Joy-Con Will Not Feature Hall Effect Sticks* (2025-04). — [nintendolife.com](https://www.nintendolife.com/news/2025/04/its-official-switch-2-joy-con-will-not-feature-hall-effect-sticks) — Accessed: 2026-10-10。Nintendo of America の Nate Bihldorff 氏への取材。スティック方式の選定が各社で分かれている例。
 - Gamepadla. *Methodology / controller comparisons*. — [gamepadla.com](https://gamepadla.com/) — Accessed: 2026-10-10。ポーリングレート（OS がレポートを受け取る頻度）と入力遅延（ハードウェア測定）を別の指標として測る第三者測定の例。
