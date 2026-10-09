@@ -58,10 +58,10 @@ flowchart TB
 | 変調 | GFSK 1 Mbps、EDR: π/4-DQPSK 2 Mbps / 8DPSK 3 Mbps | GFSK 1 Mbps (LE 2M で 2 Mbps, Coded PHY で長距離) |
 | 接続確立 | Inquiry / Page | アドバタイズ → スキャン → 接続要求 |
 | 上位プロトコル | SDP, RFCOMM | ATT/GATT, SMP |
-| 主な用途 | 音声 (A2DP/HFP)、旧来の周辺機器 | センサ・入力機器 (HOGP)・LE Audio |
+| 主な用途 | 音声 (A2DP/HFP)、ゲームコントローラー (HID Profile: DualSense・Switch Pro 等)、旧来の周辺機器 | センサ・省電力の入力機器 (HOGP)・LE Audio |
 | 設計目標 | スループットと音声リンク | 低消費電力・間欠動作 |
 
-LE の本質は「**聴いていない時間を最大化する**」こと。アドバタイズ間隔・接続間隔 (7.5 ms〜4 s) を伸ばすほど電池は持つが応答は遅れる。`input-devices-hid.md` で見た HOGP コントローラーの遅延はこのパラメータ交渉の結果である。
+LE の本質は「**聴いていない時間を最大化する**」こと。アドバタイズ間隔・接続間隔 (従来 7.5 ms〜4 s) を伸ばすほど電池は持つが応答は遅れる。`input-devices-hid.md` で見た HOGP 機器の遅延はこのパラメータ交渉の結果である。接続間隔の下限は Core 6.2 (2025-11) の Shorter Connection Intervals で 375 µs（125 µs 刻み）まで引き下げられたが、使えるのは両端のコントローラーが対応している場合に限られる（as of 2026-10）。
 
 ## 技術詳細 (Technical Details)
 
@@ -148,11 +148,11 @@ sequenceDiagram
 - ペアリングは「ECDH 鍵交換 + アソシエーションモデルによる MITM 排除 + ボンディングによる鍵永続化」の合成であり、その強度はデバイスの UI 能力で決まる。6桁照合は公開鍵のコミットメント検証である。
 - 音声は A2DP/HFP から LE Audio (LC3, Isochronous Channels) への移行期にあり、コーデック交渉とバッファリングが品質・遅延を決める。
 - 攻撃事例 (KNOB, BlueBorne) は「仕様の交渉部分」と「実装のパーサ」が二大攻撃面であることを示す。無線から来るものはすべて信頼できない入力である。
-- 本ディレクトリの3文書はここで閉じる: コントローラー (HID) は HOGP として、端末オーディオは LE Audio として、いずれも Bluetooth スタックの最上層に載る。
+- 本ディレクトリの3文書はここで閉じる: コントローラー (HID) は BR/EDR の HID Profile または LE の HOGP として、端末オーディオは A2DP/HFP または LE Audio として、いずれも Bluetooth スタックの最上層に載る。
 
 ### 次の接続先 (Related Topics)
 
-- `input-devices-hid.md` — HOGP で運ばれる HID レポートの中身。
+- `input-devices-hid.md` — HID Profile (BR/EDR) と HOGP (LE) で運ばれる HID レポートの中身と、両者の伝送方式の違い。
 - `audio-subsystem.md` — 無線区間の手前、端末内のオーディオ経路。
 - `usb-architecture.md` — HCI トランスポートとしての USB、および「挿したら信頼」との信頼モデル対比。
 - `../security/side-channels-tee-secure-boot.md` — ボンディング鍵の保管とハードウェア信頼基盤。
@@ -164,6 +164,7 @@ sequenceDiagram
 **一次資料 (Primary — 仕様・公式ドキュメント・査読付き論文)**
 
 - Bluetooth SIG. *Bluetooth Core Specification* (v5.4 以降). — [bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/) — Accessed: 2026-07-05。RF・リンク層・HCI・L2CAP・SMP・ペアリング手順の規範。
+- Bluetooth SIG. *Bluetooth Core 6.2 Feature Overview*（Shorter Connection Intervals）. — [bluetooth.com/bluetooth-core-6-2-feature-overview](https://www.bluetooth.com/bluetooth-core-6-2-feature-overview) — Accessed: 2026-10-10。LE 接続間隔の下限 7.5 ms → 375 µs の解説（規範は Core 仕様本体）。
 - Bluetooth SIG. *LE Audio 仕様群 (BAP/LC3/Isochronous Channels) と Auracast 解説*. — [bluetooth.com/learn-about-bluetooth/recent-enhancements/le-audio/](https://www.bluetooth.com/learn-about-bluetooth/recent-enhancements/le-audio/) — Accessed: 2026-07-05。
 - Antonioli, D., Tippenhauer, N. O., & Rasmussen, K. (2019). The KNOB is Broken: Exploiting Low Entropy in the Encryption Key Negotiation of Bluetooth BR/EDR. *USENIX Security 2019*. — [usenix.org](https://www.usenix.org/conference/usenixsecurity19/presentation/antonioli) — Accessed: 2026-07-05。査読付き論文。
 - Ryan, M. (2013). Bluetooth: With Low Energy Comes Low Security. *USENIX WOOT 2013*. — [usenix.org](https://www.usenix.org/conference/woot13/workshop-program/presentation/ryan) — Accessed: 2026-07-05。LE レガシーペアリングの鍵復元の実証（査読付きワークショップ）。
