@@ -11,6 +11,7 @@
 - [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — 仮想記憶・MMU・TLB (virtual memory)
 - [`interrupts-exceptions-traps.md`](interrupts-exceptions-traps.md) — 割り込み・例外・トラップ (interrupts, exceptions & traps)
 - [`isa-riscv-intro.md`](isa-riscv-intro.md) — 命令セットアーキテクチャ入門 (ISA primer, RISC-V)
+- [`isa-x86-arm-comparison.md`](isa-x86-arm-comparison.md) — x86-64 と AArch64 の比較 (x86-64 vs. AArch64)
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — 分岐予測と投機実行 (branch prediction & speculative execution)
 - [`simd-vector.md`](simd-vector.md) — SIMD・ベクトル演算 (SIMD / vector processing)
 - [`dram-memory-controllers.md`](dram-memory-controllers.md) — DRAM とメモリコントローラ (DRAM & memory controllers)
