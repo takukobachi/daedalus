@@ -18,4 +18,4 @@ NIC (network interface card) とスイッチ ASIC の内部分析。`../../softw
 - ストレージネットワーク (NVMe-oF) — NVMe over Fabrics (RDMA/TCP)、分離型ストレージ。
   `../hw-sw-interface/storage-nvm-interface.md` と RDMA の合流点
 - ルーティングハードウェア (router hardware) — コアルータの深いバッファ、
-  階層 QoS、FIB 圧縮。`../../software/networking/` の BGP 候補の物理側
+  階層 QoS、FIB 圧縮。[`../../software/networking/ip-routing-bgp.md`](../../software/networking/ip-routing-bgp.md) の物理側

@@ -70,7 +70,7 @@ Lattner と Adve は LLVM IR を「低水準だが型付きの、SSA ベース�
 
 ### MLIR — 単一 IR から IR の基盤へ
 
-LLVM IR は C 程度の抽象度に固定されているため、テンソル演算・ループネスト・データフローといった高水準の構造は、IR に落とした時点で失われる。**MLIR (Multi-Level IR)** はこの問題に対し、「1 つの IR」ではなく**方言 (dialect)** を定義する枠組みを提供する。高水準の方言 (例: `linalg`, `affine`) から低水準の方言へ段階的に下げる**漸進的低水準化 (progressive lowering)** を行い、最後に LLVM 方言を経て LLVM IR に渡す[^mlir21]。MLIR は LLVM IR の中盤を置き換えるものではなく、その**上流**に「抽象度ごとの中盤」を積み上げる設計である。
+LLVM IR は C 程度の抽象度に固定されているため、テンソル演算・ループネスト・データフローといった高水準の構造は、IR に落とした時点で失われる。**MLIR (Multi-Level IR)** はこの問題に対し、「1 つの IR」ではなく**方言 (dialect)** を定義する枠組みを提供する。高水準の方言 (例: `linalg`, `affine`) から低水準の方言へ段階的に下げる**漸進的低水準化 (progressive lowering)** を行い、最後に LLVM 方言を経て LLVM IR に渡す[^mlir21]。MLIR は LLVM IR の中盤を置き換えるものではなく、その**上流**に「抽象度ごとの中盤」を積み上げる設計である。XLA・TVM・Triton などの ML コンパイラがこの上流をどう構成するかは [`../ai/ml-compilers.md`](../ai/ml-compilers.md) で扱う。
 
 ## 技術詳細 (Technical Details)
 

@@ -14,8 +14,8 @@
   マクスウェル方程式、回路理論、伝送線路 …)。
   バス・インターコネクト (`../../hardware/hw-sw-interface/bus-interconnect.md`)、
   無線 (`../../hardware/peripherals/`)、
-  電力系統 (`../../engineering/energy/`) の基礎。hardware README が
-  優先度高に挙げる SerDes・シグナルインテグリティの前提でもある
+  電力系統 (`../../engineering/energy/`) の基礎。SerDes・シグナルインテグリティ
+  (`../../hardware/signal-integrity/`) の前提でもある
 - `quantum-solid-state/` — 量子力学・固体物理(バンド理論、半導体、
   ドーピング、pn 接合、MOSFET …)。半導体製造
   (`../../hardware/semiconductor-manufacturing/`)、NAND フラッシュ
