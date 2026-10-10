@@ -17,10 +17,10 @@
 
 1. **WSC の設計単位は「サーバ」ではなく「建物」である。** 電力容量（MW）が土地・建屋より先に尽きる制約であり、データセンターの規模は面積ではなく**受電容量**で語られる。サーバ・ラック・電源・冷却は建物全体の TCO（総所有コスト）を最小化するよう共設計され、個々の部品の最適（最高性能のサーバ）と全体の最適（ワットあたり仕事量）はしばしば食い違う[^wsc]。
 2. **可用性は構成の語彙で買う。そして語彙は電力・冷却・ネットワークで共通である。** N（必要容量）に対する N+1（1 台の故障に耐える）・2N（系統ごと複製）・2(N+1) という冗長記法（並列系の信頼度計算は [`reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md)）、稼働中に保守できる**コンカレントメンテナビリティ**、単一障害点の排除がその語彙であり、Uptime Institute の Tier I〜IV はこれらの構成要件を等級化したものである[^uptime]。[`../../software/distributed-systems/`](../../software/distributed-systems/) のレプリケーションと同じ設計原理が、UPS・冷凍機・スイッチに適用されているだけ、と読むのが正しい。
-3. **PUE は「計算以外に何倍払っているか」の会計であり、改善は頭打ちに近い。** PUE = 施設全体の消費電力 ÷ IT 機器の消費電力。業界平均は 1.5 台で長く停滞し（Uptime Institute 調査の加重平均で 2025 年 1.54、6 年連続でほぼ横ばい。2026 年版は「緩やかな改善」と要約）、ハイパースケーラの最良値は 1.1 前後である。冷却の物理（[`datacenter-cooling.md`](datacenter-cooling.md)）が漸近線を決める[^uptime-pue]。重要なのは PUE が**効率の一部しか測らない**ことで、IT 機器内部の無駄（電源変換・アイドル電力）や水 (WUE)・炭素 (CUE) は別勘定である。単一指標の最適化が全体を歪めるという、[`../../software/observability/`](../../software/observability/) のメトリクス設計と同じ教訓がここにもある。
+3. **PUE は「計算以外に何倍払っているか」の会計であり、改善は頭打ちに近い。** PUE = 施設全体の消費電力 ÷ IT 機器の消費電力。業界平均は 1.5 台で長く停滞し（Uptime Institute 調査の平均で 2025 年 1.54 → 2026 年 1.52。同社は 7 年にわたる相対的な停滞の延長と評する）、ハイパースケーラの最良値は 1.1 前後である。冷却の物理（[`datacenter-cooling.md`](datacenter-cooling.md)）が漸近線を決める[^uptime-pue]。重要なのは PUE が**効率の一部しか測らない**ことで、IT 機器内部の無駄（電源変換・アイドル電力）や水 (WUE)・炭素 (CUE) は別勘定である。単一指標の最適化が全体を歪めるという、[`../../software/observability/`](../../software/observability/) のメトリクス設計と同じ教訓がここにもある。
 4. **内部ネットワークは Clos の再発見で「帯域を積み木で買う」ものになった。** 1953 年に電話交換網のために示された Clos 網[^clos]は、同一の安価なスイッチを多段に組むことで任意規模の無閉塞網を作れることを示した（トポロジをグラフとして扱う基礎は [`graphs-trees-algorithms.md`](../../foundations/mathematics/discrete-logic/graphs-trees-algorithms.md)）。データセンターはこれをフォールデッド Clos（リーフスパイン/ファットツリー）として再発見し[^fat-tree]、「巨大で高価なコアスイッチ」を「コモディティスイッチの並列」に置き換えた。[`../../hardware/networking/`](../../hardware/networking/) のマーチャントシリコンの経済と、ECMP による多経路分散がその成立条件である。
 5. **オーバーサブスクリプションは「トラフィックの局所性への賭け」である。** リーフの下り帯域（サーバ向け）に対し上り帯域（スパイン向け）を 1:1 で用意すれば無閉塞だが高価であり、実務は 3:1 等に「間引く」。この賭けは east-west トラフィック（サーバ間）の増大とともに分が悪くなり続け、AI 学習（全 GPU が同期通信する。[`../../hardware/accelerators/interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) 参照）では**賭け自体が成立しない**ため 1:1 のレール最適化網が別途建設される。トポロジは「トラフィック行列の予測」の物理的な表明である。
-6. **AI は密度の前提を一桁書き換えた（2026-10 時点）。** 汎用サーバのラックが 5〜15 kW で設計されてきたのに対し、GPU ラックは世代ごとに跳ね上がり、ラック規模 NVLink ドメイン（NVL72 型）は**1 ラック 100 kW 超**に達する[^nvl72]。これは「空冷の限界」（[`datacenter-cooling.md`](datacenter-cooling.md)）と「配電の限界」（[`datacenter-power.md`](datacenter-power.md)）を同時に突破するもので、既存施設の改修ではなく AI 専用棟の新設が主流になった構造的理由である。ただし業界全体の実測は別の顔を見せる。Uptime Institute の 2025 年調査ではラック密度の最頻値の平均は約 9 kW（外れ値を除くと 7.5 kW）にとどまり、30 kW 超のラックを持たない施設が多数派である[^uptime-pue]。100 kW 超はベンダ構成値（仕様）かつ AI 専用棟の現実であり、平均的な施設の実測値ではない。
+6. **AI は密度の前提を一桁書き換えた（2026-10 時点）。** 汎用サーバのラックが 5〜15 kW で設計されてきたのに対し、GPU ラックは世代ごとに跳ね上がり、ラック規模 NVLink ドメイン（NVL72 型）は**1 ラック 100 kW 超**に達する[^nvl72]。これは「空冷の限界」（[`datacenter-cooling.md`](datacenter-cooling.md)）と「配電の限界」（[`datacenter-power.md`](datacenter-power.md)）を同時に突破するもので、既存施設の改修ではなく AI 専用棟の新設が主流になった構造的理由である。ただし業界全体の実測は別の顔を見せる。Uptime Institute の 2026 年調査ではラック密度の最頻値の平均は約 11 kW（2025 年 9 kW。高密度施設を除くと 7.8 kW）にとどまる。30 kW 以上のラックを持つ施設は 24%（2025 年 19%）に増えたが、持たない施設が依然として多数派である[^uptime-pue]。100 kW 超はベンダ構成値（仕様）かつ AI 専用棟の現実であり、平均的な施設の実測値ではない。
 7. **データセンターの電力需要は系統計画の変数になった（2026-10 時点）。** IEA はデータセンターの世界電力消費を 2024 年で約 415 TWh（世界の約 1.5%）と推計し[^iea]、2026-04 の改訂では 2025 年実績を約 485 TWh（前年比 +17%、うち AI 特化データセンターが +50%）、2030 年を約 950 TWh（世界需要の約 3%）と見込んだ[^iea-2026]。中心シナリオは 2025 年版の軌道からほぼ変わっておらず、ここでの 2030 年値は実績ではなく予測である。個々のキャンパスが数百 MW〜GW 級に達し、送電線・変電所の建設リードタイムが AI インフラの律速になる。これが [`../energy/`](../energy/)（系統・市場）とこの領域が合流する現在地であり、電力調達（PPA・自家発電・原子力併設）がインフラ戦略の一部になった。
 
 ## アーキテクチャ (Architecture)
@@ -70,7 +70,7 @@ flowchart LR
 ### 2. 効率の会計 — PUE とその限界 (The Efficiency Ledger)
 
 ```
-PUE = P_total / P_IT      理想 1.0、業界平均 ~1.5台 (2025 年 1.54)、最良 ~1.1 (2026-10 時点)
+PUE = P_total / P_IT      理想 1.0、業界平均 ~1.5台 (2026 年 1.52)、最良 ~1.1 (2026-10 時点)
 WUE = 水消費量 / IT 電力量 [L/kWh]   蒸発冷却とのトレードオフ
 ```
 
@@ -85,7 +85,7 @@ WUE = 水消費量 / IT 電力量 [L/kWh]   蒸発冷却とのトレードオフ
 
 ### 4. AI 密度の転換 — 2026-10 時点の現在地 (The AI Density Inflection)
 
-- 密度の系譜: 汎用ラック 5〜15 kW → GPU 空冷ラック 20〜40 kW → 液冷 GPU ラック（NVL72 型: **約 120 kW/ラック**、72 GPU + NVSwitch を単一 NVLink ドメインに収める製品構成）[^nvl72]。ラックが「サーバの棚」から「単一の液冷計算機」（[`../../hardware/accelerators/interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) のスケールアップ領域の物理実体）へ変質した。
+- 密度の系譜: 汎用ラック 5〜15 kW → GPU 空冷ラック 20〜40 kW → 液冷 GPU ラック（GB200 NVL72 型: **約 120〜130 kW/ラック**、72 GPU + NVSwitch を単一 NVLink ドメインに収める製品構成。電力値は第三者推計とリファレンス設計の値）[^nvl72][^vertiv-gb200] → 後継の Vera Rubin NVL72（2026 年秋に量産出荷開始とベンダが発表。ラック電力は NVIDIA 未公表で、OEM や第三者の値は約 190〜240 kW）[^vera-rubin] → Kyber 世代（2027 年に約 600 kW とされる目標値）[^kyber]。2026-10 時点で運用実績があるのは GB200/GB300 世代までである。ラックが「サーバの棚」から「単一の液冷計算機」（[`../../hardware/accelerators/interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) のスケールアップ領域の物理実体）へ変質した。
 - 帰結: (1) 床荷重・配管・母線が新設計になる（改修では追いつかない）、(2) 建屋の単位が「ホール」から「AI 専用棟・専用キャンパス」へ、(3) 電力の時間変動（学習ジョブの同期性が MW 級の負荷変動を作る）が系統側の問題になる（[`datacenter-power.md`](datacenter-power.md)）。
 - 需要の規模（IEA 推計: 2024 年 ~415 TWh → 2025 年 ~485 TWh → 2030 年 ~950 TWh 予測）[^iea][^iea-2026]は不確実性が大きく、効率改善（ハードウェア世代・アルゴリズム）と需要成長の綱引きで推計は頻繁に改定される。そのため本値は参照時点の再確認を要する。
 
@@ -112,7 +112,7 @@ WUE = 水消費量 / IT 電力量 [L/kWh]   蒸発冷却とのトレードオフ
 
 [^uptime]: Uptime Institute. *Tier Classification System (Tier Standard: Topology)*. https://uptimeinstitute.com/tiers — Accessed: 2026-07-13. — Tier I〜IV とコンカレントメンテナビリティの定義。
 
-[^uptime-pue]: [Uptime Institute (2025). *Uptime Institute Global Data Center Survey 2025*](https://datacenter.uptimeinstitute.com/rs/711-RIA-145/images/2025.Annual.Survey.Report.pdf) — Accessed: 2026-10-04. — 加重平均 PUE 1.54（6 年連続横ばい）、5 年以内の新設 1.48、20 MW 以上 1.44、ラック密度の最頻値平均 約 9 kW、重大停止の主因は電源 (45%)。2026 年版 ([Global Data Center Survey 2026](https://intelligence.uptimeinstitute.com/resource/uptime-institute-global-data-center-survey-2026), 2026-07-24) は PUE の「緩やかな改善」と 30 kW 超ラックの増加を要約するが、数値は有料版のため本書では未確認。
+[^uptime-pue]: [Uptime Institute (2026). *Uptime Institute Global Data Center Survey 2026*](https://datacenter.uptimeinstitute.com/rs/711-RIA-145/images/UptimeInstitute.GlobalDataCenterSurvey.2026.pdf) — Accessed: 2026-10-11. — 調査は 2026-04〜05 実施。平均 PUE 1.52（n=644、2025 年 1.54）、回答者の最大施設の平均 1.45、ラック密度の最頻値平均 約 11 kW（n=679、高密度施設を除くと 7.8 kW）、30 kW 以上のラックを持つ施設 24%（2025 年 19%）、重大停止の主因は電源 (56%、2025 年 45%)。2025 年版の値は [Global Data Center Survey 2025](https://datacenter.uptimeinstitute.com/rs/711-RIA-145/images/2025.Annual.Survey.Report.pdf) による。
 
 [^clos]: Clos, C. (1953). A Study of Non-Blocking Switching Networks. *Bell System Technical Journal*, 32(2), 406–424. DOI: 10.1002/j.1538-7305.1953.tb01433.x — Clos 網の原典。
 
@@ -124,4 +124,10 @@ WUE = 水消費量 / IT 電力量 [L/kWh]   蒸発冷却とのトレードオフ
 
 [^iea-2026]: [IEA (2026). *Key Questions on Energy and AI* — Executive summary](https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary) — Accessed: 2026-10-04. — 2025 年 ~485 TWh（+17%）、AI 特化データセンター +50%、2030 年 ~950 TWh（世界需要の約 3%）。EU の 2024 年 68 TWh → 2030 年 114 TWh 見通しも本報告を引用している（European Commission, C(2026) 3472, 2026-09-21）。
 
-[^nvl72]: NVIDIA. *GB200 NVL72* 製品資料. https://www.nvidia.com/en-us/data-center/gb200-nvl72/ — Accessed: 2026-07-13. — ラック規模 NVLink ドメインの構成・電力密度（ベンダ公称値）。
+[^nvl72]: NVIDIA. *GB200 NVL72* 製品資料. https://www.nvidia.com/en-us/data-center/gb200-nvl72/ — Accessed: 2026-10-11. — ラック規模 NVLink ドメインの構成 (72 GPU、液冷)。ラック電力は記載されていない。
+
+[^vertiv-gb200]: [Vertiv — Vertiv Codevelops with NVIDIA Complete Power and Cooling Blueprint for NVIDIA GB200 NVL72 Platform (2024)](https://investors.vertiv.com/news/news-details/2024/Vertiv-Codevelops-with-NVIDIA-Complete-Power-and-Cooling-Blueprint-for-NVIDIA-GB200-NVL72-Platform/default.aspx) — 最大 132 kW/ラックのリファレンス設計 (ベンダ値)。Accessed: 2026-10-11
+
+[^vera-rubin]: [NVIDIA — Vera Rubin Ramps Into Full Production (2026-05-31)](https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Vera-Rubin-Ramps-Into-Full-Production-to-Power-Agentic-AI-Factories-Worldwide/default.aspx) — 量産開始と 2026 年秋の出荷開始の発表。ラック電力は OEM の資料 ([Gigabyte AI DLC POD](https://www.gigabyte.com/no/Enterprise/GIGAPOD-Pod-Scale/AI-DLC-POD_NVIDIA-Vera-Rubin-NVL72) など) と第三者推計による。Accessed: 2026-10-11
+
+[^kyber]: [DatacenterDynamics — Nvidia's Rubin Ultra NVL576 rack expected to be 600kW, coming second half of 2027](https://datacenterdynamics.com/en/news/nvidias-rubin-ultra-nvl576-rack-expected-to-be-600kw-coming-second-half-of-2027) — Kyber 世代の目標値。Accessed: 2026-10-11

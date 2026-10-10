@@ -20,7 +20,7 @@
 4. **スケールアウト領域の本質は「損失ゼロの RDMA ファブリック」である。** GPUDirect RDMA により NIC が GPU メモリを直接読み書きし（ホスト経由のコピー排除であり、[`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md) の DMA の到達点）、InfiniBand または RoCEv2 が輻輳による損失を PFC/DCQCN・クレジットフロー制御で抑え込む。パケット損失は再送どころか**全チップの同期停止**として増幅されるため、「ロスレス」は快適さではなく学習の前提条件である。その代償（PFC ストーム・ヘッドオブライン閉塞）は [`../networking/nic-switch-architecture.md`](../networking/nic-switch-architecture.md) が詳述する。
 5. **in-network computing (SHARP) は「通信を計算に変える」。スイッチが reduction を実行する。** all-reduce の縮約演算をスイッチ ASIC 内で行えば、データは木を 1 往復するだけになり、エンドポイントの送受信量はほぼ M に半減、incast も消える[^sharp]。「ネットワークは運ぶだけ」という階層の掟を破る設計が正当化されるのは、トラフィックが既知（発見事項 1）だからである。これは汎用ネットワークでは成立しない共設計の代表例である。
 6. **万台規模では故障が常態であり、ネットワークは可用性ドメインになる。** Llama 3 の事前学習（16,384 GPU・54 日）では **419 回の予期しない中断**（約 3 時間に 1 回）が起き、その約 78% がハードウェア起因と報告されている[^llama3]。同期計算は 1 ノードの故障が全体を止めるため、実効スループットは「ピーク性能 × 稼働率 × 復旧速度」の積になり、チェックポイント・迅速な故障切り分け・OCS/アダプティブルーティングによる迂回（TPUv4 の光スイッチ: [`tpu-systolic-arrays.md`](tpu-systolic-arrays.md)）が性能機能として設計される。
-7. **標準化の主戦場が「AI 向けイーサネット」に移った。** InfiniBand の事実上の単一ベンダ供給への対抗として、パケットスプレー・順序外配送許容・現代的輻輳制御を束ねる Ultra Ethernet 等の標準化が進み（2026 年時点で仕様策定と初期実装の段階）、ハイパースケーラは RoCE ベースの自社ファブリック運用実績を積んでいる。「専用ファブリック vs 進化したイーサネット」は [`../networking/`](../networking/) の TOE の教訓（専用化 vs 汎用の進化）の再演である。
+7. **標準化の主戦場が「AI 向けイーサネット」に移った。** InfiniBand の事実上の単一ベンダ供給への対抗として、パケットスプレー・順序外配送許容・現代的輻輳制御を束ねる Ultra Ethernet 等の標準化が進み（UEC 仕様 1.0 が 2025-06 に公開され、2026-10 時点の最新は 1.0.3。準拠をうたう NIC がサンプル出荷され始めた初期実装の段階）、ハイパースケーラは RoCE ベースの自社ファブリック運用実績を積んでいる。「専用ファブリック vs 進化したイーサネット」は [`../networking/`](../networking/) の TOE の教訓（専用化 vs 汎用の進化）の再演である。
 
 ## アーキテクチャ (Architecture)
 
@@ -111,4 +111,4 @@ AI クラスタのインターコネクトは、「トラフィックが既知�
 - Jouppi, N. P. et al. (2023). TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning. *Proc. ISCA 2023*. DOI: 10.1145/3579371.3589350 — OCS による再構成可能トポロジ。
 - NVIDIA. *NVLink & NVSwitch — Technical Overview*. https://www.nvidia.com/en-us/data-center/nvlink/ — Accessed: 2026-07-13. — スケールアップ領域の帯域・ドメイン構成（ベンダ資料、目標値を含む）。
 - InfiniBand Trade Association. *InfiniBand Architecture Specification*. https://www.infinibandta.org/ — Accessed: 2026-07-13. — クレジットフロー制御・サブネット管理の規格。
-- Ultra Ethernet Consortium. *UEC Specifications & White Papers*. https://ultraethernet.org/ — Accessed: 2026-07-13. — AI 向けイーサネットの標準化動向（2026 年時点で進行中）。
+- Ultra Ethernet Consortium. *UEC Specification*. https://ultraethernet.org/specification — Accessed: 2026-10-11. — AI 向けイーサネットの仕様（1.0: 2025-06-11、最新 1.0.3: 2026-07-16）。
