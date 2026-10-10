@@ -36,6 +36,10 @@
 - `cdn-edge-delivery.md` — CDN・エッジ配信：光速という遅延の床、リクエストルーティング
   (DNS vs エニーキャスト)、キャッシュ階層とオリジンシールド、無効化 vs バージョン付き URL、
   エッジでのプロトコル終端、エッジ計算 (isolate 型)。CloudFront 型クラウド CDN の読み方
+- `rpc-serialization.md` — RPC とシリアライズ：タイムアウトの「不明」と冪等キー・期限の伝播、
+  形式の設計空間 (JSON/Protobuf/Avro/ゼロコピー)、Protobuf のワイヤ形式とフィールド番号の
+  互換性規則、Avro のスキーマ解決とスキーマレジストリ、gRPC の HTTP/2 上の設計
+  (トレーラの状態コードと gRPC-Web、長寿命接続と L7 LB)、デシリアライズ攻撃
 - `service-mesh.md` — サービスメッシュ：ライブラリからサイドカー (Envoy/xDS) へ、
   mTLS 自動化とワークロードアイデンティティ (SPIFFE)、L7 トラフィック制御とリトライ予算、
   サイドカー税と eBPF 系メッシュ (Cilium)。L3/4 (セキュリティグループ) から L7 への
