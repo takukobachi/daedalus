@@ -127,7 +127,7 @@ flowchart LR
 ### 4. 独自シリコン (Custom Silicon — FSD Computer)
 
 - テスラは自動運転推論用の**独自 SoC（FSD コンピュータ）** を設計し、HW3 → **HW4(AI4)** と更新してきた[^notatesla]。中央集中コンピュートの中核。
-- **次世代 AI5（2026-10 時点）**: マスクは 2026-04-15 にテープアウトを公表した。性能は「AI4 の最大 10 倍」とされるが、これは**公称**である。量産（大量ボード供給）は 2027 年半ばの見込みと報じられ、2024-06 時点の「2025 年後半に車載」という公約から約 2 年遅れた[^electrek-ai5]。テスラは Q2 2026 決算説明でも AI5 の量産を「できれば来年」と述べるにとどまり、当面は AI4 で教師なし (unsupervised) FSD を目指す方針である[^tsla-q2-2026]。
+- **次世代 AI5（2026-10 時点）**: マスクは 2026-04-15 にテープアウトを公表した。性能は「AI4 の最大 10 倍」とされるが、これは**公称**である。量産（大量ボード供給）は 2027 年半ばの見込みと報じられ、2024-06 時点の「2025 年後半に車載」という公約から約 2 年遅れた[^electrek-ai5]。テスラは Q2 2026 決算説明でも AI5 の量産を「できれば来年」と述べるにとどまり、当面は AI4 で教師なし (unsupervised) FSD を目指す方針である[^tsla-q2-2026]。マスクはテープアウト当日、AI5 はまず Optimus と学習用クラスタに使い、車両には当面載せないとも述べている。性能の倍率は報道によって「最大 10 倍」「約 5 倍」と幅があり、いずれも公称である[^dtc-ai5]。2026-09 には、Samsung のテキサス州テイラー工場で 2 nm プロセスによる AI5 の試作生産が始まったと報じられた。歩留まりの検証を 2026 年末、量産を 2027 年に予定しているとされるが、テスラの公式な確認はない[^nata-ai5-samsung]。
 - **垂直統合の象徴**: 計算の心臓部まで内製設計することで、ソフト・センサ・モデルと協調最適化できる。汎用サプライヤ依存を脱し、世代更新の速度を握る。
 - （自動運転の知覚・判断アルゴリズムそのものは本章の範囲外。ここでは「**計算基盤を内製した**」という E/E アーキ上の意味に絞る。）
 
@@ -137,7 +137,7 @@ flowchart LR
 
 | 項目 | テスラ公称（一次） | 独立報道・観測 |
 |---|---|---|
-| Robotaxi 展開 | 2026-07 時点で 7 大都市圏で稼働。オースティン・ダラス・ヒューストン・マイアミ・オーランド・タンパは無人（unsupervised）、サンフランシスコ湾岸はセーフティドライバー付き。ラスベガス・フェニックスは準備中[^tsla-q2-2026] | 同時に走る無人車両は全市場合計で 20–30 台程度にとどまり、春の約 25 台から横ばいとの集計[^electrek-cybercab] |
+| Robotaxi 展開 | 2026-07 時点で 7 大都市圏で稼働。オースティン・ダラス・ヒューストン・マイアミ・オーランド・タンパは無人（unsupervised）、サンフランシスコ湾岸はセーフティドライバー付き。ラスベガス・フェニックスは準備中[^tsla-q2-2026] | 独立集計（コミュニティの Robotaxi Tracker）では、オースティンで乗客を乗せた車両は年の大半で 20〜40 台だった。2026-09 初めの Cybercab 投入時に一時 100 台を超えたが、2026-09-22 時点の直近 7 日間では 8 台に戻った[^electrek-active]。テキサス州の登録台数（2026-10 初めで Cybercab 169 台）は増え続けているが、登録は稼働を意味しない[^nata-cybercab] |
 | Cybercab | Q2 2026 にギガテキサスで生産開始[^tsla-q2-2026]。2026-09 からオースティンで乗車提供[^electrek-cybercab] | ソフトは既存 Model Y Robotaxi と同一で、実質は「車両の入れ替え」との評価[^electrek-cybercab] |
 | FSD (Supervised) | アクティブ契約 148 万件、北米新車の 55% 超が FSD 契約付き。AI3 車向けに FSD v14 lite を配信[^tsla-q2-2026] | — |
 | 計算基盤 | 無人運行も含め AI4 で実施、AI5 は 2027 年量産見込み[^tsla-q2-2026][^electrek-ai5] | AI5 は当初公約から約 2 年遅延[^electrek-ai5] |
@@ -239,3 +239,11 @@ flowchart LR
 - [`../../../software/embedded/autosar-vehicle-software.md`](../../../software/embedded/autosar-vehicle-software.md) — 標準 (AUTOSAR) と内製 Vehicle OS の対比。
 - [`../../../hardware/accelerators/tpu-systolic-arrays.md`](../../../hardware/accelerators/tpu-systolic-arrays.md) — FSD SoC の NPU と同系統の行列演算アクセラレータの原理。
 - [`../../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../../foundations/mathematics/probability-statistics/reliability-theory.md) — 中央集中が生む単一障害点と冗長設計の定量的基礎。
+
+[^electrek-active]: [Tesla's active robotaxi fleet in Austin crashes back to 8 vehicles after Cybercab pump — Electrek (F. Lambert, 2026-09-22)](https://electrek.co/2026/09/22/tesla-robotaxi-active-fleet-austin-crashes-8-vehicles/) — コミュニティの Robotaxi Tracker による稼働台数とテキサス州の登録データの集計。Accessed: 2026-10-11. ※独立集計 (demonstrated 側) だが批判的論調。
+
+[^nata-cybercab]: [Tesla Extends Robotaxi Hours in Austin, Adds 111 Cybercabs — Not a Tesla App (2026-10-04)](https://notateslaapp.com/news/4768/tesla-extends-robotaxi-hours-in-austin-adds-111-cybercabs) — テキサス州 DMV のデータによる Cybercab の登録台数。Accessed: 2026-10-11
+
+[^dtc-ai5]: [Tesla AI5 design revealed as Musk confirms it won't be used in cars — Drive Tesla Canada (2026-04-15)](https://driveteslacanada.ca/news/tesla-ai5-design-revealed-musk-confirms-wont-be-used-in-cars/) — AI5 の用途 (Optimus と学習用クラスタ) についてのマスクの発言。Accessed: 2026-10-11
+
+[^nata-ai5-samsung]: [Tesla AI5 Chip Enters Trial Production at Samsung's Texas Fab — Not a Tesla App (2026-09-17)](https://www.notateslaapp.com/news/4701/tesla-ai5-chip-enters-trial-production-at-samsungs-texas-fab) — 韓国報道に基づく試作生産の報道。テスラ未確認。Accessed: 2026-10-11

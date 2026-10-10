@@ -18,8 +18,8 @@
 2. **各社の個性は減速比の選択に最も表れる。** Unitree は四足で確立した低減速比・準直動 (QDD) 系譜でバックドライバビリティと価格を取り、産業用途を狙う各社は関節ごとに波動歯車・遊星・直動（ボールねじ/ローラーねじ）を使い分けるハイブリッドを取る。Tesla は EV のモーター・パワエレ供給網の垂直統合を武器にする。「唯一の正解アクチュエータ」は存在せず、**タスク想定（動的移動か、把持作業か）が減速比を決める**という本領域の枠組みどおりの分岐である。
 3. **差別化の主戦場は手 (hands) に移った。** 歩行が学習ベース制御でコモディティ化しつつある一方、器用な操作 (dexterous manipulation) は未解決である。Tesla Optimus 第3世代の手は 22 自由度・腱駆動で、アクチュエータ群を前腕に移した構成と報じられる[^optimus-hands]。質量・慣性を根元に寄せる設計は、[`kinematics-dynamics.md`](kinematics-dynamics.md) の反射慣性・[`locomotion-manipulation.md`](locomotion-manipulation.md) の把持の議論の直接の応用である。指先の触覚（力）センサの搭載も各社共通の方向で、[`robotics-fundamentals.md`](robotics-fundamentals.md) の「接触を測るセンサ」がここで主役になる。
 4. **制御スタックは「二系統 (two-system) の学習アーキテクチャ」に収斂しつつある。** Figure の Helix は、低速で思考する視覚言語モデル (System 2) と高速で全身を駆動する視覚運動ポリシー (System 1、200 Hz 級) の分業を明示したVLA (vision-language-action) であり[^helix]、Boston Dynamics は Google DeepMind の基盤モデル (Gemini Robotics) を Atlas に統合する提携を発表した[^bd-deepmind]。これは [`control-systems.md`](control-systems.md) のカスケード原理（長ホライズン・粗いモデルの上位層 + 短ホライズン・高速の下位層）が、学習ベースになっても保存されることを示している。つまり、**学習が置き換えたのは計画と分解であり、実行と安全の層ではない**。
-5. **生産能力が公然の競争軸になった。** Figure は自社工場 BotQ で年産 12,000 体ラインを稼働させ、2026 年前半に「1 日 1 体 → 1 時間 1 体」への増速と累計 350 体超の生産を発表した[^botq][^figure-ramp]。Hyundai は年産 30,000 体規模の投資と自社工場への 25,000 体導入計画を掲げ[^hyundai]、2026-09 にはジョージア州 Metaplant America に Atlas の訓練拠点 RMAC を開設した[^bd-rmac]。Tesla はフリーモントの Model S/X ラインを撤去して年産 100 万体設計の第1世代 Optimus ラインを据え付け、2026 年内の生産開始を一次発表で掲げている[^tesla-q2]。ただしこれらの多くは**目標値**である。2026-10 時点で第三者の現場での稼働を数値で示したのは、Figure（BMW Spartanburg、Figure 02 が 2025 年に 30,000 台の組立に寄与と自社発表）[^figure-bmw]と Agility（GXO などで Digit 4 が累計 65,000 時間超稼働と SEC 提出書類で開示）[^agility-s4]に限られる。いずれも拠点単位のパイロットで、展開台数は公表されていない。
-6. **Unitree は「ハードウェアのコモディティ化」という別の戦争をしている。** G1（約 130 cm・35 kg・23〜43 自由度）は 13,500〜16,000 米ドル級で販売され、研究機関・開発者に SDK 付きで普及している[^unitree-g1]。強化学習 + sim-to-real による歩行制御の研究プラットフォームとして事実上の標準になりつつあり、「ヒューマノイドの本体価格は急速に下がる」ことを市場に示した。フルサイズの H1 は 3.3 m/s の走行実証を持つ[^unitree-g1]。2026-08 の上海証券取引所 STAR 市場上場に際しての開示では、2025 年のヒューマノイド出荷は 5,500 体超（車輪型双腕を除く）、売上は 2024 年の 3.93 億元から 17.0 億元に増えた[^unitree-ipo]。台数ベースで明確な実績を持つのは現時点で Unitree だけである。
+5. **生産能力が公然の競争軸になった。** Figure は自社工場 BotQ で年産 12,000 体ラインを稼働させ、2026 年前半に「1 日 1 体 → 1 時間 1 体」への増速と累計 350 体超の生産を公式に発表した[^botq][^figure-ramp]。2026-07-23 には CEO が Figure 03 の累計 1,000 体目の生産を発表している（CEO の発言で、公式ニュースルームには未掲載）[^figure-1000]。Hyundai は年産 30,000 体規模の投資と自社工場への 25,000 体導入計画を掲げ[^hyundai]、2026-09 にはジョージア州 Metaplant America に Atlas の訓練拠点 RMAC を開設した[^bd-rmac]。Tesla はフリーモントの Model S/X ラインを撤去して年産 100 万体設計の第1世代 Optimus ラインを据え付け、2026 年内の生産開始を一次発表で掲げている[^tesla-q2]。ただしこれらの多くは**目標値**である。2026-10 時点で第三者の現場での稼働を数値で示したのは、Figure（BMW Spartanburg、Figure 02 が 2025 年に 30,000 台の組立に寄与と自社発表）[^figure-bmw]と Agility（GXO などで Digit 4 が累計 65,000 時間超稼働と SEC 提出書類で開示）[^agility-s4]に限られる。いずれも拠点単位のパイロットで、展開台数は公表されていない。
+6. **Unitree は「ハードウェアのコモディティ化」という別の戦争をしている。** G1（約 130 cm・35 kg・23〜43 自由度）は 13,500〜16,000 米ドル級で販売され、研究機関・開発者に SDK 付きで普及している[^unitree-g1]。強化学習 + sim-to-real による歩行制御の研究プラットフォームとして事実上の標準になりつつあり、「ヒューマノイドの本体価格は急速に下がる」ことを市場に示した。フルサイズの H1 は 3.3 m/s の走行実証を持つ[^unitree-g1]。2026-08 の上海証券取引所 STAR 市場上場に際しての開示では、2025 年のヒューマノイド出荷は 5,500 体超（車輪型双腕を除く）、売上は 2024 年の 3.93 億元から 17.0 億元に増えた[^unitree-ipo]。2026 年上半期の世界出荷では、調査会社各社（Counterpoint、IDC、SAG）が AgiBot（智元）を首位、Unitree を 2 位としている。市場全体の推計は約 1.9 万〜2.5 万体と幅があるが、台数ベースの実績が中国勢に集中している点は各社で一致する[^counterpoint-h1][^idc-h1][^sag-h1]。
 7. **安全の制度が技術に追いついていない。** 産業用ロボットの安全規格 (ISO 10218 / ISO/TS 15066 — [`robotics-fundamentals.md`](robotics-fundamentals.md)) は「固定された腕」を前提に作られており、**動的にバランスする移動型ヒューマノイドが人と同一空間で働くための安全規格は確立途上**である。専用規格 ISO 25785-1（能動的に安定を保つ産業用移動ロボットの安全要求）は 2026-10 時点で委員会原案 (CD) 段階にとどまる[^iso25785]（転倒ハザードは [`locomotion-manipulation.md`](locomotion-manipulation.md) で述べたとおり原理的に排除できない）。各社の工場内先行導入は、規格の空白を「自社施設・管理された環境」で埋めている段階と読める。
 
 ## アーキテクチャ (Architecture)
@@ -86,7 +86,7 @@ Tesla の第3世代ハンドが示す設計（報道ベース）は教科書的�
 Figure Helix が公表した構成は、学習ベースヒューマノイドの参照アーキテクチャとして読める[^helix]。
 
 - **System 2**: 事前学習済み視覚言語モデル（数 Hz）。シーン理解・言語指示の解釈という「遅い思考」を担う。
-- **System 1**: 高速視覚運動ポリシー（200 Hz 級）。System 2 の潜在指令を受けて全身の連続制御を出す。2026-01 発表の Helix 02 では歩行・バランス・操作を単一システムとして扱う全身自律へ拡張された[^helix-02]。
+- **System 1**: 高速視覚運動ポリシー（200 Hz 級）。System 2 の潜在指令を受けて全身の連続制御を出す。2026-01 発表の Helix 02 では歩行・バランス・操作を単一システムとして扱う全身自律へ拡張された[^helix-02]。2026-09 の Helix 2.5 は、人間の行動データセット Index で事前学習し、未見の 30 家庭でのゼロショットの家事タスクで成功率 56%（420 試行中 237）を示したと自社発表している。第三者による再現はなく、評価条件の詳細も公開されていない[^helix-25]。
 - この分業は [`control-systems.md`](control-systems.md) のカスケード原理（ホライズンとモデル粒度の交換）の学習版であり、かつ同文書の発見事項 7「安全機能は制御則の外に置く」が学習時代にそのまま持ち越されることを意味する。VLA の下には依然として関節サーボと安全監視のリアルタイム層がある。
 - Boston Dynamics × Google DeepMind の提携（Gemini Robotics の Atlas 統合、自動車組立タスクのデモンストレーションで訓練）[^bd-deepmind] も同型で、**「基盤モデル企業 × ロボット企業」の水平分業**という業界構造の変化を示す。Tesla のみ FSD と同様の完全内製・end-to-end 路線である（FSD のソフトウェア構成は [`../automotive/ev/tesla-software-manufacturing.md`](../automotive/ev/tesla-software-manufacturing.md)）。
 
@@ -94,14 +94,14 @@ Figure Helix が公表した構成は、学習ベースヒューマノイドの�
 
 | 主体 | 実証された事実（2026-10 時点） | 目標・計画（未実証） |
 |---|---|---|
-| Figure | BotQ 稼働、累計 350 体超、1 時間 1 体の生産レートを発表[^figure-ramp]。BMW Spartanburg で Figure 03 がシーケンシング作業に従事（2026-06 発表）[^figure-bmw] | 年産 12,000 → 4 年で 100,000 体[^botq]、家庭向け展開 |
+| Figure | BotQ 稼働、2026-04 に累計 350 体超・1 時間 1 体の生産レートを公式発表[^figure-ramp]。2026-07 に CEO が累計 1,000 体を発表（公式ニュースルーム未掲載）[^figure-1000]。BMW Spartanburg で Figure 03 がシーケンシング作業に従事（2026-06 発表）[^figure-bmw] | 年産 12,000 → 4 年で 100,000 体[^botq]、家庭向け展開 |
 | Tesla | フリーモントの S/X ライン撤去と第1世代 Optimus ラインの据え付け（一次発表）[^tesla-q2][^optimus-prod]。2026-08 の生産入りは報道ベースで、Musk 自身が「当初は極めて遅い」と発言[^optimus-pace] | 第1世代ライン年産 100 万体設計、テキサスの第2世代ラインで年産 1,000 万体（設計目標）[^tesla-q2]、外販は 2027 年以降 |
 | Hyundai/BD | CES 2026 で量産型電動 Atlas 発表、2026 年分の供給先を確定と発表[^bd-fleet]。RMAC で部品シーケンシングを訓練中[^bd-rmac] | 年産 30,000 体工場、自社工場へ 25,000 体[^hyundai]、2030 年までに部品組付へ拡大[^bd-rmac] |
 | Unitree | 2025 年出荷 5,500 体超（上場時開示）[^unitree-ipo] | — （既に販売実績が主戦場） |
 | Agility | GXO（Flowery Branch）で累計 10 万トート超・作業中精度約 98%、Digit 4 の累計稼働 65,000 時間超（SEC 提出書類）[^agility-s4] | Digit 5 の受注 3 億ドル超（マイルストーン条件付き）[^agility-s4] |
 | 1X | 2026-05 にカリフォルニア州 Hayward 工場で NEO の生産開始、当面は社内 R&D と家庭試験向け[^1x-neo] | 2026 年中の一般家庭への納品開始 |
 
-- 2026-10 時点で**確実に「実証」と言えるのは Unitree の外販台数、Figure の生産レート、そして Figure（BMW）と Agility（GXO・Schaeffler など）の第三者現場での稼働実績**である。一方、これらの現場実績は展開台数が非公表の拠点単位パイロットであり、稼働率・保守コストを含めて「経済的に成立する」ことを第三者が検証した公開データはまだない。この区別は 1 年以内に大きく動く可能性が高く、参照時点での再確認を要する。
+- 2026-10 時点で**確実に「実証」と言えるのは Unitree・AgiBot など中国勢の出荷台数（調査会社の推計）、Figure の生産レート、そして Figure（BMW）と Agility（GXO・Schaeffler など）の第三者現場での稼働実績**である。一方、これらの現場実績は展開台数が非公表の拠点単位パイロットであり、稼働率・保守コストを含めて「経済的に成立する」ことを第三者が検証した公開データはまだない。この区別は 1 年以内に大きく動く可能性が高く、参照時点での再確認を要する。
 - 労働側の摩擦も顕在化している（Hyundai の工場導入に対する労組の交渉要求の報道[^hyundai-union]）。技術外の制約が導入速度を律する段階に入った。
 
 ## セキュリティ考察 (Security Considerations)
@@ -132,6 +132,16 @@ Figure Helix が公表した構成は、学習ベースヒューマノイドの�
 [^helix-02]: [Introducing Helix 02: Full-Body Autonomy](https://www.figure.ai/news/helix-02) — Accessed: 2026-07-12. 歩行・バランス・操作の統合（2026-01）。
 
 [^figure-ramp]: [Ramping Figure 03 Production](https://www.figure.ai/news/ramping-figure-03-production) — Accessed: 2026-07-12. 累計 350 体超・1 時間 1 体への増速。
+
+[^figure-1000]: [A Golden Milestone: Figure Manufactures Its 1,000th Figure 03 Humanoid — Humanoids Daily](https://www.humanoidsdaily.com/news/a-golden-milestone-figure-manufactures-its-1-000th-figure-03-humanoid) — 2026-07-23 の CEO 発表の報道。公式ニュースルーム未掲載であり、集計範囲を疑問視する報道もある ([RuntimeWire](https://runtimewire.com/article/figure-reportedly-built-1000th-humanoid-robot-san-jose))。Accessed: 2026-10-11
+
+[^helix-25]: [Figure's Robot Entered 30 Unseen Homes — and Succeeded 56% of the Time — TechRepublic](https://www.techrepublic.com/article/news-figure-helix-2-5-30-homes-56-percent/) — Helix 2.5 (2026-09-17) の自社発表の評価結果。Accessed: 2026-10-11
+
+[^counterpoint-h1]: [Global Humanoid Robot Shipments Soar Nearly 300% YoY in H1 2026 — Counterpoint Research](https://counterpointresearch.com/en/insights/global-humanoid-robot-shipments-soar-nearly-300-percent-yoy-in-h1-2026) — 2026 年上半期の出荷 22,000 体超、AgiBot 約 9,700 体 (43%)、Unitree 7,000 体超 (31%)。調査会社推計。Accessed: 2026-10-11
+
+[^idc-h1]: [IDC Puts H1 Humanoid Shipments Near 25,000, With AGIBOT Leading — Humanoids Daily](https://www.humanoidsdaily.com/news/idc-h1-2026-humanoid-shipments-agibot) — IDC の 2026 年上半期の推計 (約 25,000 体、AgiBot 首位) の報道。Accessed: 2026-10-11
+
+[^sag-h1]: [SAG: Global Humanoid Robot Shipments in 1H 2026 — Smart Analytics Global](https://smartanalyticsglobal.com/global-humanoid-robot-shipments-2026-agibot-unitree/) — 2026 年上半期の出荷約 19,100 体、AgiBot 首位・Unitree 2 位。調査会社推計。Accessed: 2026-10-11
 
 [^unitree-g1]: [Unitree G1 製品ページ](https://www.unitree.com/g1/) — Accessed: 2026-07-12. G1 の寸法・自由度・価格。H1 の走行速度は同社発表による。
 
