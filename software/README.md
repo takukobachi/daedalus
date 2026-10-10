@@ -44,6 +44,9 @@
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
   トランザクション, 分離レベル, クエリ実行・最適化, 分散データベース）。
   `hardware/hw-sw-interface/storage-nvm-interface.md` の上位層
+- `caching/` — 分散キャッシュ（memcached, Redis, キャッシュ・アサイドと無効化の競合,
+  スタンピードとホットキー, 置換方式, キャッシュ喪失によるメタステーブル障害）。
+  `databases/` の前に置く値の写しの層で、`distributed-systems/` の一貫性・故障モデルの応用先
 - `messaging/` — メッセージングとストリーム処理（分散ログ, 複製と耐久性,
   配信セマンティクス/exactly-once, ウィンドウとチェックポイント, バックプレッシャ）。
   `distributed-systems/`・`databases/` の機構をシステム間のデータフローへ応用する層
