@@ -18,6 +18,7 @@
 
 - ストリーム処理エンジンの深掘り (stream processing engines) — Flink/Kafka Streams
   の状態バックエンド、ジョイン、リスケーリング
-- スキーマ進化とデータパイプライン (schema evolution & data pipelines) — Avro/Protobuf、
-  互換性ルール、CDC (change data capture)
+- データパイプラインと CDC (change data capture) — データベースの変更ログを起点にした
+  パイプライン。Avro/Protobuf のスキーマ進化と互換性ルール、スキーマレジストリは
+  [`../networking/rpc-serialization.md`](../networking/rpc-serialization.md) で扱い済み
 - ブローカ内部の性能分析 — zero-copy、ページキャッシュ、tiered storage
