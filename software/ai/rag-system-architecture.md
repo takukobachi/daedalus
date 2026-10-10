@@ -150,7 +150,7 @@ flowchart TD
 ```
 
 - Edge et al. (2024) は、ポッドキャストの書き起こしやニュース記事のような 100 万トークン規模のコーパスで、大域的な質問に対する回答の網羅性と多様性が、通常の RAG より高いと報告した[^graphrag]。評価は LLM 判定器による対比較である点に注意が要る。
-- 索引構築時に全チャンクへ LLM を適用するため、取り込みコストは通常の RAG より桁で大きい。Microsoft はこの問題に対し、事前要約をやめて問い合わせ時に処理を遅延させる LazyGraphRAG を 2024-11 に発表し、索引コストはベクトル RAG と同等（GraphRAG の 0.1%）で、大域的な質問では GraphRAG の Global Search と同等の品質を 700 分の 1 以下の問い合わせコストで得られると自社報告している[^lazygraphrag]。公式リポジトリも索引構築が高価な操作であることを明記している[^graphrag-repo]。
+- 索引構築時に全チャンクへ LLM を適用するため、取り込みコストは通常の RAG より桁で大きい。Microsoft はこの問題に対し、事前要約をやめて問い合わせ時に処理を遅延させる LazyGraphRAG を 2024-11 に発表し、索引コストはベクトル RAG と同等（GraphRAG の 0.1%）で、大域的な質問では GraphRAG の Global Search と同等の品質を 700 分の 1 以下の問い合わせコストで得られると自社報告している[^lazygraphrag]。公式リポジトリも索引構築が高価な操作であることを明記している[^graphrag-repo]。なお、公式リポジトリは 2026-08 以降「おおむね保守モード」にあると表明しており、新機能の追加と新規 PR の受け入れをやめ、バグ修正・依存関係の更新・脆弱性対応だけを行っている（2026-10 時点）[^graphrag-repo]。
 - エンティティの多対多関係をたどる質問（「A 社と取引のある会社の役員は誰か」）では、グラフ検索自体が有効である。ただし抽出の誤りがグラフに固定化されるため、抽出品質の評価が要る。
 
 ### 8. 評価
@@ -192,7 +192,7 @@ Barnett et al. (2024) は 3 つの事例研究から RAG の 7 つの失敗点�
 
 ## セキュリティ考察 (Security Considerations)
 
-- **間接プロンプトインジェクション**: 攻撃者が知識ベースに入る文書（Web ページ、共有ドライブのファイル、メール、チケット）に指示を埋め込めば、検索で取得された時点で LLM への指示として作用する[^greshake]。RAG は利用者が意図せず信頼できないテキストを文脈に入れる配管であり、OWASP は LLM01:2025 Prompt Injection でこの経路を明示している[^owasp]。根本対策は未確立であり、(a) 取り込み経路の認可（誰が知識ベースに書けるか）、(b) 取得文書をデータとして区切って提示し、指示として扱わないようモデルに指示する、(c) RAG の出力が後続のツール実行に直結する場合は権限を最小化し、人の承認を挟む、の多層で被害を限定する。エージェント構成での「危険な三点セット」の議論は [`agent-loop-engineering.md`](agent-loop-engineering.md) を参照。
+- **間接プロンプトインジェクション**: 攻撃者が知識ベースに入る文書（Web ページ、共有ドライブのファイル、メール、チケット）に指示を埋め込めば、検索で取得された時点で LLM への指示として作用する[^greshake]。RAG は利用者が意図せず信頼できないテキストを文脈に入れる配管であり、OWASP は LLM01:2025 Prompt Injection でこの経路を明示している[^owasp]。2026-08 に公開されたと報じられた 2026 年版でも、プロンプトインジェクションは首位に置かれている (2026-10 時点で、公式ページの表記は 2025 年版のまま)[^owasp2026]。根本対策は未確立であり、(a) 取り込み経路の認可（誰が知識ベースに書けるか）、(b) 取得文書をデータとして区切って提示し、指示として扱わないようモデルに指示する、(c) RAG の出力が後続のツール実行に直結する場合は権限を最小化し、人の承認を挟む、の多層で被害を限定する。エージェント構成での「危険な三点セット」の議論は [`agent-loop-engineering.md`](agent-loop-engineering.md) を参照。
 - **知識汚染 (knowledge poisoning)**: PoisonedRAG は、標的の質問に対して検索されやすく、かつ攻撃者の望む回答を誘導する文書を質問あたり 5 件注入するだけで、約 90% の攻撃成功率が得られることを示した[^poisonedrag]。OWASP は LLM04:2025 Data and Model Poisoning で、埋め込みデータの汚染もこの類型に含めている[^owasp]。埋め込み空間で検索されやすく最適化された文書は、語彙的なスパムより検出しにくい。取り込み時の出所検証、文書の信頼度の階層化（公式文書と UGC を分ける）、回答根拠の出典表示が対策になる。
 - **アクセス制御は検索時に適用する**: 認可されていない文書が一度でも LLM の文脈に入れば、回答に要約・引用されて漏洩する。生成後のフィルタは要約された内容を検出できない。文書の ACL を索引のメタデータとして保持し、検索時にユーザの権限でフィルタする。共有索引のフィルタ方式とテナントごとの索引分離の選択、フィルタ付き ANN の再現率低下は [`../search/vector-search-ann.md`](../search/vector-search-ann.md) セキュリティ考察を参照。ACL の変更が索引に反映されるまでの遅延も、権限剥奪後の閲覧という形で漏洩になる。OWASP は LLM08:2025 Vector and Embedding Weaknesses としてこれらを分類している[^owasp]。
 - **埋め込みからの原文復元**: 埋め込みベクトルから原文をかなりの程度復元できるため、ベクトルストアは原文と同じ機密度で保護する（[`../search/vector-search-ann.md`](../search/vector-search-ann.md)）。外部の埋め込み API に文書を送ること自体がデータの第三者提供になる点も、データ分類の対象である。
@@ -269,8 +269,10 @@ Barnett et al. (2024) は 3 つの事例研究から RAG の 7 つの失敗点�
 
 [^lazygraphrag]: [LazyGraphRAG: Setting a new standard for quality and cost](https://www.microsoft.com/en-us/research/blog/lazygraphrag-setting-a-new-standard-for-quality-and-cost/) — Microsoft Research Blog (2024-11-25). Accessed: 2026-10-04
 
-[^graphrag-repo]: [microsoft/graphrag (GitHub)](https://github.com/microsoft/graphrag) — Accessed: 2026-10-04
+[^graphrag-repo]: [microsoft/graphrag (GitHub)](https://github.com/microsoft/graphrag) — README の保守モードの告知 (2026-08)。Accessed: 2026-10-11
 
 [^chroma]: [Evaluating Chunking Strategies for Retrieval](https://www.trychroma.com/research/evaluating-chunking) — Smith, B., & Troynikov, A., Chroma Technical Report (2024-07-03). Accessed: 2026-10-04
 
-[^owasp]: [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/) — OWASP GenAI Security Project. Accessed: 2026-10-04
+[^owasp]: [OWASP Top 10 for LLM Applications 2025](https://genai.owasp.org/llm-top-10/) — OWASP GenAI Security Project. Accessed: 2026-10-11
+
+[^owasp2026]: [CSA Research Note: OWASP's 2026 LLM Top 10](https://labs.cloudsecurityalliance.org/research/csa-research-note-owasp-llm-top10-2026-incident-weighted-202/) — 2026 年版の公開と順位の変化を伝える二次資料。Accessed: 2026-10-11

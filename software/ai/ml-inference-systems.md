@@ -207,7 +207,7 @@ loop every iteration:                       // トークン生成1反復ごと�
 - **weight-only 量子化 (INT8 / INT4)**: 重みだけを低ビット化し、演算は FP16/BF16 に逆量子化 (dequantize) して行う。**GPTQ**（二次情報を使う逐次丸め）や **AWQ**（活性値分布から重要チャネルを保護する）はこのクラスの代表。decode は重み読み出し帯域が律速なので、読むバイトが 1/2〜1/4 になれば TPOT がほぼ比例して改善する。演算形式が FP16 のままでも、である。
 - **活性値量子化の困難**: LLM の活性値には少数チャネルに極端な**外れ値 (outlier)** が現れ、一様なスケールで量子化すると精度が崩壊する。SmoothQuant のように外れ値の大きさを重み側へ「移す」変換や、外れ値チャネルだけ高精度で扱う混合精度が必要になる。weight-only が先に普及したのはこの難易度差による。
 - **FP8**: 近年の GPU 世代がハードウェアサポートする浮動小数フォーマット (E4M3/E5M2)。整数と違い動的レンジを指数部で持つため活性値にも適用しやすく、計算律速の prefill で Tensor Core スループットを引き上げる。Tensor Core の形式サポートは対の GPU ドキュメント参照。
-- **FP4（ブロックスケーリング形式）**: さらに 1 段下の 4 ビット浮動小数 E2M1（表現範囲はおよそ ±6）は、単独では動的レンジが足りないため、小ブロックごとに共有スケールを持たせて使う。OCP の **MXFP4** は 32 要素ごとに 2 の冪のスケール (E8M0) を 1 つ持ち、NVIDIA Blackwell 世代の **NVFP4** は 16 要素ごとに FP8 (E4M3) スケールを持ち、さらにテンソル単位の FP32 スケールを重ねる 2 段構成である。ブロックを細かくし、スケールを 2 の冪に限らないことで局所的なレンジに追従しやすくしている（NVIDIA は FP16 比で約 3.5 倍、FP8 比で約 1.8 倍のメモリ削減と主張する; ベンダ主張値）。2026-10 時点で vLLM v0.30.0 は SM100/103 で NVFP4 の重み 4 ビット・活性値 16 ビット (W4A16) カーネルを既定に採用し、KV cache 自体も FP8 / MXFP8 で格納するモデル対応が進んでいる。KV cache の低精度化は、重みと同じく decode の読み出しバイトを減らす帯域対策である。
+- **FP4（ブロックスケーリング形式）**: さらに 1 段下の 4 ビット浮動小数 E2M1（表現範囲はおよそ ±6）は、単独では動的レンジが足りないため、小ブロックごとに共有スケールを持たせて使う。OCP の **MXFP4** は 32 要素ごとに 2 の冪のスケール (E8M0) を 1 つ持ち、NVIDIA Blackwell 世代の **NVFP4** は 16 要素ごとに FP8 (E4M3) スケールを持ち、さらにテンソル単位の FP32 スケールを重ねる 2 段構成である。ブロックを細かくし、スケールを 2 の冪に限らないことで局所的なレンジに追従しやすくしている（NVIDIA は FP16 比で約 3.5 倍、FP8 比で約 1.8 倍のメモリ削減と主張する; ベンダ主張値）。vLLM は v0.30.0 (2026-09) で SM100/103 における NVFP4 の重み 4 ビット・活性値 16 ビット (W4A16) カーネルを既定に採用した。2026-10 時点の v0.31.0 では一部のモデルで NVFP4 で圧縮した KV cache を SM100 の既定にしており、KV cache 自体も FP8 / MXFP8 / NVFP4 で格納するモデル対応が進んでいる。KV cache の低精度化は、重みと同じく decode の読み出しバイトを減らす帯域対策である。
 - まとめると: **decode の利得は帯域（weight-only で十分）、prefill の利得は演算（FP8 等の計算形式が必要）**。どの相が律速かで打ち手が変わる。精度への影響はモデル・タスク依存であり、量子化は常に精度評価とセットで導入する。
 
 ### 6. 投機的デコーディング (speculative decoding)
@@ -217,14 +217,14 @@ decode では演算器が余っている（発見事項 1）。**投機的デコ
 - **draft-verify 構造**: 小さな**ドラフトモデル (draft model)** が k トークンを安価に先読み生成し、本体モデルが k+1 トークン分を**1回の並列フォワード**で検証する。棄却サンプリングにより、出力分布は本体モデル単独と**数学的に同一**に保たれる。これが単なる近似手法との決定的な違いである。
 - 検証の1フォワードは k 系列分をまとめて処理するため、演算量は増えるが（帯域律速の decode では）所要時間は1トークン分とほぼ変わらない。受理された分だけ「1反復で複数トークン」が進む。CPU の投機的実行が「空いたパイプラインで先の命令を走らせ、外れたら捨てる」のと同じ賭けの構造である。
 - 利得は**受理率 (acceptance rate)** に全面依存する。ドラフトと本体の分布が近い（定型文・コード等）ほど伸び、乖離すると検証コストとドラフトコストだけ払って進まない。ドラフトモデルの別建てを嫌い、本体の一部層や追加ヘッドで下書きする自己投機 (self-speculative / Medusa 系) の変種が続く。本体の隠れ状態 (hidden states) を入力に取る軽量ドラフタ **EAGLE** 系 (Li et al., 2024)、学習時から複数トークン予測ヘッドを持つモデルの **MTP (Multi-Token Prediction)** ヘッド流用、ドラフトモデル不要の n-gram（プロンプトや履歴の一致から先読み）も実用化している。
-- **2026-10 時点の対応状況**: 投機は主要ランタイムの標準機能になった。vLLM v0.30.0 は EAGLE3 / MTP / DFlash / DSpark 系をパイプライン並列下でも動かし、オンラインの受理率推定で検証長を適応的に変える。llama.cpp の `llama-server` も `--spec-type` で draft モデル、EAGLE-3、MTP、DFlash、各種 n-gram 方式を選べる。受理率に応じて投機の深さを動的に調整する機構が入ってきたことは、次項の「負荷・受理率依存」という性質への実装側の応答である。
+- **2026-10 時点の対応状況**: 投機は主要ランタイムの標準機能になった。vLLM は v0.30.0 で EAGLE3 / MTP / DFlash / DSpark 系をパイプライン並列下でも動かせるようにし、オンラインの受理率推定で検証長を適応的に変える。v0.31.0 では Model Runner V2 上で draft モデル方式にも対応した。llama.cpp の `llama-server` も `--spec-type` で draft モデル、EAGLE-3、MTP、DFlash、DSpark、各種 n-gram 方式を選べる。受理率に応じて投機の深さを動的に調整する機構が入ってきたことは、次項の「負荷・受理率依存」という性質への実装側の応答である。
 - なお投機はレイテンシ（TPOT）を買う技術であり、システム全体のスループットはむしろ下がりうる。大バッチで演算器が既に埋まっている高負荷時には利得が消えるため、負荷に応じて有効/無効を切り替えるのが実務的である。
 
 ### 7. 推論ランタイムの設計空間
 
 | | vLLM | SGLang | TensorRT-LLM | llama.cpp | ONNX Runtime |
 |---|---|---|---|---|---|
-| 版数（2026-10-04 時点） | v0.30.0（2026-09-22） | v0.5.21（2026-10-02） | 安定版 v1.2.1（2026-04-20）、v1.3.0 は RC 系列 | 日次ビルド (b11382 等) | — |
+| 版数（2026-10-11 時点） | v0.31.0（2026-10-05） | v0.5.21（2026-10-02） | 安定版 v1.2.1（2026-04-20）、v1.3.0 は RC 系列（rc29, 2026-09-29） | 版番号付きリリース v0.6.0（2026-10-05）と日次ビルド (b11541 等) | — |
 | 主対象ハード | NVIDIA 中心 + AMD ROCm / Intel XPU / CPU | NVIDIA + AMD (MI355X 等) | NVIDIA 専用 | CPU / Apple Silicon / 民生 GPU | CPU / GPU / NPU 横断 |
 | バッチング | 連続バッチング（本家） | 連続バッチング + 低オーバヘッドスケジューラ | 連続バッチング (in-flight batching) | `llama-server` で連続バッチング（既定有効）+ 並列スロット | 動的バッチング（サーバ併用時） |
 | KV 管理 | PagedAttention（本家）+ prefix caching + 階層 KV（ホスト退避） | RadixAttention（基数木による prefix 共有）+ HiCache | ページド KV cache + KV 再利用 | 全スロット共有の統合 KV バッファ (`--kv-unified`)、KV 量子化 (`-ctk`) | 実装/EP 依存 |
@@ -286,6 +286,8 @@ decode では演算器が余っている（発見事項 1）。**投機的デコ
 - [NVIDIA CUDA C++ Programming Guide](https://docs.nvidia.com/cuda/cuda-c-programming-guide/) — Accessed: 2026-10-04。ストリーム・CUDA Graphs・非同期実行モデルの一次的リファレンス（ベンダ資料）。
 - [safetensors (Hugging Face)](https://github.com/huggingface/safetensors) — Accessed: 2026-10-04。pickle デシリアライズリスクの排除を目的とした重みフォーマット。
 - [vLLM v0.30.0 Release Notes](https://github.com/vllm-project/vllm/releases/tag/v0.30.0) — Accessed: 2026-10-04。Model Runner V2、投機的デコーディング（EAGLE3/MTP/DFlash/DSpark、適応的検証）、NVFP4 W4A16 既定化、KV コネクタ。
+- [vLLM v0.31.0 Release Notes](https://github.com/vllm-project/vllm/releases/tag/v0.31.0) — Accessed: 2026-10-11。Model Runner V2 上の draft モデル方式の投機、NVFP4 圧縮 KV cache の SM100 既定化。
+- [llama.cpp Releases](https://github.com/ggml-org/llama.cpp/releases) — Accessed: 2026-10-11。版番号付きリリース v0.6.0 と日次ビルド。
 - [SGLang v0.5.21 Release Notes](https://github.com/sgl-project/sglang/releases/tag/v0.5.21) — Accessed: 2026-10-04。PD インスタンスの役割動的切替、prefix cache の Rust コア化。
 - [TensorRT-LLM Disaggregated Serving](https://nvidia.github.io/TensorRT-LLM/features/disagg-serving.html) — Accessed: 2026-10-04。NIXL による KV 転送、`trtllm-serve` の構成。版数は [Releases](https://github.com/NVIDIA/TensorRT-LLM/releases) で確認。
 - [NVIDIA Dynamo v1.5.0 Release Notes](https://github.com/ai-dynamo/dynamo/releases/tag/v1.5.0) — Accessed: 2026-10-04。ルータの選択ポリシー、条件付き分離バイパス、階層 KV インデックス。
