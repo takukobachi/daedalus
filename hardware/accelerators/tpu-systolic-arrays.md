@@ -71,7 +71,7 @@ flowchart LR
 | メモリ | キャッシュ階層 + HBM | 大容量スクラッチパッド + HBM（キャッシュなし） |
 | プログラミング | CUDA（動的形状・任意カーネル） | XLA（静的形状・グラフコンパイル） |
 | 得意領域 | 多様なカーネル・研究の速度 | 大規模で形の揃った学習・推論 |
-| スケール | NVLink/NVSwitch + InfiniBand | ICI 3D トーラス + OCS |
+| スケール | NVLink/NVSwitch + InfiniBand | ICI 3D トーラス + OCS（推論用の TPU 8i は OCS で群を結ぶ階層型トポロジ） |
 
 - スクラッチパッド（ソフトウェア管理 SRAM）とキャッシュ（ハードウェア管理）の対比は [`../cpu/cache-memory-hierarchy.md`](../cpu/cache-memory-hierarchy.md) の議論の延長にある: アクセスパターンが完全に既知なら、キャッシュのタグ・一致検査のエネルギーすら無駄になる。
 
@@ -87,7 +87,7 @@ flowchart LR
 
 - **v1**（推論専用・INT8・DDR3）: PCIe Gen3 x16 接続のコプロセッサ。律速は PCIe ではなく重みを供給する Weight Memory（DDR3、34 GB/s）の帯域で、本番 6 アプリ中 4 つ（MLP・LSTM）がメモリ律速だった。有用な MAC の割合は 6 アプリ平均で約 23%（CNN0 は 78%、MLP/LSTM は 1 割前後）、平均実効性能は 21.4 TOPS とピークの 1/4 程度にとどまり、ワークロード依存が大きかった[^tpu-v1]。「演算器は安く、給餌は高い」ことの初期実証である。
 - **v2/v3**（学習対応）: BF16 の導入、HBM 化、チップ間 ICI でポッド化[^tpu-v2v3]。学習は活性値の保存・勾配の通信を伴うため、メモリ容量と相互接続が一気に主役になった。
-- **v4 以降**: 4,096 チップ 3D トーラス + OCS[^tpu-v4]。SparseCore（埋め込み表の疎アクセス専用ユニット）の搭載は、「GEMM 以外の 2 割」である疎な gather/scatter が全体を律速し始めたことへの応答であり、Amdahl の法則が DSA にも容赦なく働くことを示す。
+- **v4 以降**: 4,096 チップ 3D トーラス + OCS[^tpu-v4]。以後もポッドは拡大し、Ironwood（第 7 世代）で 9,216 チップ、第 8 世代の学習用 TPU 8t（2026-04 発表、2026-10 時点で未一般提供）で 9,600 チップに達する（いずれもベンダ公称）[^tpu-8]。一方、推論用の TPU 8i は 3D トーラスをやめ、4 チップの単位を銅配線で 32 チップの群にまとめ、群どうしを OCS で結ぶ階層型トポロジ (Boardfly) を採った[^tpu-8]。SparseCore（埋め込み表の疎アクセス専用ユニット）の搭載は、「GEMM 以外の 2 割」である疎な gather/scatter が全体を律速し始めたことへの応答であり、Amdahl の法則が DSA にも容赦なく働くことを示す。TPU 8i は SparseCore の代わりに集合通信を専用に処理するエンジン (CAE) を載せており、専用化の対象が通信にも広がっている[^tpu-8]。
 - 一貫した教訓: **専用化の対象は「演算」から「メモリアクセスパターン」そして「クラスタトポロジ」へと外側に移動**してきた。Google 自身が 3 世代の経験を「コンパイラ互換性・後方互換性・TCO・マルチテナンシ・DNN の成長速度」などの 10 の教訓として整理しており[^ten-lessons]、ハードウェア単体の最適化より運用と互換性の制約が設計を支配するようになったことを裏づける。
 
 ### 3. コンパイラという前提 (The Compiler Contract)
@@ -121,6 +121,8 @@ flowchart LR
 [^tpu-v1]: Jouppi, N. P. et al. (2017). In-Datacenter Performance Analysis of a Tensor Processing Unit. *Proc. ACM/IEEE ISCA 2017*, 1–12. DOI: 10.1145/3079856.3080246 — TPUv1 の実測性能・利用率・設計判断の一次資料。
 
 [^tpu-v4]: Jouppi, N. P. et al. (2023). TPU v4: An Optically Reconfigurable Supercomputer for Machine Learning with Hardware Support for Embeddings. *Proc. ACM/IEEE ISCA 2023*. DOI: 10.1145/3579371.3589350 — OCS・3D トーラス・SparseCore の一次資料。
+
+[^tpu-8]: [Google Cloud Blog (2026-04-23). Inside the eighth-generation TPU: An architecture deep dive](https://cloud.google.com/blog/products/compute/tpu-8t-and-tpu-8i-technical-deep-dive) — TPU 8t/8i の構成、Boardfly、CAE。Ironwood の規模は [Google Cloud Blog (2025-11-06)](https://cloud.google.com/blog/products/compute/ironwood-tpus-and-new-axion-based-vms-for-your-ai-workloads/) による。Accessed: 2026-10-11
 
 [^eyeriss]: Chen, Y.-H., Emer, J. & Sze, V. (2016). Eyeriss: A Spatial Architecture for Energy-Efficient Dataflow for Convolutional Neural Networks. *Proc. ACM/IEEE ISCA 2016*, 367–379. DOI: 10.1109/ISCA.2016.40 — データフロー分類（weight/output/row-stationary）の典拠。
 
