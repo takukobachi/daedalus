@@ -19,7 +19,7 @@
 - `calculus-analysis/` — 微分積分・解析(極限、微分、積分、テイラー展開、
   微分方程式 …)。物理学シリーズ全体と制御理論の前提
 - `discrete-logic/` — 離散数学・論理(命題論理・ブール代数、グラフと木、
-  オートマトン・形式言語、計算可能性 …)。
+  オートマトン・形式言語、計算可能性、計算量理論 …)。
   論理回路・FPGA (`../physics/quantum-solid-state/mosfet-cmos.md`,
   `../../hardware/fpga/`)、経路制御 (`../../software/networking/`)、
   正規表現・パーサ・検証の限界 (`../../software/security/`,
