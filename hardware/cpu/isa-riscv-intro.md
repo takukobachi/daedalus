@@ -204,6 +204,7 @@ RISC-V は3モードを定義する。
 
 ### 次の接続先 (Related Topics)
 
+- [`isa-x86-arm-comparison.md`](isa-x86-arm-comparison.md) — 同じ枠組みで現役の2大 ISA (x86-64 と AArch64) を比較する続編。
 - [`../hw-sw-interface/abi-syscalls.md`](../hw-sw-interface/abi-syscalls.md) — レジスタ規約・呼び出し規約・特権境界の詳細。
 - [`memory-ordering-atomics.md`](memory-ordering-atomics.md) — RISC-V の弱順序メモリモデル (RVWMO) と `A` 拡張。
 - [`virtual-memory-mmu.md`](virtual-memory-mmu.md) — S モードが司るアドレス変換。
