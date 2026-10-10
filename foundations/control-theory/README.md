@@ -22,14 +22,14 @@ foundations 直下の系列で、情報理論・機械学習に続く第三の�
    ゲイン余裕・位相余裕・最大感度 M_s、むだ時間と遅れ余裕、
    ボードの感度積分（ウォーターベッド効果と不安定プラントの限界）、
    進み・遅れ補償とノッチによるループ整形
+3. [`state-space-estimation.md`](state-space-estimation.md) —
+   状態方程式と伝達関数、可制御性・可観測性（慣性航法の位置が積分だけでは
+   決まらない理由）、極配置、LQR と保証された安定余裕、オブザーバと双対性、
+   カルマンフィルタの定常ゲイン（指数平滑との一致）、LQG と分離定理、
+   LQG に保証された余裕がないこと（Doyle 1978）。シリーズ最終回
 
-## ロードマップ (Roadmap)
+## 今後のテーマ候補
 
-3. **状態空間と推定** — 状態方程式、可制御性・可観測性、極配置、LQR、
-   オブザーバとカルマンフィルタ、LQG と分離定理。
-   [`../../engineering/aerospace/avionics-gnc.md`](../../engineering/aerospace/avionics-gnc.md)・
-   [`../../engineering/robotics/perception-state-estimation.md`](../../engineering/robotics/perception-state-estimation.md)
-   のセンサ融合の理論的基礎
-
-以降のテーマ（非線形制御とリアプノフ安定性、ロバスト制御、MPC の理論）は
-必要が生じた時点でロードマップを再開する。
+当初計画した3本のシリーズはこれで完結。以降のテーマ（非線形制御とリアプノフ安定性、
+ロバスト制御と H∞、MPC の理論、離散時間系と z 変換）は必要が生じた時点で
+ロードマップを再開する。
