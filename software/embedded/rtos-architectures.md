@@ -68,7 +68,7 @@ flowchart TB
 ```
 
 - 分離の実体はハードウェアである（別コア・別メモリ領域・別ペリフェラル割当）。ハイパーバイザ型（Jailhouse・Xen 等でコアを静的分割）は同じ発想を仮想化機構（`../virtualization/hardware-virtualization-containers.md`）で実現する変種。
-- `../../engineering/robotics/robot-software-stack.md` の「決定性の島と分散システムの海」の境界が、ここでは**シリコン上の物理的な線**として引かれている。
+- [`../../engineering/robotics/robot-software-stack.md`](../../engineering/robotics/robot-software-stack.md) の「決定性の島と分散システムの海」の境界が、ここでは**シリコン上の物理的な線**として引かれている。
 
 ## 技術詳細 (Technical Details)
 
@@ -99,7 +99,7 @@ flowchart TB
 
 ### 5. Linux PREEMPT_RT — 汎用 OS の到達点と限界 (Linux as an RTOS)
 
-- 機構: ほぼ全域のプリエンプション許可、spinlock の rt_mutex 化（スリープ可能・優先度継承付き）、割り込みハンドラのスレッド化（優先度を付けられる）、高分解能タイマ。ユーザ側の規律（`mlockall`、SCHED_FIFO、CPU isolation、`../../engineering/robotics/robot-software-stack.md` 参照）と組み合わせて初めて有効になる。
+- 機構: ほぼ全域のプリエンプション許可、spinlock の rt_mutex 化（スリープ可能・優先度継承付き）、割り込みハンドラのスレッド化（優先度を付けられる）、高分解能タイマ。ユーザ側の規律（`mlockall`、SCHED_FIFO、CPU isolation、[`../../engineering/robotics/robot-software-stack.md`](../../engineering/robotics/robot-software-stack.md) 参照）と組み合わせて初めて有効になる。
 - 到達点: 適切なハードウェアと構成で最悪数十 µs 級（実測ベース）。1 kHz の制御ループ・オーディオ・産業制御の広い範囲を飲み込んだ。
 - 限界: (1) 保証が**観測**であり論証でないこと（数千万行のカーネルに静的な上界解析は事実上不可能）。(2) 安全認証の困難。変更速度と規模が「凍結して証明する」認証モデルと相性が悪い（Linux の機能安全利用を目指す取り組みはあるが、認証済み RTOS の代替には未達）。(3) SMI・ファームウェア起因の外乱は OS では消せない。
 - 帰結として、Linux は混合クリティカリティ構成の「豊かな側の島」に置き、証明が要る仕事は認証済み RTOS・専用コアに置く、という発見事項 7 の分業に落ち着く。

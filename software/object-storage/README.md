@@ -21,9 +21,9 @@
 
 ## 今後のテーマ候補
 
-- データレイクとテーブル形式 (data lakes & table formats) — Parquet/Iceberg/Delta が
-  オブジェクトストレージの上にトランザクションとスキーマ進化を組み立てる機構
-- CDN とエッジキャッシング (CDN & edge caching) — オリジンとしてのオブジェクト
-  ストレージ、キャッシュ無効化、署名付き配信
+データレイクとテーブル形式は [`../cloud/data-lakehouse-analytics.md`](../cloud/data-lakehouse-analytics.md)、
+CDN とエッジキャッシングは [`../networking/cdn-edge-delivery.md`](../networking/cdn-edge-delivery.md)
+で扱い済み。残る候補は以下。
+
 - 修復スケジューリングの深掘り — 修復帯域と耐久性モデルの結合、優先度付け、
   相関故障下の挙動
