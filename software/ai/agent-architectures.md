@@ -164,7 +164,7 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 
 この変更は、リモート MCP サーバを通常の HTTP サービスと同様に水平スケール・負荷分散できるようにする方向の再設計であり、LSP 型の「長寿命の対話セッション」から REST 型の「自己完結した要求」への移行と読める。
 
-**ガバナンス (2026-10 時点)**: MCP は 2025-12 に Linux Foundation 傘下で設立された Agentic AI Foundation (AAIF) に、Block の goose、OpenAI の AGENTS.md とともに寄贈され、ベンダー中立の管理下にある。エージェント間通信のプロトコル A2A (Agent2Agent) も 2025-06 から Linux Foundation のプロジェクトである。ツール接続 (MCP)、エージェント間通信 (A2A)、リポジトリ向け指示ファイル (AGENTS.md) という層の異なる標準が、いずれも単一ベンダーの管理を離れた。
+**ガバナンス (2026-10 時点)**: MCP は 2025-12 に Linux Foundation 傘下で設立された Agentic AI Foundation (AAIF) に、Block の goose、OpenAI の AGENTS.md とともに寄贈され、ベンダー中立の管理下にある。エージェント間通信のプロトコル A2A (Agent2Agent) は 2025-06 に Linux Foundation のプロジェクトとなり、2026-08 に AAIF のホストプロジェクトへ移った[^a2a-aaif]。ツール接続 (MCP)、エージェント間通信 (A2A)、リポジトリ向け指示ファイル (AGENTS.md) という層の異なる標準が、同じ中立団体 AAIF の下にそろったことになる。
 
 アーキテクチャ上の含意: ツールカタログが外部化されると、ハーネスは**ツール集合が動的**である前提で設計する必要が生じる（起動時に列挙し、多数なら検索・遅延読み込みで文脈に載せる）。同時に、サーバは第三者コードであるから、**ツール定義・ツール結果はいずれも信頼境界の外**にある（セキュリティ考察参照）。
 
@@ -221,3 +221,5 @@ MCP はクライアント（ハーネス）とサーバ（ツール提供元）�
 - [Why SWE-bench Verified no longer measures frontier coding capabilities](https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/) — OpenAI (2026-02). Accessed: 2026-10-04
 - [SWE-Bench Pro (Public Dataset) Leaderboard](https://labs.scale.com/leaderboard/swe_bench_pro_public) — Scale AI. Accessed: 2026-10-04
 - [The lethal trifecta for AI agents](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) — Simon Willison. Accessed: 2026-10-04
+
+[^a2a-aaif]: [AAIF — A2A joins AAIF](https://aaif.io/blog/a2a-joins-aaif) — 2026-08-17 の発表。Accessed: 2026-10-11
