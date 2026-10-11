@@ -114,7 +114,7 @@ struct S { char a; int b; char c; };  // sizeof は 6 ではなく 12 になり�
 
 - **トラップ命令**: RISC-V `ecall`[^riscv-priv]、x86-64 `syscall`[^intel-sdm]、ARM `svc`。
 - **規約（Linux 例）**[^syscall-man]:
-  - syscall 番号をレジスタに（x86-64: `rax`、RISC-V: `a7`）。
+  - syscall 番号をレジスタに（x86-64: `rax`、RISC-V: `a7`）。アーキテクチャごとのレジスタの対応は syscall(2) の表にまとまっている[^syscall-man]。
   - 引数を規定レジスタに（x86-64: `rdi, rsi, rdx, r10, r8, r9`、RISC-V: `a0`–`a5`）。x86-64 では第4引数が関数呼び出し規約の `rcx` ではなく `r10` になる。`syscall` 命令が戻りアドレスを `rcx` に、RFLAGS を `r11` に退避して上書きするためである[^intel-sdm]。
   - トラップ → カーネルのハンドラ (trap handler) が番号で分岐し処理 → 戻り値をレジスタに置いてユーザへ復帰。
 
