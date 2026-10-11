@@ -66,10 +66,12 @@
 
 ## 今後のテーマ候補
 
+LLM セキュリティの深掘り（プロンプトインジェクションの分類と防御設計、jailbreak、
+エージェントの権限モデル）は [`../security/llm-application-security.md`](../security/llm-application-security.md)
+で扱い済み。残る候補は以下。
+
 - 量子化とスパース化の深掘り (quantization & sparsity) — PTQ/QAT, 構造化スパース性,
   ハードウェアサポート (INT4/FP8/2:4 sparsity) との共進化
-- LLM セキュリティの深掘り — プロンプトインジェクションの分類と防御設計、
-  jailbreak、エージェントの権限モデル。`../security/` との横断
 - 学習パイプライン (training pipeline) — 事前学習 → SFT → RLHF/DPO の全体像。
   実行基盤側は `ml-training-systems.md` が担当。
   理論側の入口は `../../foundations/machine-learning/` に整備済み
