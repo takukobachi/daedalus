@@ -18,11 +18,8 @@ sources per the Citations standard.
 
 ### Japanese Prose Refinement (yomiyasu)
 
-When the [yomiyasu](https://github.com/nanaism/yomiyasu) plugin is available
-(installed in user scope, not by this project), it can refine AI-generated
-Japanese. Use it only when
-explicitly asked (e.g. 「この文章を読みやすくして」), not as a default pass.
-Daedalus conventions override the following yomiyasu rules and linter warnings:
+When using [yomiyasu](https://github.com/nanaism/yomiyasu), Daedalus conventions
+override the following yomiyasu rules and linter warnings:
 
 - **Spacing around English terms**: keep the existing half-width spaces around
   English words and `命令セット (ISA)`-style annotations; do not remove them.
