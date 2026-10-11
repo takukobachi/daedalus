@@ -44,6 +44,12 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   鍵管理とローテーション、PKI/CT、耐量子移行 (FIPS 203/204/205・
   X25519MLKEM768・暗号の俊敏性)。[`../networking/tls-internals.md`](../networking/tls-internals.md)
   の TLS 各論を暗号プリミティブの一般論へ引き上げる
+- `llm-application-security.md` — LLM アプリケーションのセキュリティ（命令とデータが
+  同じ経路を流れる層）。直接・間接プロンプトインジェクションと知識汚染・ツールポイズニングの
+  分類、Markdown 画像などの情報流出の経路、EchoLeak と GitHub MCP の事例、防御の 5 層
+  （モデル・入力の区別・検出・設計・実行環境）と適応的な攻撃による検出の突破、CaMeL と
+  設計パターン、Rule of Two、ジェイルブレイクとの区別、MCP に固有の攻撃面。
+  [`../ai/`](../ai/README.md) のエージェント・RAG 文書のセキュリティ考察を束ねる
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
