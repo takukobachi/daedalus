@@ -18,8 +18,9 @@ sources per the Citations standard.
 
 ### Japanese Prose Refinement (yomiyasu)
 
-The project enables the [yomiyasu](https://github.com/nanaism/yomiyasu) plugin
-(`.claude/settings.json`) for refining AI-generated Japanese. Use it only when
+When the [yomiyasu](https://github.com/nanaism/yomiyasu) plugin is available
+(installed in user scope, not by this project), it can refine AI-generated
+Japanese. Use it only when
 explicitly asked (e.g. 「この文章を読みやすくして」), not as a default pass.
 Daedalus conventions override the following yomiyasu rules and linter warnings:
 
