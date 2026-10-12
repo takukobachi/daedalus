@@ -38,6 +38,9 @@
 - `security/` — ハードウェアセキュリティ（サイドチャネル, 一時的実行攻撃,
   Rowhammer, TEE, secure boot …）。`cpu/` の投機実行・キャッシュ機構と
   ソフトウェア側セキュリティの橋渡し
+- `reliability/` — ハードウェア信頼性（ソフトエラー, 摩耗, ECC のフィールド実測,
+  サイレントデータ破損, フリート検査 …）。`cpu/`・`accelerators/`・`storage/` に
+  分散する誤り対策を、フリート規模の運用の視点で束ねる
 - `timekeeping/` — 時刻同期とクロック（発振器, 原子時計, GNSS 時刻, NTP/PTP …）。
   `software/distributed-systems/` の論理時計に対する「物理時計側」の基礎
 
