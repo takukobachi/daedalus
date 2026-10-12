@@ -132,7 +132,7 @@ Dragon 2 は「ロケットの上に載る貨物」ではなく、**それ自体
 
 [^crew11]: [Spaceflight Now (2026-01-15). Crew-11 safely splashes down after shortened mission](https://spaceflightnow.com/2026/01/15/crew-11-safely-splashes-down-after-shortened-mission/) — 医療上の理由による約1か月の早期帰還。Accessed: 2026-10-04.
 
-[^crs34]: [SpaceX CRS-34 — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_CRS-34) ／ [NASA (2026-05-17). SpaceX Dragon Docks to Station](https://www.nasa.gov/blogs/spacestation/2026/05/17/spacex-dragon-docks-to-station-filled-with-new-science-experiments/) — CRS-34 の運用と、貨物カプセルの6回目の飛行という記録（記録の記述は索引側）。Accessed: 2026-10-04.
+[^crs34]: [Spaceflight Now (2026-05-12). Live coverage: NASA, SpaceX to launch 34th Cargo Dragon mission to the space station](https://spaceflightnow.com/2026/05/12/live-coverage-nasa-spacex-to-launch-34th-cargo-dragon-mission-to-the-space-station/) — 貨物カプセル C209（CRS-22/24/27/30/32 に続く飛行）で、貨物型 Dragon として初の6回目の飛行（Dragon 2 全体では Crew Dragon Endeavour に次ぐ2例目）。Accessed: 2026-10-12. ／ [NASA (2026-05-17). SpaceX Dragon Docks to Station](https://www.nasa.gov/blogs/spacestation/2026/05/17/spacex-dragon-docks-to-station-filled-with-new-science-experiments/) — CRS-34 の ISS ドッキング。Accessed: 2026-10-04.
 
 [^crew17]: [The Register (2026-09-21). NASA gives SpaceX a billion reasons to keep flying Crew Dragon](https://www.theregister.com/offbeat/2026/09/21/nasa-gives-spacex-a-billion-reasons-to-keep-flying-crew-dragon/5297705) — NASA の発表に基づく Crew-15/16/17 追加（$946M、CCtCap 総額 $5.92B、2027〜2028年に準備、2030年まで）。Accessed: 2026-10-04.
 

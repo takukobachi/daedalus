@@ -230,7 +230,7 @@ LEO 速度 `v≈7.8 km/s` では、`Δi=30°` で **約 4.0 km/s** となり、L
 
 [^nasa-bsf]: NASA, [*Basics of Space Flight*](https://science.nasa.gov/learn/basics-of-space-flight/) — 軌道・遷移・脱出の入門解説。Accessed: 2026-10-04.
 
-- [Delta-v budget — Wikipedia](https://en.wikipedia.org/wiki/Delta-v_budget) — 地表→LEO（~9.4 km/s）や軌道間 Δv の代表値の索引（発見用。一次は上記教科書を優先）。Accessed: 2026-06-30.
+- Karabeyoglu, A. [*AA284a Advanced Rocket Propulsion, Lecture 7: Launch Trajectories*](https://web.stanford.edu/~cantwell/AA284A_Course_Material/Karabeyoglu%20AA%20284A%20Lectures/AA284a_Lecture7.pdf). Stanford University 講義資料 — 地表→LEO の Δv 内訳の例（高度400 km、極軌道で地球自転の利得なし）: 軌道速度 7.67、位置エネルギー 0.47、重力損失 2.2、抗力損失 0.1、計 10.44 km/s。重力損失は飛行経路に依存し、抗力損失は小さいことを明記する。本書の ~9.4 km/s は東向き打ち上げの代表値であり、この例との差は自転の利得と経路による重力損失の差による（一次は上記教科書を優先）。Accessed: 2026-10-12.
 
 **本リポジトリ内参照**
 
