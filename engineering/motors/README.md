@@ -1,8 +1,8 @@
 # 電動機・モータドライブ (Motors)
 
-電動機 (electric motor) とその駆動装置（インバータ・制御）を題材とした工学分析。世界の電力の 4〜5 割を消費する「電気から回転への変換」を、トルク発生の物理・dq 座標の制御・パワーエレクトロニクス・規格と安全の各層で読む。
+電動機 (electric motor) とその駆動装置（インバータ・制御）を題材とした工学分析。世界の電力の 4〜5 割を消費する「電気から回転への変換」を、トルク発生の物理・dq 座標の制御・パワーエレクトロニクス・規格と安全の各層に分けて分析する。
 
-EV のトラクション（[`../automotive/ev/`](../automotive/ev/)）、ロボット関節（[`../robotics/`](../robotics/)）、系統側の電力変換（[`../energy/power-electronics-grid-converters.md`](../energy/power-electronics-grid-converters.md)）に分散しているモータと駆動の記述を、共通の土台として束ねるハブである。用途固有の話題（電池・車両統合、減速機・関節設計、系統連系制御）は各ディレクトリに任せ、本ディレクトリは機種・制御・ドライブ・規格の横断的な部分を扱う。
+EV のトラクション（[`../automotive/ev/`](../automotive/ev/)）、ロボット関節（[`../robotics/`](../robotics/)）、系統側の電力変換（[`../energy/power-electronics-grid-converters.md`](../energy/power-electronics-grid-converters.md)）に分散しているモータと駆動の記述について、共通する部分をまとめるハブである。用途固有の話題（電池・車両統合、減速機・関節設計、系統連系制御）は各ディレクトリに任せ、本ディレクトリは機種・制御・ドライブ・規格の横断的な部分を扱う。
 
 ## ドキュメント
 
