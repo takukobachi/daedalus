@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-ロケットの第1段は、打ち上げ機の中で最も高価な部品でありながら、従来は一度きりで海に捨てられてきた。SpaceX の **Falcon 9** は、その第1段を**飛行後に推進降下させ、垂直着陸させて回収・再使用**することで、この前提を覆した[^f9official]。Falcon ファミリーの第1段着陸成功は累計で **665/678（98.1%、as of 2026-10-02）** に達し[^wiki-f9]（2026年6月時点の集計では 630/643＝97.98%、再使用に特化した **Block 5** 機で 605/611＝99.02%[^techtimes-reuse]）、再使用は例外ではなく**標準運用**になった。2025年の165回の打ち上げのうち157回が再使用ブースタで[^techtimes-reuse]、2026年7月13日には再使用ブースタによる600回目の飛行を記録した[^sfn-600]。先頭機 **B1067** は2026年8月25日に単機 **37回目**の飛行・回収を達成し、これは同年100回目の Falcon 9 打ち上げでもあった（as of 2026-10）[^upi-b1067][^space-b1067][^boosters]。
+ロケットの第1段は、打ち上げ機の中で最も高価な部品でありながら、従来は一度きりで海に捨てられてきた。SpaceX の **Falcon 9** は、その第1段を**飛行後に推進降下させ、垂直着陸させて回収・再使用**することで、この前提を覆した[^f9official]。Falcon ファミリーの第1段着陸成功は累計 **668回（as of 2026-10-10）** に達し[^sfn-landings]（成功率は2026年6月時点の集計で 630/643＝97.98%、再使用に特化した **Block 5** 機で 605/611＝99.02%[^techtimes-reuse]）、再使用は例外ではなく**標準運用**になった。2025年の165回の打ち上げのうち157回が再使用ブースタで[^techtimes-reuse]、2026年7月13日には再使用ブースタによる600回目の飛行を記録した[^sfn-600]。先頭機 **B1067** は2026年8月25日に単機 **37回目**の飛行・回収を達成し、これは同年100回目の Falcon 9 打ち上げでもあった（as of 2026-10）[^upi-b1067][^space-b1067][^boosters]。
 
 本ドキュメントは、Falcon 9 の再使用を**着陸シーケンスの制御工学**として分解する。エンジンの深いスロットリング・再着火（前章 [`spacex-rocket-engines.md`](spacex-rocket-engines.md)）が、グリッドフィン・着陸脚・誘導制御とどう協調して垂直着陸を成立させるか。そして再使用が**経済**に何をもたらしたかを、査読研究を交えて評価する。分析深度は Level 3。
 
@@ -119,7 +119,7 @@ Falcon 9 の最終形 **Block 5** は、初めから再使用を前提に設計�
 
 ### 信頼性 (Reliability)
 
-- **着陸成功率**: 累計 665/678（98.1%、as of 2026-10-02）[^wiki-f9]。Block 5 単独では 605/611（99.02%、as of 2026-06）[^techtimes-reuse]。多数回の反復飛行データが、稀な故障モード（エンジン再着火不良、脚展開不良、グリッドフィン油圧）を解消してきた。
+- **着陸成功率**: 630/643（97.98%、as of 2026-06）[^techtimes-reuse]。着陸成功の累計は 668回（as of 2026-10-10）[^sfn-landings]。Block 5 単独では 605/611（99.02%、as of 2026-06）[^techtimes-reuse]。多数回の反復飛行データが、稀な故障モード（エンジン再着火不良、脚展開不良、グリッドフィン油圧）を解消してきた。
 - **エンジンアウト耐性**: 9基クラスタは上昇中に最大2基を喪失しても任務継続が可能（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）。再使用と冗長が両立する設計。
 - **疲労・寿命管理**: 再使用回数が当初設計（~10回）を超えて伸びる中で、構造疲労・熱サイクルの管理が新たな工学課題（航空機の損傷許容設計に相当）。
 
@@ -152,11 +152,11 @@ Falcon 9 の再使用は、**ロケット第1段の帰還を制御工学の問�
 
 [^mdpi]: [*Cost Effectiveness of Reusable Launch Vehicles Depending on the Payload Capacity* — Aerospace (MDPI), 12(5):364, 2025](https://www.mdpi.com/2226-4310/12/5/364) — 査読誌。Falcon 9（18.5 t級）を参照機に、ペイロード規模と打ち上げ頻度が再使用の費用対効果を決めることを定量分析。Accessed: 2026-06-30.
 
-[^wiki-f9]: [List of Falcon 9 and Falcon Heavy launches — Wikipedia](https://en.wikipedia.org/wiki/List_of_Falcon_9_and_Falcon_Heavy_launches) — 累計約706回の Falcon ファミリー打ち上げ、第1段着陸 665/678（as of 2026-10-02）。一次の打ち上げ記録への索引として扱う。Accessed: 2026-10-04.
+[^sfn-landings]: [Spaceflight Now (2026-10-09). SpaceX launches 21 data satellites for the Space Development Agency](https://spaceflightnow.com/2026/10/09/spacex-to-make-another-attempt-to-launch-21-data-satellites-for-space-development-agency/) — 2026-10-10 (UTC) の B1103 の着陸が「668th Falcon booster landing to date」 ／ [Spaceflight Now (2026-09-13). SpaceX launches 700th Falcon rocket, carries final 3 O3b mPOWER satellites to orbit for SES](https://spaceflightnow.com/2026/09/13/live-coverage-spacex-to-launch-final-3-o3b-mpower-satellites-for-ses/) — Falcon ファミリー通算700回目（Falcon 9 687回＋Falcon Heavy 13回）、661回目の着陸。着陸試行数（分母）は公表されていないため、成功率は Tech Times の2026年6月時点の集計（下記）を用いる。Accessed: 2026-10-12.
 
 [^keeptrack]: [KeepTrack — Falcon 9 launch statistics](https://keeptrack.space/launches/vehicles/falcon-9) — 2026年の Falcon 9 打ち上げ数（集計サイト、Tertiary）。Accessed: 2026-10-04.
 
-[^boosters]: [List of Falcon 9 first-stage boosters — Wikipedia](https://en.wikipedia.org/wiki/List_of_Falcon_9_first-stage_boosters) — B1067 を含む機体別の飛行履歴（一次の打ち上げ記録への索引）。Accessed: 2026-10-04.
+[^boosters]: [Spaceflight Now (2026-08-24). SpaceX launches Starlink mission on a Falcon booster's record-breaking 37th flight](https://spaceflightnow.com/2026/08/24/live-coverage-spacex-to-launch-starlink-mission-on-a-falcon-boosters-record-breaking-37th-flight/) — 2021年6月就役の B1067 が Starlink 10-49 で37回目の飛行を行い、ドローンシップ *A Shortfall of Gravitas* に着陸（654回目の Falcon ブースタ着陸）。Accessed: 2026-10-12.
 
 [^acikmese]: Açıkmeşe, B., & Ploen, S. R. (2007). Convex Programming Approach to Powered Descent Guidance for Mars Landing. *Journal of Guidance, Control, and Dynamics*, 30(5), 1353–1366. DOI: 10.2514/1.27553 — 無損失凸化（推力下限付き降下問題の SOCP への等価変換）の原典。
 

@@ -24,7 +24,7 @@
 1. **エンジンの良さは「比推力 (Isp)」と「推力重量比」の二軸で決まる。** Isp は推進剤を「どれだけ効率よく」使うか（＝Δv）を、推力重量比は「どれだけ軽く力を出すか」を表す。ロケット方程式はこの2軸を機体性能に翻訳する。
 2. **サイクル選択が効率の天井を決める。** ガスジェネレータは駆動ガスを捨てるため数%損をする。二段燃焼は駆動ガスも主燃焼室で使い切るため高効率だが、高温・高圧のガスをポンプ後段で扱う難所が生まれる。
 3. **Merlin は「枯れた技術 × 量産・再使用」の勝利。** 性能の頂点ではなく、9基クラスタ・エンジンアウト耐性・整備性・低コストで Falcon 9 の再使用を成立させた。
-4. **Raptor の FFSC は「効率の理論的上限を、製造性とともに」狙う賭け。** 両推進剤を別々のプリバーナで完全に気化・駆動してから主燃焼室で燃やし切る。実用化は SpaceX が史上初[^raptor-wiki]。
+4. **Raptor の FFSC は「効率の理論的上限を、製造性とともに」狙う賭け。** 両推進剤を別々のプリバーナで完全に気化・駆動してから主燃焼室で燃やし切る。実用化は SpaceX が史上初[^raptor-ffsc]。
 5. **燃焼室圧の更新が Raptor の物語。** Raptor は FFSC を主燃焼室圧 250 bar 級で実用化し、Raptor 2 で 300 bar へ到達した。これは査読誌 (CEAS Space Journal) でも確認される量産エンジン最高水準で、ロシア RD-180 の 267 bar を上回った[^ceas][^ea-raptor]。Raptor 3 は 350 bar・海面推力 280 tf へ到達した[^spacex-raptor3][^techtimes-raptor3]。
 6. **メタンへの転換は「再使用と火星」のための選択。** すす (coking) が少なく再使用に向き、火星で現地生産 (ISRU) しやすい。Isp もケロシンより高い。
 7. **製造が性能の一部になった。** Raptor 3 は外部ヒートシールドや多数の外部配管を、金属積層造形 (metal AM) と部品統合で内部化し、推力重量比をほぼ倍化した[^techtimes-raptor3]。
@@ -72,7 +72,7 @@
 
 #### フルフロー二段燃焼 (FFSC) の核心
 
-Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]。
+Raptor の FFSC は2つのプリバーナを持つ[^raptor-ffsc]。
 
 - **酸素過剰プリバーナ (oxygen-rich preburner)**: 大量の LOX と少量のメタンを燃やし、**酸素リッチの高温ガス**で酸素側ターボポンプを駆動。
 - **燃料過剰プリバーナ (fuel-rich preburner)**: 大量のメタンと少量の LOX を燃やし、**燃料リッチの高温ガス**でメタン側ターボポンプを駆動。
@@ -83,7 +83,7 @@ Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]。
 2. **タービンの低温化**: 全流量でタービンを回すので、同じ仕事でもガス温度を低く保てる→部品寿命・再使用に有利。
 3. **ポンプ間シールの緩和**: 燃料側ターボポンプには燃料リッチガス、酸素側には酸素リッチガスが流れるため、両者を隔てる「燃料と酸素が混じると爆発する」シールの難易度が下がる（同種流体同士の界面で済む）。
 
-代償は、酸素リッチガス（金属を激しく酸化させる）に耐える材料と、2系統のプリバーナ・ターボポンプを協調制御する難しさ。**SpaceX はこれを量産・再使用レベルで実用化した初の組織**である[^raptor-wiki]。
+代償は、酸素リッチガス（金属を激しく酸化させる）に耐える材料と、2系統のプリバーナ・ターボポンプを協調制御する難しさ。**SpaceX はこれを量産・再使用レベルで実用化した初の組織**である[^raptor-ffsc]。
 
 ### 主要諸元の比較 (Specifications)
 
@@ -106,7 +106,7 @@ Raptor の FFSC は2つのプリバーナを持つ[^raptor-wiki]。
 
 Falcon 9 第1段は **Merlin 1D を9基**束ね、海面で合計 約7,605 kN (1,710,000 lbf) を出す（オクタウェブ配置）[^f9official]。設計思想は次のとおりである。
 
-- **エンジンアウト耐性 (engine-out capability)**: 9基のうち**最大2基が停止しても**ミッションを継続できる冗長性[^merlin]。多発化は信頼性を「数」で買う設計。
+- **エンジンアウト耐性 (engine-out capability)**: 9基のうち**最大2基が停止しても**ミッションを継続できるとされる冗長性（「2基」は SpaceX の設計上の主張で、公式ユーザーズガイドは基数を示さず「第1段飛行の大半でのエンジンアウト能力」と表現する）[^merlin]。多発化は信頼性を「数」で買う設計。
 - **再使用への適合**: 着陸時は中央1基（または3基）を再着火して減速する。深い**スロットリング**と複数回**再着火**ができることが、Merlin を再使用エンジンたらしめる。
 - **量産**: 1機で10基（第1段9＋第2段1基の真空型）使うため、年間数百基を製造する。**ガスジェネレータの単純さ**が量産・低コスト・整備性に直結する。
 
@@ -145,7 +145,7 @@ SpaceX の特徴は「飛ばして壊して直す」反復にある。Raptor で
 
 | 故障モード | 機構 | 対策・設計思想 |
 |---|---|---|
-| **エンジン停止** | 燃焼不安定、ポンプ故障、配管漏れ | **多発化による冗長**（Falcon 9 は2基喪失まで許容[^merlin]）。再着火・スロットリングで運用包絡を確保 |
+| **エンジン停止** | 燃焼不安定、ポンプ故障、配管漏れ | **多発化による冗長**（Falcon 9 は設計上2基喪失まで許容とされる[^merlin]）。再着火・スロットリングで運用包絡を確保 |
 | **酸素リッチ環境の腐食** | FFSC の酸素過剰プリバーナで金属が激しく酸化 | 耐酸化合金、内部の流路設計、AM による一体成形で接合部削減 |
 | **燃焼不安定 (combustion instability)** | 高圧燃焼室での圧力振動が共振・破壊に至る | インジェクタ設計、地上での反復試験、高い燃焼室圧ほど難度増 |
 | **再使用に伴う劣化** | 熱サイクル・すす・疲労 | メタン採用（低すす）、低温タービン（FFSC の利点）、点検・整備性の作り込み |
@@ -175,9 +175,9 @@ Merlin と Raptor は、同じ SpaceX の中で対照的な設計判断を体現
 
 [^ceas]: Springer / CEAS Space Journal: [Selection of propulsion characteristics for systematic assessment of future European RLV-options](https://link.springer.com/article/10.1007/s12567-024-00564-w) (2024). — 査読誌。Raptor をフルフロー二段燃焼（FFSC）と記載し、燃焼室圧を少なくとも250 bar、最新の Raptor 2 で 300 bar と整理。Accessed: 2026-06-30.
 
-[^merlin]: [SpaceX Merlin — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Merlin)（公式値を集約）— Isp 282 s(SL)/311 s(vac)、ガスジェネレータ、9基クラスタ・最大2基喪失耐性。一次値は[^f9official]を優先。Accessed: 2026-06-30.
+[^merlin]: [Everyday Astronaut (2019-05-25). Is SpaceX's Raptor engine the king of rocket engines?](https://everydayastronaut.com/raptor-engine/) — Merlin の Isp を「282 to 311 seconds」（海面〜真空）とする比較。現行の SpaceX ユーザーズガイド（下記）は Isp を掲載していないため、広く引用される公称値（独立実測ではない）として扱う ／ [SpaceX — Falcon Payload User's Guide (2025-05)](https://www.spacex.com/assets/media/falcon-users-guide-2025-05-09.pdf) §1.5 — 9基構成による「第1段飛行の大半でのエンジンアウト能力」と、異常エンジンの停止が飛行で実証済みであること ／ [AmericaSpace (2012-10-09). Falcon 9 Engine-Out Anomaly Raises Concern and Relief](https://www.americaspace.com/2012/10/09/falcon-9-engine-out-anomaly-raises-concern-and-relief/) — CRS-1 の1基停止と、最大2基の停止から回復できるとする SpaceX の主張。Accessed: 2026-10-12.
 
-[^raptor-wiki]: [SpaceX Raptor — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Raptor) — フルフロー二段燃焼サイクル、酸素過剰／燃料過剰の2プリバーナ構成（一次資料への索引として使用）。Accessed: 2026-06-30.
+[^raptor-ffsc]: [Everyday Astronaut (2019-05-25). Is SpaceX's Raptor engine the king of rocket engines?](https://everydayastronaut.com/raptor-engine/) — フルフロー二段燃焼サイクルで、燃料過剰プリバーナが燃料ポンプを、酸素過剰プリバーナが LOX ポンプを駆動する構成。先行例のソ連 RD-270 は飛行せず、Aerojet/Rocketdyne の Integrated Powerhead Demonstrator は試験台を出なかったこと。Accessed: 2026-10-12.
 
 [^v3]: [SpaceX — Starship V3（公式アップデート）](https://www.spacex.com/updates/starship-v3) ／ 報道: [Scientific American — Watch SpaceX launch Starship V3](https://www.scientificamerican.com/article/watch-spacex-launch-starship-v3-the-tallest-and-most-powerful-rocket-yet/)。 — Raptor 3 推力の公表値の幅（海面 250〜330 tf）と V3 機体諸元。Accessed: 2026-06-30.
 

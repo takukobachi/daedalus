@@ -201,7 +201,7 @@ ICE の熱効率が低いのは、熱機関である以上カルノー効率で�
 
 **補助 (Secondary — 索引)**
 
-- [Lithium-ion battery / Electric vehicle — Wikipedia](https://en.wikipedia.org/wiki/Electric_vehicle) — 用語・代表値の索引（一次は上記教科書/規格を優先）。Accessed: 2026-06-30.
+- [U.S. Department of Energy, Alternative Fuels Data Center — How Do All-Electric Cars Work?](https://afdc.energy.gov/vehicles/how-do-all-electric-cars-work) — 駆動用電池・トラクションモータ・パワーエレクトロニクス制御器・車載充電器・DC/DC コンバータ等の構成要素と用語の公的解説（数値の一次は上記教科書/規格を優先）。Accessed: 2026-10-12.
 
 **本リポジトリ内参照**
 

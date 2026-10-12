@@ -149,7 +149,7 @@ Starship HLS は「より良い月着陸船」ではなく、**月着陸の前�
 
 [^crs-artemis]: [Congressional Research Service — NASA's Artemis Program (IF11643)](https://www.congress.gov/crs-product/IF11643) — Artemis III 再編と着陸機調達の経緯の議会向け要約。Accessed: 2026-10-04.
 
-[^oig-26]: NASA OIG (2026-03-10). IG-26-004 — HLS の機体間推進剤移送実証の予定が2025年3月から2026年3月へずれ込んだことの指摘（as of 2026-10 で実施日は未公表）。報告書本文は未確認で、Wikipedia の [Starship Propellant Transfer Demonstration](https://en.wikipedia.org/wiki/Starship_Propellant_Transfer_Demonstration) の記載を経由した二次情報。Accessed: 2026-10-04.
+[^oig-26]: NASA Office of Inspector General (2026-03-10). [*NASA's Management of the Human Landing System Contracts* (IG-26-004)](https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf) — p. 13: Starship の次の主要マイルストンである大規模な機体間 (vehicle-to-vehicle) 極低温推進剤移送試験は、2025年3月の予定から12か月遅れて2026年3月予定となった。HLS 計画は極低温推進剤移送の実証を、SpaceX が直面する最も重大な技術課題の一つとみなす。p. 5: Artemis III/IV に先立ち、10機超のタンカーで LEO の貯蔵デポへ推進剤を集積する運用構想。なお「as of 2026-10 で実施日は未公表」は、2026-10-12 時点で NASA・SpaceX の公式発表を確認できないことに基づく。Accessed: 2026-10-12.
 
 **専門報道 (Specialist reporting)**
 

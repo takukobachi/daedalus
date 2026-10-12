@@ -123,7 +123,7 @@ Shuttle 退役後に NASA が実施した遡及的 PRA は、有人安全論の�
 
 [^iata]: [IATA (2025-02-26). IATA Releases 2024 Safety Report](https://www.iata.org/en/pressroom/2025-releases/2025-02-26-01/) — 2024年の死亡リスク 0.06（100万便あたり）、5年平均 0.10。Accessed: 2026-10-04.
 
-[^f9-record]: 本リポジトリ [`spacex-reusability.md`](spacex-reusability.md) の脚注群（Falcon 9 Block 5 の飛行・着陸統計）／ [List of Falcon 9 and Falcon Heavy launches — Wikipedia](https://en.wikipedia.org/wiki/List_of_Falcon_9_and_Falcon_Heavy_launches)（累計打ち上げ数の索引、Accessed: 2026-10-04）— 単一設計での数百回級連続運用の実績。
+[^f9-record]: 本リポジトリ [`spacex-reusability.md`](spacex-reusability.md) の脚注群（Falcon 9 Block 5 の飛行・着陸統計）／ [Spaceflight Now (2026-09-13). SpaceX launches 700th Falcon rocket, carries final 3 O3b mPOWER satellites to orbit for SES](https://spaceflightnow.com/2026/09/13/live-coverage-spacex-to-launch-final-3-o3b-mpower-satellites-for-ses/)（Falcon ファミリー通算700回のうち Falcon 9 が687回、as of 2026-09-13。Accessed: 2026-10-12）— 単一設計での数百回級連続運用の実績。
 
 [^artemis-replan]: [NASA — Artemis III News and Updates](https://www.nasa.gov/artemis-iii-news-and-updates/) ／ [NASA (2026-07-15). How NASA's Artemis III Lander Test Will Pave Way for Moon Landings](https://www.nasa.gov/directorates/esdmd/artemis-campaign-development-division/human-landing-system-program/how-nasas-artemis-iii-lander-test-will-pave-way-for-moon-landings/) — Artemis III の LEO 実証化、乗員は Starship 試験機に入らない、有人着陸は Artemis IV（2028年前半目標）。Accessed: 2026-10-04.
 

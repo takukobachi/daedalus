@@ -21,7 +21,7 @@
 4. **着陸は「脚」から「キャッチ」へ。** ブースタに着陸脚を付けず、**射点タワーのアーム (chopsticks) で空中キャッチ (Mechazilla)** する。脚の重量を排し、整備性と再飛行速度を上げる過激な最適化。実飛行では Flight 5・7・8 の計3回成功している（as of 2026-10。最後の成功は2025年3月の Flight 8 で、Block 3 ブースタのキャッチは未実証）[^sfn-catch][^sh-list]。
 5. **ホットステージング。** 上段エンジンを下段がまだ燃焼中に点火して分離する方式を採用し、段間の性能損失を抑える。
 6. **再突入は耐熱タイルで凌ぐ。** 上段 Starship は軌道速度からの再突入時の空力加熱を、機体下面の**耐熱タイル (TPS)** で防護する。ここが上段再使用の最大の技術的難所。
-7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年5月）の V3 初飛行、Flight 14（2026年9月28日）の**初の軌道到達と Starlink V3 26基の実運用放出**まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた（as of 2026-10 で統合飛行は計14回）[^sflight14][^wiki-ft]。一方で Block 3 ブースタは Flight 12・13 で着水前に喪失し、Flight 14 でも上昇中に Raptor 1基が早期停止するなど、Raptor 3 の信頼性は依然として開発途上にある[^sfn-faa][^mynews-faa][^sflight13]。
+7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年5月）の V3 初飛行、Flight 14（2026年9月28日）の**初の軌道到達と Starlink V3 26基の実運用放出**まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた（as of 2026-10 で統合飛行は計14回）[^sflight14][^ft-results]。一方で Block 3 ブースタは Flight 12・13 で着水前に喪失し、Flight 14 でも上昇中に Raptor 1基が早期停止するなど、Raptor 3 の信頼性は依然として開発途上にある[^sfn-faa][^mynews-faa][^sflight13]。
 
 ## アーキテクチャ (Architecture)
 
@@ -157,11 +157,11 @@ SpaceX の開発は「**ハードウェア潤沢・高頻度試験 (hardware-ric
 | **Flight 5** | 2024-10 | **史上初の Super Heavy 空中キャッチ成功 (Mechazilla)** |
 | Flight 7 | 2025-01 | ブースタはキャッチ成功、上段は喪失[^sfn-catch] |
 | Flight 8 | 2025-03 | ブースタは3回目のキャッチ成功（as of 2026-10 で最後のキャッチ）、上段は喪失[^sh-list] |
-| Flight 9 | 2025-05 | 初のブースタ再飛行。ブースタは着陸燃焼中に喪失、上段は再突入中に分解[^wiki-ft] |
-| Flight 10〜11 | 2025-08 / 2025-10 | Block 2 最終盤。両段とも制御着水に成功（ブースタはメキシコ湾、上段はインド洋）。Flight 11 が Pad 1 の最終使用[^wiki-ft] |
+| Flight 9 | 2025-05 | 初のブースタ再飛行。ブースタは着陸燃焼中に喪失、上段は飛行中に姿勢制御を失い、制御不能のまま再突入して喪失[^ft-results] |
+| Flight 10〜11 | 2025-08 / 2025-10 | Block 2 最終盤。両段とも制御着水に成功（ブースタはメキシコ湾、上段はインド洋）。Flight 11 が現行構成の Pad 1 からの最終打ち上げ[^ft-results] |
 | **Flight 12** | 2026-05-22 (UTC) | **初の Block 3 / V3・Raptor 3 飛行、Pad 2 初使用**。Starlink 模擬22基を放出し上段はインド洋に着水。ブースタはブーストバック・着陸燃焼不調で喪失、FAA 事故認定→打ち上げ一時停止[^mynews-flight12][^sfn-faa] |
 | Flight 13 | 2026-07-24 | Starlink V3 20基を準軌道で放出、宇宙空間での Raptor 再点火、上段は無傷で軟着水。ブースタは再点火不調で硬着水[^sflight13] |
-| **Flight 14** | 2026-09-28 | **初の軌道到達**（約 262×275 km、傾斜 30.5°〜32°）。**Starlink V3 26基を実運用放出**。ブースタは制御着水（キャッチせず）、上段は早期の軌道離脱後ハワイ北方の太平洋に制御着水。計画 ~10 時間を約3時間に短縮[^sflight14][^wiki-ft] |
+| **Flight 14** | 2026-09-28 | **初の軌道到達**（約 262×275 km、傾斜 30.5°〜32°）。**Starlink V3 26基を実運用放出**。ブースタは制御着水（キャッチせず）、上段は早期の軌道離脱後ハワイ北方の太平洋に制御着水。計画 ~10 時間を約3時間に短縮[^sflight14][^ft-results] |
 | Flight 15（計画） | NET 2026-10-19 | **初の Ship タワーキャッチ挑戦**を計画（目標値・未実施）[^flight15] |
 
 - **成功と失敗が混在するのが正常**: 各回の「喪失」は設計反復の入力であり、Mechazilla キャッチ成功（Flight 5）、V3 初飛行（Flight 12）、初の軌道到達（Flight 14）といったマイルストンと並走する。
@@ -226,9 +226,9 @@ Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両�
 
 **集計・索引 (Tertiary — 発見用。一次は上記を優先)**
 
-[^wiki-ft]: [SpaceX Starship flight tests — Wikipedia](https://en.wikipedia.org/wiki/SpaceX_Starship_flight_tests) — 統合飛行14回（as of 2026-09-28）の各回の結果一覧。Accessed: 2026-10-04.
+[^ft-results]: 各回の結果 — Flight 9: [Spaceflight Now — Starship • Flight 9](https://spaceflightnow.com/launch/starship-flight-9/)（B14 が Flight 7 のエンジン29基を再使用した初の再飛行ブースタで、着陸燃焼中に爆発）／ [Spaceflight Now (2025-05-28). SpaceX launches first flight-proven Super Heavy booster, loses control of Starship mid-flight](https://spaceflightnow.com/2025/05/28/spacex-launches-first-flight-proven-super-heavy-booster-loses-control-of-starship-mid-flight/)（上段は約20分後に姿勢制御を失い、制御不能のまま再突入）。Flight 10: [The Register (2025-08-27). SpaceX's Starship keeps it together for Flight Test 10](https://www.theregister.com/2025/08/27/spacex_starship_flight_10/)（ブースタはメキシコ湾へ制御着水、上段はインド洋へ着水）。Flight 11: [Scientific American (2025-10-13). SpaceX's Starship Succeeds in Final Test Flight of 2025](https://www.scientificamerican.com/article/spacexs-starship-succeeds-in-final-test-flight-of-2025/)（ブースタはメキシコ湾、上段はインド洋へ動力着水）／ [San Antonio Express-News (2025-10-14, via Yahoo News). SpaceX launches Starship for 11th test flight from South Texas Starbase](https://www.yahoo.com/news/articles/know-starships-11th-test-flight-180053017.html)（現行構成の Pad 1 からの最終打ち上げとする SpaceX の発表、V2 最後の機体）。Flight 14: [WUNC/NPR (2026-09-28). SpaceX's Starship launches on first orbital mission from Texas](https://www.wunc.org/national/2026-09-28/spacexs-starship-launches-on-first-orbital-mission-from-texas)（14回目の飛行で初の軌道到達、ブースタはキャッチせずメキシコ湾沖で着陸を模擬、上段はハワイ北方の太平洋へ着水、計画約10時間を約3時間に短縮）。Accessed: 2026-10-12.
 
-[^sh-list]: [List of Super Heavy boosters — Wikipedia](https://en.wikipedia.org/wiki/List_of_Super_Heavy_boosters) — キャッチ実績（B12/Flight 5、B14/Flight 7、B15/Flight 8）。なお同ページは B21（Flight 14）をキャッチと記載するが、Flight 14 の記事・報道は制御着水としており、本書は後者を採る。Accessed: 2026-10-04.
+[^sh-list]: キャッチ実績 — Flight 5（B12）: [Spaceflight Now (2024-11-01). Starship booster catch brings NASA, SpaceX closer to Artemis 3 Moon landing](https://spaceflightnow.com/2024/11/01/starship-booster-catch-brings-nasa-spacex-closer-to-artemis-3-moon-landing/)。Flight 7（B14）: 上記 Spaceflight Now (2025-01-17)。Flight 8（B15）: [Spaceflight Now — Starship • Flight 8](https://spaceflightnow.com/launch/starship-flight-8/)（チョップスティックによるブースタのキャッチ、S34 は第1回燃焼中に分解）。Flight 9〜14 はいずれもキャッチなし（Flight 9 は着陸燃焼中に喪失、Flight 10・11・14 は着水、Flight 12・13 は上記の各報道のとおり喪失・硬着水）。Accessed: 2026-10-12.
 
 **本リポジトリ内参照**
 
