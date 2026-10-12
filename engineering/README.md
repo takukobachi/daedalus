@@ -14,6 +14,8 @@
   移動と操作 …）。
   `automotive/`・`aerospace/` に散在する制御工学の一般化であり、`../foundations/` の
   線形代数・微分方程式の主要な応用先
+- `motors/` — 電動機・モータドライブ（機種比較, FOC, 弱め界磁, インバータと SiC, 効率規格,
+  STO …）。`automotive/ev/`・`robotics/`・`energy/` に分散するモータと駆動の共通基盤
 
 ## 今後のテーマ候補
 
