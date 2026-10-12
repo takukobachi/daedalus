@@ -14,6 +14,11 @@
   スケールアウト (InfiniBand/RoCEv2) の2階層、リング/木 all-reduce の算術、GPUDirect RDMA、
   SHARP (スイッチ内リダクション)、レール最適化、万台規模の故障と可用性。
   `../networking/` と [`../../software/ai/ml-training-systems.md`](../../software/ai/ml-training-systems.md) の中間層
+- [`hbm-ai-memory.md`](hbm-ai-memory.md) — HBM と AI メモリシステム (HBM & the AI memory system)：
+  decode の帯域律速と KV cache の算術、TSV 積層・ベースダイ・疑似チャネル、HBM〜HBM4 の
+  JEDEC 規格値とベンダ製品値、CoWoS とレティクル限界、pJ/bit の内訳、熱・歩留まり・ウェハ消費比と
+  供給集中（2026-10 時点）、カスタムベースダイ、GDDR7/LPDDR5X/SRAM/CXL との階層化、
+  HBM のロウハンマーと GPU コンフィデンシャルコンピューティング
 
 ## 今後のテーマ候補
 
