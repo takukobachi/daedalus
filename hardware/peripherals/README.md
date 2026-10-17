@@ -4,7 +4,8 @@ SoC と外界をつなぐ周辺デバイスの中身と、その接続技術。`
 
 ## ドキュメント
 
-- [`input-devices-hid.md`](input-devices-hid.md) — 入力デバイスとHID: ゲームコントローラーの解剖 (input devices & HID)
+- [`input-devices-hid.md`](input-devices-hid.md) — HIDとゲームコントローラー: 入力デバイスの解剖 (HID & game controllers)
+- [`keyboard-mouse-touch.md`](keyboard-mouse-touch.md) — キーボード・マウス・タッチ: キーとポインタの物理 (keyboard, mouse & touch)
 - [`audio-subsystem.md`](audio-subsystem.md) — オーディオサブシステム: 端末の音の出入り (audio subsystem)
 - [`display-pipeline.md`](display-pipeline.md) — ディスプレイパイプライン: フレームバッファからパネルへ (display pipeline)
 - [`camera-image-sensors.md`](camera-image-sensors.md) — カメラとイメージセンサ: 光子からピクセルまで (camera & image sensors)

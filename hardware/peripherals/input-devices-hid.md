@@ -1,8 +1,8 @@
-# 入力デバイスとHID: ゲームコントローラーの解剖 (Input Devices & HID: Anatomy of a Game Controller)
+# HIDとゲームコントローラー: 入力デバイスの解剖 (HID & Game Controllers: Anatomy of an Input Device)
 
 ## 概要 (Overview)
 
-ゲームコントローラーは、入力デバイス (input device) の技術要素がほぼすべて詰まった格好の題材である。アナログセンシング（スティック・トリガー）、デジタル入力のスキャン（ボタン）、触覚フィードバック（振動）、そしてそれらを OS へ届ける **HID (Human Interface Device)** プロトコルがそろっており、キーボードもマウスもタッチパッドも、原理はこの部分集合にすぎない。
+ゲームコントローラーは、入力デバイス (input device) の技術要素がほぼすべて詰まった格好の題材である。アナログセンシング（スティック・トリガー）、デジタル入力のスキャン（ボタン）、触覚フィードバック（振動）、そしてそれらを OS へ届ける **HID (Human Interface Device)** プロトコルがそろっている。キーボード・マウス・タッチも同じ HID の上に乗るが、それぞれに固有の物理と論点（キーのロールオーバー、光学センサ、静電容量方式のタッチなど）があり、それらは `keyboard-mouse-touch.md` で扱う。
 
 本ドキュメントは、コントローラーを「センサ → ファームウェア → 伝送路 → ホストOS」の一本の経路として解剖し、スティックドリフトはなぜ起きるのか、なぜドライバなしで挿すだけで動くのか、「ポーリングレート 1000Hz」は何を意味するのかをハードウェアの観点から説明する。
 
@@ -404,6 +404,7 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 
 ### 次の接続先 (Related Topics)
 
+- `keyboard-mouse-touch.md` — 同じ HID の上に乗るキーボード・マウス・タッチの物理と、ロールオーバー・光学センサ・Digitizer usage。
 - `usb-architecture.md` — インタラプト転送・bInterval・列挙という有線伝送路の基礎。
 - `bluetooth-pairing-protocol.md` — 無線コントローラーの伝送路（BR/EDR の HID Profile と LE の HOGP）とリンク暗号化。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ホスト側で USB/BT コントローラーが割り込み・DMA で動く基盤。

@@ -12,7 +12,7 @@
 
 - 1 回のタップ（DOWN → MOVE… → UP）を軸に、各段の担当プロセス・スレッド・受け渡されるデータ型（`struct input_event` → `RawEvent` → `NotifyMotionArgs` → `InputMessage` → `MotionEvent`）を特定する。
 - 基準線は有野 (2017) Ⅰ巻 2.1〜2.6（Linux Input サブシステム、EventHub、InputReader、InputDispatcher と InputChannel）、4.8.3（タッチの送信と InputChannel）、6.5.6（ViewRootImpl が View へタッチイベントを届けるまで）。同書のコードは著者による簡略化擬似コードであるため、クラス名・定数は現行 AOSP（`frameworks/native/services/inputflinger/`、`frameworks/native/libs/input/`、`frameworks/base/core/java/android/view/`、main ブランチ、2026-09-27 参照）で照合し、導入版はリリースタグ（`android-13.0.0_r1` 等）のディレクトリ構成比較で判定した。
-- カーネル側は kernel.org の入力サブシステム文書（`input.rst`、`multi-touch-protocol.rst`）を一次資料とする。デバイス側（タッチ IC・HID レポート）は [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) に委ねる。
+- カーネル側は kernel.org の入力サブシステム文書（`input.rst`、`multi-touch-protocol.rst`）を一次資料とする。デバイス側は、HID レポートを [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) に、タッチ IC を [`../../hardware/peripherals/keyboard-mouse-touch.md`](../../hardware/peripherals/keyboard-mouse-touch.md) に委ねる。
 - View 階層内部のヒットテスト・レイアウトの詳細は [`view-system-layout.md`](view-system-layout.md)、Looper/epoll の一般機構は [`looper-handler-message-loop.md`](looper-handler-message-loop.md) に委ね、本書は「サービス側の配送判断」と「プロセス境界の越え方」に重心を置く。
 
 ## 発見事項 (Findings)
