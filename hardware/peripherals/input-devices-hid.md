@@ -12,6 +12,7 @@
 - 各段について、物理原理・設計上の制約・ソフトウェアから見える振る舞いを対応づける。
 - 「ボタンを1回押してから画面に反映されるまで」を1本のレイテンシバジェット (latency budget) として通しで見る。
 - 伝送路は USB を基準とし、無線（Bluetooth BR/EDR の HID Profile と LE の HOGP）は差分として扱う（無線層の詳細は `bluetooth-pairing-protocol.md` に委譲）。
+- セキュリティは「ホストがデバイスの何を信じているか」を軸に、攻撃面（物理接続・無線リンク・パーサ・入力の真正性）ごとに実際の CVE と修正内容に対応づけて評価する。
 - 具体例には、仕様が公開されている部分と Linux ドライバ（`hid-playstation`、`hid-sony`、`net/bluetooth/hidp`）のソースで確認できる部分を使う。ベンダが公開していない値はドライバ実装から読み取れる範囲に限り、その旨を明記する。
 
 ## 発見事項 (Findings)
@@ -21,6 +22,7 @@
 3. **入力遅延はパイプラインの総和であり、ポーリングレートはその1項にすぎない。** センサ読み取り、デバウンス、伝送間隔、OS 処理、ゲームループ、表示までが直列に足し合わさる。
 4. **振動は ERM → LRA → ボイスコイルへと「モーター」から「スピーカー」に近づく進化をした。** 立ち上がり時間と再現できる周波数帯域が世代を分ける。
 5. **HID はトランスポート非依存で、同じレポートモデルが USB・Bluetooth BR/EDR・BLE に載る。** 一方で実際の主要コントローラーは HID の標準ゲームパッド定義をそのまま使わない。PlayStation 系は「HID の枠内でベンダ固有レポートを使う」方式、Xbox 系は USB では「そもそも HID クラスではない独自プロトコル (XUSB / GIP)」を使う方式で、どちらもホスト側の専用スタックが解釈する。
+6. **HID の安全性は「接続されたデバイスの申告を信じる」という信頼モデルの上に成り立っている。** 注入 (BadUSB、CVE-2023-45866)、パーサの脆弱性 (CVE-2017-16533)、入力改変アダプタは、いずれもこの信頼のどこかを突く。CVE-2023-45866 では、HID 仕様が要求していた認証を BlueZ が互換性のために既定で緩めていたことが攻撃経路になった。
 
 ## アーキテクチャ (Architecture)
 
@@ -260,10 +262,52 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 
 ## セキュリティ考察 (Security Considerations)
 
-- **HID は「入力を注入できる」権限そのものである。** HID キーボードを名乗る不正 USB デバイス（いわゆる BadUSB 系）は、挿されるとすぐにキー入力を打ち込める。OS は USB の申告内容を基本的に信用するため、対策は物理ポート管理・USB デバイス許可リスト・新規 HID キーボードの承認 UI などホスト側の運用に寄る。
-- **独自 2.4 GHz 無線の入力機器には注入・盗聴の前例がある。** Bastille の **MouseJack** (2016) は、複数ベンダの非 Bluetooth 系ワイヤレスマウス/キーボードのドングルが暗号化・認証不備により無線越しのキーストローク注入を許すことを示した。Bluetooth のペアリング済みリンクは暗号化される（詳細は `bluetooth-pairing-protocol.md`）のに対し、独自プロトコルは実装品質が保証されない。
-- **レポートディスクリプタはホストにとって信頼できない入力である。** ディスクリプタは事実上の小さなバイトコードであり、パーサの解釈バグはカーネル内の脆弱性になる（各 OS の HID パーサは fuzzing の常連対象）。デバイス由来のデータ長・値域は検証が必要である。これは `../hw-sw-interface/mmio-dma-interrupts.md` の「デバイス入力を信頼しない」原則の HID 版である。
-- **入力デバイスはサイドチャネルの発生源にもなる。** IMU 内蔵コントローラーの加速度・ジャイロ値は環境振動を拾いうるため、モーションデータへのアクセス権限は音声ほどではないにせよ無害ではない。
+HID の信頼モデルは「接続されたデバイスの申告を信じる」である。ホストは、デバイスが名乗った種類（キーボード、ゲームパッド）とディスクリプタに書かれたデータ形式をそのまま受け入れ、届いたレポートを利用者の操作として扱う。攻撃面はこの信頼のどこを突くかで、次の4つに整理できる。
+
+| 攻撃面 | 突かれる信頼 | 攻撃者の前提 | 事例 |
+|---|---|---|---|
+| 物理接続 (USB) | 「挿されたキーボードは利用者のもの」 | 物理アクセス | BadUSB 系 |
+| 無線リンク | 「つながったキーボードはペアリング済みの正規機器」 | 無線の到達範囲 | CVE-2023-45866、MouseJack |
+| ディスクリプタ・レポートのパーサ | 「デバイスの申告は形式どおり」 | 物理アクセス（細工したデバイス） | CVE-2017-16533 |
+| 入力の真正性 | 「レポートの中身は人の手の操作」 | 自分の機器（利用者自身が攻撃者） | 入力改変アダプタ |
+
+### 物理接続による注入
+
+HID は入力を注入できる権限そのものである。HID キーボードを名乗る不正 USB デバイス（いわゆる BadUSB 系）は、挿されるとすぐにキー入力を打ち込める。OS は USB の申告内容を基本的に信用するため、対策は物理ポート管理・USB デバイス許可リスト（Linux の USBGuard 等）・新規 HID キーボードの承認 UI などホスト側の運用に寄る。
+
+### 無線リンクでの未認証ペアリング
+
+**CVE-2023-45866**（Marc Newlin / SkySafe、2023-12 公表）は、Bluetooth のホストをだまし、利用者の確認なしに偽のキーボードとペアリングさせてキー入力を注入できる脆弱性である。研究者によれば、悪用される「認証なしのペアリング経路」は Bluetooth 仕様に存在するもので、それが実装のバグによって攻撃者に開かれていた（研究者自身は「プロトコルの問題と実装のバグの両方」と表現している）。注入できるのはキー入力なので、パスワードや生体認証を求められる操作以外は、利用者になりすまして実行できる。
+
+| OS | 攻撃が成立する条件（研究者の報告） | 修正 |
+|---|---|---|
+| Android | Bluetooth が有効なだけで成立（4.2.2〜14 で確認） | セキュリティパッチレベル 2023-12-05（Android 11〜14。Android セキュリティ情報では System コンポーネントの Critical な権限昇格）。4.2.2〜10 には修正なし |
+| Linux (BlueZ) | 端末が discoverable / connectable のとき | 入力プロファイルの `ClassicBondedOnly` の既定値を `true` に変更 |
+| macOS / iOS | Bluetooth が有効で、Magic Keyboard がペアリング済みのとき。ロックダウンモードでも防げない | macOS Sonoma 14.2 / iOS 17.2（2023-12-11） |
+
+BlueZ の修正コミット（`25a471a`、`input.conf: Change default of ClassicBondedOnly`）の説明によれば、HID 仕様は「Bluetooth HID ホストは HID デバイスとの相互運用時に Security Mode 4 を使わなければならない」と定めている。BlueZ はボンディング（鍵を保存したペアリング）済みでない機器からの入力接続を拒否する設定を 2020 年の CVE-2020-0556 の対策として既に持っていたが、古い機器との互換性のため既定で無効にしていた。**仕様が要求していたセキュリティを、互換性のために既定で緩めていた**ことが、そのまま攻撃経路になった。ペアリング方式ごとの認証の有無（Just Works が中間者を防げない理由など）は `bluetooth-pairing-protocol.md` を参照。
+
+同じ研究者は、周辺機器の側が保存しているペアリング鍵も攻撃対象になることを示した。**CVE-2024-0230** では Magic Keyboard から Bluetooth のリンクキーを抜き出せた。研究者の報告では、経路は (1) Lightning ポート経由（物理アクセスが必要）、(2) Mac から抜いた直後の未認証の Bluetooth 接続（競合状態に依存し、成功率は約 50%）などである。Apple は「物理アクセスのある攻撃者がペアリング鍵を抜き出し、Bluetooth 通信を監視できる可能性」と説明し、Magic Keyboard ファームウェア 2.0.6 (2024-01-09) で修正した。ワイヤレスキーボードではペアリング用の有線ポートも攻撃面になる。
+
+独自 2.4 GHz 無線の入力機器には、さらに古い前例がある。Bastille の **MouseJack** (2016) は、複数ベンダの非 Bluetooth 系ワイヤレスマウス/キーボードのドングルが暗号化・認証の不備により無線越しのキーストローク注入を許すことを示した。Bluetooth のペアリング済みリンクは暗号化されるのに対し、独自プロトコルの安全性はベンダの実装次第である。ただし CVE-2023-45866 が示すとおり、Bluetooth でも「ペアリング済みの相手とだけ通信する」ことが実装で守られている必要がある。
+
+### HID パーサの脆弱性
+
+レポートディスクリプタはホストにとって信頼できない入力である。ディスクリプタは事実上の小さなバイトコードであり、それを解釈する HID パーサはデバイスが送ってきた任意のバイト列を処理する。解釈のバグはカーネル内の脆弱性になる。たとえば **CVE-2017-16533** は、Linux の `usbhid_parse`（`drivers/hid/usbhid/hid-core.c`）に細工した USB デバイスを接続すると範囲外読み取りでカーネルが落ちうる脆弱性だった（4.13.8 で修正）。
+
+この種のバグを系統的に探しているのが、syzkaller の USB fuzzing である。Raw Gadget（USB Gadget サブシステムへの低レベルインターフェース）と Dummy HCD/UDC（カーネル内で互いにつながった仮想のホスト / デバイスコントローラー）を組み合わせ、実機なしで「任意の USB デバイスが挿された状態」を作り出す。HID は専用の扱いを受けるクラスで、接続用の `syz_usb_connect$hid` があり、ディスクリプタの書き換え (descriptor patching) は HID とプリンタクラスにだけ実装されている。上記の CVE-2017-16533 も、この fuzzing で見つかったバグの一覧に載っている。
+
+デバイス由来のデータ長・値域は必ず検証しなければならない。これは `../hw-sw-interface/mmio-dma-interrupts.md` の「デバイス入力を信頼しない」原則の HID 版である。ベンダ固有ドライバ（`hid-playstation` など）は汎用パーサを通らずレポートのバイト配置を直接読むため、同じ検証を個別に実装する必要がある。
+
+### 入力の真正性
+
+正規のコントローラーがつながっていても、操作が本物とは限らない。ゲーム機はつながったコントローラーが正規品かどうかを確かめている。入力改変アダプタの XIM MATRIX は、Xbox で使うには正規の Xbox コントローラーを本体のポートにつなぐ必要があり、公式ガイドはこれを「本体で動作するために必要な認証用コントローラー」と呼ぶ。つまりアダプタは本物のコントローラーに認証を肩代わりさせ、その上でゲーム機に届く入力レポートを自分で作る。認証の手順は公開されていない (as of 2026-10)。
+
+ここから分かるのは、**機器の認証は「どの機器が送ったか」を保証しても、「レポートの中身が人の操作か」は保証しない**ことである。HID のレポートはただのバイト列なので、経路の途中にある機器はいくらでも書き換えられる。Activision は 2026-02 の Ricochet アンチチートの更新で、Cronus Zen と XIM Matrix を入力改変機器として検出対象に加えた。報道によれば、これらのアダプタは自分の正体を隠せるため、検出は接続された機器の識別だけに頼らず、長期間にわたる入力のタイミング・一貫性・反応のパターンを分析して「人のばらつき」と「機械的な精度」を見分ける。真正性の判定が機器の認証で済まず、入力そのものの統計に移っている例である。報道は、これらの機器が場合によってはアクセシビリティ目的にも使われうることにも触れている。入力の変換・再マップという仕組み自体は正当な用途と共通なので、機器の種類だけでは線を引けない。
+
+### サイドチャネル
+
+入力デバイスはサイドチャネルの発生源にもなる。IMU 内蔵コントローラーの加速度・ジャイロ値は環境振動を拾いうるため、モーションデータへのアクセス権限は音声ほどではないにせよ無害ではない。
 
 ## 結論 (Conclusions)
 
@@ -273,6 +317,7 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - 入力遅延は直列パイプラインの総和で、ポーリングレートは一項にすぎない。高ポーリング化の効果は他の区間（フレームレート・表示）との相対で決まる。
 - HID はトランスポート非依存であり、無線化の本質的な差は伝送区間の遅延と信頼性、そしてリンクのセキュリティに現れる。USB も Bluetooth も「デバイスが送ってよい機会をホスト側が決める」構造で、遅延は周期的な待ちが段ごとに重なった分布として現れる。
 - 出力はパラメータなら Output Report で足りるが、ボイスコイルのハプティクスのような波形はレポートの頻度では運べず、DualSense は USB ではオーディオストリーム（アイソクロナス転送）を使う。
+- HID のセキュリティ上の弱点は、「デバイスの申告を信じる」信頼モデルから生じる。物理接続とパーサには許可リストと入力検証、無線リンクにはボンディング済み機器だけを受け入れる設定（仕様どおりの Security Mode 4）で対処する。機器の認証は送り手が正規品であることしか保証しないため、入力そのものが人の操作かどうかは振る舞いの分析に頼るしかない。
 
 ### 次の接続先 (Related Topics)
 
@@ -299,10 +344,21 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - Bluetooth SIG. *Bluetooth Core Specification*（BR/EDR のスロット・TDD・ARQ、LE の接続イベントと MD ビット）. — [bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/) — Accessed: 2026-10-10。伝送路ごとのタイミングモデルの規範。
 - Linux kernel source. `drivers/hid/hid-playstation.c`（Copyright Sony Interactive Entertainment）（`DS_INPUT_REPORT_USB`/`DS_INPUT_REPORT_BT`、`PS_INPUT_CRC32_SEED` の定義）, `net/bluetooth/hidp/hidp.h`（`HIDP_TRANS_*`・`HIDP_DATA_RTYPE_*` の定義）. — [github.com/torvalds/linux](https://github.com/torvalds/linux) — Accessed: 2026-10-10。DualSense のレポート ID・サイズ・CRC と HIDP ヘッダ値の実装上の確認。
 - Linux kernel patches. *HID: hid-sony: Fix DS4 controller reporting rate issues* (2015) および *HID: sony: Make DS4 bt poll interval adjustable*. — [lkml.iu.edu](https://lkml.iu.edu/hypermail/linux/kernel/1507.3/02465.html) / [git.disroot.org](https://git.disroot.org/kpriv/linux-hardened/commit/77b499e739ed5561e5026fa7140ae53f6c4d1d8e) — Accessed: 2026-10-10。DS4 の Bluetooth レポート間隔（最大約 1 kHz、1〜62 ms で設定可能、旧設定の約 20.83 Hz）。
+- MITRE / CVE Program. *CVE-2023-45866*（2023-12-08 公開）, *CVE-2020-0556*（2020-03-12 公開）, *CVE-2017-16533*（2017-11-04 公開）. — [cve.org](https://www.cve.org/CVERecord?id=CVE-2023-45866) — Accessed: 2026-10-17。BlueZ の HID ホストが未認証の HID デバイスからの接続を許す問題と、その前身の BlueZ アクセス制御の問題、`usbhid_parse` の範囲外読み取り。
+- BlueZ. *input.conf: Change default of ClassicBondedOnly*. commit 25a471a83e02 (2023-10). — [github.com/bluez/bluez](https://github.com/bluez/bluez/commit/25a471a83e02e1effb15d5a488b3f0085eaeb675) — Accessed: 2026-10-17。`ClassicBondedOnly` の既定値を `true` に変更。HID 仕様が Security Mode 4 を要求する旨の説明。
+- Android Open Source Project. *Android Security Bulletin—December 2023*. — [source.android.com](https://source.android.com/docs/security/bulletin/2023-12-01) — Accessed: 2026-10-17。CVE-2023-45866 を System コンポーネントの Critical な権限昇格として、パッチレベル 2023-12-05 で Android 11〜14 を修正。
+- Apple. *About the security content of macOS Sonoma 14.2* / *iOS 17.2 and iPadOS 17.2* (2023-12-11). — [support.apple.com/en-us/HT214036](https://support.apple.com/en-us/HT214036) / [support.apple.com/en-us/120877](https://support.apple.com/en-us/120877) — Accessed: 2026-10-17。Bluetooth: キーボードのなりすましによるキー入力注入 (CVE-2023-45866, Marc Newlin of SkySafe)。
+- Apple. *About the security content of Magic Keyboard Firmware Update 2.0.6* (2024-01-09). — [support.apple.com/en-us/120303](https://support.apple.com/en-us/120303) — Accessed: 2026-10-17。物理アクセスによるペアリング鍵の抽出 (CVE-2024-0230)。
+- Google. *syzkaller: External USB fuzzing for Linux kernel* / *Found Linux kernel USB bugs*. — [github.com/google/syzkaller](https://github.com/google/syzkaller/blob/master/docs/linux/external_fuzzing_usb.md) — Accessed: 2026-10-17。Raw Gadget と Dummy HCD/UDC による USB fuzzing の仕組み、HID 向けの専用サポート、見つかったバグの一覧 (CVE-2017-16533 を含む)。
+- XIM Technologies. *XIM MATRIX Guide: Gaming On Xbox*. — [guide.xim.tech](https://guide.xim.tech/Gaming-On-Xbox) — Accessed: 2026-10-17。本体での動作に正規コントローラーを認証用に接続する必要がある点（製品メーカーの公式ガイド）。
+- Activision. *RICOCHET Anti-Cheat Update: Call of Duty: Black Ops 7 Season 02* (2026-02). — [callofduty.com](https://www.callofduty.com/blog/2026/02/call-of-duty-black-ops-7-ricochet-anti-cheat-season-02) — Accessed: 2026-10-17。Cronus Zen / XIM Matrix を入力改変機器として検出対象にする方針（当事者の発表）。
 
 **二次資料 (Secondary)**
 
 - Bastille Networks. *MouseJack: Injecting Keystrokes into Wireless Mice* (2016). — [mousejack.com](https://www.mousejack.com/) — Accessed: 2026-07-05。非 Bluetooth 無線入力機器への注入攻撃の実証（研究発表、技術白書付き）。
+- Newlin, M. (SkySafe). *CVE-2023-45866* / *CVE-2024-0230* writeups (skysafe/reblog). — [cve-2023-45866](https://github.com/skysafe/reblog/tree/main/cve-2023-45866) / [cve-2024-0230](https://github.com/skysafe/reblog/blob/main/cve-2024-0230/README.md) — Accessed: 2026-10-17。研究者自身による公表。OS ごとの成立条件、報告日 (2023-08) と公表日 (2023-12-06)、鍵抽出の経路。
+- Manalang, A. (Gfinity Esports). *Black Ops 7 Season 02 Could Be Bad News for Cronus and XIM Players in Ranked Play* (2026-02-03). — [gfinityesports.com](https://www.gfinityesports.com/article/black-ops-7-season-02-could-be-bad-news-for-cronus-and-xim-players-in-ranked-play) — Accessed: 2026-10-17。検出が機器の識別だけでなく入力のタイミング・一貫性・反応パターンの分析による点の報道。
+- Game Rant. *Call of Duty: Black Ops 7 Reveals New Anti-Cheat Update for Season 2* (2026-02-02). — [gamerant.com](https://gamerant.com/call-of-duty-black-ops-7-anti-cheat-update-season-2/) — Accessed: 2026-10-17。Activision の発表の報道。これらの機器がアクセシビリティ目的にも使われうる点への言及。
 - Texas Instruments. *Haptic Energy Consumption* (SLOA194A, 2014, rev. 2022-01, アプリケーションノート). — [ti.com](https://www.ti.com/lit/an/sloa194/sloa194.pdf) — Accessed: 2026-10-10。ERM / LRA / ピエゾの応答時間の比較（ERM ~50 ms、LRA ~30 ms、ピエゾ 0.5 ms）と、自動共振による LRA の起動・停止時間の改善の実測。
 - Dixon, T. (iFixit). *PlayStation 5 Teardown* (2020-11-05, Steps 12–19: DualSense). — [ifixit.com](https://www.ifixit.com/Teardown/PlayStation+5+Teardown/138280) — Accessed: 2026-10-10。Foster 製ボイスコイルアクチュエータ2基と、モーター＋ウォームギヤによるアダプティブトリガー機構の確認。
 - Nintendo Life. *It's Official, Switch 2 Joy-Con Will Not Feature Hall Effect Sticks* (2025-04). — [nintendolife.com](https://www.nintendolife.com/news/2025/04/its-official-switch-2-joy-con-will-not-feature-hall-effect-sticks) — Accessed: 2026-10-10。Nintendo of America の Nate Bihldorff 氏への取材。スティック方式の選定が各社で分かれている例。
