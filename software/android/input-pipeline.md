@@ -183,7 +183,8 @@ flowchart LR
 - [`app-launch-end-to-end.md`](app-launch-end-to-end.md) — ホームでのタップが InputDispatcher を経て Activity 起動に至る全経路。
 - [`binder-internals.md`](binder-internals.md) — InputChannel の fd を運ぶ制御路、トークンの偽造不能性。
 - [`security-model.md`](security-model.md) — オーバーレイ・アクセシビリティ・署名権限の位置づけ。
-- [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) — デバイス側（HID レポート、ポーリングと遅延バジェット）。
+- [`../../hardware/peripherals/input-devices-hid.md`](../../hardware/peripherals/input-devices-hid.md) — デバイス側（HID レポート、伝送路とポーリングレート）。
+- [`../../hardware/peripherals/input-latency.md`](../../hardware/peripherals/input-latency.md) — 入力から画面までの遅延バジェットと測り方。
 - [`../operating-systems/power-management.md`](../operating-systems/power-management.md) — `EPOLLWAKEUP` と wakeup source。
 - [`window-manager.md`](window-manager.md) — addWindow による InputChannel 生成とフォーカス決定。
 

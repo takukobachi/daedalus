@@ -6,6 +6,7 @@ SoC と外界をつなぐ周辺デバイスの中身と、その接続技術。`
 
 - [`input-devices-hid.md`](input-devices-hid.md) — HIDとゲームコントローラー: 入力デバイスの解剖 (HID & game controllers)
 - [`keyboard-mouse-touch.md`](keyboard-mouse-touch.md) — キーボード・マウス・タッチ: キーとポインタの物理 (keyboard, mouse & touch)
+- [`input-latency.md`](input-latency.md) — 入力遅延: 操作から画面までの時間 (input latency)
 - [`sensor-hub-mems.md`](sensor-hub-mems.md) — センサハブとMEMSセンサ: 常時オンの感覚器 (sensor hub & MEMS)
 - [`audio-subsystem.md`](audio-subsystem.md) — オーディオサブシステム: 端末の音の出入り (audio subsystem)
 - [`display-pipeline.md`](display-pipeline.md) — ディスプレイパイプライン: フレームバッファからパネルへ (display pipeline)
