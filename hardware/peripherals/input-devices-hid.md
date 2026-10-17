@@ -405,6 +405,7 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 ### 次の接続先 (Related Topics)
 
 - `keyboard-mouse-touch.md` — 同じ HID の上に乗るキーボード・マウス・タッチの物理と、ロールオーバー・光学センサ・Digitizer usage。
+- `sensor-hub-mems.md` — コントローラーの IMU を含む MEMS センサの物理、較正とタイムスタンプ、モーションセンサのセキュリティ。
 - `usb-architecture.md` — インタラプト転送・bInterval・列挙という有線伝送路の基礎。
 - `bluetooth-pairing-protocol.md` — 無線コントローラーの伝送路（BR/EDR の HID Profile と LE の HOGP）とリンク暗号化。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ホスト側で USB/BT コントローラーが割り込み・DMA で動く基盤。
