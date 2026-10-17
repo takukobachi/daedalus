@@ -4,13 +4,13 @@
 
 ゲームコントローラーは、入力デバイス (input device) の技術要素がほぼすべて詰まった格好の題材である。アナログセンシング（スティック・トリガー）、デジタル入力のスキャン（ボタン）、触覚フィードバック（振動）、そしてそれらを OS へ届ける **HID (Human Interface Device)** プロトコルがそろっている。キーボード・マウス・タッチも同じ HID の上に乗るが、それぞれに固有の物理と論点（キーのロールオーバー、光学センサ、静電容量方式のタッチなど）があり、それらは `keyboard-mouse-touch.md` で扱う。
 
-本ドキュメントは、コントローラーを「センサ → ファームウェア → 伝送路 → ホストOS」の一本の経路として解剖し、スティックドリフトはなぜ起きるのか、なぜドライバなしで挿すだけで動くのか、「ポーリングレート 1000Hz」は何を意味するのかをハードウェアの観点から説明する。
+本ドキュメントは、コントローラーを「センサ → ファームウェア → 伝送路 → ホストOS」の一本の経路として解剖し、スティックドリフトはなぜ起きるのか、なぜドライバなしで挿すだけで動くのか、「ポーリングレート 1000Hz」は伝送路の上で何を意味するのかをハードウェアの観点から説明する。入力から画面までの遅延の全体と、その測り方は `input-latency.md` で扱う。
 
 ## 方法論 (Methodology)
 
 - コントローラーを **入力経路**（センサ → ADC/スキャン → HID レポート → 伝送 → OS 入力サブシステム → ゲーム）と **出力経路**（ゲーム → 出力レポート → アクチュエータ駆動）の2本に分解する。
 - 各段について、物理原理・設計上の制約・ソフトウェアから見える振る舞いを対応づける。
-- 「ボタンを1回押してから画面に反映されるまで」を1本のレイテンシバジェット (latency budget) として通しで見る。あわせて、各区間をどの方法で測れるか（ロジックアナライザ、操作治具、OS のトレース、光センサ）と、その分解能を整理する。
+- 遅延は、伝送路ごとに「デバイスが送ってよい機会を誰が決めるか」（タイミングモデル）とポーリングレートまでを扱い、入力から画面までのレイテンシバジェット (latency budget) と測り方は `input-latency.md` に委ねる。
 - 伝送路は USB を基準とし、無線（Bluetooth BR/EDR の HID Profile と LE の HOGP）は差分として扱う（無線層の詳細は `bluetooth-pairing-protocol.md` に委譲）。
 - セキュリティは「ホストがデバイスの何を信じているか」を軸に、攻撃面（物理接続・無線リンク・パーサ・入力の真正性）ごとに実際の CVE と修正内容に対応づけて評価する。
 - 具体例には、仕様が公開されている部分と Linux ドライバ（`hid-playstation`、`hid-sony`、`net/bluetooth/hidp`）のソースで確認できる部分を使う。ベンダが公開していない値はドライバ実装から読み取れる範囲に限り、その旨を明記する。
@@ -19,7 +19,7 @@
 
 1. **HID の本質は「自己記述型プロトコル」である。** デバイスは自分のデータ形式を**レポートディスクリプタ (report descriptor)** として申告し、ホストはそれを解釈して汎用ドライバだけで扱う。「挿すだけで動く」のはこの仕組みの直接の帰結。ただし、ホスト側でレポートに意味を付ける場所は1つではない。OS の汎用経路（Linux の evdev、Windows の Raw Input など）と並んで、アプリやミドルウェアが生レポートを自分で解釈する経路（hidraw、SDL の HIDAPI ドライバ）があり、ベンダ固有機能は後者でしか使えないことが多い。
 2. **スティックドリフトは電気機械的な摩耗問題であり、センシング原理の置き換えで解決されつつある。** 接触式のポテンショメータ (potentiometer) は摺動で摩耗・汚損するが、非接触のホール効果 (Hall effect) / TMR センサは原理的に摺動摩耗がない。ただし非接触にしても、磁石の温度特性（NdFeB で約 −0.12%/°C）や、中立点に戻すばね・支点の摩耗による誤差は残る。
-3. **入力遅延はパイプラインの総和であり、ポーリングレートはその1項にすぎない。** センサ読み取り、デバウンス、伝送間隔、OS 処理、ゲームループ、表示までが直列に足し合わさる。測定値は、どの区間をどの分解能で測ったかを明示し、分布として報告しなければ比べられない。
+3. **ポーリングレートは入力遅延の1項にすぎない。** USB でも Bluetooth でも、デバイスが送れる機会はホスト側が周期的に与える。この周期が決めるのは伝送の待ちだけで、入力遅延はセンサ読み取りから表示までの区間の総和になる（`input-latency.md`）。
 4. **振動は ERM → LRA → ボイスコイルへと「モーター」から「スピーカー」に近づく進化をした。** 立ち上がり時間と再現できる周波数帯域が世代を分ける。
 5. **HID はトランスポート非依存で、同じレポートモデルが USB・Bluetooth BR/EDR・BLE に載る。** 一方で実際の主要コントローラーは HID の標準ゲームパッド定義をそのまま使わない。PlayStation 系は「HID の枠内でベンダ固有レポートを使う」方式、Xbox 系は USB では「そもそも HID クラスではない独自プロトコル (XUSB / GIP)」を使う方式で、どちらもホスト側の専用スタックが解釈する。
 6. **HID の安全性は「接続されたデバイスの申告を信じる」という信頼モデルの上に成り立っている。** 注入 (BadUSB、CVE-2023-45866)、パーサの脆弱性 (CVE-2017-16533)、入力改変アダプタは、いずれもこの信頼のどこかを突く。CVE-2023-45866 では、HID 仕様が要求していた認証を BlueZ が互換性のために既定で緩めていたことが攻撃経路になった。
@@ -317,7 +317,7 @@ BR/EDR のスロットは 625 µs と細かく、central が peripheral に頻�
 
 無線で遅延を左右するのは省電力機構である。BR/EDR の**スニフモード (sniff mode)** では、デバイスは決まった間隔でだけ受信窓を開くため、間隔が数十 ms に設定されると、その分だけ入力が待たされる。スニフ間隔の設定は電池の持ちと入力遅延のトレードオフであり、ゲーム用途では遅延側を優先する必要がある。BLE の接続間隔も同じトレードオフ（間隔が長いほど電池が持ち、応答が遅れる）を持つ。
 
-### ポーリングレートと遅延バジェット
+### ポーリングレート
 
 USB の HID は**インタラプト転送 (interrupt transfer)** を使い、ホストが `bInterval` で申告された間隔でデバイスを周期的に取りに行く（デバイス側から押し込む仕組みではない）。
 
@@ -330,52 +330,7 @@ USB の HID は**インタラプト転送 (interrupt transfer)** を使い、ホ
 
 BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変更記録によれば、DualShock 4 は Bluetooth で最大約 1 kHz で Input Report を送れる。送信間隔はホストからの Output Report 内のフィールドで 1〜62 ms の範囲で設定でき、以前のドライバ設定では約 20.83 Hz に抑えられていた。つまり BR/EDR の HID には BLE のような「7.5 ms の下限」はなく、レートはデバイスとホストの設定で決まる。BLE 側の 7.5 ms の下限は Bluetooth Core 6.2 (2025-11) の Shorter Connection Intervals で 375 µs（125 µs 刻み）まで引き下げられたが、両端のコントローラーが対応している必要がある（as of 2026-10、対応機器は限られる）。
 
-#### ポーリングレートとデバイスの更新レートは別物
-
-ポーリングレートは「ホストが問い合わせる頻度」であって、「デバイスが新しい値を用意する頻度」ではない。USB では、デバイスは問い合わせの時点で新しいデータがなければ **NAK** を返し、そのフレームでは何も届かない。したがって次のことがいえる。
-
-- 1000 Hz でポーリングしても、ファームウェアがセンサを 4 ms ごとにしか読まなければ、実質の更新は 250 Hz になる。
-- ポーリングレートの測定ツールが測るのは「OS がレポートを受け取った頻度」である。ボタンを押してから届くまでの遅延（ファームウェア内部のスキャン・デバウンス・処理を含む）は別に測る必要があり、ポーリングレートが高くても遅延が小さいとは限らない。
-
-#### エンドツーエンドの遅延
-
-エンドツーエンドの遅延はおおよそ次のようになる。
-
-```text
-センサ読取/スキャン周期 + デバウンス + レポート生成
-+ 伝送待ち(平均 = ポーリング間隔/2) + OS入力処理
-+ ゲームループ(フレーム同期) + 表示遅延(V-Sync, パネル応答)
-```
-
-**「平均 = 間隔/2」の理由**: ボタンを押す瞬間は問い合わせの周期 T と無関係なので、周期内のどの時点になるかは等しい確率で散らばる。待ち時間は 0〜T の一様分布になり、平均は T/2、最悪は T である（250 Hz なら平均 2 ms・最悪 4 ms）。
-
-**周期的な待ちは何段も重なる**: この「次の区切りまで待つ」構造は伝送区間だけでなく、ファームウェアのスキャン周期、伝送の周期、ゲームが入力を読む周期（多くは1フレームに1回。60 Hz なら平均 8.3 ms・最悪 16.7 ms）にもある。各段の周期は互いに同期していないため、待ちは段ごとに足し合わされ、押すたびにばらつく。遅延は1つの値ではなく**分布**として扱う必要がある。
-
-ポーリングを 1000 Hz → 8000 Hz にしても縮むのは「伝送待ち」の項（平均 0.5 ms → 62.5 µs）だけで、**60 Hz ゲームループ（~16.7 ms）や表示側が支配的な環境では体感差は小さい**。
-
-ただし「コントローラー区間は無視できる」とは限らない。第三者測定の Gamepadla は DualSense の有線ボタン遅延を約 7.8 ms と掲載している（同サイトは比較機能を「テスト中」としており、目安の値）。1000 Hz ポーリングの平均待ち 0.5 ms と比べると、コントローラー区間の大半はポーリング以外（スキャン、デバウンス、ファームウェア処理）が占めうる。遅延を語るときは必ずどの区間の話かを特定する必要がある。
-
-**無線のジッター**: 干渉でパケットが失われると、タイミングモデルの表のとおり次の機会に再送される。平均遅延はほとんど変わらなくても、ときどき「1間隔分遅れた入力」が混ざる裾 (tail) が生じ、操作の違和感として現れる。AFH は混雑したチャネルを避けて再送の頻度を下げるが、2.4 GHz の Wi-Fi が混んだ環境では再送はなくならない。
-
-#### 遅延の測り方
-
-遅延は区間ごとに測り方が違い、どの区間を測ったかを明示しないと数字を比べられない。
-
-| 区間 | 方法 | 例と分解能 |
-|---|---|---|
-| ボタンの接点 → USB パケット | ロジックアナライザで、ボタンの接点と USB の信号を同時に記録する | Dan Luu のキーボード測定（USB ケーブルを切り開いてロジックアナライザにつなぐ）。Schmid & Wimmer (2021) は、同様の先行手法として、ボタンの接点が閉じてから USB のイベントまでをロジックアナライザで測る方法を紹介している |
-| 物理的な操作 → OS がレポートを受け取る | 治具で操作し、PC のプログラムが入力を受け取るまでを計る | Gamepadla の Prometheus 82: Arduino Nano とソレノイドでボタンやスティックを物理的に操作し、500 回繰り返して最小・平均・最大・ジッターを出す（誤差 ±1 ms とされる）。電気的に接点を閉じる GPDL Tester は 2000 回測る |
-| ホスト内での到着時刻 | OS のトレース機能で、各段のタイムスタンプを取る | Linux の usbmon は USB の要求の発行 (S) と完了 (C) をマイクロ秒単位のタイムスタンプ付きで記録する。evdev の `input_event` も発生時刻を持ち、使う時計は `EVIOCSCLOCKID` で選べる。Windows では USBPcap と Wireshark で USB の通信を記録できる |
-| クリック → 画面の変化（システム遅延） | 入力の検出と画面の明るさの変化を同じ装置で測る | NVIDIA Reflex Latency Analyzer: 対応モニタの専用 USB ポートにマウスをつなぎ、画面上の監視領域（銃口の閃光など）の変化までを測る |
-| 操作 → 画面の変化（全体） | 高速カメラ、または光センサ | 240 fps のカメラではフレーム間隔が 4 ms で、それより細かくは分からない。Schmid & Wimmer (2021) の装置は、フォトカプラでボタンの接点を閉じ、フォトレジスタで画面の変化をとらえる。カメラと比べた最大誤差は 2.64 ms 未満 |
-
-NVIDIA は、マウスのクリックから画面のピクセルが変わるまでを**システム遅延 (system latency)** と呼び、周辺機器の遅延、PC の遅延（OS・ゲーム・レンダリング）、表示の遅延（スキャンアウト、表示処理、画素の応答）に分けている。NVIDIA のガイドによれば、PC の遅延がシステム遅延の最大の要因になることが多く、マウスのポーリングレート 125 Hz は 1000 Hz と比べて平均で最大 3 ms の遅延を加える。この値は本節の「平均 = 間隔 / 2」による見積もり（125 Hz で平均 4 ms、1000 Hz で 0.5 ms、差は 3.5 ms）とおおむね合う。一方、Schmid & Wimmer は、Reflex の測定は入力イベントがシステムに届いた時点から始まるので、入力デバイス内部の遅延は含まれないと指摘している。NVIDIA は「マウスの遅延」も表示項目に挙げており、両者の説明は食い違っている。測定器が何を起点にしているかは、利用者が確かめる必要がある。
-
-測定で守るべき点は3つある。
-
-- 上の表のどの区間を測ったかを書く。Gamepadla の値（DualSense の有線で約 7.8 ms）は「物理的な操作 → OS」で、画面までの遅延ではない。
-- 測定器の分解能は測る量より細かくする。240 fps のカメラ（4 ms 刻み）で 1 ms 前後の差は見分けられない。Dan Luu は精度を過大に見せないよう測定値を 5 ms 単位に丸め、この構成では速いキーボードの裾の遅延は測れないと書いている。光センサを使う場合も、60 Hz の表示では画面の上端と下端で 16.67 ms の差が出るので、センサを置く位置で値が変わる。
-- 遅延は分布で報告する。前述のとおり遅延は分布なので、1 回の測定値には意味がない。Schmid & Wimmer は、遅延は変動するので単一の値ではなく分布を測るべきだという Bérard と Blanch の主張を紹介し、繰り返しの測定が必要だとしている。Gamepadla は数百〜数千回の測定から最小・平均・最大・ジッターと分布の図を、Dan Luu はジッターの中央値と 90 パーセンタイルを示している。
+ポーリングレートが遅延にどう効くか（デバイスの更新レートとの違い、周期的な待ちの積み重なり、無線のジッター）と、入力から画面までの遅延を区間ごとに測る方法は、`input-latency.md` で扱う。
 
 ### ハプティクス — ERM から LRA、ボイスコイルへ
 
@@ -460,7 +415,7 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 - ゲームコントローラーは「アナログセンシング＋マトリクススキャン＋HID＋ハプティクス」の複合体であり、入力デバイス全般の代表例として理解できる。
 - HID のレポートディスクリプタによる自己記述が「ドライバ不要」を実現するが、実際の製品は「HID の枠内でベンダ固有レポートを使う」(PlayStation・Nintendo 系) か「HID ではない独自プロトコルを使う」(Xbox 系の XUSB / GIP) のどちらかで拡張されており、いずれもホスト側の専用スタックが解釈する。その解釈はカーネルのドライバ、OS の API、SDL や Steam Input のようなミドルウェアと何層にも分かれ、同じ押下が複数の経路から見えるため、ゲームは読む経路を1つに決める必要がある。
 - スティックドリフトは接触式センシングの構造的問題で、ホール効果/TMR への移行が根本対策。デッドゾーンはあくまで対症療法で、XInput の推奨値でも中心から半径約 4 分の 1 を捨てている。非接触にしても温度特性と機構の誤差は残り、Sony のように摩耗部品を交換可能にするという別の解もある。
-- 入力遅延は直列パイプラインの総和で、ポーリングレートは一項にすぎない。高ポーリング化の効果は他の区間（フレームレート・表示）との相対で決まる。遅延の数字は、測った区間、測定器の分解能、分布のどの値かを添えて初めて比べられる。
+- ポーリングレートは入力遅延の一項にすぎず、高ポーリング化の効果は他の区間（フレームレート・表示）との相対で決まる。遅延の全体と測り方は `input-latency.md` で扱う。
 - HID はトランスポート非依存であり、無線化の本質的な差は伝送区間の遅延と信頼性、そしてリンクのセキュリティに現れる。USB も Bluetooth も「デバイスが送ってよい機会をホスト側が決める」構造で、遅延は周期的な待ちが段ごとに重なった分布として現れる。
 - 出力はパラメータなら Output Report で足りるが、ボイスコイルのハプティクスのような波形はレポートの頻度では運べず、DualSense は USB ではオーディオストリーム（アイソクロナス転送）を使う。
 - HID のセキュリティ上の弱点は、「デバイスの申告を信じる」信頼モデルから生じる。物理接続とパーサには許可リストと入力検証、無線リンクにはボンディング済み機器だけを受け入れる設定（仕様どおりの Security Mode 4）で対処する。機器の認証は送り手が正規品であることしか保証しないため、入力そのものが人の操作かどうかは振る舞いの分析に頼るしかない。
@@ -472,6 +427,7 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 - `usb-architecture.md` — インタラプト転送・bInterval・列挙という有線伝送路の基礎。
 - `bluetooth-pairing-protocol.md` — 無線コントローラーの伝送路（BR/EDR の HID Profile と LE の HOGP）とリンク暗号化。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — ホスト側で USB/BT コントローラーが割り込み・DMA で動く基盤。
+- `input-latency.md` — 入力から画面までのレイテンシバジェット、周期的な待ちの積み重なり、遅延の測り方。
 - `../../software/operating-systems/process-thread-scheduling.md` — 入力イベントがゲームスレッドに届くまでのスケジューリング遅延。
 - `../../software/android/input-pipeline.md` — モバイル OS の入力パイプラインの実例（evdev からアプリまで）。
 
@@ -515,17 +471,11 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 - Microsoft. *XINPUT_GAMEPAD structure*. — [learn.microsoft.com](https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_gamepad) — Accessed: 2026-10-17。スティックの各軸 −32768〜32767。推奨デッドゾーンは *Getting Started With XInput*（ホスト側の処理経路の節の文献）による。
 - Sony Interactive Entertainment. *Stick module for DualSense Edge wireless controller*. — [playstation.com](https://www.playstation.com/en-gb/accessories/stick-module-for-dualsense-edge-wireless-controller/) — Accessed: 2026-10-17。交換可能なスティックモジュール。
 - BEUC. *BEUC launches Europe-wide complaint against Nintendo premature obsolescence* (2021-01) / *Nintendo commits to EU-wide remedy for consumers following BEUC action* (2023-04-04). — [beuc.eu](https://www.beuc.eu/press-releases/beuc-launches-europe-wide-complaint-against-nintendo-premature-obsolescence) / [remedy](https://www.beuc.eu/press-releases/nintendo-commits-eu-wide-remedy-consumers-following-beuc-action) — Accessed: 2026-10-17。約 2 万 5000 件の苦情と 88% の数字（証言に基づく）、欧州での生涯無償修理の約束。
-- NVIDIA. *System Latency Optimization Guide* (2020-10) / *Reflex Latency Analyzer*. — [nvidia.com](https://www.nvidia.com/en-us/geforce/guides/system-latency-optimization-guide/) / [Reflex Latency Analyzer](https://www.nvidia.com/en-us/geforce/news/reflex-latency-analyzer-360hz-g-sync-monitors/) — Accessed: 2026-10-17。システム遅延の定義と分解、125 Hz と 1000 Hz のポーリングの差、Reflex Latency Analyzer の測定方法（ベンダの説明）。
-- Linux Kernel Documentation. *usbmon* / *Input subsystem* / `include/uapi/linux/input.h`. — [usbmon](https://www.kernel.org/doc/html/latest/usb/usbmon.html) / [input](https://www.kernel.org/doc/html/latest/input/input.html) / [input.h](https://github.com/torvalds/linux/blob/master/include/uapi/linux/input.h) — Accessed: 2026-10-17。usbmon のマイクロ秒のタイムスタンプと S / C イベント、`input_event` の時刻、`EVIOCSCLOCKID`。
-- Schmid, A., & Wimmer, R. (2021). Yet Another Latency Measuring Device. *EHPHCI '21 (CHI 2021 Workshop)*. — [epub.uni-regensburg.de](https://epub.uni-regensburg.de/45570/1/yet-another-latency-measuring-device.pdf) — Accessed: 2026-10-17。光センサによる測定装置と誤差、カメラの時間分解能、画面の上下での遅延差、分布で報告すべきという主張、Reflex の測定範囲への指摘。
 
 **二次資料 (Secondary)**
 
 - Lloyd, C. (iFixit). *Nintendo Switch Joy-Cons Failing? Here's How to Fix Them* (2019-07-17) / Haeussermann, M. (iFixit). *TMI about TMR* (2026-03-02). — [ifixit.com](https://www.ifixit.com/News/31285/nintendo-switch-joy-cons-failing-how-to-fix) / [TMR](https://www.ifixit.com/News/115707/tmi-about-tmr) — Accessed: 2026-10-17。Joy-Con の接点パッドの摩耗、TMR とリニアホールの消費電流（GuliKit の数字の紹介）と電池の持ちへの効果。
 - Which?. *Which? tests on faulty console controllers point to Nintendo design flaws* (2023-03-04). — [which.co.uk](https://www.which.co.uk/policy-and-insight/article/which-tests-on-faulty-console-controllers-point-to-nintendo-design-flaws-a75t98f03Ma6) — Accessed: 2026-10-17。Joy-Con 5 組の分解での摺動接点の摩耗と汚れ（独立した消費者団体による調査）。
-- Gamepadla / cakama3a. *Prometheus 82* / *GPDL*. — [github.com/cakama3a/Prometheus82](https://github.com/cakama3a/Prometheus82) / [GPDL](https://github.com/cakama3a/GPDL) — Accessed: 2026-10-17。物理的な操作治具と電気的な接点の短絡による測定、試行回数と報告する統計量（測定ツールの作者による説明）。
-- Luu, D. *Keyboard latency*. — [danluu.com](https://danluu.com/keyboard-latency/) — Accessed: 2026-10-17。ロジックアナライザと 240 fps カメラによる測定、5 ms 単位の丸め、ジッターの中央値と 90 パーセンタイル（公開日は記載なし）。
-- USBPcap. — [desowin.org/usbpcap](https://desowin.org/usbpcap/) — Accessed: 2026-10-17。Windows 用のオープンソースの USB スニファ（Wireshark で利用）。
 
 - Bastille Networks. *MouseJack: Injecting Keystrokes into Wireless Mice* (2016). — [mousejack.com](https://www.mousejack.com/) — Accessed: 2026-07-05。非 Bluetooth 無線入力機器への注入攻撃の実証（研究発表、技術白書付き）。
 - Newlin, M. (SkySafe). *CVE-2023-45866* / *CVE-2024-0230* writeups (skysafe/reblog). — [cve-2023-45866](https://github.com/skysafe/reblog/tree/main/cve-2023-45866) / [cve-2024-0230](https://github.com/skysafe/reblog/blob/main/cve-2024-0230/README.md) — Accessed: 2026-10-17。研究者自身による公表。OS ごとの成立条件、報告日 (2023-08) と公表日 (2023-12-06)、鍵抽出の経路。
@@ -535,4 +485,3 @@ BlueZ の修正コミット（`25a471a`、`input.conf: Change default of Classic
 - Dixon, T. (iFixit). *PlayStation 5 Teardown* (2020-11-05, Steps 12–19: DualSense). — [ifixit.com](https://www.ifixit.com/Teardown/PlayStation+5+Teardown/138280) — Accessed: 2026-10-10。Foster 製ボイスコイルアクチュエータ2基と、モーター＋ウォームギヤによるアダプティブトリガー機構の確認。
 - Nintendo Life. *It's Official, Switch 2 Joy-Con Will Not Feature Hall Effect Sticks* (2025-04). — [nintendolife.com](https://www.nintendolife.com/news/2025/04/its-official-switch-2-joy-con-will-not-feature-hall-effect-sticks) — Accessed: 2026-10-10。Nintendo of America の Nate Bihldorff 氏への取材。スティック方式の選定が各社で分かれている例。
 - PipeWire issue #2486. *Some non-haptic sound is played through DualSense's haptic feedback*. — [gitlab.freedesktop.org](https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/2486) — Accessed: 2026-10-10。USB 接続の DualSense が4チャネルのオーディオシンクとして現れ、ハプティクス用チャネルの扱いが議論されている例（コミュニティの観察）。
-- Gamepadla. *Methodology / controller comparisons*. — [gamepadla.com](https://gamepadla.com/) — Accessed: 2026-10-10。ポーリングレート（OS がレポートを受け取る頻度）と入力遅延（ハードウェア測定）を別の指標として測る第三者測定の例。
