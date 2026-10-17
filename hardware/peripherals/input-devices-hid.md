@@ -16,7 +16,7 @@
 
 ## 発見事項 (Findings)
 
-1. **HID の本質は「自己記述型プロトコル」である。** デバイスは自分のデータ形式を**レポートディスクリプタ (report descriptor)** として申告し、ホストはそれを解釈して汎用ドライバだけで扱う。「挿すだけで動く」のはこの仕組みの直接の帰結。
+1. **HID の本質は「自己記述型プロトコル」である。** デバイスは自分のデータ形式を**レポートディスクリプタ (report descriptor)** として申告し、ホストはそれを解釈して汎用ドライバだけで扱う。「挿すだけで動く」のはこの仕組みの直接の帰結。ただし、ホスト側でレポートに意味を付ける場所は1つではない。OS の汎用経路（Linux の evdev、Windows の Raw Input など）と並んで、アプリやミドルウェアが生レポートを自分で解釈する経路（hidraw、SDL の HIDAPI ドライバ）があり、ベンダ固有機能は後者でしか使えないことが多い。
 2. **スティックドリフトは電気機械的な摩耗問題であり、センシング原理の置き換えで解決されつつある。** 接触式のポテンショメータ (potentiometer) は摺動で摩耗・汚損するが、非接触のホール効果 (Hall effect) / TMR センサは原理的に摺動摩耗がない。
 3. **入力遅延はパイプラインの総和であり、ポーリングレートはその1項にすぎない。** センサ読み取り、デバウンス、伝送間隔、OS 処理、ゲームループ、表示までが直列に足し合わさる。
 4. **振動は ERM → LRA → ボイスコイルへと「モーター」から「スピーカー」に近づく進化をした。** 立ち上がり時間と再現できる周波数帯域が世代を分ける。
@@ -60,12 +60,15 @@ flowchart LR
 flowchart TB
     DEV["デバイス (HIDレポート)"] --> TR["トランスポートドライバ<br/>USB HID class / Bluetooth HID / HOGP"]
     TR --> PARSE["HIDパーサ<br/>(レポートディスクリプタ解釈)"]
-    PARSE --> INPUT["OS入力サブシステム<br/>Linux: evdev / Windows: HID stack"]
-    INPUT --> API["ゲーム向けAPI<br/>XInput・GameInput / SDL / Android input"]
-    API --> GAME["ゲームループ"]
+    PARSE --> INPUT["OS入力サブシステム<br/>Linux: evdev / Windows: Raw Input 等"]
+    TR -.->|"生レポート<br/>(hidraw / HidD・HidP)"| MW
+    INPUT --> MW["ミドルウェア<br/>SDL / Steam Input"]
+    INPUT --> API["ゲーム向けAPI<br/>XInput・GameInput / Android input"]
+    MW --> GAME["ゲームループ"]
+    API --> GAME
 ```
 
-要点は、**トランスポート層（USB/BT）と HID 層が分離している**こと。HID パーサから上は、レポートがどの物理経路で来たかを知らない。
+要点は2つある。1つは、**トランスポート層（USB/BT）と HID 層が分離している**こと。HID パーサから上は、レポートがどの物理経路で来たかを知らない。もう1つは、レポートに「意味」を付ける場所が1つではないこと。OS の汎用経路（実線）と並んで、アプリやミドルウェアが生レポートを自分で解釈する経路（点線）がある。詳細は技術詳細の「ホスト側スタック」で扱う。
 
 ## 技術詳細 (Technical Details)
 
@@ -135,6 +138,86 @@ End Collection
 - **そもそも HID クラスではない（Xbox 系）**: Microsoft によれば XInput の伝送プロトコルには XUSB（Xbox 360 世代）、XInputHID、GIP (Game Input Protocol、Xbox One 以降) の3つがあり、Xbox 本体は GIP デバイスのみをサポートする。XUSB と GIP は USB 2.0 上の独自拡張として仕様が公開されており (MS-XUSBI / MS-GIPUSB)、OS の汎用 HID ドライバでは扱えない。Linux では `xpad` や外部ドライバの `xone` がこれを処理する。
 
 「HID だから完全に汎用」ではない点が実務上の落とし穴になる。
+
+### ホスト側スタック — レポートがゲームに届くまで
+
+ホストに届いたレポートは、OS の汎用経路で「意味」の付いた入力イベントになるか、アプリやミドルウェアが生のまま読んで自分で解釈する。以下、Linux と Windows の汎用経路を見たうえで、両者の違いを吸収するミドルウェアの層を扱う。
+
+#### Linux — HID コア、evdev、hidraw、uhid
+
+```mermaid
+flowchart TB
+    subgraph Kernel["カーネル"]
+        USBHID["usbhid<br/>(USB)"]
+        HIDP["hidp<br/>(BR/EDR)"]
+        I2C["i2c-hid<br/>(I2C)"]
+        UHID["uhid<br/>(/dev/uhid)"]
+        CORE["HID コア<br/>ディスクリプタ解析・HID-BPF"]
+        DRV["HID デバイスドライバ<br/>hid-generic / hid-playstation / hid-nintendo …"]
+        HIN["hid-input<br/>usage → 入力コード"]
+        EVDEV["evdev<br/>/dev/input/eventN"]
+        RAW["hidraw<br/>/dev/hidrawN"]
+    end
+    BLUEZ["BlueZ (ユーザー空間)<br/>HOGP: Report Map を GATT で読む"]
+    APP["アプリ / ミドルウェア"]
+    USBHID --> CORE
+    HIDP --> CORE
+    I2C --> CORE
+    BLUEZ -->|"UHID_CREATE2 / UHID_INPUT2"| UHID --> CORE
+    CORE --> DRV --> HIN --> EVDEV --> APP
+    CORE --> RAW -->|"未解析のレポート"| APP
+```
+
+- **トランスポートと HID コアの分離**: トランスポートドライバ（`usbhid`、`hidp`、`i2c-hid`）は HID デバイスを作って HID コアに登録し、受け取った Input Report を `hid_input_report()` で渡す。カーネル文書は「HID コアは、どのトランスポートドライバが存在するかを決して知らない」と述べ、各デバイスに intr と ctrl の2本のチャネルを要求する。USB のインタラプト転送とコントロール転送、BR/EDR の Interrupt チャネルと Control チャネルという2本立ては、ここで共通の形にそろえられる。
+- **BLE の HID はユーザー空間を経由する**: BR/EDR の HID Profile はカーネルの `hidp` が処理するのに対し、HOGP は BlueZ（ユーザー空間の Bluetooth スタック）が処理する。BlueZ は GATT で Report Map キャラクタリスティック（UUID `0x2A4B`）を読み、`/dev/uhid` に `UHID_CREATE2` を送ってカーネル内に HID デバイスを作る。その後は通知で届いた Input Report を `UHID_INPUT2` でカーネルに渡す（BlueZ `src/shared/hog.c` の `bt_uhid_create()` / `bt_uhid_input()` 呼び出し、`src/shared/uhid.c`）。uhid は「ユーザー空間で HID のトランスポートドライバを実装する」ための仕組みで、HID コアから見れば USB 由来のデバイスと区別がない。
+- **usage から入力コードへの写像**: `hid-input` は、ディスクリプタの usage を evdev の入力コード（`EV_KEY` のボタン、`EV_ABS` の軸）に写像し、`/dev/input/eventN` として公開する。ゲームパッドについては、カーネルの Gamepad 仕様が配置を定めている。フェイスボタンは印字ではなく**物理的な位置**で `BTN_SOUTH` / `BTN_EAST` / `BTN_NORTH` / `BTN_WEST` と呼ぶ（仕様は「ボタンのラベルにかかわらず、コードはボタンの物理的な位置に従って送られる」と定める）。左右のスティックは `ABS_X`/`ABS_Y` と `ABS_RX`/`ABS_RY` で、十字キーはデジタルの `BTN_DPAD_*` とアナログ軸の `ABS_HAT0X`/`ABS_HAT0Y` のどちらでもよい。Xbox の A と PlayStation の × は、どちらも `BTN_SOUTH` になる。
+- **hidraw — 解析しない経路**: `hidraw` は、レポートを「HID パーサで解析せず、そのまま」アプリとやり取りする `/dev/hidrawN` を提供する。`read()` で Input Report を受け取り、`write()` で Output Report を送る。番号付きレポートでは先頭1バイトが Report ID になる。ディスクリプタは `HIDIOCGRDESC`、Feature Report は `HIDIOCGFEATURE` / `HIDIOCSFEATURE` で読み書きする。カーネル文書は、アプリが通信方法を正確に知っている場合や、ディスクリプタと実際のレポートが合わない非準拠デバイスに使う経路だと説明している。後述の SDL はこの経路でベンダ固有機能を使う。デバイスノードは udev が作るので、どのユーザーが読めるかも udev の規則で決まる。
+- **HID-BPF — カーネルを書き換えずに直す**: Linux 6.3 (2023-04) で入った HID-BPF は、eBPF プログラムをデバイスごとに取り付け、ディスクリプタの書き換え（`hid_rdesc_fixup`、probe 時）やイベントの加工・破棄（`hid_device_event`）を行う仕組みである。カーネル文書は、従来の quirk 修正には「カーネルパッチと、それをリリースまで運ぶ手間」が必要だったことを動機に挙げ、例としてジョイスティックのデッドゾーンをカーネル内で処理し、ノイズでユーザー空間を起こさない使い方を示している。ディスクリプタが仕様と合わない製品への対処が、カーネルのリリースを待たず、小さなプログラムの配布で済む道が開けた。
+
+Android の入力パイプライン（evdev から InputReader を経てアプリまで）は、この evdev の上に乗る。詳細は `../../software/android/input-pipeline.md` を参照。
+
+#### Windows — hidclass と排他オープン
+
+Windows の HID スタックは、クラスドライバ `hidclass.sys` を中心に、下にトランスポートのミニドライバ（USB 用の HidUsb など）、上に HID クライアントが乗る構成である。Microsoft は、クラスドライバをクライアントと各種トランスポートの間の「接着剤」と説明しており、新しいトランスポートが加わってもクライアントはほぼ変更なしで動く。アプリは `HidD_Xxx` でコレクションの情報を取り、`HidP_Xxx`（HID パーサのルーチン）でレポートを解釈する。
+
+Linux と大きく違うのは、**トップレベルコレクションの usage によってアクセスの方式が決まる**ことである。
+
+| Usage Page / Usage | 種類 | アクセスの方式 |
+|---|---|---|
+| 0x0001 / 0x0001〜0x0002 | マウス | 排他 |
+| 0x0001 / 0x0004〜0x0005 | ゲームコントローラー（Joystick / Game Pad） | 共有 |
+| 0x0001 / 0x0006〜0x0007 | キーボード / キーパッド | 排他 |
+| 0x000D / 0x0004、0x0005 | タッチスクリーン、高精度タッチパッド (PTP) | 排他 |
+
+Microsoft によれば、入力用の HID クライアントを排他にしているのは、本来の受け手でないクライアントが全体の入力状態を横取りしたり受け取ったりするのを防ぐためで、セキュリティ上の理由から Raw Input Manager (RIM) がこれらのデバイスを排他で開く。任意のアプリがキーボードのレポートを直接読めれば、それだけでキーロガーとして働くので、それを OS の側で塞いでいることになる。ゲームコントローラーは共有なので、複数のアプリが同時に同じレポートを読める。
+
+その上にゲーム向けの API が何層も重なっている。
+
+| API | 対象 | アプリから見える形 |
+|---|---|---|
+| XInput | XInput 互換コントローラー（XUSB / GIP など） | 固定のレイアウト（スティック2本、アナログトリガー2本、十字キー、ボタン8個、振動モーター2個）。同時に最大4台 |
+| DirectInput / Raw Input | HID デバイス一般 | usage に基づく軸・ボタン、または生レポート |
+| Windows.Gaming.Input | ゲームパッド等（WinRT） | 種類ごとのクラス |
+| GameInput | キーボード・マウス・ゲームパッドを含むすべて | 共通の時間軸にそろえた統一モデル。Microsoft は従来の API（XInput、DirectInput、Raw Input、HID、WinRT）の「機能的な上位集合」と位置づける。Windows 10 19H1 以降と Xbox で利用でき、Xbox One 向け GDK タイトルでは唯一の入力 API |
+
+XInput のレイアウトは固定なので、タッチパッドやジャイロのように構造体にない入力は XInput では届かない。DualSense のジャイロを使いたいゲームは、XInput ではなく HID の経路（Raw Input や `HidD`/`HidP`、あるいは次に述べる SDL）を使う必要がある。
+
+#### ミドルウェア — SDL と Steam Input
+
+OS の経路だけでは、コントローラーごとのボタン配置の違いもベンダ固有の機能も吸収しきれない。そこで、その上にミドルウェアの層がある。
+
+- **SDL のマッピングデータベース**: SDL は、OS の汎用経路から来た「ボタン番号・軸番号」を、標準のゲームパッド配置に対応づける文字列を持つ。コミュニティが管理する SDL_GameControllerDB は、1行に1台分を `GUID,名前,a:b1,b:b2,…,dpdown:h0.4,…,platform:…` の形で記録し（`bN` はボタン、`aN` は軸、`hN.M` はハット）、アプリは起動時に `SDL_AddGamepadMappingsFromFile()`（SDL3）で読み込む。同じコントローラーでも OS によって番号が変わるため、`platform:` ごとに別の行になる。
+- **SDL の HIDAPI ドライバ**: SDL は OS の汎用経路を通らず、HID でコントローラーと直接話す独自ドライバ群も持つ（ソースの `src/joystick/hidapi/` に、`SDL_hidapi_ps5.c`・`SDL_hidapi_switch.c`・`SDL_hidapi_xboxone.c`・`SDL_hidapi_gip.c` などがある）。Linux では hidraw がその経路になる。ジャイロ・タッチパッド・LED・振動といったベンダ固有機能は、こちらで使えるようになる。この経路は既定で有効である（`SDL_HINT_JOYSTICK_HIDAPI` の既定値が有効）。つまり SDL は、ベンダ固有ドライバ（`hid-playstation` など）がカーネルでしている解釈を、ユーザー空間でもう一度実装している。
+- **Steam Input**: Steam は、つながったコントローラーをゲームに対して**エミュレートした Xbox コントローラー**として見せる。Valve の文書によれば、Windows では Steam オーバーレイが XInput・DirectInput・Raw Input・Windows.Gaming.Input といった従来のゲームパッド API をフックし、macOS と Linux ではドライバがエミュレートした入力を提供する。プレイヤーはボタンの割り当てやジャイロのマウス化を Steam 側で設定できる。
+
+経路が複数あるので、同じ1回の押下がゲームに**2回届く**ことがある。Valve は、エミュレーションでは拡張ボタンの一部が重複すると注意している（例: PlayStation のタッチパッドのクリックと Options ボタンが、どちらも XInput の Start になる）。物理的なコントローラーと仮想の Xbox コントローラーを同時に読めば、二重入力にもなる。ゲームは、どの経路で読むかを1つに決める必要がある。
+
+| 経路 | アプリが受け取るもの | 配置の標準化 | ベンダ固有機能 |
+|---|---|---|---|
+| OS の汎用経路（evdev、DirectInput / Raw Input の usage） | usage から写像した軸・ボタン | OS の規約（Linux の Gamepad 仕様など）。実際の番号は機種で揺れる | ドライバが公開した分だけ |
+| XInput | 固定の構造体 | 完全に固定 | 使えない |
+| 生レポート（hidraw、`HidD`/`HidP`、SDL HIDAPI） | 未解析のバイト列 | なし（アプリやミドルウェアが機種ごとに解釈） | すべて |
+| Steam Input | 仮想の Xbox コントローラー | 固定（変換は Steam 側） | Steam の設定で割り当て |
 
 ### 無線トランスポート — BR/EDR の HID Profile と HOGP
 
@@ -268,7 +351,7 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 ## 結論 (Conclusions)
 
 - ゲームコントローラーは「アナログセンシング＋マトリクススキャン＋HID＋ハプティクス」の複合体であり、入力デバイス全般の代表例として理解できる。
-- HID のレポートディスクリプタによる自己記述が「ドライバ不要」を実現するが、実際の製品は「HID の枠内でベンダ固有レポートを使う」(PlayStation・Nintendo 系) か「HID ではない独自プロトコルを使う」(Xbox 系の XUSB / GIP) のどちらかで拡張されており、いずれもホスト側の専用スタックが解釈する。
+- HID のレポートディスクリプタによる自己記述が「ドライバ不要」を実現するが、実際の製品は「HID の枠内でベンダ固有レポートを使う」(PlayStation・Nintendo 系) か「HID ではない独自プロトコルを使う」(Xbox 系の XUSB / GIP) のどちらかで拡張されており、いずれもホスト側の専用スタックが解釈する。その解釈はカーネルのドライバ、OS の API、SDL や Steam Input のようなミドルウェアと何層にも分かれ、同じ押下が複数の経路から見えるため、ゲームは読む経路を1つに決める必要がある。
 - スティックドリフトは接触式センシングの構造的問題で、ホール効果/TMR への移行が根本対策。デッドゾーンはあくまで対症療法。
 - 入力遅延は直列パイプラインの総和で、ポーリングレートは一項にすぎない。高ポーリング化の効果は他の区間（フレームレート・表示）との相対で決まる。
 - HID はトランスポート非依存であり、無線化の本質的な差は伝送区間の遅延と信頼性、そしてリンクのセキュリティに現れる。USB も Bluetooth も「デバイスが送ってよい機会をホスト側が決める」構造で、遅延は周期的な待ちが段ごとに重なった分布として現れる。
@@ -297,6 +380,15 @@ BR/EDR の値は実装差が大きい。Linux の `hid-sony` ドライバの変�
 - Linux Kernel Documentation. *HID subsystem / hid-playstation, hid-nintendo drivers*. — [kernel.org HID docs](https://www.kernel.org/doc/html/latest/hid/index.html) — Accessed: 2026-07-05。ベンダ固有レポートをホストがどう扱うかの実装一次資料。
 - Colenbrander, R. (Sony Interactive Entertainment). *HID: playstation: add DualSense classic rumble support.* Linux kernel commit 51151098d7ab (2021-02-07). — [github.com/torvalds/linux](https://github.com/torvalds/linux/commit/51151098d7ab832f2a8b8f5c51fe224a9c98fdd5) — Accessed: 2026-10-10。DualSense のボイスコイル型ハプティクスが PCM データ（Bluetooth では特別な HID パケット）を必要とするというメーカー側エンジニアの説明。
 - Bluetooth SIG. *Bluetooth Core Specification*（BR/EDR のスロット・TDD・ARQ、LE の接続イベントと MD ビット）. — [bluetooth.com/specifications/specs/](https://www.bluetooth.com/specifications/specs/) — Accessed: 2026-10-10。伝送路ごとのタイミングモデルの規範。
+- Linux Kernel Documentation. *HID I/O Transport Drivers* / *UHID - User-space I/O driver support for HID subsystem* / *HIDRAW - Raw Access to USB and Bluetooth Human Interface Devices* / *HID-BPF* / *Linux Gamepad Specification*. — [kernel.org/doc/html/latest/hid/](https://www.kernel.org/doc/html/latest/hid/index.html) / [input/gamepad](https://www.kernel.org/doc/html/latest/input/gamepad.html) — Accessed: 2026-10-17。トランスポートと HID コアの分離、uhid のイベント、hidraw の ioctl、HID-BPF のフック、ゲームパッドの位置ベースの命名。
+- Tissoires, B. *[GIT PULL] HID for 6.3* (2023-02-22, LKML). — [lkml.rescloud.iu.edu](https://lkml.rescloud.iu.edu/2302.2/06220.html) — Accessed: 2026-10-17。HID-BPF の基盤が Linux 6.3 で取り込まれたこと。
+- BlueZ source. `src/shared/hog.c`（Report Map UUID `0x2A4B`、`bt_uhid_create()` / `bt_uhid_input()` の呼び出し）, `src/shared/uhid.c`（`/dev/uhid` のオープン）. — [github.com/bluez/bluez](https://github.com/bluez/bluez) — Accessed: 2026-10-17。HOGP をユーザー空間で処理し uhid でカーネルに渡す実装。
+- Microsoft. *HID Architecture* (Windows drivers). — [learn.microsoft.com](https://learn.microsoft.com/en-us/windows-hardware/drivers/hid/hid-architecture) — Accessed: 2026-10-17。`hidclass.sys`、`HidD_Xxx` / `HidP_Xxx`、トップレベルコレクションごとの排他 / 共有と、RIM が入力デバイスを排他で開く理由。
+- Microsoft. *Getting Started With XInput in Windows applications*. — [learn.microsoft.com](https://learn.microsoft.com/en-us/windows/win32/xinput/getting-started-with-xinput) — Accessed: 2026-10-17。最大4台、固定のコントローラーレイアウト。
+- Microsoft. *GameInput introduction* (Microsoft Game Development Kit). — [learn.microsoft.com](https://learn.microsoft.com/en-us/gaming/gdk/docs/features/common/input/overviews/input-overview) — Accessed: 2026-10-17。従来の入力 API の機能的な上位集合、共通の時間軸、対応 OS。
+- SDL_GameControllerDB (community). *README*. — [github.com/mdqinc/SDL_GameControllerDB](https://github.com/mdqinc/SDL_GameControllerDB) — Accessed: 2026-10-17。マッピング文字列の形式（GUID・名前・`bN`/`aN`/`hN.M`・`platform:`）と読み込み方。コミュニティ管理のデータベース。
+- Valve. *Steam Input Gamepad Emulation - Best Practices* (Steamworks Documentation). — [partner.steamgames.com](https://partner.steamgames.com/doc/features/steam_controller/steam_input_gamepad_emulation_bestpractices) — Accessed: 2026-10-17。エミュレートした Xbox コントローラーとしての提示、Windows での API フック、macOS / Linux でのドライバ、拡張ボタンの重複。
+- libsdl-org. *SDL source: `src/joystick/hidapi/`* / *SDL_HINT_JOYSTICK_HIDAPI* (SDL3 Wiki). — [github.com/libsdl-org/SDL](https://github.com/libsdl-org/SDL/tree/main/src/joystick/hidapi) / [wiki.libsdl.org](https://wiki.libsdl.org/SDL3/SDL_HINT_JOYSTICK_HIDAPI) — Accessed: 2026-10-17。機種ごとの HIDAPI ドライバと、その既定値。
 - Linux kernel source. `drivers/hid/hid-playstation.c`（Copyright Sony Interactive Entertainment）（`DS_INPUT_REPORT_USB`/`DS_INPUT_REPORT_BT`、`PS_INPUT_CRC32_SEED` の定義）, `net/bluetooth/hidp/hidp.h`（`HIDP_TRANS_*`・`HIDP_DATA_RTYPE_*` の定義）. — [github.com/torvalds/linux](https://github.com/torvalds/linux) — Accessed: 2026-10-10。DualSense のレポート ID・サイズ・CRC と HIDP ヘッダ値の実装上の確認。
 - Linux kernel patches. *HID: hid-sony: Fix DS4 controller reporting rate issues* (2015) および *HID: sony: Make DS4 bt poll interval adjustable*. — [lkml.iu.edu](https://lkml.iu.edu/hypermail/linux/kernel/1507.3/02465.html) / [git.disroot.org](https://git.disroot.org/kpriv/linux-hardened/commit/77b499e739ed5561e5026fa7140ae53f6c4d1d8e) — Accessed: 2026-10-10。DS4 の Bluetooth レポート間隔（最大約 1 kHz、1〜62 ms で設定可能、旧設定の約 20.83 Hz）。
 
