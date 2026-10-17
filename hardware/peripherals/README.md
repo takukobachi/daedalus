@@ -6,6 +6,7 @@ SoC と外界をつなぐ周辺デバイスの中身と、その接続技術。`
 
 - [`input-devices-hid.md`](input-devices-hid.md) — HIDとゲームコントローラー: 入力デバイスの解剖 (HID & game controllers)
 - [`keyboard-mouse-touch.md`](keyboard-mouse-touch.md) — キーボード・マウス・タッチ: キーとポインタの物理 (keyboard, mouse & touch)
+- [`sensor-hub-mems.md`](sensor-hub-mems.md) — センサハブとMEMSセンサ: 常時オンの感覚器 (sensor hub & MEMS)
 - [`audio-subsystem.md`](audio-subsystem.md) — オーディオサブシステム: 端末の音の出入り (audio subsystem)
 - [`display-pipeline.md`](display-pipeline.md) — ディスプレイパイプライン: フレームバッファからパネルへ (display pipeline)
 - [`camera-image-sensors.md`](camera-image-sensors.md) — カメラとイメージセンサ: 光子からピクセルまで (camera & image sensors)
@@ -23,6 +24,3 @@ SoC と外界をつなぐ周辺デバイスの中身と、その接続技術。`
 
 - NFC と非接触決済 (NFC & contactless) — 13.56 MHz 近接結合、カードエミュレーション、
   セキュアエレメント/HCE。決済という「セキュリティが本体」のデバイス層
-- センサハブと MEMS センサ (sensor hub & MEMS) — IMU・気圧・磁気センサの物理、
-  I2C/SPI/I3C 接続、AP を起こさない常時オン処理。オーディオ (wake word)・
-  カメラ (AOSC) と同じ低電力監視パターンの第三例
