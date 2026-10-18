@@ -78,6 +78,10 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   pass-the-hash・リレー・非推奨化、LDAP と Active Directory (攻撃経路のグラフ・AD CS の悪用・
   管理の階層化)、SAML と XML 署名ラッピング・Golden SAML・Storm-0558、802.1X/EAP と
   RADIUS (偽の RADIUS サーバ・Blast-RADIUS)
+- `isms-risk-management.md` — ISMS とリスクマネジメント（どれを、どの順に、どこまでやるかを
+  決める層）。ISO/IEC 27001:2022 の要求事項と附属書 A の 93 管理策、リスクの評価と対応
+  (定性・定量・FAIR)、脅威モデリング (STRIDE・攻撃木)、NIST CSF 2.0 の統治と CIS Controls、
+  事業継続と RTO/RPO、認証と SOC 2 の意味と限界
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
