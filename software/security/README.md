@@ -68,12 +68,17 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   CVE と CNA・NVD の 2026 年の方針変更・CWE、CVSS v4.0 の指標群と限界、EPSS・CISA KEV・
   SSVC による優先順位付け、協調的な開示 (ISO/IEC 29147/30111・JVN・EU CRA の報告義務)、
   修正の期限と直せないときの緩和、脆弱性スキャン・ペネトレーションテスト・レッドチーム
+- `web-application-vulnerabilities.md` — サーバ側の Web アプリケーション脆弱性（データが命令に
+  なる層と、誰の要求かを確かめない層）。インジェクションの定式化と対策 (SQL・OS コマンド・
+  テンプレートと式言語・XXE・デシリアライズ)、パストラバーサルとアップロード、IDOR/BOLA と
+  認可の設計、SSRF と Capital One、セッション管理、リクエストスマグリング、競合状態、
+  セキュアコーディングの原則と OWASP Top 10:2025
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
 → 出所を検証する (`software-supply-chain-security.md`)。四層で「単一の失敗で
 崩れない防御」を構成する。
 
-なお、ウェブ・アプリケーションセキュリティ（同一生成元ポリシー・XSS/CSRF・
+なお、ブラウザ側のウェブセキュリティ（同一生成元ポリシー・XSS/CSRF・
 COOP/COEP・権限モデル）は [`../browsers/web-security-model.md`](../browsers/web-security-model.md)
 がプラットフォーム文脈ごと扱う。
