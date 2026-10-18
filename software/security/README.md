@@ -60,6 +60,10 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   EDR/XDR/MDR とエージェントの危うさ、痛みのピラミッドと STIX/TAXII/TLP、SOC と CSIRT、
   NIST SP 800-61 Rev. 3 の CSF 2.0 にもとづくライフサイクル、RFC 3227 の揮発性の順序と
   証拠保全の連鎖、個人情報保護法・GDPR・SEC の報告期限
+- `attack-lifecycle.md` — 攻撃のライフサイクル（攻撃者の側から見た工程）。
+  サイバーキルチェーンと ATT&CK (v18)・ダイヤモンドモデル、APT と初期侵入 (脆弱性の悪用・
+  インフォスティーラー・ヘルプデスクへの電話)、環境寄生と横展開、ランサムウェアの分業 (RaaS・
+  二重恐喝) と支払いの動向、DDoS の 3 層 (反射と増幅・ボットネット・HTTP/2 Rapid Reset)
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
