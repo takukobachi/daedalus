@@ -64,6 +64,10 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   サイバーキルチェーンと ATT&CK (v18)・ダイヤモンドモデル、APT と初期侵入 (脆弱性の悪用・
   インフォスティーラー・ヘルプデスクへの電話)、環境寄生と横展開、ランサムウェアの分業 (RaaS・
   二重恐喝) と支払いの動向、DDoS の 3 層 (反射と増幅・ボットネット・HTTP/2 Rapid Reset)
+- `vulnerability-management.md` — 脆弱性管理（見つかった脆弱性を組織として扱う層）。
+  CVE と CNA・NVD の 2026 年の方針変更・CWE、CVSS v4.0 の指標群と限界、EPSS・CISA KEV・
+  SSVC による優先順位付け、協調的な開示 (ISO/IEC 29147/30111・JVN・EU CRA の報告義務)、
+  修正の期限と直せないときの緩和、脆弱性スキャン・ペネトレーションテスト・レッドチーム
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
