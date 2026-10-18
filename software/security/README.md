@@ -55,6 +55,11 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   IDS/IPS (シグネチャと異常検知、基準率の誤謬、回避、暗号化の影響)、WAF と仮想パッチ、
   NIST SP 800-207 のゼロトラスト (PE/PA/PEP) と BeyondCorp、SASE/SSE、
   侵入の入口になった境界の機器と TLS インスペクションの代償
+- `detection-incident-response.md` — 検知とインシデント対応（突破された後の層）。
+  ログの収集 (時刻・保存期間・改ざん防止)、SIEM の正規化と相関と detection as code、
+  EDR/XDR/MDR とエージェントの危うさ、痛みのピラミッドと STIX/TAXII/TLP、SOC と CSIRT、
+  NIST SP 800-61 Rev. 3 の CSF 2.0 にもとづくライフサイクル、RFC 3227 の揮発性の順序と
+  証拠保全の連鎖、個人情報保護法・GDPR・SEC の報告期限
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
