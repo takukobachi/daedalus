@@ -21,6 +21,10 @@
   エンベロープとヘッダの 3 種類の差出人、SPF・DKIM・DMARC (RFC 9989 とアライメント、転送と
   メーリングリストの衝突、ARC)、STARTTLS の格下げと MTA-STS/DANE、S/MIME・OpenPGP と EFAIL、
   大手事業者の送信者要件、SMTP smuggling と BEC
+- `vpn-tunneling.md` — VPN とトンネリング：包む層による分類、IPsec (SPD/SA、ESP と AH、
+  IKEv2、NAT トラバーサル)、SSH (TOFU、ポート転送、Terrapin、regreSSHion)、WireGuard
+  (cryptokey routing、Noise IK、応答しない設計)、L2TP と PPTP、TLS の VPN、MTU と経路表、
+  TunnelVision・TunnelCrack と VPN 装置の侵害
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
