@@ -73,6 +73,11 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   テンプレートと式言語・XXE・デシリアライズ)、パストラバーサルとアップロード、IDOR/BOLA と
   認可の設計、SSRF と Capital One、セッション管理、リクエストスマグリング、競合状態、
   セキュアコーディングの原則と OWASP Top 10:2025
+- `enterprise-authentication.md` — 企業の認証基盤（1 か所で認証して多くの場所で信じる層）。
+  Kerberos のチケットと Kerberoasting・ゴールデンチケット・委任・RC4 の廃止、NTLM と
+  pass-the-hash・リレー・非推奨化、LDAP と Active Directory (攻撃経路のグラフ・AD CS の悪用・
+  管理の階層化)、SAML と XML 署名ラッピング・Golden SAML・Storm-0558、802.1X/EAP と
+  RADIUS (偽の RADIUS サーバ・Blast-RADIUS)
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
