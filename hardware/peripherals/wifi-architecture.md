@@ -105,7 +105,9 @@ MAC 処理の分割線が2流儀ある。
 ## セキュリティ考察 (Security Considerations)
 
 - **WEP→WPA→WPA2→WPA3 — 後付け暗号の 25 年**: 初代 WEP (1999) は RC4 の誤用（IV 再利用・鍵導出の欠陥）で数分で破れることが示され、緊急避難の WPA (TKIP, 2003) を経て WPA2 (AES-CCMP, 2004) が長く標準となった。しかし **KRACK** (Vanhoef & Piessens, CCS 2017) は 4ウェイハンドシェイクの鍵再インストールを突き、**プロトコル自体**の設計欠陥が 13 年潜伏し得ることを示した。WPA3 (2018) は **SAE (Simultaneous Authentication of Equals)** で辞書攻撃耐性と前方秘匿性を導入し、**PMF (Protected Management Frames, 802.11w)** を必須化した。教訓は一貫している: **共有媒体の MAC 層に暗号を後付けし、かつ旧機器と互換を保つことは極めて難しい**。移行期間は常に 10 年単位であり、ダウングレード互換モードが新しい攻撃面になる。
-- **オープンネットワークと Evil Twin**: SSID は名乗るだけの文字列であり、AP は自分を証明しない。同名の偽 AP (evil twin) を立てれば端末は自動接続し得る。管理フレーム保護以前は**偽装 deauthentication フレーム1発**で正規 AP から切断→偽 AP へ誘導が可能だった。PMF は deauth/disassoc を認証付きにしてこれを塞ぐ（WPA3 で必須になった理由）。公衆 Wi-Fi の実務的な防御は、Wi-Fi 層を信用せず上位で守る（TLS/VPN）ことに尽きる。
+- **企業向けの認証 (WPA2/WPA3-Enterprise)**: 家庭向けの Personal モードは全員が同じパスフレーズ (WPA3 では SAE) を使うが、Enterprise モードは 802.1X と EAP で利用者や端末ごとに認証し、RADIUS サーバが接続を許可する。退職者のパスフレーズを変えて回る必要がなく、利用者ごとに VLAN を割り当てられる。WPA3-Enterprise には GCMP-256 と SHA-384 を使う 192 ビットのセキュリティモードもある。弱点は端末側の設定で、端末が RADIUS サーバの証明書を検証しないと、Evil Twin の偽 AP と偽の RADIUS サーバに PEAP のパスワードの応答を渡してしまう。仕組みと攻撃の詳細は [`../../software/security/enterprise-authentication.md`](../../software/security/enterprise-authentication.md)、有線の 802.1X は [`../../software/networking/ethernet-lan-switching.md`](../../software/networking/ethernet-lan-switching.md) で扱う。
+- **WPA3 の移行期の弱点 (Dragonblood)**: Vanhoef & Ronen (IEEE S&P 2020) は、WPA3 の SAE (Dragonfly ハンドシェイク) の実装に、処理時間やキャッシュの使い方からパスワードの情報が漏れるサイドチャネルがあることと、WPA2 と WPA3 を併用する移行モードでは WPA2 に格下げさせてパスワードを総当たりできることを示した。仕様の改訂と実装の修正が行われたが、互換のための移行モードが新しい攻撃面になるという、上の項目の教訓がここでも当てはまる。
+- **オープンネットワークと Evil Twin**: SSID は名乗るだけの文字列であり、AP は自分を証明しない。同名の偽 AP (evil twin) を立てれば端末は自動接続し得る。管理フレーム保護以前は**偽装 deauthentication フレーム1発**で正規 AP から切断→偽 AP へ誘導が可能だった。PMF は deauth/disassoc を認証付きにしてこれを塞ぐ（WPA3 で必須になった理由）。公衆 Wi-Fi の実務的な防御は、Wi-Fi 層を信用せず上位で守る（TLS/VPN）ことに尽きる。パスワードのないネットワークでも通信を暗号化する Enhanced Open (OWE: Opportunistic Wireless Encryption、RFC 8110) は、端末と AP の間の受動的な盗聴を防ぐが、AP の認証はしないため Evil Twin は防げない。VPN を使っていても、攻撃者が用意した Wi-Fi の DHCP で経路を操作されれば通信がトンネルの外に出ることがある ([`../../software/networking/vpn-tunneling.md`](../../software/networking/vpn-tunneling.md) の TunnelVision)。
 - **プローブ要求と MAC アドレスランダム化**: アクティブスキャンは端末の MAC アドレスを晒し、小売・空港での動線追跡に実利用されてきた（Bluetooth の RPA と同型の問題）。現代の iOS/Android はスキャン時・接続時に **MAC アドレスをランダム化**するが、ネットワークごとに固定のランダム値を使う実装が多く、また上位層の識別子（DHCP ホスト名等）で再同定され得るなど、緩和であって根治ではない。
 - **チップファームウェアという攻撃面**: 発見事項 5 の裏面。**Broadpwn (CVE-2017-9417)** は Broadcom BCM43xx ファームウェアのヒープオーバーフローで、細工した無線フレーム（不正長の WME 情報要素）だけで**ユーザー操作ゼロ・ペアリング等の前提ゼロ**のままチップ上でコード実行に至った (Artenstein, Black Hat USA 2017)。チップはホストメモリへの DMA 経路を持つことが多く、チップ掌握はホスト侵害の足場になる。`usb-architecture.md` の Thunderclap、`bluetooth-pairing-protocol.md` の BlueBorne と並べると、「**常時電波を聴くパーサは、それがどの実行環境で走っていようと第一級の攻撃面**」という共通則が浮かぶ。緩和は IOMMU によるチップ DMA の封じ込めとファームウェア更新の配布経路の確保である。
 
@@ -134,6 +136,9 @@ MAC 処理の分割線が2流儀ある。
 - Vanhoef, M., & Piessens, F. (2017). Key Reinstallation Attacks: Forcing Nonce Reuse in WPA2. *ACM CCS 2017*. — [krackattacks.com](https://www.krackattacks.com/) — Accessed: 2026-07-06。KRACK の査読付き原典。
 - NVD. *CVE-2017-9417 (Broadpwn)*. — [nvd.nist.gov/vuln/detail/CVE-2017-9417](https://nvd.nist.gov/vuln/detail/CVE-2017-9417) — Accessed: 2026-07-06。Broadcom BCM43xx ファームウェアのリモートコード実行の公式記録。
 - Linux Kernel Documentation. *mac80211 / cfg80211 subsystem*. — [kernel.org 802.11 docs](https://www.kernel.org/doc/html/latest/driver-api/80211/index.html) — Accessed: 2026-07-06。soft-MAC/full-MAC 分割のホスト側参照実装。
+
+- Vanhoef, M., & Ronen, E. (2020). Dragonblood: Analyzing the Dragonfly Handshake of WPA3 and EAP-pwd. *IEEE Symposium on Security and Privacy (S&P 2020)*. — [wpa3.mathyvanhoef.com](https://wpa3.mathyvanhoef.com/) — Accessed: 2026-10-18。SAE のサイドチャネルと移行モードの格下げ。
+- Harkins, D., & Kumari, W. (Eds.). (2017). Opportunistic Wireless Encryption. *RFC 8110*. — Accessed: 2026-10-18。Enhanced Open の基になった仕様。
 
 **二次資料 (Secondary)**
 

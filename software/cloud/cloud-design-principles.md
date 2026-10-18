@@ -100,6 +100,7 @@ AWS Well-Architected Framework (ベンダー提示) の 6 本の柱 (運用・�
 
 - **独立な柵の積 (defense as independent failures)**: 単一の防御の完璧さではなく、失敗モードが独立な複数の柵の積で守る。その柵とは、認可と到達性 ([`cloud-network-topology.md`](cloud-network-topology.md))、暗号と権限 ([`cloud-kms-confidential-computing.md`](cloud-kms-confidential-computing.md))、plan 検査と実行時ガードレール ([`infrastructure-as-code.md`](infrastructure-as-code.md)) である。[`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) の並列合成が、そのまま防御設計の数理である。Capital One 型の事故は「柵が独立でなかった」ことの実証として、本領域で繰り返し参照された。
 - **爆発半径は障害と侵害の共通言語**: セル・アカウント境界・最小権限・関数単位ロール・鍵の分離は、障害の伝播と攻撃の水平移動の両方を縛る同じ機構である。「この資格情報/このセル/この鍵が失われたら、何が失われるか」という問いは、可用性設計とセキュリティ設計を同じ図面の上に載せる。
+- **責任共有モデル (shared responsibility model)**: クラウドでは、事業者が「クラウドそのもの」(建物、ハードウェア、ハイパーバイザ、マネージドサービスの基盤) を守り、利用者が「クラウドの中」(データ、IAM の設定、ネットワークの設定、OS とアプリケーション) を守る、という分担を事業者自身が示している。境界はサービスの種類で動き、IaaS では OS の更新まで利用者の責任だが、マネージドなデータベースやサーバレスでは事業者に移り、SaaS では利用者に残るのはデータとアクセスの設定にほぼ限られる。どの種類でも、データの分類、ID とアクセスの管理、設定は利用者に残る。クラウドの侵害の多くはこの利用者側の設定 (公開されたストレージ、過剰な権限、メタデータサービスの古い方式) から起きており ([`cloud-iam-authorization.md`](cloud-iam-authorization.md))、設定の不備を継続的に検出する CSPM (Cloud Security Posture Management) はこの領域を自動で点検する道具である。分担の線を誤解すると、どちらも守っていない領域が生まれる。
 - **保証の等級を混同しない**: 数学的保証 (暗号・SMT 検証)、設計的保証 (隔離機構・fail-closed)、組織的保証 (運用統制・監査) は等級が異なり、「TEE だから」「プライベートだから」「検証済みだから」という等級の混同が過信を生む ([`cloud-kms-confidential-computing.md`](cloud-kms-confidential-computing.md) の結論)。何を・誰から・どの等級で守っているかの明示が、セキュリティ主張の最低要件である。
 
 ## 結論 (Conclusions)
@@ -125,6 +126,7 @@ AWS Well-Architected Framework (ベンダー提示) の 6 本の柱 (運用・�
 **ベンダー提示 (Vendor-presented — 規範化されたベストプラクティス)**
 
 - AWS. *Well-Architected Framework*. [docs.aws.amazon.com/wellarchitected/](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html) — Accessed: 2026-07-30。本書の帰納結果と突き合わせる対象としてのベンダー規範 (技術詳細 2)。
+- AWS. *Shared Responsibility Model*. [aws.amazon.com/compliance/shared-responsibility-model/](https://aws.amazon.com/compliance/shared-responsibility-model/) — Accessed: 2026-10-18。「クラウドそのもの」と「クラウドの中」の責任の分担 (セキュリティ考察の責任共有モデル)。
 
 **一次資料**
 
