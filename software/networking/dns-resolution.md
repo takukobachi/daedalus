@@ -99,6 +99,8 @@ flowchart TD
 
 - **キャッシュポイズニング**: 偽応答の競争 (Kaminsky 型) に加え、フラグメンテーションを突く亜種・帯域内の中間者など。防御はソースポートランダム化・0x20 エンコーディング (大文字小文字の乱数化)・DNSSEC 検証・トランスポート暗号化の重ね掛けであり、単独で十分な層はない。
 - **増幅・反射 DDoS**: 偽装ソースへの大応答 (ANY クエリ・DNSSEC 応答で増幅率数十倍) は、DNS 自体でなく**第三者を撃つ武器**として DNS を使う。対策は BCP 38 (ソース偽装の出口フィルタ)・レートリミット (RRL)・ANY の廃止 (RFC 8482)。逆に DNS が標的になった例が Dyn (2016, Mirai ボットネット) である。単一 DNS プロバイダ依存の SaaS が軒並み巻き添えになり、**権威 DNS の冗長化 (複数プロバイダ)** が教訓として定着した。
+- **オープンリゾルバ**: 誰からの問い合わせにも再帰的に答えるリゾルバ (オープンリゾルバ) は、送信元を偽装した問い合わせを受けて被害者に大きな応答を返す、増幅攻撃の踏み台になる。家庭用ルータなどの設定の誤りで意図せず公開されていることが多い。リゾルバの再帰の応答は自組織の利用者のアドレスに限るのが原則である (RFC 5358、BCP 140)。反射と増幅の全体像は [`../security/attack-lifecycle.md`](../security/attack-lifecycle.md) で扱う。
+- **水責め攻撃 (ランダムサブドメイン攻撃)**: 存在しないランダムなサブドメイン (`a8f3k2.example.com` のような名前) を大量に問い合わせると、どの名前もキャッシュに載っていないため、リゾルバはすべてを権威サーバへ問い合わせる。権威サーバと、間にあるリゾルバの両方が負荷で応答できなくなる。問い合わせはボットネットや、乗っ取った端末からキャッシュリゾルバ経由で送られるため、送信元で区別しにくい。対策は存在しない名前の応答 (NXDOMAIN) の多いゾーンへの問い合わせのレート制限と、DNSSEC の不在証明 (NSEC) をキャッシュして、範囲内の存在しない名前にはリゾルバが自分で答える方式 (RFC 8198) である。
 - **DNS はデータチャネルになる**: TXT/NULL クエリに載せた DNS トンネリング (C2・データ持ち出し) は、「DNS だけは通す」境界設定の裏をかく古典であり、防御側はクエリ長・エントロピー・頻度の異常検知とログ (パッシブ DNS) で対抗する。パッシブ DNS はインシデント対応の一級資料 (ドメインの過去の解決先の追跡) でもある。
 - **登録・移管の層が最弱点になりうる**: レジストラアカウントの乗っ取り・期限切れドメインの再取得 (だれかの依存先を居抜きで奪う)・typosquatting は、プロトコルの外側で名前の信頼を破る。レジストリロック・自動更新・依存ドメインの棚卸しが防御になる。
 - **プライバシ**: クエリ列は行動履歴そのものである。QNAME minimization (RFC 9156。ルートに `www.example.com` 全体を聞かず `.com` だけ聞く) のような「知る必要のない者に知らせない」改修が進むが、リゾルバ事業者への可視性集中 (DoH の論点) は残る。
@@ -128,6 +130,9 @@ flowchart TD
 - Hoffman, P., & McManus, P. (2018). DNS Queries over HTTPS (DoH). *RFC 8484*。Hu, Z., et al. (2016). DNS over TLS. *RFC 7858*。 — Accessed: 2026-07-05。
 - US-CERT (2008). Multiple DNS implementations vulnerable to cache poisoning. *VU#800113*. — [kb.cert.org](https://www.kb.cert.org/vuls/id/800113) — Accessed: 2026-07-05。Kaminsky 攻撃の公式勧告。
 - Meta Engineering (2021). More details about the October 4 outage. — [engineering.fb.com](https://engineering.fb.com/2021/10/05/networking-traffic/outage-details/) — Accessed: 2026-07-05。BGP+DNS 連鎖障害の一次ポストモーテム。
+
+- Damas, J., & Neves, F. (2008). Preventing Use of Recursive Nameservers in Reflector Attacks. *RFC 5358* (BCP 140). — Accessed: 2026-10-18。オープンリゾルバの対策。
+- Fujiwara, K., Kato, A., & Kumari, W. (2017). Aggressive Use of DNSSEC-Validated Cache. *RFC 8198*. — Accessed: 2026-10-18。NSEC のキャッシュによるランダムサブドメイン攻撃の緩和。
 
 **二次資料 (Secondary — 解説・計測)**
 

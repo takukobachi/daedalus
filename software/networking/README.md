@@ -62,6 +62,16 @@
   サイドカー税と eBPF 系メッシュ (Cilium)。L3/4 (セキュリティグループ) から L7 への
   ポリシーの移動
 
+読む順の目安: 下の層から積み上げるなら、LAN (`ethernet-lan-switching.md`) → IP
+(`ip-addressing-icmp-dhcp-nat.md`) → 経路制御 (`ip-routing-bgp.md`) → TCP
+(`tcp-transport-congestion.md`) → 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
+→ アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`)
+→ トンネル (`vpn-tunneling.md`) の順に読む。その後は関心に応じて、ホストの中
+(`kernel-network-stack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
+`load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
+へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
+攻撃のライフサイクルの文書へ。
+
 ## 今後のテーマ候補
 
 - 帯域内テレメトリとネットワーク検証 (network verification) — INT、経路の形式検証。
