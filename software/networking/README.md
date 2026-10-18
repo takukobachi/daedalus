@@ -13,6 +13,10 @@
   VLAN (802.1Q) とネイティブ VLAN、STP/RSTP/MSTP (TTL なき層のループ対策と収束)、
   リンク集約と L3 化、VRRP によるゲートウェイ冗長、L2 の攻撃と防御 (ARP スプーフィング・
   VLAN ホッピング・DAI・802.1X・MACsec)。以下すべての文書が前提とする最下層
+- `ip-addressing-icmp-dhcp-nat.md` — IP の基礎：IPv4 ヘッダと TTL、アドレッシングと CIDR
+  (サブネット計算・特別用途アドレス・枯渇の経緯)、断片化と経路 MTU 探索 (PMTUD ブラックホール・
+  RFC 8900)、ICMP と ICMPv6、DHCP のリースとリレー、NAT/NAPT (RFC 4787 の挙動要件・
+  CGN・NAT 越え)、IPv6 (SLAAC・一時アドレス・移行技術・普及状況)、送信元偽装と BCP 38
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
