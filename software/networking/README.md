@@ -17,6 +17,10 @@
   (サブネット計算・特別用途アドレス・枯渇の経緯)、断片化と経路 MTU 探索 (PMTUD ブラックホール・
   RFC 8900)、ICMP と ICMPv6、DHCP のリースとリレー、NAT/NAPT (RFC 4787 の挙動要件・
   CGN・NAT 越え)、IPv6 (SLAAC・一時アドレス・移行技術・普及状況)、送信元偽装と BCP 38
+- `email-delivery-authentication.md` — メールの配送と送信者認証：SMTP の蓄積転送と MX、
+  エンベロープとヘッダの 3 種類の差出人、SPF・DKIM・DMARC (RFC 9989 とアライメント、転送と
+  メーリングリストの衝突、ARC)、STARTTLS の格下げと MTA-STS/DANE、S/MIME・OpenPGP と EFAIL、
+  大手事業者の送信者要件、SMTP smuggling と BEC
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
