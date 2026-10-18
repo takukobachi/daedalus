@@ -2,12 +2,17 @@
 
 ネットワーキングとプロトコル (networking & protocols) の分析。「誰も全体を管理していない系」
 での分散制御 (輻輳制御) と、層をまたぐ設計判断 (HoL ブロッキング・硬直化・暗号化の範囲) を軸に、
-トランスポートからアプリケーションプロトコルまでを読み解く。
+リンク層 (LAN) からトランスポート、アプリケーションプロトコルまでを読み解く。
 [`../distributed-systems/`](../distributed-systems/) の故障モデル (ロス・遅延・分断) の発生源で
 あり、[`../../hardware/hw-sw-interface/`](../../hardware/hw-sw-interface/)（NIC・割り込み・DMA）の真上の層。
 
 ## 構成
 
+- `ethernet-lan-switching.md` — LAN とスイッチング：Ethernet フレームと MAC アドレス
+  (最小 64B の由来・ランダム化)、学習ブリッジとユニキャストの退化、ARP とアドレス衝突検出、
+  VLAN (802.1Q) とネイティブ VLAN、STP/RSTP/MSTP (TTL なき層のループ対策と収束)、
+  リンク集約と L3 化、VRRP によるゲートウェイ冗長、L2 の攻撃と防御 (ARP スプーフィング・
+  VLAN ホッピング・DAI・802.1X・MACsec)。以下すべての文書が前提とする最下層
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
