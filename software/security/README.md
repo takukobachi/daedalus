@@ -50,6 +50,11 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   （モデル・入力の区別・検出・設計・実行環境）と適応的な攻撃による検出の突破、CaMeL と
   設計パターン、Rule of Two、ジェイルブレイクとの区別、MCP に固有の攻撃面。
   [`../ai/`](../ai/README.md) のエージェント・RAG 文書のセキュリティ考察を束ねる
+- `perimeter-defense-zero-trust.md` — 境界防御とゼロトラスト（通信を検査し止める層）。
+  パケットフィルタからステートフル・次世代ファイアウォールへの判断材料の拡大、プロキシと DMZ、
+  IDS/IPS (シグネチャと異常検知、基準率の誤謬、回避、暗号化の影響)、WAF と仮想パッチ、
+  NIST SP 800-207 のゼロトラスト (PE/PA/PEP) と BeyondCorp、SASE/SSE、
+  侵入の入口になった境界の機器と TLS インスペクションの代償
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
