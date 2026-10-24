@@ -16,7 +16,7 @@
 - `virtualization/` — 仮想化とコンテナ（VT-x/EPT, KVM/QEMU, virtio, namespaces/cgroups,
   gVisor/Firecracker）。`hardware/hw-sw-interface/` と `operating-systems/` の間に挟まる
   もう一つの特権層
-- `operating-systems/` — OS 内部（スケジューリング, 仮想記憶, syscall, FS, I/O, eBPF）。
+- `operating-systems/` — OS 内部（スケジューリング, 仮想記憶, syscall とカーネル側の境界, FS, I/O, eBPF）。
   `hardware/hw-sw-interface/` の真上の層。カーネルを再コンパイルせずに拡張する eBPF もここで扱う
 - `embedded/` — 組み込み・リアルタイム OS（RM/EDF と応答時間解析, WCET, 優先度逆転,
   RTOS カーネル設計, PREEMPT_RT, AUTOSAR）。「平均を速くする」`operating-systems/` に
@@ -24,7 +24,7 @@
   `engineering/robotics/`（制御計算機）と software 側を束ねる橋
 - `compilers-runtimes/` — コンパイラとランタイム（コンパイラ中盤・バックエンド (SSA, 最適化パイプライン,
   命令選択, レジスタ割り当て), ELF・リンカ・ローダ, 階層型 JIT, 投機と deopt,
-  GC, 言語処理系の設計対比, WebAssembly）。コンパイル後の成果物がプロセスになるまで
+  GC, 言語処理系の設計対比, WebAssembly, ビルドシステムと再現可能ビルド）。コンパイル後の成果物がプロセスになるまで
   （`hardware/hw-sw-interface/abi-syscalls.md` の ABI の実施者側）と、「実行しながら翻訳する」
   側の両方を扱い、`android/`・`ios/` のランタイム分析の一般論になる
 
@@ -100,10 +100,10 @@
 - `security/` — ソフトウェアセキュリティ（メモリ安全性, exploit 緩和の系譜, サンドボックス,
   応用暗号, LLM アプリケーションとプロンプトインジェクション, 境界防御とゼロトラスト,
   検知とインシデント対応, 攻撃のライフサイクル, 脆弱性管理, サーバ側の Web 脆弱性,
-  企業の認証基盤, ISMS とリスクマネジメント …）。`hardware/security/` のソフトウェア側の対であり、
+  企業の認証基盤, ISMS とリスクマネジメント, プライバシー工学 …）。`hardware/security/` のソフトウェア側の対であり、
   各領域の「セキュリティ考察」セクションを束ねる横串
 - `observability/` — 可観測性と性能工学（PMU/トップダウン解析, カーネルトレーシング,
-  eBPF 集計, 分散トレーシング, メトリクス, SLO, 測定方法論）。`security/` に続く
+  eBPF 集計, 分散トレーシング, メトリクス, SLO, 測定方法論, ログシステム, 時系列データベース）。`security/` に続く
   第二の横串で、各領域の「観測の入口」表を束ねて一般化する
 - `formal-methods/` — 形式手法（時相論理, TLA+/SPIN によるモデル検査, Hoare 論理と
   演繹的検証 (seL4/CompCert), SMT・抽象解釈, eBPF 検証器・Rust 型システムという

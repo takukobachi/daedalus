@@ -5,25 +5,22 @@
 ## 構成
 
 - `automotive/` — 自動車（車載ネットワーク, ECU, E/E アーキテクチャ, 機能安全, ADAS・自動運転, EV …）
-- `energy/` — 電力・エネルギー（発電方式, 電力系統, 電力市場, HVDC, 系統用蓄電池, 系統制御 …）
+- `energy/` — 電力・エネルギー（発電方式, 電力系統, 送配電網, 電力市場, HVDC, 系統用蓄電池, 系統制御 …）
 - `datacenters/` — データセンター（給電チェーン, UPS, 冷却・液冷,
   Clos トポロジ, PUE/WUE …）。`energy/` と計算機システムの合流点で、
   AI クラスタ (`../hardware/accelerators/`) の電力・冷却制約の物理的実体
-- `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX, 衛星 …）
+- `aerospace/` — 航空・宇宙（航空機の基礎工学, ロケット, SpaceX, 衛星, 小型無人航空機 …）
 - `robotics/` — ロボティクス（アクチュエータ, キネマティクス・動力学, 制御, 状態推定・SLAM,
   移動と操作 …）。
   `automotive/`・`aerospace/` に散在する制御工学の一般化であり、`../foundations/` の
   線形代数・微分方程式の主要な応用先
 - `motors/` — 電動機・モータドライブ（機種比較, FOC, 弱め界磁, インバータと SiC, 効率規格,
   STO …）。`automotive/ev/`・`robotics/`・`energy/` に分散するモータと駆動の共通基盤
-
-## 今後のテーマ候補
-
-新しいトップレベル領域を生みうる候補を挙げる。既存領域の深掘り候補は各ディレクトリの
-README のロードマップに置き、ここには重複させない。
-
-- 鉄道信号と制御 (railway signaling) — 閉塞、ATC/ETCS/CBTC、フェールセーフ設計。
-  `automotive/` の機能安全と対比する第三の輸送ドメイン
-- 医療機器 (medical devices) — IEC 62304/60601、規制下のソフトウェアライフサイクル、
-  ペースメーカ・輸液ポンプの安全設計。automotive (ISO 26262)・railway に続く
-  安全規格ドメインの第三例
+- `railway/` — 鉄道（閉塞・連動・ATS/ATC・ETCS/CBTC、フェールセーフ、EN 5012x と SIL …）。
+  `automotive/` の機能安全と対比する、「止まれば安全」が成り立つ輸送ドメイン
+- `medical/` — 医療機器（ISO 14971・IEC 62304 などの規格群、薬機法・FDA・EU MDR、
+  Therac-25・輸液ポンプ・ペースメーカの事例、サイバーセキュリティと SBOM、SaMD …）。
+  `automotive/`・`railway/` に続く安全規格ドメイン
+- `telecom/` — 通信インフラ（海底ケーブル、中継器と給電、修理船、陸揚げの規制 …）。
+  `../hardware/networking/` の光部品と `../software/networking/` の経路制御が前提にする、
+  建屋と国境の外の伝送路
