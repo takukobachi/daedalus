@@ -53,13 +53,16 @@ AOT コンパイラ本体 (IR 上の中盤最適化と、機械語を作るバ�
   最終コンパイルをホストに」という第四の実行モデル。サンドボックスから逆算された
   ISA (構造化制御フロー・線形メモリ・guard page)、ホスト保護とモジュール内部の
   非対称、WasmGC とコンポーネントモデル、eBPF との検証設計対比
+- `build-systems-reproducible-builds.md` — ビルドシステムと再現可能ビルド:
+  「入力をすべて宣言し、出力を入力の関数にする」一つの性質から速さ・正しさ・
+  検証可能性を導く。Build Systems à la Carte の分類 (スケジューラ × 再構築の判定)、
+  Make の時刻判定と Bazel/Buck2 のアクション鍵・密閉性、Remote Execution API、
+  依存解決の NP 完全性と MVS / Cargo / npm / pip の回避策、lockfile、
+  非決定性の原因と SOURCE_DATE_EPOCH、Debian・Arch・NixOS の現状 (2026-10)、
+  Nix/Guix、SLSA の来歴の裏付け・DDC・xz が示した宣言の境界
 
 ## 今後のテーマ候補
 
-- ビルドシステムと再現可能ビルド (build systems & reproducible builds) —
-  依存グラフとパッケージ依存解決 (go modules の MVS, cargo の semver, pip)、
-  キャッシュと分散ビルド、ビット単位で同一な成果物が
-  サプライチェーン検証に持つ意味
 - デバッグ情報とアンワインド (debug info & unwinding) — DWARF、
   スタックアンワインド (CFI)、シンボリケーション。プロファイラ・例外処理・
   クラッシュレポートの共通基盤
