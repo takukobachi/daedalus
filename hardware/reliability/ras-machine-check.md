@@ -234,7 +234,7 @@ PCIe の AER (Advanced Error Reporting) は、誤りを 3 段階に分ける[^ae
 
 Linux の AER ドライバは訂正不能誤りの発生源より上のポートでセカンダリバスリセットを行う。ドライバは `error_detected` などのコールバックで回復処理に参加する[^aer-howto]。訂正可能と非致命的の通知はデバイスと誤りの種類ごとに既定で 5 秒あたり 10 件に間引かれる。致命的誤りと DPC の通知は間引かれない[^aer-howto]。
 
-DPC (Downstream Port Containment) は、訂正不能誤りをポートより下に封じ込める任意の機能である。DPC が起動すると、ハードウェアが下流のリンクを無効にする。Linux の DPC ドライバは配下のデバイスをすべて取り外し、リンクが無効になった後で状態を消してリンクの再訓練を許す[^dpc-c]。壊れたかもしれない TLP がそれ以上上流へ届かないことを、配下のデバイスを失う代償で保証する。メモリのポイズンと同じく、PCIe も TLP の EP (poisoned) ビットでデータが壊れていることを運び、受け手がそのデータを使わないようにする[^pcie-base]。MMIO・DMA・IOMMU の基本は [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md)、バスの構造は [`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md) を参照。
+DPC (Downstream Port Containment) は、訂正不能誤りをポートより下に封じ込める任意の機能である。DPC が起動すると、ハードウェアが下流のリンクを無効にする。Linux の DPC ドライバは配下のデバイスをすべて取り外し、リンクが無効になった後で状態を消してリンクの再訓練を許す[^dpc-c]。壊れたかもしれない TLP がそれ以上上流へ届かないことを、配下のデバイスを失う代償で保証する。メモリのポイズンと同じく、PCIe も TLP の EP (poisoned) ビットで、ペイロードのデータが壊れていることを運ぶ。受け手はこれを誤りとして扱う。たとえば AMD の PCIe-AXI ブリッジは、EP ビットの立った完了パケットを受けると割り込み (SEP) を上げ、AXI 側にはエラー応答 (SLVERR) を返す[^amd-pg055]。規則の本体は PCIe Base Specification のデータポイズニングの規則の節にあるが、会員向けのため本文は確かめていない[^pcie-base]。MMIO・DMA・IOMMU の基本は [`../hw-sw-interface/mmio-dma-interrupts.md`](../hw-sw-interface/mmio-dma-interrupts.md)、バスの構造は [`../hw-sw-interface/bus-interconnect.md`](../hw-sw-interface/bus-interconnect.md) を参照。
 
 ### 9. CE の嵐とその抑制
 
@@ -365,6 +365,8 @@ CE は恒久故障の兆候であり、CE を数えて DIMM やページを先�
 [^aer-howto]: [The Linux Kernel documentation — The PCI Express Advanced Error Reporting Driver Guide HOWTO](https://docs.kernel.org/PCI/pcieaer-howto.html) — Accessed: 2026-10-24. — 誤りの 3 分類、セカンダリバスリセット、`_OSC`、5 秒あたり 10 件の間引き。
 
 [^dpc-c]: Linux kernel source, `drivers/pci/pcie/dpc.c` (Keith Busch, 2016) — 冒頭のコメント. [GitHub](https://github.com/torvalds/linux/blob/master/drivers/pci/pcie/dpc.c) — Accessed: 2026-10-24.
+
+[^amd-pg055]: AMD. *AXI Bridge for PCI Express Gen3 Subsystem Product Guide (PG055)* — Poison Bit Received on Completion Packet. [docs.amd.com](https://docs.amd.com/r/en-US/pg055-axi-bridge-pcie/Poison-Bit-Received-on-Completion-Packet) — Accessed: 2026-10-24.
 
 [^pcie-base]: PCI-SIG. *PCI Express Base Specification* — Data Poisoning (EP ビット) と Downstream Port Containment の節。[pcisig.com](https://pcisig.com/specifications) — Accessed: 2026-10-24. (会員向けのため本文は未取得)
 
