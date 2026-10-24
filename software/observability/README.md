@@ -10,13 +10,17 @@
   (Dapper・文脈伝搬・head/tail サンプリング)、メトリクス工学 (USE/RED・ヒストグラム・
   カーディナリティ)、SLO/エラーバジェット、測定方法論の落とし穴 (coordinated omission・
   パーセンタイル合成・tail at scale)
+- `logging-systems.md` — ログシステム：構造化ログと OpenTelemetry Logs のデータモデル
+  (trace_id による相関)、収集パイプライン (Fluent Bit/Vector/OTel Collector のバッファ・
+  背圧・at-least-once と重複・ローテーションでの取りこぼし)、索引の前払いと走査の後払い
+  (全文の転置インデックス・Loki のラベル索引と圧縮チャンク・ClickHouse の列指向)、
+  ラベルの濃度、保持の階層とサンプリング、秘密の混入とログの注入、Log4Shell、
+  監査ログの改ざん耐性 (ハッシュ連鎖・WORM)
 
 ## 今後のテーマ候補
 
 - 時系列データベース (time-series databases) — Gorilla 圧縮、ダウンサンプリング、
   逆引きインデックス。`../databases/` のストレージエンジン議論の特化形
-- ログシステム (logging systems) — 構造化ログ、収集パイプライン、インデックス vs
-  全文走査 (Loki 型)、保持の経済。三信号の残る一角の深掘り
 - ベンチマーキング方法論 (benchmarking methodology) — 統計的有意性、外れ値と分散、
   マイクロベンチの罠 (JMH)、再現性。本書の測定方法論の体系化
 - ランタイム観測の各論 (runtime observability) — JFR、V8 inspector、Go pprof/trace。
