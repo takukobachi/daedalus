@@ -50,6 +50,10 @@ SpaceX 3部作（エンジン・再使用・Starship）を機体サブシステ�
 
 - [`avionics-gnc.md`](avionics-gnc.md) — アビオニクスと GNC (avionics & GNC)：GNC ループ（航法/誘導/制御）、冗長計算機とフォールトトレランス（Shuttle・777・A320・Falcon 9）、Byzantine 障害、凸最適化着陸誘導、航空宇宙バス (1553/AFDX)、Apollo AGC
 
+### 無人航空機 (Unmanned Aircraft)
+
+- [`uav-multirotor-systems.md`](uav-multirotor-systems.md) — 小型無人航空機とマルチロータ (small UAS & multirotor)：回転数による推力・ヨー制御、ホバリング電力と電池の比エネルギー、PX4/ArduPilot のカスケード制御と EKF2、MAVLink、GNSS/RTK/VIO、ロータ故障とフェイルセーフ、日米欧の規制（レベル 4・Part 107/Remote ID・EU 2019/947）、GNSS 妨害・なりすましとリンクの乗っ取り
+
 ## 今後のテーマ候補
 
 衛星側の候補（デブリ・軌道交通管理、衛星の電力・熱設計）は
