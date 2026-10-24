@@ -11,8 +11,4 @@
 - [`clock-power-reset.md`](clock-power-reset.md) — クロック・電源・リセット管理 (clock, power & reset management)
 - [`storage-nvm-interface.md`](storage-nvm-interface.md) — ストレージ・不揮発メモリインタフェース (storage & non-volatile memory interface)
 - [`iommu-dma-isolation.md`](iommu-dma-isolation.md) — IOMMU と DMA 隔離: VT-d・AMD-Vi・SMMUv3 から機密 I/O まで (IOMMU & DMA isolation)
-
-## 今後のテーマ候補
-
-- CXL とメモリ拡張 (CXL & memory pooling) — [`bus-interconnect.md`](bus-interconnect.md)
-  の CXL 概説の先。メモリ拡張・プーリング・ティアリングとキャッシュコヒーレントな接続
+- [`cxl-memory-pooling.md`](cxl-memory-pooling.md) — CXL とメモリ拡張・プーリング (CXL memory expansion & pooling)
