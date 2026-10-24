@@ -25,13 +25,14 @@ eBPF (extended Berkeley Packet Filter) も、カーネル機構の一部とし�
   (1993) からの系譜、検証器 (verifier) の静的解析と「検証器と戦う」開発体験、
   JIT と実行時ハードニング、プログラムタイプとフック分類 (XDP/tc/kprobe/LSM/
   sched_ext)、マップとデータプレーン、BTF/CO-RE による可搬性、エコシステム比較
+- `syscall-kernel-boundary.md` — システムコール境界のカーネル側：entry_SYSCALL_64 と
+  汎用エントリコード (ptrace → seccomp → audit の順序)、テーブルから switch への
+  ディスパッチ、KPTI/retpoline/BHI 以後の越境コスト、copy_from_user・SMAP/PAN・
+  ダブルフェッチ、vDSO、seccomp-bpf の評価と既定プロファイル、io_uring と検査点、
+  ABI 安定性
 
 ## 今後のテーマ候補
 
-- システムコール境界のカーネル側 (kernel/userspace boundary) — エントリ処理、
-  `copy_from_user` とユーザポインタ検証、vDSO、seccomp による syscall フィルタ。
-  [`../../hardware/hw-sw-interface/abi-syscalls.md`](../../hardware/hw-sw-interface/abi-syscalls.md)
-  が扱う呼び出し規約・特権遷移（ハードウェア側）の続き
 - XDP と高速データプレーン深掘り — Katran / Cilium の実装分析、DPDK・カーネル
   バイパスとの対比、`../networking/` のトランスポート層との合流点
 - sched_ext によるスケジューラの eBPF 化 — `process-thread-scheduling.md`
