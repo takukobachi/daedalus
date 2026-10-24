@@ -13,14 +13,11 @@
 - [`hvdc-interconnection.md`](hvdc-interconnection.md) — 直流送電と地域間連系 (HVDC & interconnection)。LCC/VSC、日本の周波数変換設備 (FC)・北本連系、市場分断との接続
 - [`power-electronics-grid-converters.md`](power-electronics-grid-converters.md) — 電力変換と系統連系インバータ (power electronics & grid-connected converters)。Si IGBT / SiC / GaN、2 レベル・NPC・MMC、PWM、損失と熱設計、IEEE 519、グリッドフォロイング/フォーミング制御、弱い系統
 - [`grid-stability-frequency-control.md`](grid-stability-frequency-control.md) — 系統安定度と周波数制御 (power system stability & frequency control)。動揺方程式・RoCoF・最下点、一次〜三次制御と AGC、IEEE/CIGRE 安定度分類、UFLS、5 大停電の比較、連鎖故障モデル
+- [`transmission-distribution.md`](transmission-distribution.md) — 送配電網 (transmission & distribution)。電圧階級と変電所の母線方式、交流潮流・直流近似、N-1 基準と送電容量の 3 制約、DLR、日本版コネクト&マネージとノンファーム型接続、託送料金、配電の逆潮流と電圧管理、山火事と PSPS
 
 ## 今後のテーマ候補
 
 物理（発電・系統）から事業（市場・運用）までを一つの連続したシステムとして扱う。特に「周波数制御の階層が市場商品として値付けされる」接点を軸に、電力事業側へ展開する。
-
-### 事業・市場との接点 (grid economics & operation)
-
-- 送配電網 (transmission & distribution) — 変電所、潮流計算、N-1 基準、系統混雑とノンファーム型接続、託送
 
 ### 分散化・需要側 (DER & demand side)
 
