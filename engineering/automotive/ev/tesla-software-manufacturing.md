@@ -137,9 +137,9 @@ flowchart LR
 
 | 項目 | テスラ公称（一次） | 独立報道・観測 |
 |---|---|---|
-| Robotaxi 展開 | 2026-07 時点で 7 大都市圏で稼働。オースティン・ダラス・ヒューストン・マイアミ・オーランド・タンパは無人（unsupervised）、サンフランシスコ湾岸はセーフティドライバー付き。ラスベガス・フェニックスは準備中[^tsla-q2-2026] | 独立集計（コミュニティの Robotaxi Tracker）では、オースティンで乗客を乗せた車両は年の大半で 20〜40 台だった。2026-09 初めの Cybercab 投入時に一時 100 台を超えたが、2026-09-22 時点の直近 7 日間では 8 台に戻った[^electrek-active]。テキサス州の登録台数（2026-10 初めで Cybercab 169 台）は増え続けているが、登録は稼働を意味しない[^nata-cybercab] |
-| Cybercab | Q2 2026 にギガテキサスで生産開始[^tsla-q2-2026]。2026-09 からオースティンで乗車提供[^electrek-cybercab] | ソフトは既存 Model Y Robotaxi と同一で、実質は「車両の入れ替え」との評価[^electrek-cybercab] |
-| FSD (Supervised) | アクティブ契約 148 万件、北米新車の 55% 超が FSD 契約付き。AI3 車向けに FSD v14 lite を配信[^tsla-q2-2026] | — |
+| Robotaxi 展開 | 2026-07 時点で 7 大都市圏で稼働。オースティン・ダラス・ヒューストン・マイアミ・オーランド・タンパは無人（unsupervised）、サンフランシスコ湾岸はセーフティドライバー付き。ラスベガス・フェニックスは準備中[^tsla-q2-2026]。Q3 2026 の資料は都市の一覧を更新せず、Robotaxi の無人走行の累計が 200 万マイル近くに達したと記載した[^tsla-q3-2026] | 独立集計（コミュニティの Robotaxi Tracker）では、オースティンで乗客を乗せた車両は年の大半で 20〜40 台だった。2026-09 初めの Cybercab 投入時に一時 100 台を超えたが、2026-09-22 時点の直近 7 日間では 8 台に戻った[^electrek-active]。テキサス州の登録台数（2026-10 初めで Cybercab 169 台）は増え続けているが、登録は稼働を意味しない[^nata-cybercab] |
+| Cybercab | Q2 2026 にギガテキサスで生産開始[^tsla-q2-2026]。2026-09 からオースティンで乗車提供[^electrek-cybercab]。Q3 2026 の資料はオースティンの Robotaxi 車両への投入開始を記載し、テキサスの設備能力を年 12.5 万台超・生産中とした (設備能力で、生産実績ではない)[^tsla-q3-2026] | ソフトは既存 Model Y Robotaxi と同一で、実質は「車両の入れ替え」との評価[^electrek-cybercab] |
+| FSD (Supervised) | アクティブ契約は Q2 末の 148 万件から Q3 末に 174 万件へ増えた[^tsla-q2-2026][^tsla-q3-2026]。北米新車の 55% 超が FSD 契約付き (Q2 時点)。AI3 車向けに FSD v14 lite を配信[^tsla-q2-2026] | 契約数には買い切りの購入も含まれる (2025 年の経営者報酬の定義による)[^electrek-q3] |
 | 計算基盤 | 無人運行も含め AI4 で実施、AI5 は 2027 年量産見込み[^tsla-q2-2026][^electrek-ai5] | AI5 は当初公約から約 2 年遅延[^electrek-ai5] |
 
 数字の性格が異なる点に注意する。テスラの「7 都市圏」はサービスの提供エリア数であり、独立集計の「20–30 台」は同時稼働する無人車両の数である。両者は矛盾しないが、前者だけで無人運行の規模を推し量ると過大評価になる。
@@ -155,7 +155,7 @@ flowchart LR
 
 - **発想**: 従来の「車体を1本のラインで直列に仕上げる」前提を捨て、**前部・後部・電池/床・側部などのモジュールを並行して作り込み、最後に結合**する[^ams]。
 - **狙い**: 各モジュールを最適な向き・最適工程で同時生産 → ライン長・床面積・サイクルタイム・コストを圧縮。塗装や内装を「箱（車体）の内側」で行う制約を外す。
-- **現状（2026-10 時点）**: **Cybercab** が完全アンボックス採用の先行例とされる[^teslarati][^ams]。テスラは Q2 2026 決算資料でギガテキサスでの Cybercab 生産開始を公表した[^tsla-q2-2026]。2026-09-03 にオースティンで発表イベントを開き、既存の Robotaxi アプリ経由で一般向けの乗車提供を始めた[^electrek-cybercab]。ただし生産台数・ライン速度は非開示で、アンボックス方式が従来ラインに比べてコスト・床面積の目標をどこまで達成したかは、独立には検証されていない。低価格モデルへの展開も計画段階にとどまる。
+- **現状（2026-10 時点）**: **Cybercab** が完全アンボックス採用の先行例とされる[^teslarati][^ams]。テスラは Q2 2026 決算資料でギガテキサスでの Cybercab 生産開始を公表した[^tsla-q2-2026]。2026-09-03 にオースティンで発表イベントを開き、既存の Robotaxi アプリ経由で一般向けの乗車提供を始めた[^electrek-cybercab]。Q3 2026 の資料はテキサスの設備能力を年 12.5 万台超と記載した[^tsla-q3-2026]。ただし生産台数・ライン速度は非開示で、アンボックス方式が従来ラインに比べてコスト・床面積の目標をどこまで達成したかは、独立には検証されていない。低価格モデルへの展開も計画段階にとどまる。
 
 ### 7. 垂直統合 (Vertical Integration) — なぜ層を跨げるか
 
@@ -225,6 +225,10 @@ flowchart LR
 **テスラ公式・自動運転サービス (Tesla first-party & robotaxi status)**
 
 [^tsla-q2-2026]: [Tesla Q2 2026 Update (Form 8-K Exhibit 99.1, 2026-07) — SEC EDGAR](https://www.sec.gov/Archives/edgar/data/0001318605/000162828026049213/exhibit991.htm) — Cybercab のギガテキサス生産開始、Robotaxi の 7 都市圏展開（無人/セーフティドライバーの区分）、FSD 契約 148 万件、AI3 向け FSD v14 lite。Accessed: 2026-10-04. ※一次だが公称。AI5 の「できれば来年」は同四半期の決算説明会での発言（[Not a Tesla App の要約, 2026-07-22](https://www.notateslaapp.com/news/4481/summary-of-teslas-2026-q2-earnings-call-cybercab-fsd-ai4-and-more)）。
+
+[^tsla-q3-2026]: [Tesla Q3 2026 Update (Form 8-K Exhibit 99.1, 2026-10-21) — SEC EDGAR](https://www.sec.gov/Archives/edgar/data/0001318605/000162828026066738/exhibit9914.htm) — FSD のアクティブ契約 174 万件、Robotaxi の無人走行の累計が 200 万マイル近く、Cybercab の Robotaxi 車両への投入とテキサスの設備能力 (>125,000 台/年・Production)、Semi の量産開始、Fremont での Optimus の生産開始。Accessed: 2026-10-24.
+
+[^electrek-q3]: [Tesla (TSLA) releases Q3 2026 financial results — Electrek (2026-10-21)](https://electrek.co/2026/10/21/tesla-tsla-q3-2026-financial-results/) — 決算の独立した解説。FSD の契約数に買い切りの購入が含まれるとの指摘。Accessed: 2026-10-24.
 
 [^electrek-cybercab]: [Tesla confirms Cybercab launch coming next week — Electrek (F. Lambert, 2026-08-24)](https://electrek.co/2026/08/24/tesla-cybercab-exclusive-access-robotaxi-sept-3/) — 2026-09-03 オースティンでの Cybercab 発表と Robotaxi アプリ経由の提供、無人車両の同時稼働数（全市場で 20–30 台程度）の独立集計。Accessed: 2026-10-04. ※独立報道（demonstrated 側）だが批判的論調。
 
