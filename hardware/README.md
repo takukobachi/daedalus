@@ -19,13 +19,13 @@
   ジッタ, S パラメータ, COM …）。PCIe (`hw-sw-interface/`)・USB/ディスプレイ
   (`peripherals/`)・Ethernet (`networking/`) が論理層で共有する
   共通の物理層。理論は `foundations/physics/electromagnetism/` の伝送線路編が供給
-- `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI …）
+- `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI, IOMMU と DMA 隔離, CXL とメモリプーリング …）
 - `peripherals/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
   サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi …）。`hw-sw-interface/` の
   一段上でSoCと外界をつなぐ層。`software/android/`・`software/ios/` の入力・オーディオ・
   表示スタックと対で読む
 - `networking/` — ネットワークハードウェア（NIC, ディスクリプタリング,
-  オフロード, RDMA/RoCE, スイッチ ASIC, SmartNIC/DPU …）。
+  オフロード, RDMA/RoCE, スイッチ ASIC, SmartNIC/DPU, 光インターコネクト (LPO/CPO・OCS) …）。
   `software/networking/`（特に kernel-network-stack）の物理側の対
 - `wireless/` — 無線通信・RF（リンクバジェット, シャノン容量, 変調/QAM, OFDM,
   MIMO, RF チェーン …）。広域・高速側の無線 PHY の共通理論で、Wi-Fi/Bluetooth
@@ -39,8 +39,11 @@
   Rowhammer, TEE, secure boot …）。`cpu/` の投機実行・キャッシュ機構と
   ソフトウェア側セキュリティの橋渡し
 - `reliability/` — ハードウェア信頼性（ソフトエラー, 摩耗, ECC のフィールド実測,
-  サイレントデータ破損, フリート検査 …）。`cpu/`・`accelerators/`・`storage/` に
+  サイレントデータ破損, フリート検査, RAS とマシンチェック …）。`cpu/`・`accelerators/`・`storage/` に
   分散する誤り対策を、フリート規模の運用の視点で束ねる
+- `mixed-signal/` — ミクストシグナル（AD/DA 変換器の方式と性能指標, 熱雑音とジッタの限界,
+  混載 SoC の雑音結合 …）。センサ・オーディオ (`peripherals/`)、無線 (`wireless/`)、
+  SerDes (`signal-integrity/`) が共有する、アナログとデジタルの変換点
 - `timekeeping/` — 時刻同期とクロック（発振器, 原子時計, GNSS 時刻, NTP/PTP …）。
   `software/distributed-systems/` の論理時計に対する「物理時計側」の基礎
 
