@@ -16,11 +16,13 @@
   (全文の転置インデックス・Loki のラベル索引と圧縮チャンク・ClickHouse の列指向)、
   ラベルの濃度、保持の階層とサンプリング、秘密の混入とログの注入、Log4Shell、
   監査ログの改ざん耐性 (ハッシュ連鎖・WORM)
+- `time-series-databases.md` — 時系列データベース：Gorilla 圧縮 (delta-of-delta・XOR)、
+  Prometheus TSDB (ヘッドと WAL・2 時間ブロック・ポスティングリスト)、高濃度と churn、
+  ダウンサンプリング、長期保存 (Thanos/Mimir/VictoriaMetrics/M3)、列指向エンジンとの比較、
+  rate とカウンタのリセット、指数ヒストグラムと分位点の誤差
 
 ## 今後のテーマ候補
 
-- 時系列データベース (time-series databases) — Gorilla 圧縮、ダウンサンプリング、
-  逆引きインデックス。`../databases/` のストレージエンジン議論の特化形
 - ベンチマーキング方法論 (benchmarking methodology) — 統計的有意性、外れ値と分散、
   マイクロベンチの罠 (JMH)、再現性。本書の測定方法論の体系化
 - ランタイム観測の各論 (runtime observability) — JFR、V8 inspector、Go pprof/trace。
