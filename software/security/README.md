@@ -82,6 +82,12 @@ TLS が、それぞれの文脈で断片的に現れる。本領域はそれら�
   決める層）。ISO/IEC 27001:2022 の要求事項と附属書 A の 93 管理策、リスクの評価と対応
   (定性・定量・FAIR)、脅威モデリング (STRIDE・攻撃木)、NIST CSF 2.0 の統治と CIS Controls、
   事業継続と RTO/RPO、認証と SOC 2 の意味と限界
+- `privacy-engineering.md` — プライバシー工学（出力が個人について漏らす量を管理する層）。
+  再識別の事例 (Sweeney・AOL・Netflix Prize)、k-匿名性・l-多様性・t-近接性と限界、
+  再構成攻撃、差分プライバシーの定義・機構・合成とプライバシー予算、中央型とローカル型、
+  実運用の ε (2020 年米国国勢調査・Apple・RAPPOR・VaultGemma) と批判、メンバーシップ推論と
+  学習データの抽出と DP-SGD、GDPR と個人情報保護法の仮名化・匿名化 (令和 8 年改正を含む)、
+  PETs の位置づけ、LINDDUN
 
 読む順の目安: 見つける (`fuzzing-program-analysis.md`) → exploit させない
 (`memory-safety-exploit-mitigations.md`) → 閉じ込める (`sandbox-architectures.md`)
