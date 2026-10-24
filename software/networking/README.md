@@ -24,7 +24,8 @@
 - `vpn-tunneling.md` — VPN とトンネリング：包む層による分類、IPsec (SPD/SA、ESP と AH、
   IKEv2、NAT トラバーサル)、SSH (TOFU、ポート転送、Terrapin、regreSSHion)、WireGuard
   (cryptokey routing、Noise IK、応答しない設計)、L2TP と PPTP、TLS の VPN、MTU と経路表、
-  TunnelVision・TunnelCrack と VPN 装置の侵害
+  TunnelVision・TunnelCrack と VPN 装置の侵害、メッシュ型 VPN (調整サーバと NAT 越え)、
+  耐量子鍵交換への移行 (SSH・IKEv2・WireGuard)、VPN の識別と検閲、一般向け VPN サービスの信頼モデル
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
