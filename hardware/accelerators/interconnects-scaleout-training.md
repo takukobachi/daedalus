@@ -81,7 +81,7 @@ flowchart TB
 
 - 同期 SPMD 計算では**最も遅い 1 台が全体の速度**である（ストラグラー問題）。原因は故障だけでなく、温度による周波数低下・ECC 再試行・リンクの再トレーニングなど「遅くなる故障」が厄介で、検出には全ランクのステップ時間分布の常時監視（[`../../software/observability/`](../../software/observability/) の方法論）が要る。
 - Llama 3 の実測[^llama3]が示す規模感は、419 中断/54 日、78% がハードウェアで、GPU の故障 148 回と HBM3 の故障 72 回を合わせると全中断の約 53% を占める（内訳は [`../reliability/fleet-hardware-reliability.md`](../reliability/fleet-hardware-reliability.md)）。これは、この規模の学習が「計算ジョブ」ではなく**可用性エンジニアリング**であることを意味する。対策の柱は高頻度・低オーバーヘッドのチェックポイント（[`ml-training-systems.md`](../../software/ai/ml-training-systems.md)）、故障の自動切り分けと予備ノードへの再スケジュール、そしてトポロジ側の迂回能力（OCS・アダプティブルーティング）である。
-- ネットワーク自体の故障（リンクフラップ・光モジュール劣化）は台数に比例して増える。部品の故障率が一定なら系全体の MTBF は部品数に反比例して縮むという直列系の算術は [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) が扱う。光インターコネクトの信頼性・共封止光学は [`../networking/`](../networking/) のロードマップ（光インターコネクト）で扱う。
+- ネットワーク自体の故障（リンクフラップ・光モジュール劣化）は台数に比例して増える。部品の故障率が一定なら系全体の MTBF は部品数に反比例して縮むという直列系の算術は [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) が扱う。光インターコネクトの故障の内訳・共封止光学の交換単位は [`../networking/optical-interconnect.md`](../networking/optical-interconnect.md) が扱う。
 
 ## セキュリティ考察 (Security Considerations)
 

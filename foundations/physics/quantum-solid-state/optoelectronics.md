@@ -94,6 +94,7 @@ LED は順バイアスの pn 接合で注入された少数キャリアの再結
 | [`hardware/peripherals/camera-image-sensors.md`](../../../hardware/peripherals/camera-image-sensors.md) | 本回はこの文書のデバイス物理層——量子効率・暗電流・ショットノイズ・画素構造 (§2) |
 | [`hardware/peripherals/display-pipeline.md`](../../../hardware/peripherals/display-pipeline.md) | LED バックライト・OLED・microLED の発光原理 (§3)、色と Eg の対応 |
 | [`hardware/networking/nic-switch-architecture.md`](../../../hardware/networking/nic-switch-architecture.md) | 光トランシーバ・VCSEL 短距離リンク・CPO への趨勢 (§4–5) |
+| [`hardware/networking/optical-interconnect.md`](../../../hardware/networking/optical-interconnect.md) | レーザ・受光器・シリコンフォトニクス (§4–5) を部品とする光トランシーバ、LPO/CPO、OCS |
 | [`hardware/hw-sw-interface/bus-interconnect.md`](../../../hardware/hw-sw-interface/bus-interconnect.md) | 電気 SerDes の限界の先にある光インターコネクト (§5) |
 | [`hardware/timekeeping/clocks-time-synchronization.md`](../../../hardware/timekeeping/clocks-time-synchronization.md) | レーザーによる原子の操作・光格子時計への展望 (§4)、光ファイバによる時刻配信 |
 | [`engineering/automotive/ee-architecture.md`](../../../engineering/automotive/ee-architecture.md) | LiDAR・カメラという光センサ群の物理的基盤 (工学への接続 §4) |
