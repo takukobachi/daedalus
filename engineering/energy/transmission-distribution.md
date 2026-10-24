@@ -42,7 +42,7 @@
 
 | 階層 | 代表的な電圧 | 役割 | 構造 |
 |---|---|---|---|
-| 基幹系統 (bulk transmission) | 各社の上位 2 電圧 (例: 500 kV・275 kV、沖縄は 132 kV) | 大型電源と需要地・地域間を結ぶ | 網状 (meshed) |
+| 基幹系統 (bulk transmission) | 各エリアで最も高い電圧の長距離送電線 (例: 北海道は 275 kV と 187 kV)[^occto-kikan] | 大型電源と需要地・地域間を結ぶ | 網状 (meshed) |
 | ローカル系統 (sub-transmission) | 154・110 kV、77・66 kV、33・22 kV | 基幹系統から地域の変電所・大口需要家へ | 網状または放射状 |
 | 配電系統 高圧 (primary distribution) | 6.6 kV | 配電用変電所から地域の需要家へ | 放射状 (radial)、連系開閉器で切替 |
 | 配電系統 低圧 (secondary distribution) | 100/200 V | 柱上変圧器から住宅・小規模需要家へ | 放射状 |
@@ -52,7 +52,7 @@
 ```mermaid
 flowchart TB
     G1["大型電源<br/>(火力・原子力・大規模再エネ)"] --> T1["発電所 昇圧変圧器"]
-    T1 --> B["基幹系統<br/>500/275 kV 網状"]
+    T1 --> B["基幹系統<br/>最上位の電圧・網状"]
     HV["HVDC・FC<br/>(潮流を指令できる)"] <--> B
     B --> S1["一次変電所"]
     S1 --> L["ローカル系統<br/>154〜22 kV"]
@@ -320,6 +320,8 @@ PSPS は「停電という故障モードを、より大きな災害を避ける
 - [`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md): 最適潮流と双対変数としての価格
 
 ## 参考文献 (References)
+
+[^occto-kikan]: 電力広域的運営推進機関 (2018). 北海道胆振東部地震に伴う大規模停電に関する検証委員会 第2回 参考資料2 (用語解説「系統・基幹系統」). [PDF](https://www.occto.or.jp/assets/iinkai/hokkaido_kensho/files/hokkaido_kensho_02_sankou_2.pdf) — Accessed: 2026-10-24。「最も高い電圧で長距離の送電線を基幹系統といい、北海道の場合は 275 kV と 187 kV」。
 
 [^glover]: Glover, J. D., Overbye, T. J., & Sarma, M. S. (2017). *Power System Analysis and Design* (6th ed.). Cengage Learning. ISBN 978-1-305-63213-4. — 母線アドミタンス行列、潮流計算、変電所と保護、配電の電圧降下の標準的教科書。
 
