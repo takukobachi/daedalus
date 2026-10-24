@@ -28,5 +28,7 @@ Ethernet (`../networking/`)・車載 Ethernet (`../../engineering/automotive/`) 
   デカップリング階層。`signal-integrity-engineering.md` で導入した「リターン電流の道」の深掘り
 - パッケージとチップレット間リンク (UCIe & package-level links) — 2.5D/3D 実装での
   超短距離・超広幅リンク。`../semiconductor-manufacturing/` の先端パッケージングとの合流点
-- 光への移行の工学 — リニアドライブ光学 (LPO)・共封止光学 (CPO) の電気側要件。
-  `../networking/` の光インターコネクト候補の SerDes 側
+- LPO・CPO の電気側の設計 (electrical side of LPO/CPO) — ホスト SerDes から相手の
+  モジュールまでを一つのアナログチャネルとして扱う損失バジェット、OIF CEI の LPO 向け
+  要件。光側の全体像と電力・保守性の取引は
+  [`../networking/optical-interconnect.md`](../networking/optical-interconnect.md) で扱った

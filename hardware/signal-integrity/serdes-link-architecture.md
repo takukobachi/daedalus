@@ -70,7 +70,7 @@ flowchart LR
 「Nyquist 半減で稼ぐ dB」 > 「アイ縮小で失う 9.5 dB」となり PAM4 が勝つ
 ```
 
-- PAM4 は多値化により**遷移の種類**も増え（レベル間で立ち上がり時間が異なる）、CDR・ジッタ解析が複雑化する。さらなる多値化（PAM6/PAM8）と光への移行が 224G 以降の分岐点であり、[`../networking/`](../networking/) の光インターコネクト候補に接続する。
+- PAM4 は多値化により**遷移の種類**も増え（レベル間で立ち上がり時間が異なる）、CDR・ジッタ解析が複雑化する。さらなる多値化（PAM6/PAM8）と光への移行が 224G 以降の分岐点であり、[`../networking/optical-interconnect.md`](../networking/optical-interconnect.md) に接続する。
 
 ### 2. イコライゼーションの積層 (The Equalization Stack)
 

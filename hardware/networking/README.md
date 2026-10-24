@@ -5,12 +5,10 @@ NIC (network interface card) とスイッチ ASIC の内部分析。`../../softw
 ## ドキュメント
 
 - [`nic-switch-architecture.md`](nic-switch-architecture.md) — NIC とスイッチ (NIC & switch hardware)：パケット単価の算術、ディスクリプタリングと doorbell（lock-free リング協定）、オフロードの系譜（checksum/TSO/RSS と TOE の教訓）、RDMA/RoCEv2 とロスレスイーサネットの代償（PFC・DCQCN）、スイッチ ASIC のパイプライン（match-action・TCAM・共有バッファ・incast）、P4/RMT、SR-IOV/eSwitch と SmartNIC/DPU（AccelNet・Nitro）
+- [`optical-interconnect.md`](optical-interconnect.md) — 光インターコネクト (optical interconnect)：銅の到達距離と光電変換の位置、トランシーバの部品と QSFP-DD/OSFP、NRZ→PAM4 とコヒーレント、SR/DR/FR/LR と IEEE 802.3df/dj、WDM、電力の内訳と pJ/bit、LPO と CPO (交換単位の取引)、シリコンフォトニクス、OCS (Apollo/Jupiter)、故障とリンクフラップの運用
 
 ## 今後のテーマ候補
 
-- 光インターコネクト (optical interconnect) — 光トランシーバ (SFP/OSFP)、DWDM、
-  co-packaged optics、リニアドライブ光学。SerDes の先にある「銅の限界」の突破口で、
-  AI クラスタの帯域スケーリングの物理的本体
 - InfiniBand ファブリックの各論 (InfiniBand internals) — サブネットマネージャ、
   アダプティブルーティング・輻輳制御の詳細。SHARP と AI クラスタの全体像は
   [`../accelerators/interconnects-scaleout-training.md`](../accelerators/interconnects-scaleout-training.md)
