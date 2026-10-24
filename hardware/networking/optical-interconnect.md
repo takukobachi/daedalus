@@ -188,13 +188,13 @@ flowchart LR
 
 [^lpo-msa]: LPO MSA. [LPO MSA Announces Release of Specification for Linear Pluggable Optical Modules (2025-03-25)](https://www.globenewswire.com/news-release/2025/03/25/3048840/0/en/LPO-MSA-Announces-Release-of-Specification-for-Linear-Pluggable-Optical-Modules.html) — Accessed: 2026-10-24。
 
-[^itu-cwdm]: ITU-T Recommendation G.694.2. *Spectral grids for WDM applications: CWDM wavelength grid*. — 20 nm 間隔の CWDM 格子。
+[^itu-cwdm]: ITU-T Recommendation G.694.2 (12/2003). *Spectral grids for WDM applications: CWDM wavelength grid*. [itu.int](https://www.itu.int/rec/T-REC-G.694.2) — Accessed: 2026-10-24。20 nm 間隔は ITU-T の解説資料 [Coarse Wavelength Division Multiplexing (ITU-T, 2004)](https://itu.int/dms_pub/itu-t/oth/0B/04/T0B040000150009PDFE.pdf) の「This wavelength grid supports a channel spacing of 20 nm」で確認 (Accessed: 2026-10-24)。
 
 [^itu-dwdm]: ITU-T Recommendation G.694.1. *Spectral grids for WDM applications: DWDM frequency grid*. — 固定格子とフレキシブルグリッド。
 
 [^macsec]: IEEE Std 802.1AE. *IEEE Standard for Local and Metropolitan Area Networks — Media Access Control (MAC) Security*. — リンク層の暗号化。
 
-[^iec60825]: IEC 60825-1. *Safety of laser products — Part 1: Equipment classification and requirements*. — レーザ安全クラス。
+[^iec60825]: IEC 60825-1:2014 (Edition 3.0). *Safety of laser products — Part 1: Equipment classification and requirements*. [IEC Webstore](https://webstore.iec.ch/en/publication/3587) — Accessed: 2026-10-24。波長 180 nm〜1 mm のレーザ製品の安全要求とクラス分け (規格の概要で確認。本文は有償のため未取得)。
 
 [^apollo]: Urata, R., Liu, H., Yasumura, K., et al. (2022). Mission Apollo: Landing Optical Circuit Switching at Datacenter Scale. *arXiv:2208.10041*. https://arxiv.org/abs/2208.10041 — Palomar OCS (136×136、挿入損失、108 W)、サーキュレータ、CWDM4 の維持、DML から EML、DSP 化。
 
