@@ -94,7 +94,7 @@
 
 - OVS (NSDI '15) は**カーネル/ユーザ空間分割**を採る: 最初のパケットはカーネルで表に当たらず userspace の `ovs-vswitchd` へ上がり (slow path)、全段のポリシー表を評価した**結果**をカーネルにキャッシュする (fast path)。
 - キャッシュの単位は **megaflow** である。これは完全一致 (microflow) ではなく、「評価に実際に使われたフィールドだけ」をワイルドカード化した集約エントリで、1 エントリが多数のフローを吸収しキャッシュミス率を桁で下げる。ポリシーの一般性と転送単価の分離、という [`kernel-network-stack.md`](kernel-network-stack.md) の単価の経済のオーバーレイ版である。
-- **接続追跡**: ステートフルなセキュリティグループ (§5) は conntrack を要求する。OVS はカーネルの conntrack を `ct()` アクションとして呼び出し、「この方向の接続は確立済みか」をフロー評価に組み込む。状態を持つ分、テーブル枯渇という攻撃面も持ち込む ([`kernel-network-stack.md`](kernel-network-stack.md) の SYN flood と同型)。
+- **接続追跡**: ステートフルなセキュリティグループ (§5) は conntrack を要求する。OVS はカーネルの conntrack を `ct()` アクションとして呼び出し、「この方向の接続は確立済みか」をフロー評価に組み込む。状態を持つ分、テーブル枯渇という攻撃面も持ち込む ([`kernel-network-stack.md`](kernel-network-stack.md) の SYN flood と同型)。conntrack の状態機械と表の枯渇は [`packet-filtering-conntrack.md`](packet-filtering-conntrack.md) で扱う。
 - **SmartNIC/DPU オフロード**: megaflow キャッシュと conntrack をカードのハード (eSwitch) に移し、例外だけホストに上げる。**AWS Nitro** はさらに進み、仮想スイッチ・マッピング照会・SG 施行・カプセル化のすべてを専用カードで実行する (ベンダー実証)。ホスト CPU のネットワーク税はゼロになり、かつテナントのコードとネットワーク施行が**別の計算機**に分離される。ハード構造は [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md)、SR-IOV/virtio との接続は [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) を参照。
 
 ### 4. セキュリティグループ — 分散ステートフルファイアウォール

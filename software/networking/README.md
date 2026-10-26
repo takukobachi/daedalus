@@ -40,6 +40,12 @@
 - `kernel-network-stack.md` — カーネルネットワークスタック：NIC リングと NAPI (割り込みの
   経済)、sk_buff、GRO/GSO とパケット単価、RSS/RPS/RFS、qdisc/BQL、XDP・AF_XDP・DPDK の
   バイパス系譜。上 2 本のプロトコルを運ぶ機械側
+- `packet-filtering-conntrack.md` — パケットフィルタと接続追跡：netfilter のフックと優先度、
+  iptables から nftables へ (線形照合と全体更新 → 集合・verdict map・トランザクション、
+  iptables-nft、ipset)、conntrack の状態機械 (TCP の窓の検査、UDP/ICMP の擬似状態、タイムアウト)、
+  表の大きさと枯渇・ゾーン、helper の既定無効化の経緯、conntrack の上の NAT (ポート割り当て)、
+  非対称経路と状態の同期 (conntrackd・pfsync)、pf・eBPF・flowtable との対比、
+  NAT Slipstreaming と IPv6 の見落とし。上の文書のホストの中で、規則と状態を実装する部分
 - `tls-internals.md` — TLS 1.3：削除による安全化 (RSA 鍵交換・CBC の廃止)、1-RTT
   ハンドシェイク、HKDF 鍵スケジュール、PKI と Certificate Transparency、0-RTT と
   ダウングレード防御、耐量子ハイブリッドへの移行
@@ -80,7 +86,8 @@
 → アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`)
 → トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
-(`kernel-network-stack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
+(`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
+`packet-filtering-conntrack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
 へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
