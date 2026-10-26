@@ -49,6 +49,11 @@
 - `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、IGP (リンクステート)
   vs EGP (パスベクトル)、BGP のポリシー機構と Gao–Rexford 安定条件、経路ハイジャックと
   RPKI、エニーキャスト、クラウド接続 (専用線接続と経路制御) の読み方
+- `mpls-segment-routing.md` — MPLS と Segment Routing：ラベルスイッチングの価値 (表引きの
+  速さではなく転送判断と IP 宛先の切り離し)、ラベルスタック・PHP・TTL の扱い、LDP と IGP の同期、
+  RSVP-TE と状態の代償、FRR (RFC 4090・LFA・TI-LFA) と 50 ms の由来、BGP/MPLS L3VPN (RD と RT)・
+  VPLS/EVPN・6PE/6VPE、SR-MPLS と SR ポリシー・PCE、SRv6 (SRH・ネットワークプログラミング・
+  RFC 9800 の SID 圧縮)、閉じた信頼領域と SRv6 の境界フィルタ。通信事業者の基幹網の読み方
 - `virtual-networks-overlay.md` — 仮想ネットワークとオーバーレイ：マルチテナントの
   問題設定、VXLAN/Geneve カプセル化、マッピング分配の制御平面 (EVPN・中央ディレクトリ)、
   OVS と SmartNIC オフロード、セキュリティグループ = 分散ステートフル FW、NAT と
@@ -73,7 +78,8 @@
 (`tcp-transport-congestion.md`) → 混雑したリンクでの配分 (`qos-traffic-management.md`)
 → 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
 → アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`)
-→ トンネル (`vpn-tunneling.md`) の順に読む。その後は関心に応じて、ホストの中
+→ トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
+`mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
 へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
