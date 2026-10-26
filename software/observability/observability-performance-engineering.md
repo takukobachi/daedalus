@@ -131,6 +131,7 @@ flowchart TD
 - [`../../hardware/cpu/pipeline-superscalar-ooo.md`](../../hardware/cpu/pipeline-superscalar-ooo.md) — トップダウン解析が数えている「発行スロット」の機構側。
 - [`../operating-systems/block-io-stack.md`](../operating-systems/block-io-stack.md)・[`../operating-systems/process-thread-scheduling.md`](../operating-systems/process-thread-scheduling.md) — biolatency・runqlat・PSI の対象領域。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — 文脈伝搬の理論側 (因果・論理時計)。
+- [`../networking/network-verification-telemetry.md`](../networking/network-verification-telemetry.md) — ネットワークに固有のテレメトリ (gNMI・IPFIX/sFlow・INT/IOAM・Pingmesh) と、観測の前に振る舞いを予測するネットワーク検証。
 - [`../../hardware/timekeeping/clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md) — トレースの時間分解能を規定する物理時計。
 - [`../compilers-runtimes/managed-runtimes-gc-jit.md`](../compilers-runtimes/managed-runtimes-gc-jit.md) — ランタイム層の計装 (GC ログ・JIT 統計) とウォームアップ問題。
 

@@ -91,6 +91,14 @@
   mTLS 自動化とワークロードアイデンティティ (SPIFFE)、L7 トラフィック制御とリトライ予算、
   サイドカー税と eBPF 系メッシュ (Cilium)。L3/4 (セキュリティグループ) から L7 への
   ポリシーの移動
+- `network-verification-telemetry.md` — ネットワーク検証とテレメトリ：意図・設定・制御プレーン・
+  データプレーン・実際のパケットの食い違い、データプレーン検証 (HSA・Anteater・VeriFlow・NetPlumber・
+  Delta-net・APKeep と増分化)、設定と制御プレーンの検証 (Batfish・Minesweeper とモデルの忠実度、
+  AWS Tiros/Zelkova・Azure SecGuru/RCDC・Google の Zero Touch/CAPA)、SNMP の限界 (カウンタの桁あふれ・
+  マイクロバースト) と gNMI/OpenConfig (dial-in/dial-out)、NetFlow v9/IPFIX・sFlow と標本化の精度、
+  帯域内テレメトリ (INT・IOAM・DEX・ポストカード方式) と MTU の代償、能動測定 (Pingmesh・STAMP・
+  Paris traceroute)、グレー障害と局所化 (007・NetBouncer)、変更前の検証と事後報告 (Facebook 2021・
+  Google 2019・Azure 2023)、テレメトリの偽装・漏洩と gNMI の保護。網を予測し観測する運用の側
 
 読む順の目安: 下の層から積み上げるなら、LAN (`ethernet-lan-switching.md`) → IP
 (`ip-addressing-icmp-dhcp-nat.md`) → 経路制御 (`ip-routing-bgp.md`) → TCP
@@ -103,10 +111,6 @@
 `packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド
 (ファブリックの経路制御の `dc-fabric-routing.md`、`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
-へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
+へ進む。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
+防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
-
-## 今後のテーマ候補
-
-- 帯域内テレメトリとネットワーク検証 (network verification) — INT、経路の形式検証。
-  運用の観測・保証側の深掘り

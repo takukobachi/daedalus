@@ -126,6 +126,7 @@ IP の転送は、突き詰めれば一つの原語に還元される。それ�
 - [`kernel-network-stack.md`](kernel-network-stack.md) — ホスト側の FIB (カーネル IP 層の経路判定)。
 - [`mpls-segment-routing.md`](mpls-segment-routing.md) — 事業者網で IGP と MP-BGP の上に載る MPLS・Segment Routing と L3VPN (VRF・RD・RT)。
 - [`ddos-mitigation.md`](ddos-mitigation.md) — BGP を DDoS の遮断の合図に使う RTBH (BLACKHOLE コミュニティ) と Flowspec、スクラビングへの経路の迂回。
+- [`network-verification-telemetry.md`](network-verification-telemetry.md) — BGP と IGP の設定から収束後の転送を予測する検証 (Batfish・Minesweeper) と、変更作業が経路障害を起こした事後報告。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — BGP は結果整合な経路の分散データベースであり、収束途中の不整合 (ループ・黒穴) はこの語彙で読める。
 - [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — FIB の物理: TCAM・LPM 専用構造と表容量の経済。
 - [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — Clos ファブリックと ECMP。BGP がデータセンター内部の標準になった現場。
