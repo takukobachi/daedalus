@@ -60,6 +60,13 @@
   RSVP-TE と状態の代償、FRR (RFC 4090・LFA・TI-LFA) と 50 ms の由来、BGP/MPLS L3VPN (RD と RT)・
   VPLS/EVPN・6PE/6VPE、SR-MPLS と SR ポリシー・PCE、SRv6 (SRH・ネットワークプログラミング・
   RFC 9800 の SID 圧縮)、閉じた信頼領域と SRv6 の境界フィルタ。通信事業者の基幹網の読み方
+- `dc-fabric-routing.md` — データセンターファブリックの経路制御：BGP を IGP として使う設計
+  (RFC 7938、AS 番号の割り当てと谷の遮断・経路探索、私用 AS と 4 オクテット、allowas-in と
+  コンフェデレーション)、BGP unnumbered と RFC 8950、IS-IS/OSPF のフラッディングと動的フラッディング
+  (RFC 9667)・RIFT、ECMP のハッシュと分極・resilient hashing・重み付け (WCMP・RFC 10005)、
+  フローレット (CONGA・LetFlow)、BFD と局所修復・マイクロループ・ADD-PATH/PIC、退避
+  (RFC 8326・Meta の 3 状態)、Google Firepath/Orion と Meta の BGP 設計、グレー障害と全体変更の
+  影響範囲、セッション保護 (TCP-AO・GTSM) と CoPP。クラウドのアンダーレイの読み方
 - `virtual-networks-overlay.md` — 仮想ネットワークとオーバーレイ：マルチテナントの
   問題設定、VXLAN/Geneve カプセル化、マッピング分配の制御平面 (EVPN・中央ディレクトリ)、
   OVS と SmartNIC オフロード、セキュリティグループ = 分散ステートフル FW、NAT と
@@ -87,7 +94,8 @@
 → トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
-`packet-filtering-conntrack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
+`packet-filtering-conntrack.md`)、データセンターとクラウド (ファブリックの経路制御の
+`dc-fabric-routing.md`、`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
 へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
