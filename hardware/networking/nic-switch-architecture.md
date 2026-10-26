@@ -88,7 +88,7 @@ flowchart LR
 
 - **モデル**: アプリは QP (送受のワークキュー対) に work request を post し、NIC が DMA で直接ユーザメモリを読み書きする (メモリ登録とピン留めが前提)。one-sided (READ/WRITE: リモート CPU 不関与) と two-sided (SEND/RECV) があり、レイテンシは µs 級、CPU 使用は桁で減る。
 - **RoCEv2 と PFC**: Ethernet は本来ロスを許す網であり、RDMA (再送が弱い) のために PFC で「詰まったら上流を止める」無損失化を行う。停止は連鎖するため、(a) 輻輳が無関係なフローを巻き込む、(b) 循環依存でデッドロックが起きうる、(c) 誤動作 NIC が網全体を止める (PFC storm)、という運用上の難所が実務報告に揃っている (Guo et al. 2016)。緩和として ECN ベースの輻輳制御 (DCQCN) が NIC に実装され、PFC は「最後の安全弁」に格下げするのが定石になった。
-- **用途**: AI 学習クラスタの collective 通信 (NCCL over IB/RoCE)、ストレージ (NVMe-oF)、分散 DB。「**ネットワークがメモリバスの延長になる**」ことで、[`../../software/distributed-systems/`](../../software/distributed-systems/README.md) の前提レイテンシが一桁変わる。
+- **用途**: AI 学習クラスタの collective 通信 (NCCL over IB/RoCE)、ストレージ (NVMe-oF。RDMA と TCP のトランスポートの比較は [`../../software/networking/nvme-over-fabrics.md`](../../software/networking/nvme-over-fabrics.md))、分散 DB。「**ネットワークがメモリバスの延長になる**」ことで、[`../../software/distributed-systems/`](../../software/distributed-systems/README.md) の前提レイテンシが一桁変わる。
 
 ### 4. スイッチ ASIC — 表・バッファ・プログラマビリティ
 

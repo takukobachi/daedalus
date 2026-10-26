@@ -89,6 +89,13 @@
   問題設定、VXLAN/Geneve カプセル化、マッピング分配の制御平面 (EVPN・中央ディレクトリ)、
   OVS と SmartNIC オフロード、セキュリティグループ = 分散ステートフル FW、NAT と
   インターネット境界。クラウド VPC の実装原理
+- `nvme-over-fabrics.md` — NVMe over Fabrics とストレージネットワーク：SCSI・FC/FCP・iSCSI (RFC 7143)
+  からの系譜と翻訳の除去、カプセルとキューペア (キュー 1 本 = コネクション 1 本)、Admin/I/O キュー・
+  NQN・名前空間と予約、RDMA・FC-NVMe・NVMe/TCP (PDU・CRC32C ダイジェスト・R2T) の比較、
+  Discovery と CDC (TP 8009/8010)・NBFT による起動、i10 と CPU 単価・DDP オフロード・incast・HoL、
+  分離型ストレージ (ReFlex・AWS SRD/EBS・Alibaba Luna/Solar・Azure の RDMA)、Keep Alive・再接続・
+  ANA・マルチパスのタイマと再接続の嵐・CQT、ホスト NQN の許可リスト・DH-HMAC-CHAP・TLS 1.3 と
+  RDMA の暗号化の欠如。ブロックストレージを網の向こうへ伸ばす層
 - `load-balancing-architecture.md` — ロードバランシング：DNS/ECMP/L4/L7 の積層、
   コンシステントハッシュと Maglev/Ananta 系譜、L7 終端と HTTP/2 の罠、ヘルスチェックと
   カスケード障害、クラウド LB (NLB/ALB 型) と弾力性の制御ループ
@@ -123,7 +130,7 @@
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
 `packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド
 (ファブリックの経路制御の `dc-fabric-routing.md`、`virtual-networks-overlay.md`、
-`load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
-へ進む。1 対多の配信とリンクの上のサービス探索は `multicast-service-discovery.md` へ。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
+`load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`、
+ブロックストレージを網で運ぶ `nvme-over-fabrics.md`) へ進む。1 対多の配信とリンクの上のサービス探索は `multicast-service-discovery.md` へ。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
 防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
