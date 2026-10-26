@@ -101,7 +101,7 @@ IP の転送は、突き詰めれば一つの原語に還元される。それ�
 - **出方向**は LOCAL_PREF で自由に制御できるが、**入り方向**は他 AS の決定に委ねられるため間接手段しかない: **AS_PATH プリペンド** (自 AS を重ねて経路を「長く見せる」)、MED、細分化広告、コミュニティによるプロバイダへの依頼。マルチホーミングの実務はこの非対称との格闘である。
 - **エニーキャスト (anycast)**: 同一プレフィックスを複数拠点から起点広告すると、BGP は各視点で「近い」拠点を選ぶ。これにより負荷分散・耐障害・DDoS の希釈 (攻撃が拠点群に分散吸収される) が一挙に得られる。DNS ルートサーバがこの代表例であり、詳細は [`dns-resolution.md`](dns-resolution.md) の議論に譲る。制約もある: 経路変動で拠点が切り替わると TCP のような状態を持つ接続は切れるため、短命トランザクション (DNS/UDP) や接続移行に耐える設計と相性がよい。
 - **クラウド接続**: インターネット**トランジット**経由 (経路は DFZ 任せ・品質保証なし) に対し、**専用線接続 (AWS Direct Connect 型)** は物理専用リンク上に**仮想インタフェース (VIF)** を切り、その上の BGP セッションでクラウド側が VPC プレフィックスを、顧客側がオンプレ経路を広告する。これは一般企業のエンジニアが BGP 設定に直面する最も普通の場面である。VPC の**ルートテーブル**は「このプレフィックスは IGW へ・これは VGW へ・これはピアリングへ」という宣言的な政策境界であり、AS 間ポリシーの縮小再演といえる。
-- **データセンター内の BGP**: 大規模 Clos ファブリック ([`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md)) では、IGP のフラッディングを嫌い **eBGP をラック単位の AS で組む**設計 (RFC 7938) が定着した。ECMP による多経路分散と組み合わせ、「AS 間プロトコルが建物内の標準になる」という転用が起きている。
+- **データセンター内の BGP**: 大規模 Clos ファブリック ([`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md)) では、IGP のフラッディングを嫌い **eBGP をラック単位の AS で組む**設計 (RFC 7938) が定着した。ECMP による多経路分散と組み合わせ、「AS 間プロトコルが建物内の標準になる」という転用が起きている。その AS 番号の割り当て・ECMP・退避・集中制御との比較は [`dc-fabric-routing.md`](dc-fabric-routing.md) が扱う。
 
 ## セキュリティ考察 (Security Considerations)
 

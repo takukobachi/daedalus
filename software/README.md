@@ -36,7 +36,7 @@
 - `concurrency/` — 並行・並列（言語メモリモデル, 同期, lock-free, 非同期）。
   `memory-ordering-atomics.md` の上位層
 - `networking/` — ネットワーキング（LAN・スイッチング, IP・NAT・IPv6, メール配送と送信者認証, VPN・トンネリング, TCP・輻輳制御, QoS・トラフィック制御, HTTP/2/3・QUIC, TLS, DNS, カーネル
-  ネットワークスタック, パケットフィルタ・接続追跡, BGP・経路制御, MPLS・Segment Routing, VPC 型オーバーレイ, ロードバランシング）。
+  ネットワークスタック, パケットフィルタ・接続追跡, BGP・経路制御, MPLS・Segment Routing, DC ファブリックの経路制御, VPC 型オーバーレイ, ロードバランシング）。
   `distributed-systems/` の故障モデルの発生源であり、
   NIC (`hardware/hw-sw-interface/`) の上位層
 - `distributed-systems/` — 分散システム（一貫性モデル, 合意, 複製）。
