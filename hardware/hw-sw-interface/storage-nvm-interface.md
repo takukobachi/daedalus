@@ -236,6 +236,7 @@ fsync(fd)              # ① データをデバイスへ送出 (DMA)
 - [`../cpu/virtual-memory-mmu.md`](../cpu/virtual-memory-mmu.md) — `mmap`/page cache と、PMEM の DAX 直接アクセス。
 - [`../../software/operating-systems/block-io-stack.md`](../../software/operating-systems/block-io-stack.md) — bio・blk-mq・I/O スケジューラという OS 側の経路。
 - [`../../software/operating-systems/filesystems.md`](../../software/operating-systems/filesystems.md) — ジャーナリングと `fsync` の順序要求。
+- [`../../software/networking/nvme-over-fabrics.md`](../../software/networking/nvme-over-fabrics.md) — 本稿の SQ/CQ のキューモデルを RDMA・FC・TCP の網の向こうまで伸ばす NVMe over Fabrics。
 - [`../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md`](../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md) — NAND セルの書込み・消去と摩耗の物理。
 
 ## 参考文献 (References)
