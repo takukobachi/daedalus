@@ -29,6 +29,11 @@
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
   BBR、TCP の構造的限界 (HoL・硬直化)
+- `qos-traffic-management.md` — QoS とトラフィック制御：QoS は容量を作らず混雑時の配分を
+  決めるだけ、IntServ/RSVP から DiffServ へ、DSCP と PHB (EF・AF・LE・NQB)、信頼境界と
+  インターネットでの DSCP の書き換え、スケジューリング (厳密優先・WFQ・DRR)、ポリシングと
+  シェーピング (3 色マーカ・TCP との相性)、階層型 QoS と Linux tc (HTB・fq_codel・CAKE)、
+  L4S・5QI・PFC、優先度の窃取とネットワーク中立性
 - `http-quic-evolution.md` — HTTP/1.1 → 2 → QUIC/HTTP3：多重化と HoL の局在化、
   HPACK/QPACK、QUIC の設計 (ストリーム、コネクション ID、トランスポート暗号化、0-RTT と
   リプレイ、アンプ制限)、硬直化への構造的応答
@@ -65,7 +70,8 @@
 
 読む順の目安: 下の層から積み上げるなら、LAN (`ethernet-lan-switching.md`) → IP
 (`ip-addressing-icmp-dhcp-nat.md`) → 経路制御 (`ip-routing-bgp.md`) → TCP
-(`tcp-transport-congestion.md`) → 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
+(`tcp-transport-congestion.md`) → 混雑したリンクでの配分 (`qos-traffic-management.md`)
+→ 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
 → アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`)
 → トンネル (`vpn-tunneling.md`) の順に読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`)、データセンターとクラウド (`virtual-networks-overlay.md`、
