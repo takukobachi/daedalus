@@ -37,6 +37,11 @@
 - `http-quic-evolution.md` — HTTP/1.1 → 2 → QUIC/HTTP3：多重化と HoL の局在化、
   HPACK/QPACK、QUIC の設計 (ストリーム、コネクション ID、トランスポート暗号化、0-RTT と
   リプレイ、アンプ制限)、硬直化への構造的応答
+- `webrtc-realtime-media.md` — WebRTC とリアルタイムメディア伝送：遅延予算 (G.114) と「遅れたデータは
+  失われたデータ」、ICE・STUN・TURN と trickle ICE・mDNS 候補、DTLS-SRTP と指紋、SCTP のデータチャネル、
+  JSEP と Unified Plan、RTP/RTCP とジッタバッファ・NACK/RTX・FEC (FlexFEC・RED)・PLI/FIR、
+  GCC・transport-wide CC・SCReAM・NADA と RMCAT の要件、メッシュ・MCU・SFU とサイマルキャスト・SVC、
+  SFrame と MLS、WebTransport・MoQ・WHIP/WHEP、TURN の悪用・IP アドレスの漏洩・cryptex
 - `kernel-network-stack.md` — カーネルネットワークスタック：NIC リングと NAPI (割り込みの
   経済)、sk_buff、GRO/GSO とパケット単価、RSS/RPS/RFS、qdisc/BQL、XDP・AF_XDP・DPDK の
   バイパス系譜。上 2 本のプロトコルを運ぶ機械側
@@ -104,7 +109,8 @@
 (`ip-addressing-icmp-dhcp-nat.md`) → 経路制御 (`ip-routing-bgp.md`) → TCP
 (`tcp-transport-congestion.md`) → 混雑したリンクでの配分 (`qos-traffic-management.md`)
 → 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
-→ アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`)
+→ アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`、
+対話的な音声・映像の `webrtc-realtime-media.md`)
 → トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める

@@ -104,7 +104,7 @@ HTTP の 30 年は、「**Web ページ 1 枚のために数十〜数百のリ�
 
 - HTTP/3 は「HTTP セマンティクス (RFC 9110) を QUIC ストリームに写像する」薄い層である。リクエスト/レスポンスは 1 双方向ストリーム、制御は単方向ストリーム。
 - 発見は `Alt-Svc` ヘッダまたは DNS の **HTTPS レコード**で「UDP/443 で h3 が使える」ことを広告する。UDP がブロックされる網（企業 FW 等）では TCP へフォールバックする。つまり、**TCP は失敗時の保険として残り続ける**。
-- Web 以外への波及が本命という見方もある: **MASQUE**（QUIC 上のプロキシ/VPN）、**WebTransport**（ブラウザからの低遅延双方向通信）、**Media over QUIC** など、「ユーザ空間で進化できる汎用トランスポート」としての利用が広がっている。
+- Web 以外への波及が本命という見方もある: **MASQUE**（QUIC 上のプロキシ/VPN）、**WebTransport**（ブラウザからの低遅延双方向通信）、**Media over QUIC** など、「ユーザ空間で進化できる汎用トランスポート」としての利用が広がっている。WebTransport と Media over QUIC の標準化の状況と、WebRTC との関係は [`webrtc-realtime-media.md`](webrtc-realtime-media.md) で扱う。
 
 ## セキュリティ考察 (Security Considerations)
 
