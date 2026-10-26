@@ -129,6 +129,7 @@
 
 - [`kernel-network-stack.md`](kernel-network-stack.md) — 本書の足元。仮想スイッチが走るホスト内経路・パケット単価の経済・XDP。
 - [`ip-routing-bgp.md`](ip-routing-bgp.md) — アンダーレイの経路制御と、EVPN が乗る BGP の機構。
+- [`network-verification-telemetry.md`](network-verification-telemetry.md) — VPC の到達性をパケットを送らずに判定する形式手法 (AWS Tiros・Reachability Analyzer) と、オーバーレイの上で使う帯域内テレメトリの MTU の代償。
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — カプセル化の MTU/MSS 税が輻輳制御・スループットに与える影響の受け側。
 - [`../virtualization/hardware-virtualization-containers.md`](../virtualization/hardware-virtualization-containers.md) — virtio/SR-IOV/パススルー。VM と仮想スイッチの間の I/O 経路。
 - [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — eSwitch・SmartNIC/DPU・スイッチ ASIC というオフロード先の実体。
