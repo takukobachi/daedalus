@@ -63,6 +63,13 @@
 - `dns-resolution.md` — DNS：委任とキャッシュ (TTL 付き結果整合性)、解決の実経路
   (スタブ〜権威)、毒入れと DNSSEC、DoT/DoH と集中化のトレードオフ、障害の構造
   (依存の環・ネガティブキャッシュ)
+- `multicast-service-discovery.md` — IP マルチキャストとローカルなサービス探索：状態を網に置く
+  代償と、インターネットで広がらなかった理由 (Diot ら 2000)、MAC アドレスへの 32 対 1 の写像、
+  IGMPv3/MLDv2 (RFC 9776/9777) と報告の抑制の廃止、スヌーピング (RFC 4541・未登録グループ・
+  クエリアの不在)、PIM-SM の RP と最短経路木への移行・RPF・SSM・PIM-DM・AMT、BIER と EVPN/MVPN、
+  IPTV・市場データ・無線 LAN (RFC 9119)、mDNS/DNS-SD (probe・既知応答の抑制・`.local` の衝突)、
+  SSDP・LLMNR・NBT-NS、Discovery Proxy と SRP (Thread・Matter)、名前解決の毒入れ・SSDP の反射・
+  CallStranger
 - `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、IGP (リンクステート)
   vs EGP (パスベクトル)、BGP のポリシー機構と Gao–Rexford 安定条件、経路ハイジャックと
   RPKI、エニーキャスト、クラウド接続 (専用線接続と経路制御) の読み方
@@ -117,6 +124,6 @@
 `packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド
 (ファブリックの経路制御の `dc-fabric-routing.md`、`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
-へ進む。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
+へ進む。1 対多の配信とリンクの上のサービス探索は `multicast-service-discovery.md` へ。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
 防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
