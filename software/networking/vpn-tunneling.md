@@ -12,7 +12,7 @@
 
 - **一次資料**: IPsec は RFC 4301 (アーキテクチャ)・RFC 4303 (ESP)・RFC 4302 (AH)・RFC 7296 (IKEv2)、SSH は RFC 4251〜4254、L2TP は RFC 2661 と RFC 3931 を使う。WireGuard は設計者の論文 (Donenfeld, NDSS 2017) を、攻撃は査読付き論文 (Terrapin は USENIX Security 2024、TunnelCrack は USENIX Security 2023) と、発見者や CERT/CC・CISA の公開情報を使う。耐量子暗号は RFC 9370 と IETF の作業中の文書、OpenSSH のリリースノートを、メッシュ型 VPN は Tailscale の技術解説を、VPN の識別は査読付き論文 (USENIX Security 2022) を、日本の被害の傾向は警察庁の統計を使う。
 - **装置の脆弱性は公的機関の文書で確かめる**: VPN 装置の事件は報道が多く数字が揺れるため、CISA の緊急指令やベンダーの告知など、日付と CVE 番号が確かめられる文書を使う。
-- **担当範囲**: TLS のハンドシェイクと証明書の検証は [`tls-internals.md`](tls-internals.md)、AEAD や鍵交換の一般論は [`../security/applied-cryptography.md`](../security/applied-cryptography.md)、クラウドとオンプレミスを VPN や専用線でつなぐ構成は [`../cloud/cloud-network-topology.md`](../cloud/cloud-network-topology.md)、QUIC の上の VPN (MASQUE) は [`http-quic-evolution.md`](http-quic-evolution.md) に委ねる。VPN を置き換えるゼロトラスト型のアクセス (ZTNA・SASE) は [`../security/perimeter-defense-zero-trust.md`](../security/perimeter-defense-zero-trust.md) に委ねる。
+- **担当範囲**: TLS のハンドシェイクと証明書の検証は [`tls-internals.md`](tls-internals.md)、AEAD や鍵交換の一般論は [`../security/applied-cryptography.md`](../security/applied-cryptography.md)、クラウドとオンプレミスを VPN や専用線でつなぐ構成は [`../cloud/cloud-network-topology.md`](../cloud/cloud-network-topology.md)、QUIC の上の VPN (MASQUE) は [`http-quic-evolution.md`](http-quic-evolution.md) に委ねる。通信事業者が MPLS の上で提供する暗号化しない閉域網 (L3VPN) は [`mpls-segment-routing.md`](mpls-segment-routing.md) に委ねる。VPN を置き換えるゼロトラスト型のアクセス (ZTNA・SASE) は [`../security/perimeter-defense-zero-trust.md`](../security/perimeter-defense-zero-trust.md) に委ねる。
 - 各方式を「どの層で包むか」「鍵をどう決めるか」「NAT や MTU とどう付き合うか」の 3 つの観点で比べ、攻撃と防御は対で扱う。
 
 ## 発見事項 (Findings)

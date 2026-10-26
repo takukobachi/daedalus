@@ -124,6 +124,7 @@ IP の転送は、突き詰めれば一つの原語に還元される。それ�
 - [`dns-resolution.md`](dns-resolution.md) — エニーキャストの最大の応用 (ルートサーバ)。DNSSEC の停滞は BGPsec と同型の増分導入性問題。
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — BGP のトランスポートは TCP。セッション保護 (TCP-AO) と、輻輳 (ミリ秒) vs 経路収束 (分) の時定数の対比。
 - [`kernel-network-stack.md`](kernel-network-stack.md) — ホスト側の FIB (カーネル IP 層の経路判定)。
+- [`mpls-segment-routing.md`](mpls-segment-routing.md) — 事業者網で IGP と MP-BGP の上に載る MPLS・Segment Routing と L3VPN (VRF・RD・RT)。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — BGP は結果整合な経路の分散データベースであり、収束途中の不整合 (ループ・黒穴) はこの語彙で読める。
 - [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — FIB の物理: TCAM・LPM 専用構造と表容量の経済。
 - [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — Clos ファブリックと ECMP。BGP がデータセンター内部の標準になった現場。
