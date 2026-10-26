@@ -46,6 +46,12 @@
   表の大きさと枯渇・ゾーン、helper の既定無効化の経緯、conntrack の上の NAT (ポート割り当て)、
   非対称経路と状態の同期 (conntrackd・pfsync)、pf・eBPF・flowtable との対比、
   NAT Slipstreaming と IPv6 の見落とし。上の文書のホストの中で、規則と状態を実装する部分
+- `ddos-mitigation.md` — DDoS 対策のアーキテクチャ：容量の配置と早く安い廃棄、費用の非対称、
+  BCP 38/84 と反射の踏み台の閉鎖 (monlist・memcached・RRL・QUIC の 3 倍の上限)、RTBH (RFC 5635・
+  BLACKHOLE コミュニティ) が攻撃を完成させること、Flowspec (RFC 8955) と網全体を止めた障害、
+  スクラビングへの BGP 迂回と GRE の戻り経路の MTU、エニーキャストの吸収と撤退、フロー計測による
+  検知とカーペットボミング、L7 (Rapid Reset・CONTINUATION・MadeYouReset)、DOTS、合図の悪用と
+  試験の範囲。上の部品を防御の層として組み直す
 - `tls-internals.md` — TLS 1.3：削除による安全化 (RSA 鍵交換・CBC の廃止)、1-RTT
   ハンドシェイク、HKDF 鍵スケジュール、PKI と Certificate Transparency、0-RTT と
   ダウングレード防御、耐量子ハイブリッドへの移行
@@ -94,8 +100,8 @@
 → トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
-`packet-filtering-conntrack.md`)、データセンターとクラウド (ファブリックの経路制御の
-`dc-fabric-routing.md`、`virtual-networks-overlay.md`、
+`packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド
+(ファブリックの経路制御の `dc-fabric-routing.md`、`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`)
 へ進む。防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
 攻撃のライフサイクルの文書へ。
