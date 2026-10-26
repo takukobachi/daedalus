@@ -117,6 +117,7 @@ flowchart TD
 - [`tls-internals.md`](tls-internals.md) — DoT/DoH の基盤。SNI/ECH と並ぶ「最後の平文」問題の相方。
 - [`http-quic-evolution.md`](http-quic-evolution.md) — DoQ の輸送。HTTPS レコード (SVCB) は接続確立の 1 往復をここに畳む。
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — TC フラグで落ちてくる先の TCP。
+- [`multicast-service-discovery.md`](multicast-service-discovery.md) — 同じレコード型をリンクの上のマルチキャストで引く mDNS と、PTR・SRV・TXT でサービスを探す DNS-SD。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — TTL キャッシュの一貫性を位置づける語彙 (結果整合性)。
 - [`../../hardware/timekeeping/clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md) — DNSSEC 署名の有効期間検証が依存する「正しい時刻」。
 
