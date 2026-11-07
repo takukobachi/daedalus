@@ -398,6 +398,7 @@ flowchart LR
 - [`vpn-tunneling.md`](vpn-tunneling.md) — TLS を使う VPN。
 - [`webrtc-realtime-media.md`](webrtc-realtime-media.md) — DTLS によるメディアの鍵の取り決め。
 - [`../security/perimeter-defense-zero-trust.md`](../security/perimeter-defense-zero-trust.md) — TLS インスペクションを行う境界防御の装置とゼロトラスト。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — SNI・QUIC の Initial・ECH を使う検閲と、ClientHello の指紋 (JA3・JA4・uTLS) による識別と迂回。
 
 ## 参考文献 (References)
 

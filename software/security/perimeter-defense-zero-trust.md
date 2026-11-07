@@ -163,6 +163,7 @@ PE が要求ごとに許可・拒否を判断し、PA がその判断を PEP に
 - [`../cloud/cloud-iam-authorization.md`](../cloud/cloud-iam-authorization.md) — 位置ではなく ID と属性で認可するクラウドの IAM。
 - [`../apis/webauthn-passkeys-specification.md`](../apis/webauthn-passkeys-specification.md) — ゼロトラストの前提となるフィッシングに強い認証。
 - [`../../engineering/energy/plant-control-scada-security.md`](../../engineering/energy/plant-control-scada-security.md) — 制御システムでのゾーンとコンジット、IT/OT 境界の DMZ。
+- [`../networking/proxies-anonymity-censorship.md`](../networking/proxies-anonymity-censorship.md) — 検査のための中継と、匿名化・迂回のための中継を、誰が何を見るかで比べる。PAC/WPAD の危険。
 
 ## 参考文献 (References)
 

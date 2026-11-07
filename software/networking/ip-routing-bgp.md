@@ -288,6 +288,7 @@ flowchart LR
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — BGP は結果整合な経路の分散データベースであり、収束途中の不整合 (ループ・黒穴) はこの語彙で読める。
 - [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — FIB の物理: TCAM・LPM 専用構造と表容量の経済。
 - [`../../engineering/datacenters/datacenter-fundamentals.md`](../../engineering/datacenters/datacenter-fundamentals.md) — Clos ファブリックと ECMP。BGP がデータセンター内部の標準になった現場。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — 経路の撤回による国全体の遮断の集計 (#KeepItOn) と、経路を悪用して Tor の利用者を結び付ける RAPTOR。
 
 ## 参考文献 (References)
 
