@@ -203,6 +203,7 @@ Pingmesh が見つけた故障の代表はパケットの黒穴 (black-hole) で
 - [`ip-routing-bgp.md`](ip-routing-bgp.md) — 制御プレーン検証が対象にする IGP と BGP の機構。BGP が安定状態を複数持ちうることの背景。
 - [`packet-filtering-conntrack.md`](packet-filtering-conntrack.md) — データプレーン検証が扱う ACL と NAT の評価モデル。状態を持つフィルタはスナップショットの検証では扱いにくい。
 - [`qos-traffic-management.md`](qos-traffic-management.md) — 帯域内テレメトリが測るキューの機構と、マイクロバーストが起きる場所。
+- [`datacenter-congestion-control.md`](datacenter-congestion-control.md) — INT の値で送信量を決める HPCC と Solar。テレメトリを制御の信号として使う側。
 - [`virtual-networks-overlay.md`](virtual-networks-overlay.md) — VPC の到達性 (Tiros・Reachability Analyzer の対象) と、カプセル化の MTU の税。
 - [`load-balancing-architecture.md`](load-balancing-architecture.md) — ECMP とロードバランサ。traceroute の誤りと、007 が VIP から DIP を問い合わせる理由。
 - [`../observability/observability-performance-engineering.md`](../observability/observability-performance-engineering.md)・[`../observability/time-series-databases.md`](../observability/time-series-databases.md) — 収集したテレメトリを保存し、SLO と警報に変える側。

@@ -69,7 +69,7 @@ flowchart TB
 - **GPUDirect RDMA**: NIC の DMA エンジンが PCIe 経由（または NVLink 接続の NIC）で GPU の HBM を直接読み書きする。CPU とホストメモリはデータパスから消え、コピー回数はゼロになる。[`../networking/nic-switch-architecture.md`](../networking/nic-switch-architecture.md) のディスクリプタリング協定が、宛先アドレスだけ GPU メモリに差し替わった形と読める。IOMMU/ATS の設定（[`../hw-sw-interface/`](../hw-sw-interface/)）が前提になる。
 - **InfiniBand**: クレジットベースのリンクレベルフロー制御で構造的にロスレス。サブネットマネージャによる集中経路制御、アダプティブルーティングで大フローの衝突を回避する。
 - **RoCEv2**: UDP/IP 上の RDMA。ロスレス性は PFC（優先度別の一時停止）+ ECN ベースの輻輳制御 (DCQCN) の運用で作り込む必要があり、その運用難度と引き換えにイーサネットのエコシステムを得る。両者の詳細な機構と代償は [`../networking/nic-switch-architecture.md`](../networking/nic-switch-architecture.md) に譲る。
-- 進行中の方向（Ultra Ethernet 等）: 単一パスに順序を頼らず**パケットを複数経路に散らし (packet spraying)、受信側で順序外を許容**する。これは「ロスレスを作り込む」から「損失・順序に頑健にする」への転換であり、[`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) の輻輳制御の知見がファブリック設計に還流している。
+- 進行中の方向（Ultra Ethernet 等）: 単一パスに順序を頼らず**パケットを複数経路に散らし (packet spraying)、受信側で順序外を許容**する。これは「ロスレスを作り込む」から「損失・順序に頑健にする」への転換であり、[`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) の輻輳制御の知見がファブリック設計に還流している。輻輳制御の側の詳細 (UET の NSCC・RCCC・トリミング、Meta が DCQCN を止めて集合通信ライブラリで送信を制限した事例) は [`../../software/networking/datacenter-congestion-control.md`](../../software/networking/datacenter-congestion-control.md) が扱う。
 
 ### 3. SHARP — スイッチ内リダクション (In-Network Reduction)
 

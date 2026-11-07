@@ -137,6 +137,7 @@ flowchart LR
 - [`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) — バッファ・ECN・輻輳制御のプロトコル側。
 - [`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) — SR-IOV/virtio/vDPA の仮想化側。
 - [`../timekeeping/clocks-time-synchronization.md`](../timekeeping/clocks-time-synchronization.md) — ハードウェアタイムスタンプと PTP。
+- [`../../software/networking/datacenter-congestion-control.md`](../../software/networking/datacenter-congestion-control.md) — DCQCN・TIMELY・Swift・HPCC・受信側主導の方式を、信号と制御の場所で比べたアルゴリズム側。PFC の故障と IRN。
 - [`../accelerators/README.md`](../accelerators/README.md) — RDMA/collective 通信の最大の需要者 (スケールアウト学習候補)。
 
 ## 参考文献 (References)

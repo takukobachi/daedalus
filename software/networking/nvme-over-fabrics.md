@@ -264,6 +264,7 @@ struct nvme_tcp_hdr {
 - [`../../hardware/accelerators/interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) — AI クラスタのロスレス RDMA 網。チェックポイントの保存先としてのストレージ網と同じ網を共有する場合がある。
 - [`qos-traffic-management.md`](qos-traffic-management.md) — PFC を含むトラフィッククラスの設計。ストレージのトラフィックを分けるときの前提。
 - [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — TCP の HoL ブロッキングと再送タイムアウト。NVMe/TCP のテールの源。
+- [`datacenter-congestion-control.md`](datacenter-congestion-control.md) — incast と PFC の故障、SRD・Solar・Azure の輻輳制御。ストレージの網の下の送信量の制御。
 - [`kernel-network-stack.md`](kernel-network-stack.md) — sk_buff・GRO・RSS。NVMe/TCP の受信経路が通るスタック。
 - [`../object-storage/object-storage-architecture.md`](../object-storage/object-storage-architecture.md) — 部分書き換えを捨てたもう一つのストレージ抽象。
 
