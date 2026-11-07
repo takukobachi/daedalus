@@ -44,7 +44,12 @@
   SFrame と MLS、WebTransport・MoQ・WHIP/WHEP、TURN の悪用・IP アドレスの漏洩・cryptex
 - `kernel-network-stack.md` — カーネルネットワークスタック：NIC リングと NAPI (割り込みの
   経済)、sk_buff、GRO/GSO とパケット単価、RSS/RPS/RFS、qdisc/BQL、XDP・AF_XDP・DPDK の
-  バイパス系譜。上 2 本のプロトコルを運ぶ機械側
+  バイパス系譜。NAPI の予算 (`netdev_budget`)・スレッド化 NAPI・busy poll と IRQ suspension、
+  page_pool とヘッダ分割、ソケットのメモリ計上 (`tcp_mem`)・listen のキューと SYN cookie・
+  SO_REUSEPORT・epoll・io_uring、ゼロコピー (MSG_ZEROCOPY・devmem TCP・io_uring zcrx・kTLS)、
+  FIB の LC-trie と経路キャッシュの削除・近隣表、EDT と TSQ、netns・veth、drop reason と
+  落ちる場所の地図、netmap・mTCP・Snap とバイパスの再評価、SegmentSmack・FragmentSmack・
+  SACK Panic。上 2 本のプロトコルを運ぶ機械側
 - `packet-filtering-conntrack.md` — パケットフィルタと接続追跡：netfilter のフックと優先度、
   iptables から nftables へ (線形照合と全体更新 → 集合・verdict map・トランザクション、
   iptables-nft、ipset)、conntrack の状態機械 (TCP の窓の検査、UDP/ICMP の擬似状態、タイムアウト)、
