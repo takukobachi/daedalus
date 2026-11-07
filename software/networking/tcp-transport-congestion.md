@@ -237,6 +237,7 @@ stateDiagram-v2
 - [`kernel-network-stack.md`](kernel-network-stack.md) — TCP の下の GRO/GSO・qdisc・BQL。BBR のペーシングを担う fq。
 - [`ddos-mitigation.md`](ddos-mitigation.md) — SYN cookie・SYNPROXY・XDP による大規模な SYN flood の防御。
 - [`dc-fabric-routing.md`](dc-fabric-routing.md) — ECMP。PLB による経路の選び直しの下地。
+- [`datacenter-congestion-control.md`](datacenter-congestion-control.md) — 第 10 節の橋渡しの先。DCTCP・DCQCN・Swift・HPCC・Homa・UET の詳細。
 
 ## 参考文献 (References)
 

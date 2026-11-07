@@ -113,6 +113,13 @@
   フローレット (CONGA・LetFlow)、BFD と局所修復・マイクロループ・ADD-PATH/PIC、退避
   (RFC 8326・Meta の 3 状態)、Google Firepath/Orion と Meta の BGP 設計、グレー障害と全体変更の
   影響範囲、セッション保護 (TCP-AO・GTSM) と CoPP。クラウドのアンダーレイの読み方
+- `datacenter-congestion-control.md` — データセンターの輻輳制御とトランスポート：µs 級の RTT・浅いバッファ・
+  incast と FCT の末尾、DCTCP (RFC 8257・Linux `tcp_dctcp.c` の α と PLB)、DCQCN と TIMELY、PFC の
+  デッドロック・ストーム・ライブロックと IRN、Swift (ファブリックとホストの遅延の分割)、HPCC と HPCC++・CSIG、
+  受信側主導 (pHost・NDP のトリミング・Homa と Linux への取り込みの状況・ExpressPass)、TCP の置き換え論争、
+  散布・フローレット・PLB と順序の許容、SRD・Falcon・Azure の RDMA・Alibaba Solar、AI 学習の網と
+  Meta の DCQCN の停止、UET (NSCC・RCCC・トリミング、1.0〜1.1)、信号の偽装・LoRDMA・NIC のサイドチャネル。
+  信号と制御ループの置き場所で方式を読み分ける
 - `virtual-networks-overlay.md` — 仮想ネットワークとオーバーレイ：マルチテナントの
   問題設定、VXLAN/Geneve カプセル化、マッピング分配の制御平面 (EVPN・中央ディレクトリ)、
   OVS と SmartNIC オフロード、セキュリティグループ = 分散ステートフル FW、NAT と
@@ -157,7 +164,8 @@
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
 `packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド
-(ファブリックの経路制御の `dc-fabric-routing.md`、`virtual-networks-overlay.md`、
+(ファブリックの経路制御の `dc-fabric-routing.md`、その上の輻輳制御とトランスポートの
+`datacenter-congestion-control.md`、`virtual-networks-overlay.md`、
 `load-balancing-architecture.md`、`cdn-edge-delivery.md`、`service-mesh.md`、`rpc-serialization.md`、
 ブロックストレージを網で運ぶ `nvme-over-fabrics.md`) へ進む。1 対多の配信とリンクの上のサービス探索は `multicast-service-discovery.md` へ。運用の側から網の振る舞いを予測し観測するなら `network-verification-telemetry.md` へ。
 防御の側から読み直すなら [`../security/`](../security/README.md) の境界防御・検知・
