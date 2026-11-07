@@ -35,8 +35,13 @@
   シェーピング (3 色マーカ・TCP との相性)、階層型 QoS と Linux tc (HTB・fq_codel・CAKE)、
   L4S・5QI・PFC、優先度の窃取とネットワーク中立性
 - `http-quic-evolution.md` — HTTP/1.1 → 2 → QUIC/HTTP3：多重化と HoL の局在化、
-  HPACK/QPACK、QUIC の設計 (ストリーム、コネクション ID、トランスポート暗号化、0-RTT と
-  リプレイ、アンプ制限)、硬直化への構造的応答
+  HPACK/QPACK、意味論とワイヤ形式の分離 (RFC 9110–9114)、冪等性・キャッシュ・条件付きと範囲の
+  リクエスト、仲介者と CONNECT・Extended CONNECT、Server Push の撤去と 103 Early Hints・
+  RFC 9218 の優先度・WebSocket/SSE、リクエストスマグリング (H2.CL/H2.TE・0.CL)、
+  QUIC の設計 (ストリーム、コネクション ID、トランスポート暗号化、0-RTT とリプレイ、アンプ制限)、
+  損失検出と輻輳制御 (RFC 9002)、経路移動とステートレスリセット、QUIC v2・GREASE・スピンビット、
+  DATAGRAM とマルチパス、UDP GSO/GRO と CPU のコスト、普及率と UDP 遮断時のフォールバック、
+  MASQUE と iCloud Private Relay、硬直化への構造的応答
 - `webrtc-realtime-media.md` — WebRTC とリアルタイムメディア伝送：遅延予算 (G.114) と「遅れたデータは
   失われたデータ」、ICE・STUN・TURN と trickle ICE・mDNS 候補、DTLS-SRTP と指紋、SCTP のデータチャネル、
   JSEP と Unified Plan、RTP/RTCP とジッタバッファ・NACK/RTX・FEC (FlexFEC・RED)・PLI/FIR、
