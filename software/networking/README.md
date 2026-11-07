@@ -26,6 +26,15 @@
   (cryptokey routing、Noise IK、応答しない設計)、L2TP と PPTP、TLS の VPN、MTU と経路表、
   TunnelVision・TunnelCrack と VPN 装置の侵害、メッシュ型 VPN (調整サーバと NAT 越え)、
   耐量子鍵交換への移行 (SSH・IKEv2・WireGuard)、VPN の識別と検閲、一般向け VPN サービスの信頼モデル
+- `proxies-anonymity-censorship.md` — プロキシ・匿名化・検閲：誰がどのフィールド (IP・SNI・DNS の名前・
+  大きさとタイミング) を見て誰を信頼するかという共通の枠組み、フォワード・リバース・透過型のプロキシと
+  CONNECT・SOCKS・PAC/WPAD、X-Forwarded-For・Forwarded・PROXY protocol の偽装、知識を分ける中継
+  (iCloud Private Relay・OHTTP・ODoH・廃止された Chrome の IP Protection)、Tor (回路・ディレクトリ機関・ガード・
+  オニオンサービス v3 と proof-of-work・規模・Arti)、相関攻撃・RAPTOR・Web サイトの指紋の評価論争・悪意ある中継、
+  層ごとの検閲 (DNS の注入・RST・SNI・帯域制限・QUIC の Initial の復号・完全に暗号化された通信の推定・
+  能動的な調査・ECH の遮断・国全体の遮断)、GFW・TSPU・イランの配置、OONI・Censored Planet・ICLab と計測の倫理、
+  迂回の設計 (obfs4・meek・Snowflake・WebTunnel・Shadowsocks・模倣と乱数化・リフラクションネットワーキング・
+  ドメインフロンティングの衰退)、DNS・WebRTC の漏れと TLS の指紋。散らばっていた検閲とプライバシの話題の入口
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
   フロー制御 vs 輻輳制御、接続管理 (SYN cookie・TIME_WAIT とポート再利用・RFC 5961・keepalive)、
   TCP Fast Open が広まらなかった理由、損失回復 (RTO の最小値・RACK-TLP・PRR・F-RTO・遅延 ACK と Nagle)、
@@ -160,7 +169,8 @@
 → 名前解決 (`dns-resolution.md`) → 暗号化 (`tls-internals.md`)
 → アプリケーションのプロトコル (`http-quic-evolution.md`、`email-delivery-authentication.md`、
 対話的な音声・映像の `webrtc-realtime-media.md`)
-→ トンネル (`vpn-tunneling.md`) の順に読む。通信事業者の基幹網に進むなら、経路制御の後に
+→ トンネル (`vpn-tunneling.md`) の順に読む。その先で、中継・匿名化・検閲を経路の上の見え方として読み直すなら
+`proxies-anonymity-censorship.md` へ進む。通信事業者の基幹網に進むなら、経路制御の後に
 `mpls-segment-routing.md` を読む。その後は関心に応じて、ホストの中
 (`kernel-network-stack.md`、その上でパケットを通すか捨てるかを決める
 `packet-filtering-conntrack.md`)、DDoS の防御の配置 (`ddos-mitigation.md`)、データセンターとクラウド

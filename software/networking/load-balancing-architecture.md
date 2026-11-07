@@ -133,6 +133,7 @@
 - [`../object-storage/object-storage-architecture.md`](../object-storage/object-storage-architecture.md) — 同じ道具の別適用。CRUSH/Dynamo リングとの設計空間の共有。
 - [`../distributed-systems/consensus.md`](../distributed-systems/consensus.md) — 故障検知の理論的下地。「遅い」と「死んだ」の非区別性。
 - [`../observability/observability-performance-engineering.md`](../observability/observability-performance-engineering.md) — 制御ループの観測側。p99・負荷メトリクスの読み方。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — リバースプロキシが元のアドレスを伝える X-Forwarded-For・Forwarded・PROXY protocol と、その偽装の防ぎ方。
 
 ## 参考文献 (References)
 

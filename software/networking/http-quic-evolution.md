@@ -338,6 +338,7 @@ Web Almanac の 7〜9% が低いのは、クローラが各ページを初回の
 - [`vpn-tunneling.md`](vpn-tunneling.md) — MASQUE を VPN の系譜の中で見る。
 - [`kernel-network-stack.md`](kernel-network-stack.md) — UDP の GSO/GRO が働くカーネルの受信と送信の経路。
 - [`../security/web-application-vulnerabilities.md`](../security/web-application-vulnerabilities.md) — リクエストスマグリングの攻撃手順と Web アプリケーションへの影響。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — Private Relay・OHTTP を含む知識を分ける中継と、GFW による QUIC の Initial の復号と遮断。
 
 ## 参考文献 (References)
 

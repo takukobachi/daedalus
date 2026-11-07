@@ -209,6 +209,7 @@ flowchart LR
 - [`../cloud/cloud-network-topology.md`](../cloud/cloud-network-topology.md) — クラウドのサイト間 VPN と専用線接続の使い分け。
 - [`http-quic-evolution.md`](http-quic-evolution.md) — QUIC の上で VPN を実現する MASQUE。
 - [`../security/software-supply-chain-security.md`](../security/software-supply-chain-security.md) — sshd を狙った xz バックドア。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — 単一の中継 (VPN) を、知識を分ける 2 段の中継や Tor と並べて比べ、検閲による識別と迂回の設計を扱う入口。
 
 ## 参考文献 (References)
 

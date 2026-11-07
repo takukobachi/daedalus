@@ -233,6 +233,7 @@ flowchart LR
 - [`email-delivery-authentication.md`](email-delivery-authentication.md) — MX・SPF・DKIM・DMARC・DANE。DNS をメールの信頼の置き場に使う側。
 - [`../distributed-systems/consistency-models.md`](../distributed-systems/consistency-models.md) — TTL キャッシュの一貫性を位置づける語彙 (結果整合性)。
 - [`../../hardware/timekeeping/clocks-time-synchronization.md`](../../hardware/timekeeping/clocks-time-synchronization.md) — DNSSEC 署名の有効期間検証が依存する「正しい時刻」。
+- [`proxies-anonymity-censorship.md`](proxies-anonymity-censorship.md) — DNS の注入による検閲 (GFW・GFWatch・Wallbleed)、ODoH と OHTTP、プロキシ利用時の DNS リーク。
 
 ## 参考文献 (References)
 

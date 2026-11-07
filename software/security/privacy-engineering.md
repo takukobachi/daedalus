@@ -222,6 +222,7 @@ A randomized mechanism M is (ε, δ)-DP if for all neighboring databases D, D'
 - [`../../foundations/mathematics/probability-statistics/probability-random-variables.md`](../../foundations/mathematics/probability-statistics/probability-random-variables.md) — ラプラス分布・正規分布と確率の不等式。
 - [`../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md`](../../foundations/mathematics/probability-statistics/estimation-hypothesis-testing.md) — 推定と仮説検定。ε を検定の誤りの率として読む見方とメンバーシップ推論の評価。
 - [`../../foundations/information-theory/entropy-source-coding.md`](../../foundations/information-theory/entropy-source-coding.md) — 相互情報量と KL ダイバージェンス。出力が漏らす情報の量を測る別の尺度。
+- [`../networking/proxies-anonymity-censorship.md`](../networking/proxies-anonymity-censorship.md) — 通信の側のプライバシ。知識を分ける中継 (Private Relay・OHTTP) と Tor、その非匿名化の型。
 
 ## 参考文献 (References)
 
