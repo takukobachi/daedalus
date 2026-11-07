@@ -221,6 +221,7 @@ rebalance_after_weight_change():
 - [`load-balancing-architecture.md`](load-balancing-architecture.md) — ECMP とコンシステントハッシュの上に作るロードバランサ。次ホップの変化がステートフルな機器に与える影響。
 - [`mpls-segment-routing.md`](mpls-segment-routing.md) — 通信事業者の網での迂回 (TI-LFA) とエントロピーラベル。リンクステートで迂回路を事前計算する方式。
 - [`qos-traffic-management.md`](qos-traffic-management.md) — 混雑したリンクでの配分と PFC。ECMP で避けきれない混雑への対処。
+- [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — DCTCP と、ECN の印を見て ECMP の経路を選び直す PLB。端点の側からの混雑への対処。
 - [`../../hardware/accelerators/interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) — パケットスプレーと適応的な経路選択を使う AI 学習のファブリック。
 - [`../../hardware/networking/nic-switch-architecture.md`](../../hardware/networking/nic-switch-architecture.md) — ECMP の束やバケットの表を収めるスイッチ ASIC の構造。
 - [`../distributed-systems/failure-models.md`](../distributed-systems/failure-models.md) — グレー障害を含む故障モデル。
