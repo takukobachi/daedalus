@@ -89,9 +89,13 @@
   IPTV・市場データ・無線 LAN (RFC 9119)、mDNS/DNS-SD (probe・既知応答の抑制・`.local` の衝突)、
   SSDP・LLMNR・NBT-NS、Discovery Proxy と SRP (Thread・Matter)、名前解決の毒入れ・SSDP の反射・
   CallStranger
-- `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、IGP (リンクステート)
-  vs EGP (パスベクトル)、BGP のポリシー機構と Gao–Rexford 安定条件、経路ハイジャックと
-  RPKI、エニーキャスト、クラウド接続 (専用線接続と経路制御) の読み方
+- `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、経路表の規模と 512k day、
+  IGP (OSPF のエリアと LSA、IS-IS のレベル、SPF の遅延制御) vs EGP (パスベクトル)、BGP の
+  決定プロセスの全段と MED・ルートリフレクタの振動、コミュニティ、Graceful Restart/LLGR、
+  Route Flap Damping、Gao–Rexford 安定条件、相互接続の経済 (トランジット・ピアリング・IXP
+  ルートサーバ・平坦化・オフネットキャッシュ・ネットワーク利用料)、計測 (RouteViews・RIS・
+  IODA)、経路ハイジャックと経路リーク (ROV の普及、ASPA、RFC 9234、IRR の弱点、主要事件)、
+  エニーキャスト、クラウド接続 (専用線接続と経路制御) の読み方
 - `mpls-segment-routing.md` — MPLS と Segment Routing：ラベルスイッチングの価値 (表引きの
   速さではなく転送判断と IP 宛先の切り離し)、ラベルスタック・PHP・TTL の扱い、LDP と IGP の同期、
   RSVP-TE と状態の代償、FRR (RFC 4090・LFA・TI-LFA) と 50 ms の由来、BGP/MPLS L3VPN (RD と RT)・
