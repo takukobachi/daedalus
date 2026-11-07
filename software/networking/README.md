@@ -62,9 +62,13 @@
   スクラビングへの BGP 迂回と GRE の戻り経路の MTU、エニーキャストの吸収と撤退、フロー計測による
   検知とカーペットボミング、L7 (Rapid Reset・CONTINUATION・MadeYouReset)、DOTS、合図の悪用と
   試験の範囲。上の部品を防御の層として組み直す
-- `tls-internals.md` — TLS 1.3：削除による安全化 (RSA 鍵交換・CBC の廃止)、1-RTT
-  ハンドシェイク、HKDF 鍵スケジュール、PKI と Certificate Transparency、0-RTT と
-  ダウングレード防御、耐量子ハイブリッドへの移行
+- `tls-internals.md` — TLS 1.3 (RFC 9846 による改訂を含む)：削除による安全化 (RSA 鍵交換・CBC の廃止)、1-RTT
+  ハンドシェイク、HKDF 鍵スケジュール、HelloRetryRequest と鍵共有の予測・互換モード・GREASE、
+  SNI・ALPN・ECH (RFC 9849)・証明書圧縮、PKI の運用 (47 日への短縮・ACME/ARI・OCSP の退場と
+  CRLite・static-ct-api・Entrust などの不信任・サーバ認証専用化)、チケット鍵と前方秘匿性、
+  0-RTT のリプレイ対策、AEAD の利用上限と KeyUpdate、形式検証と実装の欠陥 (Heartbleed・
+  CVE-2024-12797)、mTLS と DTLS 1.3、TLS を終端する中間装置の実害、耐量子ハイブリッドの
+  展開と MTC、故障の形
 - `dns-resolution.md` — DNS：委任とキャッシュ (TTL 付き結果整合性)、解決の実経路
   (スタブ〜権威)、リゾルバの内部 (QNAME 最小化 RFC 9156・SRTT によるサーバ選択・
   積極的な NSEC キャッシュ・0x20)、Flag Day と 1232 バイト・TCP 必須 (RFC 9210)・断片化の
