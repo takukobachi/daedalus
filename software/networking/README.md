@@ -66,8 +66,13 @@
   ハンドシェイク、HKDF 鍵スケジュール、PKI と Certificate Transparency、0-RTT と
   ダウングレード防御、耐量子ハイブリッドへの移行
 - `dns-resolution.md` — DNS：委任とキャッシュ (TTL 付き結果整合性)、解決の実経路
-  (スタブ〜権威)、毒入れと DNSSEC、DoT/DoH と集中化のトレードオフ、障害の構造
-  (依存の環・ネガティブキャッシュ)
+  (スタブ〜権威)、リゾルバの内部 (QNAME 最小化 RFC 9156・SRTT によるサーバ選択・
+  積極的な NSEC キャッシュ・0x20)、Flag Day と 1232 バイト・TCP 必須 (RFC 9210)・断片化の
+  回避 (RFC 9715)、権威側 (エニーキャスト・NOTIFY/IXFR・隠しプライマリ・複数署名者
+  RFC 8901)、SVCB/HTTPS と ECH・apex の CNAME・ワイルドカード・CAA、ECS の精度と
+  プライバシ、毒入れと DNSSEC (2018 年・2026 年のルート KSK の交代、アルゴリズムの交代、
+  NSEC3)、DoT/DoH/DoQ・DDR・ODoH と集中化、`.internal`、障害の事例 (Dyn・Akamai・
+  Slack・.nz・AWS 2025)、SAD DNS・NXNS・TsuNAME・KeyTrap・ダングリングレコード
 - `multicast-service-discovery.md` — IP マルチキャストとローカルなサービス探索：状態を網に置く
   代償と、インターネットで広がらなかった理由 (Diot ら 2000)、MAC アドレスへの 32 対 1 の写像、
   IGMPv3/MLDv2 (RFC 9776/9777) と報告の抑制の廃止、スヌーピング (RFC 4541・未登録グループ・
