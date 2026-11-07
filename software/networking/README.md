@@ -27,8 +27,13 @@
   TunnelVision・TunnelCrack と VPN 装置の侵害、メッシュ型 VPN (調整サーバと NAT 越え)、
   耐量子鍵交換への移行 (SSH・IKEv2・WireGuard)、VPN の識別と検閲、一般向け VPN サービスの信頼モデル
 - `tcp-transport-congestion.md` — TCP と輻輳制御：信頼性の道具立て (ACK/SACK/RTO)、
-  フロー制御 vs 輻輳制御、AIMD の公平性 (Chiu–Jain)、CUBIC、バッファブロートと AQM/ECN、
-  BBR、TCP の構造的限界 (HoL・硬直化)
+  フロー制御 vs 輻輳制御、接続管理 (SYN cookie・TIME_WAIT とポート再利用・RFC 5961・keepalive)、
+  TCP Fast Open が広まらなかった理由、損失回復 (RTO の最小値・RACK-TLP・PRR・F-RTO・遅延 ACK と Nagle)、
+  ウィンドウスケール・PAWS・バッファの自動調整、AIMD の公平性 (Chiu–Jain)、CUBIC、
+  バッファブロートと AQM/ECN・AccECN、BBR (v1 の実装・公平性の実測・BBRv3 の状況)、
+  データセンターの輻輳制御への橋渡し (DCTCP・Swift・HPCC・PLB)、MPTCP と結合輻輳制御、
+  `ss -ti`・tracepoint による観測、TCP の脆弱性 (CVE-2016-5696・SACK Panic・TCP-AO)、
+  TCP の構造的限界 (HoL・硬直化)
 - `qos-traffic-management.md` — QoS とトラフィック制御：QoS は容量を作らず混雑時の配分を
   決めるだけ、IntServ/RSVP から DiffServ へ、DSCP と PHB (EF・AF・LE・NQB)、信頼境界と
   インターネットでの DSCP の書き換え、スケジューリング (厳密優先・WFQ・DRR)、ポリシングと
