@@ -23,8 +23,8 @@
 |---|---|
 | [`hardware/`](hardware/README.md) | 計算機ハードウェアの分析（CPU、アクセラレータ、HW/SW インターフェース、周辺デバイスなど） |
 | [`software/`](software/README.md) | ソフトウェア分析（OS、分散システム、データベース、コンパイラなど） |
-| [`engineering/`](engineering/README.md) | 工学システムの分析（航空宇宙、自動車、ロボット、電力、データセンター設備） |
-| [`foundations/`](foundations/README.md) | 基礎理論（分析を支える数学・物理・情報理論・機械学習などの理論） |
+| [`engineering/`](engineering/README.md) | 工学システムの分析（航空宇宙、自動車、ロボット、電力、データセンター設備、モータ、鉄道、医療機器、通信インフラ） |
+| [`foundations/`](foundations/README.md) | 基礎理論（分析を支える数学・物理・情報理論・機械学習・制御理論などの理論） |
 | [`references/`](references/README.md) | 参考資料（書籍・論文などの書誌情報と要約） |
 
 各ディレクトリの `README.md` に、そのディレクトリのドキュメント一覧があります。ドキュメントの構成や引用の規約は [`AGENTS.md`](AGENTS.md) を参照してください。
