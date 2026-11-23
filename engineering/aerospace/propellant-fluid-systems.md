@@ -20,7 +20,7 @@
 3. **load-and-go は有人安全論争を経て標準になった。** 乗員搭乗後に充填する運用は NASA 諮問委員会で安全性が議論されたが、「充填中の地上要員を排せる」等の利点も含めて評価され、Crew Dragon の標準手順として承認された[^asap]。
 4. **自生加圧はヘリウムという単一障害点を消す。** タンク押しガスに自機の推進剤の気化ガス（CH₄/O₂）を使う Raptor/Starship の方式は、He 調達・充填・COPV（CRS-7/AMOS-6 の当事者）をシステムごと廃する。単純化こそ最大の信頼性向上、という設計哲学の典型[^raptor-autogenous]。
 5. **無重力では「液体がどこにあるか」が問題になる。** 加速度がなければ推進剤はタンク内を浮遊し、エンジンは気体を吸い込みかねない。着火前の**沈底 (settling)**、着陸専用の**ヘッダタンク**、移送時の微小加速は、すべて「液体を出口に寄せる」ための技法である。
-6. **軌道上移送は Starship アーキテクチャの要石。** 月着陸 (HLS) も火星も、LEO でタンカー機から推進剤を移し替える前提で成立する。2024年の飛行試験で機体内タンク間の極低温移送が NASA 契約下で実証されたが、**機体間 (ship-to-ship) の移送は as of 2026-10 で未実証かつ実施日未定**であり、必要タンカー数の見積もりも幅がある（1回のミッションに10機超の充填飛行という試算もある）[^tipping-point][^gao][^ptd]。
+6. **軌道上移送は Starship アーキテクチャの要石。** 月着陸 (HLS) も火星も、LEO でタンカー機から推進剤を移し替える前提で成立する。2024年の飛行試験で機体内タンク間の極低温移送が NASA 契約下で実証されたが、**機体間 (ship-to-ship) の移送は as of 2026-11 で未実証かつ実施日未定**であり、必要タンカー数の見積もりも幅がある（1回のミッションに10機超の充填飛行という試算もある）[^tipping-point][^gao][^ptd]。
 7. **メタンは火星で「現地生産できる燃料」。** CO₂ 大気と水の電気分解から Sabatier 反応で CH₄ を合成できることが、メタン採用（[`spacex-rocket-engines.md`](spacex-rocket-engines.md)）の最終的な根拠であり、流体システムの設計（長期滞留・移送）はこの往還アーキテクチャから逆算されている[^isru]。
 
 ## アーキテクチャ (Architecture)
@@ -47,7 +47,7 @@ stateDiagram-v2
     Landing --> [*]
 ```
 
-凡例: 状態は推進剤の置かれた環境、遷移ラベルはその間に行う操作。「未実証」は as of 2026-10 の状況。加圧方式は Falcon 9 がヘリウム、Starship が自生加圧（次節）。ボイルオフ（熱侵入による蒸発）と二相系の熱力学的背景は [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) を参照。
+凡例: 状態は推進剤の置かれた環境、遷移ラベルはその間に行う操作。「未実証」は as of 2026-11 の状況。加圧方式は Falcon 9 がヘリウム、Starship が自生加圧（次節）。ボイルオフ（熱侵入による蒸発）と二相系の熱力学的背景は [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) を参照。
 
 ### 加圧アーキテクチャの対比 (Pressurization Architectures)
 
@@ -106,7 +106,7 @@ Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙�
      × Nフライト分を反復 → 満タンにして月/火星へ出発
 ```
 
-- **実証状況 (as of 2026-10)**: NASA の Tipping Point 契約（2020, $53.2M）のもと、2024年3月の飛行試験 (IFT-3) で**同一機体内のタンク間 LOX 移送**を実証した[^tipping-point]。**機体間 (ship-to-ship) 移送は未実証**で、予定は2025年3月から2026年3月へずれ込んだ後、新たな確定日は公表されていない（予定の変遷は NASA OIG の 2026-03 の報告による）[^ptd]。前提となる Starship の軌道到達は2026年9月28日の Flight 14 で初めて達成され、次の Flight 15 では移送に関連するドッキング・ハッチ機構のハードウェア試験が報じられている（計画）[^ptd]。HLS 計画の律速要素の一つであることに変わりはない。
+- **実証状況 (as of 2026-11)**: NASA の Tipping Point 契約（2020, $53.2M）のもと、2024年3月の飛行試験 (IFT-3) で**同一機体内のタンク間 LOX 移送**を実証した[^tipping-point]。**機体間 (ship-to-ship) 移送は未実証**で、予定は2025年3月から2026年3月へずれ込んだ後、新たな確定日は公表されていない（予定の変遷は NASA OIG の 2026-03 の報告による）[^ptd]。前提となる Starship の軌道到達は2026年9月28日の Flight 14 で初めて達成された。Flight 15（2026-11-13）について、事前には移送に関連するドッキング・ハッチ機構のハードウェア試験が計画として報じられたが、飛行後の主要な報道はこの試験に触れておらず、実施されたかは確認できない。最初の推進剤移送の試験は「比較的近いうちに」とされるのみで、日付は公表されていない[^ptd][^flight15-next]。HLS 計画の律速要素の一つであることに変わりはない。
 - **規模の見積もり**: 1回の月着陸ミッションに必要なタンカー飛行数は、公表情報の幅が大きい（1桁台後半〜16回程度の試算が併存）[^gao]。ボイルオフ率・タンカー搭載量・軌道上滞在期間に依存するためで、確定値ではなく**感度の高い設計変数**として扱うべき数字である。
 - **技術的難所**: (1) 極低温流体の空中給油に相当する**ドッキング＋配管接続**、(2) 移送中の二相流管理（気液分離、蒸気戻し）、(3) 受け側タンクの熱管理（温かいタンクに注ぐと激しく蒸発する→事前冷却 chilldown）、(4) 長期滞留のボイルオフ最小化。
 
@@ -153,7 +153,9 @@ Starship の月・火星ミッションは、**LEO で「ほぼ空」の宇宙�
 
 [^gao]: U.S. Government Accountability Office — NASA Human Landing System に関する報告書 — HLS ミッションに必要なタンカー飛行数の見積もり幅（1桁台後半〜16回程度）と軌道上移送の技術リスク評価。Accessed: 2026-07-26.
 
-[^ptd]: NASA Office of Inspector General (2026-03-10). [*NASA's Management of the Human Landing System Contracts* (IG-26-004)](https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf) — p. 13: 機体間 (vehicle-to-vehicle) 極低温推進剤移送試験の予定が2025年3月から12か月遅れて2026年3月となったこと。p. 5: HLS ミッションに先立ち10機超のタンカーで推進剤を集積する構想。未実施・実施日未公表の現況は、2026-10-12 時点で NASA・SpaceX の公式発表を確認できないことに基づく。Accessed: 2026-10-12. ／ [Starship flight 15 — Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_15) — Flight 15 での関連ハードウェア試験計画。Accessed: 2026-10-04.
+[^ptd]: NASA Office of Inspector General (2026-03-10). [*NASA's Management of the Human Landing System Contracts* (IG-26-004)](https://oig.nasa.gov/wp-content/uploads/2026/03/final-report-ig-26-004-nasas-management-of-the-human-landing-system-contracts.pdf) — p. 13: 機体間 (vehicle-to-vehicle) 極低温推進剤移送試験の予定が2025年3月から12か月遅れて2026年3月となったこと。p. 5: HLS ミッションに先立ち10機超のタンカーで推進剤を集積する構想。未実施・実施日未公表の現況は、2026-11-23 時点で NASA・SpaceX の公式発表を確認できないことに基づく。Accessed: 2026-10-12.
+
+[^flight15-next]: [Space.com (2026-11-15). What's next for SpaceX's Starship after epic Flight 15 chopsticks catch?](https://www.space.com/space-exploration/launches-spacecraft/whats-next-for-spacexs-starship-after-epic-flight-15-chopsticks-catch) ／ [Spaceflight Now (2026-11-13). Starship returns to Starbase and a successful tower catch](https://spaceflightnow.com/2026/11/13/live-coverage-starship-flight-15-attempts-to-recover-full-vehicle-in-double-launch-pad-catch/) — Flight 15 の結果（上段のタワーキャッチ）と、最初の推進剤移送の試験は「比較的近いうち」とされ日付未定であること。いずれもドッキング・ハッチ機構の試験には触れていない。Accessed: 2026-11-23.
 
 **技術解説・教科書 (Textbooks & technical explainers)**
 
