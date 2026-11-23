@@ -11,7 +11,7 @@
 ## 方法論 (Methodology)
 
 - **一次資料**: IETF の RFC を中心にする。SMTP は RFC 5321、メッセージ形式は RFC 5322、SPF は RFC 7208、DKIM は RFC 6376、DMARC は 2026 年に標準化された RFC 9989 (旧版の RFC 7489 を置き換えた)、MTA-STS は RFC 8461、DANE for SMTP は RFC 7672 である。配送の安全性の実測は Durumeric et al. (2015)、エンドツーエンド暗号化への攻撃は Poddebniak et al. (2018) の査読付き論文を使う。
-- **事業者の要件は事業者の文書で確かめる**: Google の送信者ガイドラインは Google の公式ヘルプで確認した。Yahoo と Microsoft の要件は、事業者の告知を引用する専門メディアと配信事業者の解説で確認し、その旨を明記する。要件は改定されるため、確認した日付を付ける。
+- **事業者の要件は事業者の文書で確かめる**: Google・Yahoo・Microsoft の要件は、それぞれの事業者の公式の文書で確かめる。要件は改定されるため、確認した日付を付ける。
 - **被害額は公的統計の値を使う**: ビジネスメール詐欺 (BEC) の被害額は FBI の IC3 (Internet Crime Complaint Center) の年次報告の値を使う。届け出にもとづく値であり、実際の被害の総額ではない。
 - **担当範囲**: DNS の解決と DNSSEC は [`dns-resolution.md`](dns-resolution.md)、TLS のハンドシェイクと証明書は [`tls-internals.md`](tls-internals.md)、署名と鍵管理の一般論は [`../security/applied-cryptography.md`](../security/applied-cryptography.md) に委ねる。本書はそれらをメールがどう組み合わせて使っているかに集中する。
 
@@ -138,15 +138,15 @@ C: QUIT
 - **普及しない理由**: 送る前に相手の公開鍵を手に入れ、それが本物だと確かめる手間がかかる。鍵をなくすと過去のメールも読めなくなる。サーバ側で本文を検索したり、迷惑メールやマルウェアを検査したりできなくなる。企業内の S/MIME (証明書を一括配布できる環境) を除けば、一般の利用はごく少ない。
 - **EFAIL** (Poddebniak et al. 2018): 攻撃者は傍受した暗号文を書き換え (CBC/CFB モードの改変しやすさを使う)、復号後の平文の前後に HTML の画像タグなどを埋め込んだメールを受信者に送る。受信者のメールソフトが復号して HTML を表示すると、平文が画像の URL の一部として攻撃者のサーバに送られる。過去に傍受したメールにも使える。対策は改ざんを検知できる暗号化 (AEAD。[`../security/applied-cryptography.md`](../security/applied-cryptography.md)) への移行と、改ざんされた暗号文を表示しないこと、外部コンテンツの自動読み込みを止めることである。
 
-### 8. 大手事業者の送信者要件 (2026-10-18 時点で確認)
+### 8. 大手事業者の送信者要件 (2026-11-23 時点で確認)
 
 | 事業者 | 適用開始 | 主な要件 |
 |---|---|---|
 | Google (Gmail) | 2024 年 2 月 1 日 | すべての送信者: SPF か DKIM、正引きと逆引きの DNS、TLS、迷惑メール率 0.3% 未満 (0.1% 未満を推奨)。1 日 5,000 通超の送信者: SPF・DKIM・DMARC (p=none 可)、From と SPF か DKIM のドメインの一致、販促メールのワンクリック配信停止 (RFC 8058) |
-| Yahoo | 2024 年 2 月 | Google とほぼ同じ (大量送信の基準は Google ほど厳密に数値化されていないと報じられている) |
-| Microsoft (Outlook.com、Hotmail、Live) | 2025 年 5 月 5 日 | 1 日 5,000 通超の送信者: SPF・DKIM・DMARC (p=none 以上で、SPF か DKIM と一致)。満たさないメールはまず迷惑メールフォルダへ、のちの段階で拒否する予定と告知された |
+| Yahoo | 2024 年 2 月 (配信停止の要件は 2024 年 6 月) | 大量送信者: SPF と DKIM、DMARC (p=none 以上で、From と一致して通ること)、List-Unsubscribe ヘッダ (RFC 8058 のワンクリック方式を強く推奨)、配信停止の依頼を 2 日以内に反映、迷惑メール率 0.3% 未満。大量送信者とみなす通数の基準は示さない方針 |
+| Microsoft (Outlook.com、Hotmail、Live) | 2025 年 5 月 5 日 | 1 日 5,000 通超の送信者: SPF・DKIM・DMARC (p=none 以上で、SPF か DKIM と一致)。満たさないメールはまず迷惑メールフォルダへ振り分け、拒否 (550 5.7.515) は後日とされた。現在は Microsoft のサポート文書がこの拒否のエラーを説明しているが、拒否を始めた日は公式に告知されていない |
 
-Google の要件は Google の公式ヘルプで確認した。Yahoo と Microsoft の要件は、事業者の告知を引用した配信事業者の解説で確認した値である。
+Google・Yahoo・Microsoft の要件は、いずれも事業者の公式の文書で確認した。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -209,8 +209,9 @@ Google の要件は Google の公式ヘルプで確認した。Yahoo と Microso
 **事業者の要件・事例・統計 (時期で変わる値)**
 
 - [Email sender guidelines, Google Workspace Admin Help](https://support.google.com/a/answer/81126) — Accessed: 2026-10-18。すべての送信者と 1 日 5,000 通超の送信者の要件、DKIM 鍵長、迷惑メール率。
-- [Microsoft joins Google and Yahoo in raising the bar for email senders, Customer.io](https://customer.io/learn/deliverability/microsoft-teams-up-with-google-and-yahoo-on-email) — Accessed: 2026-10-18。Microsoft の 2025 年 5 月 5 日からの要件 (事業者の告知の引用を含む配信事業者の解説)。
-- [2024 Gmail and Yahoo Deliverability Changes, Bounteous](https://www.bounteous.com/insights/2024/01/31/2024-gmail-and-yahoo-deliverability-changes/) — Accessed: 2026-10-18。Yahoo の要件 (配信事業者側の解説)。
+- [Sender Best Practices, Yahoo Sender Hub](https://senders.yahooinc.com/best-practices/) — Accessed: 2026-11-23。2024 年 2 月からの大量送信者の要件 (SPF、DKIM、DMARC、List-Unsubscribe、2 日以内の配信停止、迷惑メール率 0.3% 未満)。/ [FAQs, Yahoo Sender Hub](https://senders.yahooinc.com/faqs/) — Accessed: 2026-11-23。通数の基準を示さないこと、List-Unsubscribe の要件を 2024 年 6 月から適用すること。
+- [Strengthening Email Ecosystem: Outlook's New Requirements for High-Volume Senders, Microsoft Defender for Office 365 Blog (2025-04-02, 2025-04-30 更新)](https://techcommunity.microsoft.com/blog/microsoftdefenderforoffice365blog/strengthening-email-ecosystem-outlook%E2%80%99s-new-requirements-for-high%E2%80%90volume-senders/4399730) — Accessed: 2026-11-23。1 日 5,000 通超の送信者の要件、2025-05-05 からの迷惑メールフォルダへの振り分けと、拒否は後日とすること。
+- [Fix NDR error 550 5.7.515 in Outlook.com, Microsoft Support](https://support.microsoft.com/en-us/outlook/fix-ndr-error-550-5-7-515-in-outlook-com) — Accessed: 2026-11-23。認証の要件を満たさないメールを拒否するときのエラー。拒否を始めた日は書かれていない。
 - [VU#302671: SMTP end-of-data uncertainty can be abused to spoof emails and bypass policies, CERT/CC](https://kb.cert.org/vuls/id/302671) — Accessed: 2026-10-18。SMTP smuggling の概要、各実装の対応。
 - [2024 Internet Crime Report, FBI IC3](https://www.ic3.gov/AnnualReport/Reports/2024_IC3Report.pdf) — Accessed: 2026-10-18。BEC の届け出件数 21,442 件と被害額 2,770,151,146 ドル (報告書の表で確認)。
 - [FBI's IC3 Finds Almost $8.5 Billion Lost to Business Email Compromise in Last Three Years, Nacha](https://www.nacha.org/news/fbis-ic3-finds-almost-85-billion-lost-business-email-compromise-last-three-years) — Accessed: 2026-10-18。

@@ -6,13 +6,13 @@
 
 中心テーゼは、**企業の認証基盤は「1 か所で認証し、その結果を多くの場所で信じる」ために作られ、その信頼の起点を握られると組織全体が攻撃者のものになる**ということである。Kerberos では、鍵配布センター (KDC) が発行したチケットを、各サーバがパスワードを確かめ直さずに信じる。AD では、ドメインコントローラが組織のすべての利用者と端末の鍵を持つ。SAML では、ID プロバイダ (IdP) が署名したアサーションを、各サービスが信じる。どれも利便性と一元管理の仕組みとして優れているが、KDC の鍵 (krbtgt)、ドメイン管理者の権限、IdP の署名鍵を奪われれば、攻撃者は誰にでもなりすませる。
 
-もう 1 つの論点は古い暗号と古い方式の長い後始末である。NTLM はパスワードのハッシュ値そのものが認証に使えてしまう設計で、Microsoft は 2024 年に NTLM 全体を非推奨にした。Kerberos の RC4 も、Microsoft が 2026 年に既定で無効にする予定を示している。RADIUS は 1990 年代の MD5 にもとづく応答の認証を使い続け、2024 年に MD5 の衝突を使った応答の偽造 (Blast-RADIUS) が実証された。分析深度は Level 3。
+もう 1 つの論点は古い暗号と古い方式の長い後始末である。NTLM はパスワードのハッシュ値そのものが認証に使えてしまう設計で、Microsoft は 2024 年に NTLM 全体を非推奨にした。Kerberos の RC4 についても、Microsoft は 2026 年の更新プログラムで KDC の既定の暗号から段階的に外している。RADIUS は 1990 年代の MD5 にもとづく応答の認証を使い続け、2024 年に MD5 の衝突を使った応答の偽造 (Blast-RADIUS) が実証された。分析深度は Level 3。
 
 ## 方法論 (Methodology)
 
 - **一次資料**: Kerberos は原理の原典 (Needham & Schroeder 1978) と仕様 (RFC 4120)、LDAP は RFC 4511、SAML は OASIS の SAML 2.0 仕様、EAP は RFC 3748、RADIUS は RFC 2865 を使う。攻撃は査読付き論文 (SAML の署名の回避は Somorovsky et al. 2012、Blast-RADIUS は Goldberg et al. 2024) と、発見者の技術文書 (AD CS の悪用は Schroeder & Christensen 2021) を使う。
 - **ベンダーの予定は時期と出どころを付ける**: Microsoft による NTLM と RC4 の廃止の予定は、Microsoft の発表と報道で確かめ、確認した時点を明記する。予定は変わりうる。
-- **事件の分析は公的な報告を使う**: 2023 年の Storm-0558 の事件は、米国の Cyber Safety Review Board (CSRB) の 2024 年 3 月の報告を報じた記事で確かめる。
+- **事件の分析は公的な報告を使う**: 2023 年の Storm-0558 の事件は米国の Cyber Safety Review Board (CSRB) の 2024 年 3 月の報告 (2024 年 4 月 2 日公表) の原文で確かめる。
 - **攻撃の手順は扱わない**: 本書は認証の仕組みと、どこを奪われると何が起きるか、どう守るかを説明する。攻撃のツールの使い方は扱わない (AGENTS.md の Security & Ethics)。
 - **担当範囲**: L2 での接続の制御は [`../networking/ethernet-lan-switching.md`](../networking/ethernet-lan-switching.md)、Wi-Fi の暗号化は [`../../hardware/peripherals/wifi-architecture.md`](../../hardware/peripherals/wifi-architecture.md)、クラウドの IAM は [`../cloud/cloud-iam-authorization.md`](../cloud/cloud-iam-authorization.md)、ゼロトラストの考え方は [`perimeter-defense-zero-trust.md`](perimeter-defense-zero-trust.md)、侵入後の横展開の全体像は [`attack-lifecycle.md`](attack-lifecycle.md) に委ねる。
 
@@ -101,7 +101,7 @@ flowchart LR
 - **Kerberoasting**: AD のどの利用者も任意のサービスのチケットを要求できる。チケットはサービスのアカウントの鍵で暗号化されているため、取得したチケットを持ち帰れば、サービスのアカウントのパスワードをオフラインで総当たりできる。人が設定した短いパスワードのサービスアカウントは破られやすい。対策はサービスアカウントに長い乱数のパスワードを使うか、パスワードを自動で管理するアカウント (gMSA) を使い、AES の暗号だけを許すことである。チケットの要求の急増は検知の手がかりになる。
 - **ゴールデンチケットとシルバーチケット**: krbtgt の鍵を持つ攻撃者は任意の利用者、任意のグループの所属を書いた TGT を作れる (ゴールデンチケット)。サービスの鍵を持つ攻撃者はそのサービスの任意のチケットを作れる (シルバーチケット)。krbtgt の鍵はドメインコントローラを侵害されたり、ディレクトリの複製の権限を悪用して鍵を取り出されたり (DCSync) すると盗まれる。鍵を 1 回変えても、直前の鍵で作られたチケットはしばらく有効なため、侵害の後は間を空けて 2 回変える。
 - **委任**: 利用者の代わりに別のサービスにアクセスする必要があるサービス (Web サーバが利用者としてデータベースにアクセスする) のために、Kerberos は委任の仕組みを持つ。制約のない委任を許したサーバは、接続してきた利用者の TGT を保持するため、そのサーバを侵害されると管理者の TGT まで盗まれる。委任の範囲を特定のサービスに限る (制約付きの委任) 設定にする。
-- **暗号の移行**: 古い AD との互換のために残っていた RC4 の暗号は、Kerberoasting を容易にする。Microsoft は 2025 年 12 月に、2026 年半ばまでに Windows Server の KDC の既定で RC4 を無効にし、AES だけを許す方針を示した (報道による)。RC4 に依存する古いシステムを事前に洗い出しておく必要がある。
+- **暗号の移行**: 古い AD との互換のために残っていた RC4 の暗号は、Kerberoasting を容易にする。Microsoft は 2025 年 12 月に、2026 年半ばまでにドメインコントローラが前提とする暗号の種類の既定を変える方針を示した。KB5073381 によれば、2026 年 1 月の更新で RC4 の使用を記録する監査のイベントが加わり、2026 年 4 月の更新で、暗号の種類を明示していないアカウントに対する KDC の既定が AES-SHA1 だけになった (この段階ではレジストリで元に戻せる)。2026 年 7 月の更新で強制の段階に移り、元に戻す設定はなくなるとされた。7 月の更新で強制が始まったことは第三者の報告では確認できたが、Microsoft の文書では確認できなかった (2026-11-23 時点)。RC4 に依存する古いシステムを事前に洗い出しておく必要がある。
 
 ### 2. NTLM
 
@@ -130,7 +130,7 @@ flowchart LR
 ### 5. トークンの署名鍵の管理と Storm-0558
 
 - **事件の概要**: 2023 年、攻撃者 (Microsoft は Storm-0558 と呼ぶ) は Microsoft の消費者向けアカウント (MSA) のトークン署名鍵を手に入れ、その鍵で企業向けのトークンを偽造して、米国政府機関などの Exchange Online のメールにアクセスした。消費者向けの鍵で企業向けのトークンが受け付けられたのは、トークンの検証の不備による。
-- **CSRB の指摘** (2024 年 3 月): 盗まれたのは 2016 年に作られた鍵で、2021 年に失効させるべきだった。消費者向けのシステムの鍵の交換は手作業で行われていたが、大規模な障害のあと 2021 年に止められていた。鍵が古くなったことを知らせる仕組みや、自社の生成方式に合わない偽造トークンを検知する仕組みがあれば防げたとし、鍵がどのように盗まれたかは特定できていないとした。
+- **CSRB の指摘** (2024 年 3 月): 盗まれたのは 2016 年に作られた鍵で、2021 年以降も鍵の交換を続けていれば 2023 年には使えなくなっていた。消費者向けのシステムの鍵の交換は手作業で行われていたが、大規模な障害のあと 2021 年に止められていた。鍵が古くなったことを知らせる仕組みや、自社の生成方式に合わない偽造トークンを検知する仕組みがあれば防げたとし、鍵がどのように盗まれたかは特定できていないとした。
 - **教訓**: 署名鍵は定期的に自動で交換し、用途 (消費者向けと企業向け) ごとに分け、検証の側でも発行元と用途を厳格に確かめる。署名鍵の侵害は多要素認証もパスワードも関係なく、あらゆる利用者になりすませる最悪の事態である。
 
 ### 6. 802.1X、EAP、RADIUS
@@ -156,7 +156,7 @@ flowchart LR
 
 - 認証基盤は最上位の資産として扱う。ドメインコントローラ、IdP、AD CS、RADIUS サーバ、ID の同期サーバは、侵害されれば組織全体のなりすましにつながる。これらのサーバへの管理者のアクセスを最小限にし、専用の端末から行い、操作を記録して監視する ([`detection-incident-response.md`](detection-incident-response.md))。
 - 侵害の後の復旧は認証基盤から始める。ランサムウェアなどでドメインの管理者権限を奪われた場合、端末を作り直しても、攻撃者が krbtgt の鍵、証明書、IdP の署名鍵を持っていれば再び入られる。復旧の手順にはkrbtgt の鍵の 2 回の変更、管理者アカウントのパスワードの変更、不正に発行された証明書の失効、署名鍵の交換を含める ([`attack-lifecycle.md`](attack-lifecycle.md))。
-- 古い方式の削減は計画的に行う。NTLM、RC4、RADIUS/UDP、PEAP-MSCHAPv2 は、互換性のために残され続けてきた。いきなり無効にすると業務が止まるため、まず監査のログで使われている場所を洗い出し、移行し、最後に無効にする。Microsoft の RC4 と NTLM の廃止の予定は、この作業の期限になる。
+- 古い方式の削減は計画的に行う。NTLM、RC4、RADIUS/UDP、PEAP-MSCHAPv2 は、互換性のために残され続けてきた。いきなり無効にすると業務が止まるため、まず監査のログで使われている場所を洗い出し、移行し、最後に無効にする。Microsoft による RC4 の既定の変更と NTLM の廃止の予定は、この作業の期限になる。
 - ID はゼロトラストの前提でもある。ゼロトラストではネットワーク上の位置ではなく ID で判断するため、ID 基盤の侵害の影響はさらに大きくなる ([`perimeter-defense-zero-trust.md`](perimeter-defense-zero-trust.md))。フィッシングに強い認証 (パスキーやスマートカード) と、署名鍵の厳格な管理が、その前提である。
 
 ## 結論 (Conclusions)
@@ -197,7 +197,10 @@ flowchart LR
 
 - [Blast-RADIUS](https://blastradius.fail/) — Accessed: 2026-10-18。攻撃の概要と、Message-Authenticator と RADIUS over (D)TLS による対策。
 - [Upcoming changes to NTLMv1 in Windows 11, version 24H2 and Windows Server 2025, Microsoft Support (KB5066470)](https://support.microsoft.com/help/5066470) — Accessed: 2026-10-18。NTLM の非推奨と NTLMv1 の削除。
+- [Beyond RC4 for Windows authentication, Microsoft Windows Server Blog (2025-12-03, 2026-02-04 更新)](https://www.microsoft.com/windows-server/blog/2025/12/03/beyond-rc4-for-windows-authentication/) — Accessed: 2026-11-23。2026 年半ばまでにドメインコントローラが前提とする暗号の種類の既定を変える方針。
+- [How to manage Kerberos KDC usage of RC4 for service account ticket issuance changes related to CVE-2026-20833, Microsoft Support (KB5073381)](https://support.microsoft.com/en-us/kb/5073381) — Accessed: 2026-11-23。2026 年 1 月 (監査)、4 月 (既定の変更、元に戻せる)、7 月 (強制) の段階。KB の本文には強制が 2026 年 4 月以降の更新で自動で有効になるという記述もあり、段階の表 (7 月) と食い違う。本書は段階の表に従った。
 - [Microsoft to Kill RC4 in Kerberos by 2026, BankInfoSecurity (2025-12)](https://www.bankinfosecurity.com/microsoft-to-kill-rc4-in-kerberos-by-2026-a-30304) — Accessed: 2026-10-18。Kerberos の KDC の既定で RC4 を無効にする予定。
+- Cyber Safety Review Board. (2024). *Review of the Summer 2023 Microsoft Exchange Online Intrusion* (表紙の日付 2024-03-20). https://www.cisa.gov/sites/default/files/2025-03/CSRBReviewOfTheSummer2023MEOIntrusion508.pdf — Accessed: 2026-11-23。p. ii「a cascade of security failures at Microsoft」、p. iii 2016 年の鍵と、鍵の入手の方法と時期が分からないこと、p. 6 と p. 17 手作業の鍵の交換と 2021 年の停止、p. 17 と p. 26 交換を続けていれば 2016 年の鍵は 2023 年に有効でなかったこと。
 - [A "cascade" of errors let Chinese hackers into US government inboxes, Help Net Security (2024-04-03)](https://www.helpnetsecurity.com/2024/04/03/microsoft-storm-0558-key/) — Accessed: 2026-10-18。CSRB の Storm-0558 の報告の要約。
 - [Analysis of Storm-0558 techniques for unauthorized email access, Microsoft (2023-07-14)](https://www.microsoft.com/en-us/security/blog/2023/07/14/analysis-of-storm-0558-techniques-for-unauthorized-email-access/) — Accessed: 2026-10-18。
 - [BloodHound, SpecterOps](https://github.com/SpecterOps/BloodHound) — Accessed: 2026-10-18。AD の攻撃経路のグラフ分析。
