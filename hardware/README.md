@@ -21,7 +21,7 @@
   共通の物理層。理論は `foundations/physics/electromagnetism/` の伝送線路編が供給
 - `hw-sw-interface/` — HW・SW境界（MMIO, DMA, 割り込み, ABI, IOMMU と DMA 隔離, CXL とメモリプーリング …）
 - `peripherals/` — 周辺デバイスと接続（入力デバイス/HID, オーディオ
-  サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi …）。`hw-sw-interface/` の
+  サブシステム, ディスプレイ, カメラ, USB, Bluetooth, Wi-Fi, NFC …）。`hw-sw-interface/` の
   一段上でSoCと外界をつなぐ層。`software/android/`・`software/ios/` の入力・オーディオ・
   表示スタックと対で読む
 - `networking/` — ネットワークハードウェア（NIC, ディスクリプタリング,

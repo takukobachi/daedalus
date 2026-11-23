@@ -4,7 +4,8 @@
 での分散制御 (輻輳制御) と、層をまたぐ設計判断 (HoL ブロッキング・硬直化・暗号化の範囲) を軸に、
 リンク層 (LAN) からトランスポート、アプリケーションプロトコルまでを読み解く。
 [`../distributed-systems/`](../distributed-systems/) の故障モデル (ロス・遅延・分断) の発生源で
-あり、[`../../hardware/hw-sw-interface/`](../../hardware/hw-sw-interface/)（NIC・割り込み・DMA）の真上の層。
+あり、[`../../hardware/networking/`](../../hardware/networking/)（NIC・スイッチ ASIC）と
+[`../../hardware/hw-sw-interface/`](../../hardware/hw-sw-interface/)（割り込み・DMA）の真上の層。
 
 ## 構成
 

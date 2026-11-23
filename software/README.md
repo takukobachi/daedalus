@@ -38,7 +38,7 @@
 - `networking/` — ネットワーキング（LAN・スイッチング, IP・NAT・IPv6, メール配送と送信者認証, VPN・トンネリング, プロキシ・匿名化・検閲, TCP・輻輳制御, QoS・トラフィック制御, HTTP/2/3・QUIC, WebRTC・リアルタイムメディア, TLS, DNS, マルチキャスト・サービス探索, カーネル
   ネットワークスタック, パケットフィルタ・接続追跡, DDoS 対策, BGP・経路制御, MPLS・Segment Routing, DC ファブリックの経路制御, データセンターの輻輳制御, VPC 型オーバーレイ, NVMe-oF・ストレージネットワーク, ロードバランシング, ネットワーク検証・テレメトリ）。
   `distributed-systems/` の故障モデルの発生源であり、
-  NIC (`hardware/hw-sw-interface/`) の上位層
+  NIC・スイッチ (`hardware/networking/`) と割り込み・DMA (`hardware/hw-sw-interface/`) の上位層
 - `distributed-systems/` — 分散システム（一貫性モデル, 合意, 複製）。
   `cache-coherence.md` の coherence/consistency 議論のスケールアップ
 - `databases/` — データベースとストレージエンジン（B+tree, LSM-tree, WAL,
