@@ -102,7 +102,7 @@ SpaceX の競争力は、エンジンサイクルや着陸アルゴリズムと�
 
 - **初期 (2019)**: 屋外・テントでのステンレス溶接から Starhopper・初期試験機を製造。「工場が無くても作り始められる」材料選択の効果。
 - **量産化**: 試験機の消費ペースに合わせ、テント→大規模屋内工場 (Starfactory) へ段階的に移行。機体設計 (V1→V2→V3) と並行して**工場も版を重ねる**[^starfactory]。
-- **目標と現実**: SpaceX は将来的に極めて高い機体生産レートを公言するが、これは target であり、現時点の実績レート（飛行試験の消費を支える月数機級）と区別して読む必要がある[^starfactory]。as of 2026-10 で公表されている Starfactory の目標は「1日1機」級（年最大1,000機規模の能力）だが、これを実績として示す一次資料は確認できない。実績側の手がかりは飛行試験の消費ペースで、2026年は Block 3 の4機体セット（Flight 12〜15 用、各セット Raptor 39基）を約5か月で投入している[^starfactory][^robb][^starship-doc]。
+- **目標と現実**: SpaceX は将来的に極めて高い機体生産レートを公言するが、これは target であり、現時点の実績レート（飛行試験の消費を支える月数機級）と区別して読む必要がある[^starfactory]。as of 2026-11 で公表されている Starfactory の目標は「1日1機」級（年最大1,000機規模の能力）だが、これを実績として示す一次資料は確認できない。実績側の手がかりは飛行試験の消費ペースで、2026年は Block 3 の4機体セット（Flight 12〜15 用、各セット Raptor 39基）を約6か月（2026-05-22〜11-13）で投入した[^starfactory][^robb][^starship-doc]。
 
 ## 品質・サプライチェーン考察 (Quality & Supply Chain Considerations)
 
@@ -141,7 +141,7 @@ SpaceX の製造哲学は一つの因果連鎖に要約できる: **削除が単
 
 [^robb]: [Robb Report — SpaceX's new Starfactory aims to build one rocket per day](https://robbreport.com/motors/aviation/spacex-new-star-factory-1-rocket-per-day-1235650057/) — Starfactory の生産目標（1日1機級、target）の報道。Accessed: 2026-10-04.
 
-[^starship-doc]: 本リポジトリ [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md) の飛行試験表（Flight 12: 2026-05-22、Flight 13: 07-24、Flight 14: 09-28、Flight 15: NET 10-19 の機体セット）。
+[^starship-doc]: 本リポジトリ [`spacex-starship-superheavy.md`](spacex-starship-superheavy.md) の飛行試験表（Flight 12: 2026-05-22、Flight 13: 07-24、Flight 14: 09-28、Flight 15: 11-13 の機体セット）。
 
 **本リポジトリ内参照**
 

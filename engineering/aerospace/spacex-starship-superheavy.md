@@ -10,7 +10,7 @@
 
 - Starship を要求（完全再使用・低コスト・大ペイロード・火星）から逆算し、各設計判断が**どの要求に応える妥協か**を読み解く。
 - Falcon 9 との差分（部分→完全再使用、過熱に耐える材料、キャッチ着陸）を対比軸に据える。
-- 飛行試験 (IFT-1 〜 Flight 14, as of 2026-10) を**反復開発 (iterative, hardware-rich development)** のサイクルとして時系列で追い、各回の「狙いと学び」を整理する。
+- 飛行試験 (IFT-1 〜 Flight 15, as of 2026-11) を**反復開発 (iterative, hardware-rich development)** のサイクルとして時系列で追い、各回の「狙いと学び」を整理する。
 - 数値・経緯は SpaceX 公式（車両ページ・飛行試験ページ）と一次に近い報道・FAA 文書に基づき、典拠を脚注に付す。最新の飛行試験は流動的なため、確定値と暫定値を区別する。
 
 ## 発見事項 (Findings)
@@ -18,10 +18,10 @@
 1. **完全再使用が全設計を駆動する。** 「両段とも無傷で戻し、最小整備で再飛行する」という要求が、材料・形状・着陸方式・エンジン数のすべてを規定する。Falcon 9 が残した「使い捨ての第2段」を無くすのが核心。
 2. **ステンレス鋼という逆張り。** 航空宇宙の常識（軽量なアルミ／複合材）に反し、SpaceX は**ステンレス鋼**を選んだ。低温で強度が増し、高温（再突入）にも耐え、安価で溶接でき、量産に向くためである。比強度より「広い温度域での総合性能とコスト」を取った判断。
 3. **33基クラスタは「数による推力と冗長」。** Super Heavy は Raptor を33基束ねて巨大推力を得つつ、複数基喪失への耐性を確保する。製造可能な中型エンジンを大量に並べる思想（Falcon 9 の9基の極大化）。
-4. **着陸は「脚」から「キャッチ」へ。** ブースタに着陸脚を付けず、**射点タワーのアーム (chopsticks) で空中キャッチ (Mechazilla)** する。脚の重量を排し、整備性と再飛行速度を上げる過激な最適化。実飛行では Flight 5・7・8 の計3回成功している（as of 2026-10。最後の成功は2025年3月の Flight 8 で、Block 3 ブースタのキャッチは未実証）[^sfn-catch][^sh-list]。
+4. **着陸は「脚」から「キャッチ」へ。** ブースタに着陸脚を付けず、**射点タワーのアーム (chopsticks) で空中キャッチ (Mechazilla)** する。脚の重量を排し、整備性と再飛行速度を上げる過激な最適化。ブースタのキャッチは Flight 5・7・8 の計3回成功している（as of 2026-11。最後の成功は2025年3月の Flight 8 で、Block 3 ブースタのキャッチは未実証）。上段 (Ship) は2026年11月14日の Flight 15 で軌道から戻り、タワーで初めてキャッチされた[^sfn-catch][^sh-list][^sflight15]。
 5. **ホットステージング。** 上段エンジンを下段がまだ燃焼中に点火して分離する方式を採用し、段間の性能損失を抑える。
 6. **再突入は耐熱タイルで凌ぐ。** 上段 Starship は軌道速度からの再突入時の空力加熱を、機体下面の**耐熱タイル (TPS)** で防護する。ここが上段再使用の最大の技術的難所。
-7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年5月）の V3 初飛行、Flight 14（2026年9月28日）の**初の軌道到達と Starlink V3 26基の実運用放出**まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた（as of 2026-10 で統合飛行は計14回）[^sflight14][^ft-results]。一方で Block 3 ブースタは Flight 12・13 で着水前に喪失し、Flight 14 でも上昇中に Raptor 1基が早期停止するなど、Raptor 3 の信頼性は依然として開発途上にある[^sfn-faa][^mynews-faa][^sflight13]。
+7. **開発は「反復」そのもの。** IFT-1（2023年）の爆発から Flight 12（2026年5月）の V3 初飛行、Flight 14（2026年9月28日）の**初の軌道到達と Starlink V3 26基の実運用放出**、Flight 15（2026年11月）の**初の Ship タワーキャッチ**まで、SpaceX は失敗を織り込んだ高頻度試験で設計を詰めてきた（as of 2026-11 で統合飛行は計15回）[^sflight14][^ft-results][^sflight15]。一方で Block 3 ブースタは Flight 12・13 で着水前に喪失し、Flight 14 でも上昇中に Raptor 1基が早期停止するなど、Raptor 3 の信頼性は依然として開発途上にある[^sfn-faa][^mynews-faa][^sflight13]。Flight 15 でもブースタはキャッチを自動で中止し、着水直前に爆発した（原因は調査中）[^flight15-booster]。
 
 ## アーキテクチャ (Architecture)
 
@@ -57,7 +57,7 @@
 
 ### ミッションプロファイルと実証状況 (Mission Profile & Demonstration Status)
 
-完全再使用の飛行は、両段がそれぞれ別の帰還経路をたどる。下図は Starlink 展開ミッションを例に、各フェーズの実証状況（as of 2026-10）を示す。
+完全再使用の飛行は、両段がそれぞれ別の帰還経路をたどる。下図は Starlink 展開ミッションを例に、各フェーズの実証状況（as of 2026-11）を示す。
 
 ```mermaid
 flowchart TD
@@ -71,12 +71,12 @@ flowchart TD
     DEP --> RE["再突入<br/>耐熱タイル + フラップ"]
     RE --> SL{"着陸フリップ・燃焼"}
     SL -- "実証済み" --> SPL2["洋上での制御着水"]
-    SL -- "未実証<br/>Flight 15 で初挑戦予定" --> SCATCH["タワーで Ship キャッチ"]
+    SL -- "実証済み 1回<br/>(Flight 15)" --> SCATCH["タワーで Ship キャッチ"]
     CATCH --> REUSE["再スタック・再飛行"]
     SCATCH --> REUSE
 ```
 
-凡例: 四角は飛行フェーズ、菱形は帰還方式の分岐。矢印のラベルは as of 2026-10 の実証状況で、「未実証」「予定」は計画値である[^sflight14][^sh-list][^flight15]。
+凡例: 四角は飛行フェーズ、菱形は帰還方式の分岐。矢印のラベルは as of 2026-11 の実証状況で、「未実証」は試みたが成功していないか未実施であることを示す[^sflight14][^sh-list][^sflight15]。
 
 ### Falcon 9 からの飛躍 (Leap from Falcon 9)
 
@@ -104,7 +104,7 @@ flowchart TD
 
 - Super Heavy は**着陸脚を持たない**。代わりに、降下してくるブースタを**射点タワーの2本のアーム（通称 chopsticks）で空中で挟んで捕捉**する。
 - 利点: (1) 着陸脚の重量を排して性能向上、(2) 機体を直接タワーへ戻すことで**整備・再スタックを高速化**（飛行機的な運用に近づく）。
-- 難所: ブースタを **数十 cm の精度でタワー位置へ誘導**する制御が要る。Falcon 9 のホバスラング（[`spacex-reusability.md`](spacex-reusability.md)）を、固定構造物への精密ランデブーへ先鋭化したもの。誘導の数学（凸最適化）は [`avionics-gnc.md`](avionics-gnc.md) と [`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md) で扱う。キャッチは計3回成功している（Flight 5・7・8）。Ship 側のタワーキャッチは as of 2026-10 で未実証で、Flight 15（NET 2026-10-19）で初挑戦が計画されている[^sfn-catch][^sh-list][^flight15]。
+- 難所: ブースタを **数十 cm の精度でタワー位置へ誘導**する制御が要る。Falcon 9 のホバスラング（[`spacex-reusability.md`](spacex-reusability.md)）を、固定構造物への精密ランデブーへ先鋭化したもの。誘導の数学（凸最適化）は [`avionics-gnc.md`](avionics-gnc.md) と [`../../foundations/mathematics/optimization/convex-optimization-duality.md`](../../foundations/mathematics/optimization/convex-optimization-duality.md) で扱う。ブースタのキャッチは計3回成功している（Flight 5・7・8）。Flight 15 では両段のキャッチを初めて同じ飛行で試み、ブースタはキャッチ位置から外れたため自動で中止してメキシコ湾へ向かい、着水直前に爆発した。上段は約21時間の軌道飛行のあと Pad 2 のタワーに捕捉され、軌道から戻った上段の初めての回収となった[^sfn-catch][^sh-list][^sflight15][^flight15-booster]。
 
 ## 技術詳細 (Technical Details)
 
@@ -156,23 +156,23 @@ SpaceX の開発は「**ハードウェア潤沢・高頻度試験 (hardware-ric
 | IFT-3〜4 | 2024 | 上段の再突入・着水へ前進、データ取得を拡大 |
 | **Flight 5** | 2024-10 | **史上初の Super Heavy 空中キャッチ成功 (Mechazilla)** |
 | Flight 7 | 2025-01 | ブースタはキャッチ成功、上段は喪失[^sfn-catch] |
-| Flight 8 | 2025-03 | ブースタは3回目のキャッチ成功（as of 2026-10 で最後のキャッチ）、上段は喪失[^sh-list] |
+| Flight 8 | 2025-03 | ブースタは3回目のキャッチ成功（as of 2026-11 で最後のブースタキャッチ）、上段は喪失[^sh-list] |
 | Flight 9 | 2025-05 | 初のブースタ再飛行。ブースタは着陸燃焼中に喪失、上段は飛行中に姿勢制御を失い、制御不能のまま再突入して喪失[^ft-results] |
 | Flight 10〜11 | 2025-08 / 2025-10 | Block 2 最終盤。両段とも制御着水に成功（ブースタはメキシコ湾、上段はインド洋）。Flight 11 が現行構成の Pad 1 からの最終打ち上げ[^ft-results] |
 | **Flight 12** | 2026-05-22 (UTC) | **初の Block 3 / V3・Raptor 3 飛行、Pad 2 初使用**。Starlink 模擬22基を放出し上段はインド洋に着水。ブースタはブーストバック・着陸燃焼不調で喪失、FAA 事故認定→打ち上げ一時停止[^mynews-flight12][^sfn-faa] |
 | Flight 13 | 2026-07-24 | Starlink V3 20基を準軌道で放出、宇宙空間での Raptor 再点火、上段は無傷で軟着水。ブースタは再点火不調で硬着水[^sflight13] |
 | **Flight 14** | 2026-09-28 | **初の軌道到達**（約 262×275 km、傾斜 30.5°〜32°）。**Starlink V3 26基を実運用放出**。ブースタは制御着水（キャッチせず）、上段は早期の軌道離脱後ハワイ北方の太平洋に制御着水。計画 ~10 時間を約3時間に短縮[^sflight14][^ft-results] |
-| Flight 15（計画） | NET 2026-10-19 | **初の Ship タワーキャッチ挑戦**を計画（目標値・未実施）[^flight15] |
+| **Flight 15** | 2026-11-13 (22:47 UTC) | B22/S42、Pad 2。**初の両段キャッチ挑戦**。約 275 km の軌道で Starlink V3 26基を放出し、約14周・21時間あまり飛行したのち、11-14 21:20 UTC に**上段を Pad 2 のタワーでキャッチ**（軌道からの上段回収は初）。ブースタはキャッチを自動中止してメキシコ湾へ向かい、着水直前に爆発[^sflight15][^flight15-booster] |
 
-- **成功と失敗が混在するのが正常**: 各回の「喪失」は設計反復の入力であり、Mechazilla キャッチ成功（Flight 5）、V3 初飛行（Flight 12）、初の軌道到達（Flight 14）といったマイルストンと並走する。
-- **依然として開発途上**: as of 2026-10 で、Block 3 ブースタの回収（キャッチ）、Ship のキャッチ、軌道からの再突入後の回収・再飛行はいずれも未実証である。完全再使用は未完であり、信頼性は飛行データの蓄積で詰めている段階[^sfn-faa][^sflight14]。
-- **射点の多重化**: Starbase Pad 2 が Flight 12 以降の主射点となり（Pad 1 は改修中）、フロリダでは LC-39A の Starship 射点が初打ち上げ（NET 2026-10-30 目標）に向けて仕上げ段階、SLC-37 が建設中である（as of 2026-09）[^nsf-pads]。
+- **成功と失敗が混在するのが正常**: 各回の「喪失」は設計反復の入力であり、Mechazilla キャッチ成功（Flight 5）、V3 初飛行（Flight 12）、初の軌道到達（Flight 14）、初の Ship キャッチ（Flight 15）といったマイルストンと並走する。Flight 15 は同じ飛行の中で上段の回収に成功し、ブースタの回収に失敗した。
+- **依然として開発途上**: as of 2026-11 で、Block 3 ブースタの回収（キャッチ）と、回収した上段の再飛行はいずれも未実証である。Flight 15 で捕捉した Ship 42 について、Musk は再飛行もおそらく可能だとしつつ、展示用に退役させると述べた[^sflight15-retire]。ブースタがキャッチを中止した原因について、SpaceX の説明は途中で変わった。当初は誘導の問題とされ、のちに誘導・航法・制御の問題ではないと訂正され、ブーストバック燃焼が燃料残量低下の警報で早く終わったという説明も出た。根本原因は調査中である[^flight15-booster]。Flight 15 について FAA が事故調査を求めたという報道は確認できなかった（2026-11-23 時点）。完全再使用は未完であり、信頼性は飛行データの蓄積で詰めている段階[^sfn-faa][^sflight14]。
+- **射点の多重化**: Starbase Pad 2 が Flight 12 以降の主射点となり（Pad 1 は改修中）、フロリダでは LC-39A の Starship 射点が初打ち上げに向けて仕上げ段階、SLC-37 が建設中である。LC-39A からの初打ち上げは当初 NET 2026-10-30 が目標とされたが実施されておらず、B23/S43 を使う Flight 16 がその初打ち上げになると報じられている。日付は公表されておらず、年内より2027年初頭の可能性が高いとされる（as of 2026-11、報道による）[^nsf-pads][^nsf-flight16]。
 
 ### Falcon 9 との信頼性プロセスの対比
 
 | 観点 | Falcon 9（成熟） | Starship（開発途上） |
 |---|---|---|
-| 着陸成功率 | Block 5 で 99% 級[^reuse-doc] | ブースタキャッチ3回（Block 2）、Block 3 と Ship の回収は未確立 |
+| 着陸成功率 | Block 5 で 99% 級[^reuse-doc] | ブースタキャッチ3回（Block 2）、Ship キャッチ1回（Flight 15）。Block 3 ブースタの回収と回収機の再飛行は未確立 |
 | 主たる学習源 | 大量の実運用飛行 | 高頻度の試験飛行（fly-fail-fix） |
 | 規制 | 定常運用 | FAA の事故調査・飛行許可がマイルストンを律速[^sfn-faa] |
 
@@ -180,7 +180,7 @@ SpaceX の開発は「**ハードウェア潤沢・高頻度試験 (hardware-ric
 
 Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両段・全機・最小整備**へ徹底した到達点である。完全再使用という一つの要求が、**ステンレス鋼**（広温度域×コスト×製造性）、**33基 Raptor クラスタ**（数による推力と冗長）、**Mechazilla 空中キャッチ**（脚を排した整備性）、**ホットステージング**（段間損失の回避）、**耐熱タイル**（上段再突入）という、相互に連関した設計判断を一斉に駆動している。
 
-同時に、Flight 14 で軌道到達と実ペイロード放出を果たした一方、Block 3 ブースタは3飛行連続でキャッチに至っておらず（as of 2026-10）、完全再使用（とりわけ**上段の再突入と両段の確実な回収**）は依然として未完の工学であり、SpaceX は「飛ばして壊して直す」反復でそれを詰めている。
+同時に、Flight 14 で軌道到達と実ペイロード放出を、Flight 15 で軌道から戻った上段のキャッチを果たした一方、Block 3 ブースタは4飛行連続でキャッチに至っておらず（as of 2026-11）、完全再使用（とりわけ**両段の確実な回収と、回収した機体の再飛行**）は依然として未完の工学であり、SpaceX は「飛ばして壊して直す」反復でそれを詰めている。
 
 ### 3部作を貫くもの (The Thread)
 
@@ -206,11 +206,17 @@ Starship / Super Heavy は、Falcon 9 が証明した再使用の論理を**両�
 
 [^sfn-catch]: [SpaceX successfully catches Super Heavy booster, loses Starship upper stage during Flight 7 — Spaceflight Now (2025-01-17)](https://spaceflightnow.com/2025/01/17/spacex-successfully-catches-super-heavy-booster-loses-starship-upper-stage-during-flight-7/) — Mechazilla による Super Heavy 空中キャッチの実証、上段喪失。Accessed: 2026-06-30.
 
-[^flight15]: [Starship flight 15 — Wikipedia](https://en.wikipedia.org/wiki/Starship_flight_15) ／ [Teslarati — SpaceX to attempt Starship catch](https://www.teslarati.com/spacex-catch-starship-launch-14-elon-musk/) — B22/S42、Pad 2、NET 2026-10-19、初の Ship タワーキャッチ挑戦の計画（目標値）。Accessed: 2026-10-04.
-
 **専門報道 (Specialist reporting)**
 
 [^sflight14]: [SpaceX Starship megarocket reaches orbit on Flight 14 — Space.com (2026-09-28)](https://www.space.com/space-exploration/launches-spacecraft/spacex-starship-megarocket-flight-14-orbital-launch-success) ／ [NASASpaceflight — Starship Flight 14 reaches orbit (2026-09)](https://www.nasaspaceflight.com/2026/09/starship-flight-14-orbit/) — 初の軌道到達（約 262×275 km）、Starlink V3 26基（うち3基はカメラ搭載）、ブースタ制御着水、Raptor 1基・RVac 1基の早期停止、飛行時間約3時間8分。軌道傾斜は 30.5°（Wikipedia 集計）と 32°（NSF）で報道に幅。Accessed: 2026-10-04.
+
+[^sflight15]: [Spaceflight Now (2026-11-13, updated 2026-11-14). Starship returns to Starbase and a successful tower catch](https://spaceflightnow.com/2026/11/13/live-coverage-starship-flight-15-attempts-to-recover-full-vehicle-in-double-launch-pad-catch/) ／ [CNBC (2026-11-14). SpaceX catches upper stage of Starship rocket in historic first](https://www.cnbc.com/2026/11/14/spacex-plans-to-try-first-ever-catch-of-starship-rocket-from-orbit.html) ／ [Space.com (2026-11-15). What's next for SpaceX's Starship after epic Flight 15 chopsticks catch?](https://www.space.com/space-exploration/launches-spacecraft/whats-next-for-spacexs-starship-after-epic-flight-15-chopsticks-catch) — 2026-11-13 22:47 UTC に Pad 2 から B22/S42 で打ち上げ、約 275 km の軌道で Starlink V3 26基（うち3基はヒートシールド撮像用カメラ搭載）を放出、約14周・21時間あまりの飛行後、2026-11-14 21:20 UTC に Pad 2 のタワーで上段を捕捉（軌道からの上段回収は初）。Spaceflight Now は本文で 16:47 CST、写真説明で 16:48 CST と記しており1分の差がある。SpaceX 公式の Flight 15 ページは取得できなかったため報道で確認した。Accessed: 2026-11-23.
+
+[^flight15-booster]: [Space.com (2026-11-13). SpaceX launches Starship on ambitious 22-hour Flight 15 test, but aborts booster 'chopsticks' catch](https://www.space.com/space-exploration/launches-spacecraft/spacex-starship-flight-15-chopsticks-double-catch-super-heavy-ship) ／ [Space.com (2026-11-14). SpaceX still investigating why Starship Flight 15 booster aborted 'chopsticks' landing catch](https://www.space.com/space-exploration/launches-spacecraft/spacex-says-starship-flight-15-booster-aborted-chopsticks-landing-catch-after-launch-due-to-guidance-issue-video) ／ [SpaceNews (2026-11-13). Starship launches on 15th test, calls off booster catch](https://spacenews.com/starship-launches-on-15th-test-calls-off-booster-catch/)（有料記事のため見出しのみ確認） — ブースタは打ち上げ約6.5分後にキャッチを自動中止してメキシコ湾へ転じ、着水直前に爆発。SpaceX の説明の変遷（誘導の問題 → 誘導・航法・制御の問題ではない → ブーストバック燃焼が燃料残量低下の警報で早期終了）と、根本原因が調査中であること。Accessed: 2026-11-23.
+
+[^sflight15-retire]: [Space.com (2026-11-21). SpaceX will retire 1st Starship upper stage ever caught by 'chopsticks', Elon Musk says](https://www.space.com/space-exploration/launches-spacecraft/spacex-will-retire-1st-starship-upper-stage-ever-caught-by-chopsticks-elon-musk-says) — Ship 42 は再飛行もおそらく可能だが展示用に退役させるという Musk の発言。Accessed: 2026-11-23.
+
+[^nsf-flight16]: [NASASpaceflight (2026-10). SpaceX working through Starship Flight 15 and 16 milestones](https://www.nasaspaceflight.com/2026/10/spacex-flight-15-16-milestones/) ／ [NASASpaceflight (2026-11). Starship Flight 15, a dual catch attempt, awaits FAA green light](https://www.nasaspaceflight.com/2026/11/starship-flight-15-awaits-faa/) — Flight 16 は B23/S43 で LC-39A からの初打ち上げとなる見込み、日付は未公表で2027年初頭の可能性が高い。サイトが直接の取得を拒否したため、検索結果の要約で確認した。Accessed: 2026-11-23.
 
 [^sflight13]: [Space.com — Starship makes the softest splashdown ever after launching next-gen Starlink satellites in Flight 13 (2026-07)](https://www.space.com/space-exploration/launches-spacecraft/spacexs-starship-megarocket-makes-the-softest-splashdown-ever-after-launching-next-gen-starlink-satellites-in-flight-13-test-video) ／ [NASASpaceflight — Starship Flight 13 (2026-07)](https://www.nasaspaceflight.com/2026/07/starship-flight-13-flight/) — Starlink V3 20基の準軌道放出、上段の軟着水、ブースタの再点火不調と硬着水。Accessed: 2026-10-04.
 
