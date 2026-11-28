@@ -10,6 +10,13 @@ RFC を一次資料として API・データモデル・プロトコルフロー
   （コントローラープロパティと Accounts v2 による現行アカウントモデルとレガシーの
   アカウントタイプ, charge types と資金フロー, 埋め込みコンポーネント, Webhook,
   日本向け料金（2026-10 時点））
+- `card-payment-networks.md` — カード決済ネットワーク：四者モデル、ISO 8583
+  （MTI・ビットマップ・データ要素）と ISO 20022 (cain) への移行の位置づけ、
+  承認・清算・精算の分離、インターチェンジ（EU の上限規制）、EMV の ARQC / ARPC、
+  EMVCo ネットワークトークン、EMV 3DS 2.x、PSD2 SCA と免除、Visa の紛争処理、
+  PCI DSS v4.0.1 の適用範囲（2026-11 時点）。`stripe-connect-specification.md` が
+  抽象化している層で、端末側は
+  [`../../hardware/peripherals/nfc-contactless-payments.md`](../../hardware/peripherals/nfc-contactless-payments.md)
 - `authentication-tokens-specification.md` — 認証トークン (JWT / OAuth 2.0 / OIDC)：
   トークン形式 (RFC 9068)、認可コード + PKCE、PAR / RAR / トークン交換、
   送信者制約 (DPoP / mTLS)、RFC 9700 準拠のセキュリティ考察と OAuth 2.1 ドラフトの状況。
@@ -22,8 +29,3 @@ RFC を一次資料として API・データモデル・プロトコルフロー
   hybrid トランスポート、アテステーションとプライバシー、アカウント回復、
   脅威モデル。`authentication-tokens-specification.md` の手前に立つ
   「最初の本人確認」の層
-
-## 今後のテーマ候補
-
-- 決済ネットワークの下部構造 (payment networks) — カードネットワーク (ISO 8583)、
-  3-D セキュア、清算と精算。`stripe-connect-specification.md` が抽象化している層
