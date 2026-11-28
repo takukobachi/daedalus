@@ -126,11 +126,11 @@ G.977 は機械的な構造でケーブルを分類し、軽量 (lightweight)、
 
 | 時期・システム | ファイバ対 | 容量 | 出典 |
 |---|---|---|---|
-| TAT-12/13 (1990 年代) | 未確認 | 5 Gb/s / 対 | [^fevrier] |
-| MAREA (2017) | 未確認 | 224 Tb/s | [^tg-faq] |
+| TAT-12/13 (1990 年代) | 2 (うち 1 対は予備) | 5 Gb/s / 対 | [^fevrier][^hayes-tat] |
+| MAREA (2017) | 8 | 当初設計 160 Tb/s、現在の公称 224 Tb/s | [^ms-marea][^tg-faq] |
 | Dunant (2020 予定、Google) | 12 | 250 Tb/s | [^google-dunant] |
 | NEC の 24 対の認定 (2021) | 24 | 「半ペタビット毎秒」級 (ベンダ公称) | [^nec-24fp] |
-| Project Waterworth (2025 発表、Meta) | 24 | 未確認 | [^meta-waterworth] |
+| Project Waterworth (2025 発表、Meta) | 24 | 非公表 (「業界最高水準」とのみ記載) | [^meta-waterworth] |
 
 数値は各社の公称値 (target) であり、運用中に実測された容量 (demonstrated) とは限らない。TeleGeography によれば、国際的に使われている帯域は 2024 年に 6.4 Pb/s を超え、年成長率は 2020 年の 45% から 2024 年の 29% に下がった[^tg-bw2025]。国際インターネット帯域は 2026 年中頃に 2,259 Tb/s に達した[^tg-bw2026]。
 
@@ -209,11 +209,11 @@ sequenceDiagram
 |---|---|---|---|---|
 | 2022-01 | トンガ | 唯一の国際ケーブル (トンガ—フィジー、827 km) と国内ケーブル | フンガ火山の噴火による高速の密度流[^seabrook] | 国際ケーブルは 2022-02-22 に復旧 (92 km を交換)。国内ケーブルは 6〜9 か月の見込みとされた[^globalnews-tonga] |
 | 2024-02 | 紅海 | Seacom・AAE-1・EIG (TGN を含め 4 本とする報道もある)[^comsoc-hgc] | 攻撃を受けて沈んだ貨物船 Rubymar の錨とみられる (公式には未確定)[^dcd-redsea] | 汎アフリカの事業者は修理許可に最大 8 週間かかるとし、修理は 2024-07 に完了した[^iab] |
-| 2024 | 西アフリカ | 12 か国に影響する複数本[^iab] | 未確認 | 陸上の国境越え回線で迂回[^iab] |
+| 2024-03 | 西アフリカ | WACS・MainOne・SAT-3・ACE など 12 か国に影響する複数本[^iab][^cloudflare-wa] | コートジボワール沖の海底の落石と報じられた。事業者や調査機関の公式な原因の発表は見当たらない (2026-11-28 時点)[^cloudflare-wa] | 陸上の国境越え回線で迂回[^iab]。SAT-3 は 2024-04-06、ACE は 04-17 に修理を終えたと伝えられた[^cloudflare-wa] |
 | 2024-11 | バルト海 | BCS East-West Interlink (リトアニア—スウェーデン)、C-Lion1 (フィンランド—ドイツ) | 調査中。中国の貨物船 Yi Peng 3 が周辺にいたが、決定的な証拠はないと報道[^yle-clion] | C-Lion1 は 11-25 に修理に着手した[^yle-clion]。ICPC は 2 本とも 2 週間以内に修理されたとする[^icpc-media] |
 | 2024-12 | フィンランド湾 | Estlink 2 (電力) と通信ケーブル 4 本 | タンカー Eagle S が錨を約 90 km 引きずったとして乗組員 3 人を起訴[^err-eagle] | Estlink 2 は約半年停止[^record-eagle] |
-| 2025-01 | バルト海 | ラトビア (ベンツピルス)—ゴットランドの光ケーブル | 貨物船 Vezhen の錨。スウェーデン検察は荒天と装備・操船の不備による事故と判断[^lsm-vezhen] | 未確認 |
-| 2025-12-31 | バルト海 | 海底ケーブル | 貨物船 Fitburg が損傷した錨を少なくとも 130 km 引きずったとして、船長と甲板長を起訴 (2026-06)[^record-eagle] | 未確認 |
+| 2025-01 | バルト海 | ラトビア (ベンツピルス)—ゴットランドの光ケーブル | 貨物船 Vezhen の錨。スウェーデン検察は荒天と装備・操船の不備による事故と判断[^lsm-vezhen] | 未確認 (所有者 LVRTC の公表資料に修理の時期が見当たらない。2026-11-28 時点) |
+| 2025-12-31 | バルト海 | Elisa のフィンランド—エストニア間の通信ケーブルなど 2 本 | 貨物船 Fitburg が損傷した錨を少なくとも 130 km 引きずったとして、船長と甲板長を起訴 (2026-06)[^record-eagle]。ヘルシンキ地裁は 2026-11-05 に 2 人を加重破壊工作で有罪とした (控訴可能で未確定)[^yle-fitburg] | 冗長経路で通信は維持された。修理の完了は未確認[^yle-fitburg] |
 
 - **トンガ**: Seabrook らは、噴火で生じた火山砕屑性の密度流が海底ケーブルを壊し、西へ少なくとも 85 km 流れたことを示した[^seabrook]。修理船 Reliance は 20 日かけて 92 km を交換し、予備のケーブルが足りずニューカレドニアから融通を受けた[^globalnews-tonga]。IAB は「ほぼ完全なデジタルの孤立が 61 日」としており[^iab]、報道の国際回線の復旧日 (噴火から 38 日後) とは食い違う。国内ケーブルを含めた孤立の数え方の違いと考えられるが、本書では確認できなかった。
 - **紅海**: Seacom は 2024-02-24、モンバサ—ザファラーナ区間の故障を報告し、欧州向けの通信を Equiano・PEACE・WACS へ迂回した[^subtel-seacom]。米国の当局者と ICPC は Rubymar の錨が引きずられて損傷したとみている[^dcd-redsea]。HGC は、損傷したケーブルが地域の通信の約 25% を運んでいたと推定した (事業者の推定)[^comsoc-hgc]。
@@ -321,6 +321,14 @@ sequenceDiagram
 [^err-eagle]: ERR News. [Finland charges 3 Eagle S ship officers over broken undersea cables (2025-08-11)](https://news.err.ee/1609767975/finland-charges-3-eagle-s-ship-officers-over-broken-undersea-cables) — Accessed: 2026-10-24。約 90 km、Estlink 2 と通信ケーブル 4 本。
 
 [^record-eagle]: The Record. [Finland appeals court revives case against Eagle S officers over cable breaks (2026-08-27)](https://therecord.media/finland-appeals-court-revives-case-against-eagle-s) — Accessed: 2026-10-24。高裁の差し戻し、上告期限 2026-10-26、Fitburg の起訴 (130 km 以上)、Estlink 2 の停止期間と修理費。
+
+[^hayes-tat]: Hayes, J. F. (2006). Paths Beneath the Seas: Transatlantic Telephone Cable Systems. *IEEE Canadian Review*, 52, 20–21. [PDF](https://canrev.ieee.ca/en/cr52/CR52_TAT.pdf) — Accessed: 2026-11-28。TAT-12/13 は 2 対 (運用 1・予備 1)、各対 5 Gb/s。一次資料の Trischitta, P. et al. (1996). The TAT-12/13 Cable Network. *IEEE Communications Magazine*, 34(2), 24–28. DOI: 10.1109/35.481240 は要旨 (1 対あたり 5 Gb/s、計 10 Gb/s) のみ確認。
+
+[^ms-marea]: Rey, F. (Microsoft). [Microsoft and Facebook to build subsea cable across Atlantic (2016-05-26)](https://learn.microsoft.com/en-us/archive/blogs/testtesttestbug/microsoft-and-facebook-to-build-subsea-cable-across-atlantic) — Accessed: 2026-11-28。8 対、当初の設計容量 160 Tb/s、約 6,600 km、運用は Telxius。
+
+[^cloudflare-wa]: Cloudflare. [Undersea cable failures cause Internet disruptions across Africa (2024-03-14)](https://blog.cloudflare.com/undersea-cable-failures-cause-internet-disruptions-across-africa-march-14-2024/) と [Q1 2024 Internet disruption summary](https://blog.cloudflare.com/q1-2024-internet-disruption-summary/) — Accessed: 2026-11-28。Microsoft Azure の状態ページを引いた 4 本の名前、ITWeb を引いた「落石」の報道、修理を担う事業者の投稿を引いた復旧日。いずれも二次的な集約である。
+
+[^yle-fitburg]: Yle News. [Helsinki court jails two Fitburg crew members over subsea cable damage (2026-11-05)](https://yle.fi/a/74-20255306) — Accessed: 2026-11-28。損傷した通信ケーブル 2 本、船長に禁錮 3 年 6 か月・甲板長に 2 年 10 か月、修理費の支払い、判決は未確定。通信の維持と修理の未着手 (事故直後) は [Helsinki Times](https://www.helsinkitimes.com/finland/finland-news/domestic/28368-fitburg-brought-to-port-after-elisa-cable-damage-in-baltic-sea.html) による。
 
 [^lsm-vezhen]: LSM (Latvian Public Broadcasting). [Sweden says Latvian undersea cable damage was not sabotage (2025-02-03)](https://eng.lsm.lv/article/society/defense/03.02.2025-sweden-says-latvian-undersea-cable-damage-was-not-sabotage.a586287/) — Accessed: 2026-10-24。2025-01-26 のベンツピルス—ゴットランド区間、Vezhen、検察の判断。
 

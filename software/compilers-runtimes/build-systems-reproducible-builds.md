@@ -195,7 +195,7 @@ Lamb & Zacchiroli は、時刻が「群を抜いて最大の」原因だとし�
 
 - Debian の CI の値は、Lamb & Zacchiroli が 2021 年に報告した「開発版の 3 万超のパッケージの 95% 超」と整合している[^lamb]。2021 年の報告と 2026-10 の値はどちらも 95% 前後にある。同論文は、残りの数 % に原理的な障害はなく、進まない理由は人手の限界と、一度直したパッケージの退行にあると述べている[^lamb]。
 - reproduce.debian.net は、実際に配布されているバイナリを作り直す点で、CI より検証の意味が強い。ただし 2026-10 時点で未判定が多く、全体の達成率としては読めない。
-- NixOS のダッシュボードは各パスの判定方法をページ上で説明していない。表示されている列は証明 (attestation) の数と、異なるハッシュの数である[^nixos-rt]。ここでは表示された判定をそのまま記し、方法の詳細は未確認として扱う。
+- NixOS のダッシュボードは各パスの判定方法をページ上で説明していない。表示されている列は証明 (attestation) の数と、異なるハッシュの数である[^nixos-rt]。ダッシュボードを動かす Lila のソースコードでは、判定は次の規則による。証明がなければ保留、出力のハッシュが 2 種類以上あれば (同じ利用者の証明どうしでも) 不一致、ハッシュが一致していても証明した利用者が 2 人未満なら保留、2 人以上の利用者のハッシュが一致すれば再現である。どの利用者の証明も同じ重みで数え、公式のキャッシュや Hydra のハッシュを特別扱いする処理はない[^lila]。ただし読んだのは main ブランチであり、運用中のサーバが同じ版かどうかは確かめていない。
 
 ### 8. Nix と Guix: 性質を構造にする
 
@@ -290,6 +290,8 @@ Nix は各部品の格納先の名前に、その部品のビルドに寄与し�
 [^rdn]: [reproduce.debian.net](https://reproduce.debian.net/) と [amd64 の API (`/amd64/api/v0/dashboard`)](https://reproduce.debian.net/amd64/api/v0/dashboard) — Accessed: 2026-10-24. 値は API の生値 (good / bad / unknown)。
 
 [^arch]: [Arch Linux Reproducible Status (`/api/v0/dashboard`)](https://reproducible.archlinux.org/api/v0/dashboard) — Accessed: 2026-10-24. 値は API の生値 (good / bad / unknown)。
+
+[^lila]: [nix-community/lila — `web/common.py` の `get_output_path_status()`](https://github.com/nix-community/lila/blob/main/web/common.py) — Accessed: 2026-11-28。設計は Malka, J. & Engelen, A. (2026). Lila: Decentralized Build Reproducibility Monitoring for the Functional Package Management Model. arXiv:2601.20662 (判定規則そのものは論文に書かれていない)。
 
 [^nixos-rt]: [NixOS reproducibility, Minimal ISO runtime dependencies, evaluation #28](https://reproducibility.nixos.social/evaluations/1/4975466d3247) — Accessed: 2026-10-24. 一覧は [reproducible.nixos.org](https://reproducible.nixos.org/) から。
 

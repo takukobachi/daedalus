@@ -317,7 +317,7 @@ another_round:
 - Miller, I. (2001). Protection Against a Variant of the Tiny Fragment Attack. *RFC 3128*.
 - Gont, F., & Liu, W. (2014). Security Implications of IPv6 on IPv4 Networks. *RFC 7123*.
 - Audet, F., & Jennings, C. (2007). Network Address Translation (NAT) Behavioral Requirements for Unicast UDP. *RFC 4787* (BCP 127).
-- van Rooij, G. (2000). Real Stateful TCP Packet Filtering in IP Filter. *Proceedings of the 2nd International SANE Conference*. — Linux の TCP の窓の検査が依拠する手法 (`nf_conntrack_proto_tcp.c` のコメントによる)。本文は未確認。
+- van Rooij, G. (2000). Real Stateful TCP Packet Filtering in IP Filter. *Proceedings of the 2nd International SANE Conference*. — Linux の TCP の窓の検査が依拠する手法 (`nf_conntrack_proto_tcp.c` のコメントによる)。著者が公開していた本文 (`tcp_filtering.ps.gz`) は 2026-11-28 時点で入手できず、本文は読めていない。同じ内容の講演 (USENIX Security 2001) の要旨は、状態の判定にシーケンス番号と窓の大きさを含めると述べている ([Thinkst Citation](https://citation.thinkst.com/talk/13365) — Accessed: 2026-11-28)。netfilter の窓追跡パッチ ([Kadlec](https://wigner.hu/~kadlec/sw/netfilter/tcp-window-tracking1.html) — Accessed: 2026-11-28) もこの論文にもとづくと明記している。
 - Miano, S., Bertrone, M., Risso, F., Vásquez Bernal, M., Lu, Y., & Pi, J. (2019). Securing Linux with a Faster and Scalable Iptables. *ACM SIGCOMM Computer Communication Review*, 49(3), 3–17. https://doi.org/10.1145/3371927.3371928
 - Høiland-Jørgensen, T., Brouer, J. D., Borkmann, D., Fastabend, J., Herbert, T., Ahern, D., & Miller, D. (2018). The eXpress Data Path: Fast Programmable Packet Processing in the Operating System Kernel. *CoNEXT '18*. https://doi.org/10.1145/3281411.3281443
 

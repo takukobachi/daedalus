@@ -21,9 +21,12 @@ AI 学習クラスタの電力・冷却密度は、この層の設計を根本�
 
 ## 今後のテーマ候補
 
-- データセンターネットワークの各論 — Jupiter 型の進化、光スイッチング (OCS) の運用、
-  マルチテナントのオーバーレイ。`../../hardware/networking/` のスイッチ ASIC と
-  `../../hardware/accelerators/interconnects-scaleout-training.md` の中間層
+- データセンターネットワークの物理配線 — ファブリックの経路制御と Jupiter・Orion の
+  集中制御は `../../software/networking/dc-fabric-routing.md`、OCS の運用は
+  `../../hardware/networking/optical-interconnect.md`、テナントのオーバーレイは
+  `../../software/networking/virtual-networks-overlay.md` が扱った。残るのは建屋側の
+  物理層で、構造化ケーブリングと光ファイバのトランク、棟間・キャンパス間の接続 (DCI)、
+  配線の増設と保守の運用である
 - サイト選定と電力調達 — 立地の物理（送電容量・水・気候・レイテンシ）、PPA と
   自家発電、原子力 SMR 併設の動向。`../energy/electricity-markets-dispatch.md` の応用
 - 物理セキュリティと運用 — 入退管理、コミッショニング、変更管理の失敗学

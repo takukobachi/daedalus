@@ -127,7 +127,7 @@ flowchart LR
 ### 4. 独自シリコン (Custom Silicon — FSD Computer)
 
 - テスラは自動運転推論用の**独自 SoC（FSD コンピュータ）** を設計し、HW3 → **HW4(AI4)** と更新してきた[^notatesla]。中央集中コンピュートの中核。
-- **次世代 AI5（2026-10 時点）**: マスクは 2026-04-15 にテープアウトを公表した。性能は「AI4 の最大 10 倍」とされるが、これは**公称**である。量産（大量ボード供給）は 2027 年半ばの見込みと報じられ、2024-06 時点の「2025 年後半に車載」という公約から約 2 年遅れた[^electrek-ai5]。テスラは Q2 2026 決算説明でも AI5 の量産を「できれば来年」と述べるにとどまり、当面は AI4 で教師なし (unsupervised) FSD を目指す方針である[^tsla-q2-2026]。マスクはテープアウト当日、AI5 はまず Optimus と学習用クラスタに使い、車両には当面載せないとも述べている。性能の倍率は報道によって「最大 10 倍」「約 5 倍」と幅があり、いずれも公称である[^dtc-ai5]。2026-09 には、Samsung のテキサス州テイラー工場で 2 nm プロセスによる AI5 の試作生産が始まったと報じられた。歩留まりの検証を 2026 年末、量産を 2027 年に予定しているとされるが、テスラの公式な確認はない[^nata-ai5-samsung]。
+- **次世代 AI5（2026-10 時点）**: マスクは 2026-04-15 にテープアウトを公表した。性能は「AI4 の最大 10 倍」とされるが、これは**公称**である。量産（大量ボード供給）は 2027 年半ばの見込みと報じられ、2024-06 時点の「2025 年後半に車載」という公約から約 2 年遅れた[^electrek-ai5]。テスラは Q2 2026 決算説明でも AI5 の量産を「できれば来年」と述べるにとどまり、当面は AI4 で教師なし (unsupervised) FSD を目指す方針である[^tsla-q2-2026]。マスクはテープアウト当日、AI5 はまず Optimus と学習用クラスタに使い、車両には当面載せないとも述べている。性能の倍率は報道によって「最大 10 倍」「約 5 倍」と幅があり、いずれも公称である[^dtc-ai5]。2026-09 には、Samsung のテキサス州テイラー工場で 2 nm プロセスによる AI5 の試作生産が始まったと報じられた。歩留まりの検証を 2026 年末、量産を 2027 年に予定しているとされるが、テスラの公式な確認はない[^nata-ai5-samsung]。Q3 2026 の決算説明 (2026-10-21) でも、マスクは AI5 を 2027 年 4 月ごろに Optimus 向けに量産したいと述べただけで、製造する工場には触れなかった (2026-11-28 時点で未確認)[^tsla-q3-2026-call]。
 - **垂直統合の象徴**: 計算の心臓部まで内製設計することで、ソフト・センサ・モデルと協調最適化できる。汎用サプライヤ依存を脱し、世代更新の速度を握る。
 - （自動運転の知覚・判断アルゴリズムそのものは本章の範囲外。ここでは「**計算基盤を内製した**」という E/E アーキ上の意味に絞る。）
 
@@ -251,3 +251,5 @@ flowchart LR
 [^dtc-ai5]: [Tesla AI5 design revealed as Musk confirms it won't be used in cars — Drive Tesla Canada (2026-04-15)](https://driveteslacanada.ca/news/tesla-ai5-design-revealed-musk-confirms-wont-be-used-in-cars/) — AI5 の用途 (Optimus と学習用クラスタ) についてのマスクの発言。Accessed: 2026-10-11
 
 [^nata-ai5-samsung]: [Tesla AI5 Chip Enters Trial Production at Samsung's Texas Fab — Not a Tesla App (2026-09-17)](https://www.notateslaapp.com/news/4701/tesla-ai5-chip-enters-trial-production-at-samsungs-texas-fab) — 韓国報道に基づく試作生産の報道。テスラ未確認。Accessed: 2026-10-11
+
+[^tsla-q3-2026-call]: [The Motley Fool — Tesla (TSLA) Q3 2026 Earnings Call Transcript (2026-10-22)](https://www.fool.com/earnings/call-transcripts/2026/10/22/tesla-tsla-q3-2026-earnings-call-transcript/) — AI5 を 2027 年 4 月ごろに Optimus 向けに量産する見込み。Samsung・TSMC・テイラー工場への言及はない。第三者による書き起こし。Accessed: 2026-11-28

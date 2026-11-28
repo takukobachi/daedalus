@@ -203,7 +203,7 @@ ATACS は踏切も無線で制御する。移動許可はまず踏切の手前�
 |---|---|---|
 | EN 50126-1 / IEC 62278-1 | RAMS の一般プロセス (ライフサイクル) | EN 50126-1:2017 (A1:2024 で改正)[^en50126]。IEC 62278-1:2025 と IEC 62278-2:2025 が IEC 62278:2002 を置き換えた[^iec62278] |
 | EN 50128 → EN 50716 / IEC 62279 | 鉄道制御・防護系のソフトウェア | EN 50716:2023 が EN 50128:2011 と EN 50657:2017 を置き換える。旧規格の撤回期限 (dow) は 2026-10-30[^en50716]。IEC 62279:2015[^iec62279] |
-| EN 50129 / IEC 62425 | 信号用の安全関連電子システム | SFS-EN 50129:2026 (第3版、2026-05-29) が 2018 年版を置き換えた。CENELEC 側の版の表記は未確認[^en50129] |
+| EN 50129 / IEC 62425 | 信号用の安全関連電子システム | EN 50129:2026 (第3版、2026-05) が EN 50129:2018 とその訂正 (AC:2019-04) を置き換えた。CENELEC の承認は 2026-04-20、各国の旧版の廃止期限 (dow) は 2029-05-31[^en50129] |
 | CLC/TS 50701 → IEC 63452 | 鉄道のサイバーセキュリティ | 後述 |
 
 IEC 62278・62279・62425 は、鉄道の通信・信号・処理系について IEC 61508 系列に相当する部門規格と位置づけられている[^iec62278]。
@@ -312,7 +312,7 @@ IEC 62278・62279・62425 は、鉄道の通信・信号・処理系について
 
 [^en50126]: EN 50126-1:2017, *Railway Applications — The Specification and Demonstration of Reliability, Availability, Maintainability and Safety (RAMS) — Part 1: Generic RAMS process* (+A1:2024)。 — [EVS](https://www.evs.ee/en/evs-en-50126-1-2017) — Accessed: 2026-10-24
 
-[^en50129]: EN 50129, *Railway applications — Communication, signalling and processing systems — Safety related electronic systems for signalling*。2018 年版 (第2版) は 2026 年版 (第3版) に置換。 — [SFS-EN 50129:2018](https://store.sfs.fi/en/sfs-en-50129-2018) ／ [SFS-EN 50129:2026](https://store.sfs.fi/en/sfs-en-50129-2026) — Accessed: 2026-10-24
+[^en50129]: EN 50129, *Railway applications — Communication, signalling and processing systems — Safety related electronic systems for signalling*。2018 年版 (第2版) は 2026 年版 (第3版) に置換。 — [SFS-EN 50129:2018](https://store.sfs.fi/en/sfs-en-50129-2018) ／ [SFS-EN 50129:2026](https://store.sfs.fi/en/sfs-en-50129-2026) — Accessed: 2026-10-24。CENELEC 側の表記・承認日・置換の範囲は、EN の表紙と European foreword を収めた [STN EN 50129:2026 のプレビュー (スロバキア規格協会)](https://normy.normoff.gov.sk/norma/142846/nahlad/) で確認した (「EN 50129, May 2026」「approved by CENELEC on 2026-04-20」、作成は CLC/SC 9XA、dop 2027-05-31、dow 2029-05-31)。Accessed: 2026-11-28
 
 [^en50716]: EN 50716:2023, *Railway Applications — Requirements for software development*。CENELEC 承認 2023-10-30、EN 50128:2011 (AC:2014, A1:2020, A2:2020) と EN 50657:2017 (A1:2023) を置換、dow 2026-10-30。 — [OVE EN 50716:2024-10-01 プレビュー](https://shop.ove.at/de/preview/ove-en-50716-2024-10-01) — Accessed: 2026-10-24
 
