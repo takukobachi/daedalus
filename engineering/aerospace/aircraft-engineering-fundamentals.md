@@ -344,5 +344,6 @@ R = (V / TSFC) · (L/D) · ln(W_initial / W_final)
 
 - [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) — 運動方程式・振動と共振（4つの力、フラッタの背景）
 - [`../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md`](../../foundations/physics/fluid-dynamics/compressible-flow-nozzles.md) / [`shock-waves-hypersonics.md`](../../foundations/physics/fluid-dynamics/shock-waves-hypersonics.md) — 圧縮性流れ・衝撃波
+- [`../../foundations/physics/fluid-dynamics/incompressible-flow-boundary-layers.md`](../../foundations/physics/fluid-dynamics/incompressible-flow-boundary-layers.md) — ベルヌーイ、境界層と剥離、循環とクッタ条件（空力節の理論的背景）
 - [`../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) — ブレイトンサイクルの熱力学的背景
 - [`spacex-rocket-engines.md`](spacex-rocket-engines.md) / [`orbital-mechanics.md`](orbital-mechanics.md) — ロケットへの橋渡しの続編

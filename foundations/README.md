@@ -21,7 +21,7 @@
 - `physics/` — 物理学（力学、電磁気学、熱力学・統計力学、流体力学、量子力学・固体物理 …）
 - `information-theory/` — 情報理論（エントロピー、情報源符号化＝圧縮の下限、
   通信路容量＝通信の上限 …）。数学・物理以外の基礎理論系列の最初の1本
-- `machine-learning/` — 機械学習（Transformer の数理、スケーリング則 …）。
+- `machine-learning/` — 機械学習（Transformer の数理、スケーリング則、強化学習 …）。
   線形代数・確率・最適化・情報理論の合流点で、`software/ai/` と
   `hardware/accelerators/` の分析が依拠する理論側
 - `control-theory/` — 制御理論（フィードバック、伝達関数、PID、安定余裕、

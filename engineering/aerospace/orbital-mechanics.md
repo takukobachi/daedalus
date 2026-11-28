@@ -241,3 +241,4 @@ LEO 速度 `v≈7.8 km/s` では、`Δi=30°` で **約 4.0 km/s** となり、L
 - [`hls-lunar-architecture.md`](hls-lunar-architecture.md) — NRHO と月往還の Δv 収支（本章の応用）。
 - [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) — 二体問題の運動方程式（常微分方程式）。
 - [`../../foundations/physics/classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) — 万有引力・保存則の基礎。
+- [`../../foundations/physics/classical-mechanics/central-force-kepler-orbits.md`](../../foundations/physics/classical-mechanics/central-force-kepler-orbits.md) — ケプラーの法則・ヴィス・ヴィヴァ式・脱出速度の導出、軌道要素と J2 摂動。

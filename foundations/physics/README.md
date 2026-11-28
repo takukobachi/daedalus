@@ -7,7 +7,7 @@
 ## 構成 (Structure)
 
 - `classical-mechanics/` — 古典力学(運動方程式、運動量とエネルギー、剛体と回転、
-  振動・共振、安定性 …)。ロボティクス (`../../engineering/robotics/`)、
+  振動・共振、安定性、ラグランジュ形式と多体系、中心力と軌道 …)。ロボティクス (`../../engineering/robotics/`)、
   航空宇宙 (`../../engineering/aerospace/`)、自動車 (`../../engineering/automotive/`) の
   制御対象 (プラント) のモデルを与える
 - `electromagnetism/` — 電磁気学(電荷・電場・電位、静磁気、電磁誘導、
@@ -22,12 +22,12 @@
   (`../../hardware/storage/`)、原子時計
   (`../../hardware/timekeeping/`) の物理的実体
 - `thermodynamics-statistical/` — 熱力学・統計力学(熱力学法則、エントロピー、
-  熱機関とカルノー効率、熱伝導 …)。クロック・電力管理
+  熱機関とカルノー効率、熱伝導、ボルツマン分布、熱雑音、ランダウアー限界 …)。クロック・電力管理
   (`../../hardware/hw-sw-interface/clock-power-reset.md`)、発電
   (`../../engineering/energy/`)、データセンター冷却
   (`../../engineering/datacenters/`) の支配法則
 - `fluid-dynamics/` — 流体力学(圧縮性流れ、マッハ数、デ・ラバルノズル、
-  膨張比と Isp …)。ロケットエンジン
+  膨張比と Isp、衝撃波、非圧縮性流れと境界層 …)。ロケットエンジン
   (`../../engineering/aerospace/spacex-rocket-engines.md`) と航空機空力
   (`../../engineering/aerospace/aircraft-engineering-fundamentals.md`) の理論的基礎
 

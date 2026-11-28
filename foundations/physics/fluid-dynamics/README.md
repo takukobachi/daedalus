@@ -15,8 +15,8 @@
    衝撃波と極超音速流：波の突っ立ち、ランキン–ユゴニオ関係、斜め衝撃波と膨張扇、
    造波抗力、極超音速の新物理（薄い衝撃層、マッハ数独立、実在気体効果、輻射加熱）、
    鈍頭理論の再訪。再突入 (`../../../engineering/aerospace/reentry-thermal-protection.md`) の理論的基礎
-
-## 今後のロードマップ (Roadmap)
-
-3. **非圧縮性流れと境界層** — ベルヌーイ、粘性、境界層と剥離、揚力と抗力の由来。
+3. [`incompressible-flow-boundary-layers.md`](incompressible-flow-boundary-layers.md) —
+   非圧縮性流れとベルヌーイの定理、粘性とナビエ=ストークス方程式・レイノルズ数と相似則、
+   ダランベールのパラドックスと Prandtl の境界層 (Blasius 解)、遷移と剥離、
+   循環・クッタ条件による揚力と摩擦・圧力・誘導抗力の由来。
    `../../../engineering/aerospace/aircraft-engineering-fundamentals.md` の空力節の理論化

@@ -22,11 +22,13 @@
 - `scaling-laws.md` — スケーリング則: 損失のべき則、計算最適学習 (Chinchilla)、
   過学習ならぬ「過訓練」の経済学（推論コストを含む最適化）、創発をめぐる論争、
   テスト時計算という第二のスケーリング軸
+- `reinforcement-learning-policy-gradient.md` — 強化学習の基礎: MDP、価値関数と
+  ベルマン方程式 (LQR との対応)、TD 学習・Q 学習・DQN、方策勾配定理とアドバンテージ・GAE、
+  TRPO と PPO のクリップ付き目的関数、RLHF (ブラッドリー=テリー報酬モデルと KL 正則化)、
+  DPO の導出、報酬ハッキング、検証可能な報酬と GRPO
 
 ## 今後のテーマ候補
 
 - 逆伝播と最適化の実務 (backpropagation & optimizers) — 自動微分、Adam 系列、
   学習率スケジュール、損失地形。`../mathematics/optimization/` の非凸側への拡張
-- 強化学習の基礎 (reinforcement learning) — MDP、方策勾配、PPO。
-  RLHF (`../../software/ai/llm-internals-prompting.md` §4) の理論的基礎
 - 汎化の理論 (generalization) — 二重降下、宝くじ仮説、暗黙の正則化
