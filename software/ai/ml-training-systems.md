@@ -12,12 +12,12 @@
 - メモリは**バイト数の会計**として厳密に扱う（パラメータあたり何バイトが、どの瞬間に、どこに存在するか）。「大きいから切る」ではなく「この項がこの係数で寄与するからこの分割が要る」を導く。
 - 効率は **MFU (model FLOPs utilization)**（理論ピーク FLOPs に対するモデル演算の実効比率）を共通指標とし、公開された実測値（PaLM・Llama 3 等の一次報告）に紐づける[^palm][^llama3]。
 - 故障・運用の数値は一次報告（Llama 3 の中断統計）を用い、逸話ではなく設計入力として扱う。故障率・可用性の基礎概念は [`reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) に依拠する。
-- フレームワーク・数値形式の現況は変化が速いため、2026-10 時点の一次資料（リリースノート・技術報告）で確認し、本文では「as of 2026-10」と明示する（Accessed: 2026-10-04）。
+- フレームワーク・数値形式の現況は変化が速いため、一次資料（リリースノート・技術報告）で確認し、本文では時点を明示する。初版は 2026-10-04 に確認し、版番号・通信バックエンド・FSDP の位置づけは 2026-11-28 に再確認した。
 
 ## 発見事項 (Findings)
 
 1. **最初に溢れるのは計算ではなくメモリであり、犯人は optimizer である。** Adam + 混合精度の標準構成では、パラメータあたり**約 16 バイト**のモデル状態（FP16/BF16 のパラメータ (2B) と勾配 (2B)、FP32 のマスターパラメータ (4B)・モーメント (4B)・分散 (4B)）を保持する[^zero]。10B パラメータで 160 GB、これだけで単一チップの HBM を超える。さらに activations（系列長 × バッチ × 隠れ次元 × 層数に比例）が乗る。**学習システム設計はこのバイト会計から始まる。**
-2. **ZeRO/FSDP の洞察は「複製をやめて分割し、必要なときだけ集める」である。** 素朴なデータ並列は全チップにモデル状態の完全な複製を持つ。ZeRO は optimizer 状態 (Stage 1)・勾配 (2)・パラメータ (3) を段階的にチップ間で分割し、パラメータは各層の計算直前に all-gather で一時復元する[^zero]。PyTorch はこれを FSDP として実装し[^fsdp]、2026-10 時点では DTensor による per-parameter 分割へ作り直した FSDP2 (`fully_shard`) を推奨し、旧 FSDP1 を deprecated と位置づけている[^fsdp2]。メモリは台数分の 1 に近づき、通信は定数倍（Stage 3 で素朴 DP の約 1.5 倍）しか増えない。つまり**容量を通信で買う**取引であり、[`interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) の帯域があって初めて成立する。
+2. **ZeRO/FSDP の洞察は「複製をやめて分割し、必要なときだけ集める」である。** 素朴なデータ並列は全チップにモデル状態の完全な複製を持つ。ZeRO は optimizer 状態 (Stage 1)・勾配 (2)・パラメータ (3) を段階的にチップ間で分割し、パラメータは各層の計算直前に all-gather で一時復元する[^zero]。PyTorch はこれを FSDP として実装し[^fsdp]、2026-11 時点では DTensor による per-parameter 分割へ作り直した FSDP2 (`fully_shard`) を推奨し、旧 FSDP1 を deprecated と位置づけている[^fsdp2]。メモリは台数分の 1 に近づき、通信は定数倍（Stage 3 で素朴 DP の約 1.5 倍）しか増えない。つまり**容量を通信で買う**取引であり、[`interconnects-scaleout-training.md`](../../hardware/accelerators/interconnects-scaleout-training.md) の帯域があって初めて成立する。
 3. **3D 並列は「通信の性質をインターコネクト階層に合わせて配置する」設計である。** テンソル並列（層内の行列を分割、**毎層** activations を all-reduce。Megatron の列/行分割は 1 層あたり前後 2 回）[^megatron]は超高帯域のスケールアップ領域にしか置けない。パイプライン並列はステージ境界の activations を点対点で送るだけで安いが、**バブル**（パイプラインの充填・排出で遊ぶ時間、比率 ≈ (p−1)/(m+p−1)、p: ステージ数、m: マイクロバッチ数）を払う[^gpipe]。データ並列はステップ末の勾配 all-reduce のみで、重畳可能。この 3 つの直積が「TP はノード内・PP は近接ノード・DP は全域」という標準配置に落ちる。
 4. **重畳 (overlap) がスループットの生死を分ける。** 逆伝播は出力側の層から勾配を確定させるため、確定した層からバケット単位で all-reduce を発行すれば通信は計算の影に隠れる（PyTorch DDP の勾配バケッティング[^ddp]）。逆に TP の all-reduce は次の計算の入力依存なので隠せない。つまり「**隠せる通信は無料、隠せない通信が課金される**」。MFU が 30〜50% 台に留まる主因は、この隠せない通信とパイプラインバブル、そしてカーネル間の隙間である（公開実測値: PaLM 540B が 46.2%[^palm]、Llama 3 405B が 16K GPU で BF16 MFU 38〜43%[^llama3]、MegaScale が 12,288 GPU 上の 175B モデルで 55.2%[^megascale]。いずれも 2022〜2024 年の各社自己報告で、モデル構成・ハードウェアが異なるため横並びの比較はできない）。
 5. **混合精度は数値解析の応用工学である。** BF16/FP16 で計算・保存しつつ FP32 のマスターパラメータに累積する構成は、丸め誤差の蓄積（小さい勾配 × 多数回の加算）への防御であり、FP16 では勾配のアンダーフローを防ぐ**損失スケーリング**が要る[^amp]。縮約の順序で結果が変わる浮動小数点の非結合性（[`matrix-factorizations-numerical.md`](../../foundations/mathematics/linear-algebra/matrix-factorizations-numerical.md)）は、並列縮約と再現性の緊張として学習システムに現れる。FP8（E4M3/E5M2 の 2 形式[^fp8]）以降はスケーリング係数の動的管理がランタイムの仕事になり、数値形式とシステムの共進化（[`tpu-systolic-arrays.md`](../../hardware/accelerators/tpu-systolic-arrays.md)・[`gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md)）が続く。2026-10 時点の到達点は次のとおりである。DeepSeek-V3（671B MoE）はブロック単位の細粒度スケーリングによる FP8 混合精度学習を大規模で実証した[^deepseek-v3]。スケール係数をブロック（32 要素）ごとに共有する MX 形式 (MXFP8/MXFP4) が OCP で標準化された[^mx]。NVIDIA は NVFP4 で 12B モデルを 10T トークン学習し、FP8 ベースラインに近い精度（MMLU-Pro 62.58% 対 62.62%）を報告している[^nvfp4]。ただし 4 bit 学習はランダム Hadamard 変換・確率的丸め・一部層の高精度維持といった補助策を前提とした単一ベンダの実証段階にあり、FP8 のような既定構成にはまだ至っていない。
@@ -94,15 +94,15 @@ flowchart TB
 - 「遅くなる故障」（ECC 再試行・温度スロットリング・リンク劣化）は停止しないぶん検出が難しく、全ランクのステップ時間・通信時間の分布監視（[`observability-performance-engineering.md`](../observability/observability-performance-engineering.md)、MegaScale の診断基盤[^megascale]）が実務の主力になる。
 - データパイプライン（トークン化・シャッフル・シャーディング）は見落とされがちな律速点で、GPU を遊ばせないための先読み・キャッシュと、中断時に**正確に同じ位置から**再開できる決定的なイテレータ状態の両立が要る。
 
-### 5. 実装ランドスケープ (Implementation Landscape, as of 2026-10)
+### 5. 実装ランドスケープ (Implementation Landscape, as of 2026-11)
 
-本書の機構は特定フレームワークに依存しないが、2026-10 時点の主要な実装上の到達点を記録しておく（Accessed: 2026-10-04）。
+本書の機構は特定フレームワークに依存しないが、2026-11 時点の主要な実装上の到達点を記録しておく（版番号・通信バックエンド・FSDP は 2026-11-28 に再確認、それ以外の行は 2026-10-04 の確認）。
 
-| 項目 | 2026-10 時点の状態 | 本書の該当箇所 |
+| 項目 | 2026-11 時点の状態 | 本書の該当箇所 |
 |---|---|---|
-| PyTorch 最新安定版 | 2.14.1（2026-09-30 リリース。2.14 系の初版は 2026-09-02）[^pt214] | — |
+| PyTorch 最新安定版 | 2.15.0（2026-10-28 リリース）[^pt215] | — |
 | シャーディング DP | FSDP2 (`fully_shard`、DTensor ベース) が推奨、FSDP1 は deprecated[^fsdp2] | 発見事項 2・技術詳細 2 |
-| 通信バックエンド | PyTorch 2.14 で書き直した NCCL バックエンド ("nccl2") をプレビュー提供、2.15 以降で既定化予定[^pt214] | 発見事項 4 |
+| 通信バックエンド | 2.14 でプレビュー提供した書き直し版 NCCL バックエンド ("nccl2") が、2.15 で `nccl` プロセスグループの既定になった。旧実装には `TORCH_DIST_USE_NCCL2=0` または `nccl-legacy` で戻せる。集合通信がハングしたときに各ランクの状態をディスクへ書き出すフライトレコーダも加わった[^pt214][^pt215] | 発見事項 4・7 |
 | 故障耐性 | c10d にプロセスグループのその場再構成・中断フックを導入（第一級機能化）[^pt214] | 発見事項 7・技術詳細 4 |
 | 計算・通信の重畳 | Inductor の collective 再配置 (`simple_overlap`) が既定で有効[^pt214] | 発見事項 4 |
 | 低精度 GEMM | NVFP4・スケール付き GEMM を NVGEMM 経由で Inductor が生成、MXFP8/MXFP4 の `scaled_mm` 対応[^pt214] | 発見事項 5 |
@@ -143,7 +143,7 @@ flowchart TB
 
 [^fsdp]: Zhao, Y., Gu, A., Varma, R., Luo, L., Huang, C.-C., Xu, M. et al. (2023). PyTorch FSDP: Experiences on Scaling Fully Sharded Data Parallel. *Proceedings of the VLDB Endowment*, 16(12), 3848–3860. DOI: 10.14778/3611540.3611569 — ZeRO-3 型分割の PyTorch 実装と設計上の教訓。
 
-[^fsdp2]: PyTorch. *Getting Started with Fully Sharded Data Parallel (FSDP2)*. https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html — Accessed: 2026-10-04. — DTensor による per-parameter 分割、`recordStream` 回避によるメモリの決定性、「FSDP1 is deprecated」の記載。
+[^fsdp2]: PyTorch. *Getting Started with Fully Sharded Data Parallel (FSDP2)*. https://docs.pytorch.org/tutorials/intermediate/FSDP_tutorial.html — Accessed: 2026-11-28. — DTensor による per-parameter 分割、`recordStream` 回避によるメモリの決定性、「FSDP1 is deprecated」の記載。
 
 [^ddp]: Li, S., Zhao, Y., Varma, R., Salpekar, O. et al. (2020). PyTorch Distributed: Experiences on Accelerating Data Parallel Training. *Proceedings of the VLDB Endowment*, 13(12), 3005–3018. DOI: 10.14778/3415478.3415530 — 勾配バケッティングと backward との重畳。
 
@@ -168,6 +168,8 @@ flowchart TB
 [^gemini]: Wang, Z., Jia, Z., Zheng, S., Zhang, Z., Fu, X., Ng, T. S. E. et al. (2023). GEMINI: Fast Failure Recovery in Distributed Training with In-Memory Checkpoints. *Proc. ACM SOSP 2023*, 364–381. DOI: 10.1145/3600006.3613145 — CPU メモリへのチェックポイントによる高速復旧。
 
 [^dcp]: PyTorch. *Asynchronous Saving with Distributed Checkpoint (DCP)*. https://docs.pytorch.org/tutorials/recipes/distributed_async_checkpoint_recipe.html — Accessed: 2026-10-04. — CPU バッファへの退避と非同期永続化、pinned memory ステージング。
+
+[^pt215]: PyTorch. *PyTorch 2.15 Release Blog* (2026-10-28). https://pytorch.org/blog/pytorch-2-15-release-blog/ — Accessed: 2026-11-28. — 書き直し版 NCCL バックエンドの既定化とロールバック手段、フライトレコーダ、FSDP2 のパラメータ単位の精度指定。リリース日は [torch (PyPI)](https://pypi.org/project/torch/) の 2.15.0 のアップロード日 (2026-10-28) と照合。
 
 [^pt214]: PyTorch. *PyTorch 2.14 Release Blog* (2026-09-02). https://pytorch.org/blog/pytorch-2-14-release-blog/ — Accessed: 2026-10-04. — nccl2 バックエンド、c10d の故障耐性、Inductor の重畳既定化、NVGEMM の NVFP4 対応。
 

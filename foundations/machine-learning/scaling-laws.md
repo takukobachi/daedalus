@@ -54,7 +54,7 @@ Chinchilla 最適は**学習費用だけ**の最適化である。モデルは�
 Cost_total = 6ND (学習)  +  2N × D_inference (推論)
 ```
 
-推論量 D_inference が大きいほど、**N を小さく保つ価値が増す**。小さい N で同じ損失に届くには D を Chinchilla 比で大きく超えて訓練する（べき則の裾を登る）必要があり、学習費用は最適点より割高になるが、その差は推論で回収される。Llama 系（例: 8B に 15T tokens ≈ 1,900 tokens/param）に代表される「小さく・長く」の潮流はこの計算の帰結であり (Touvron et al., 2023; Sardana et al., 2024)、エッジ・オンデバイス推論への圧力がそれを加速している。**「Chinchilla 最適」と「デプロイ最適」は別の点である**。
+推論量 D_inference が大きいほど、**N を小さく保つ価値が増す**。小さい N で同じ損失に届くには D を Chinchilla 比で大きく超えて訓練する（べき則の裾を登る）必要があり、学習費用は最適点より割高になるが、その差は推論で回収される。Llama 系（例: Llama 3 の 8B を 15T 超のトークンで事前学習 ≈ 1,900 tokens/param）に代表される「小さく・長く」の潮流はこの計算の帰結であり (Touvron et al., 2023; Grattafiori et al., 2024; Meta, 2024; Sardana et al., 2024)、エッジ・オンデバイス推論への圧力がそれを加速している。**「Chinchilla 最適」と「デプロイ最適」は別の点である**。
 
 ### 4. データ制約とその克服
 
@@ -93,6 +93,8 @@ Wei et al. (2022) は、算術・多段推論などの下流タスク性能が�
 - Hestness, J. et al. (2017). Deep Learning Scaling is Predictable, Empirically. arXiv:1712.00409
 - Hoffmann, J. et al. (2022). Training Compute-Optimal Large Language Models. *NeurIPS 2022*. arXiv:2203.15556
 - Touvron, H. et al. (2023). LLaMA: Open and Efficient Foundation Language Models. arXiv:2302.13971
+- Grattafiori, A. et al. (2024). The Llama 3 Herd of Models. arXiv:2407.21783
+- [Meta AI. Introducing Meta Llama 3: The most capable openly available LLM to date (2024-04-18)](https://ai.meta.com/blog/meta-llama-3/) — Accessed: 2026-11-28。「over 15T tokens」で事前学習したとの一次記述。
 - Sardana, N. et al. (2024). Beyond Chinchilla-Optimal: Accounting for Inference in Language Model Scaling Laws. *ICML 2024*. arXiv:2401.00448
 - Muennighoff, N. et al. (2023). Scaling Data-Constrained Language Models. *NeurIPS 2023*. arXiv:2305.16264
 - Villalobos, P. et al. (2024). Will we run out of data? Limits of LLM scaling based on human-generated data. *ICML 2024*. arXiv:2211.04325
