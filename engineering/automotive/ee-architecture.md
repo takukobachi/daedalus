@@ -136,6 +136,7 @@ graph LR
 - [`automotive-ethernet-tsn.md`](automotive-ethernet-tsn.md) — ゾーン幹線の実体: Ethernet/TSN・SPE・SOME/IP。
 - [`ev/tesla-software-manufacturing.md`](ev/tesla-software-manufacturing.md) — 本書が一般化したテスラ固有の集中型 E/E・OTA・製造統合。
 - [`functional-safety-iso26262.md`](functional-safety-iso26262.md) — 混在重要度・FFI・ASIL 分解の規範。
+- [`chassis-control-x-by-wire.md`](chassis-control-x-by-wire.md) — 集約後も独立経路を残すべきアクチュエータ側：X-by-wire の冗長電源・二重 ECU。
 - [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md) — 集約後の攻撃面への対策: セキュア OTA・HSM・SecOC・UN R155/R156。
 - [`../../hardware/cpu/`](../../hardware/cpu/) — HPC が要求する仮想化・並行性・メモリ階層の基礎。
 - [`../../software/embedded/autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) — Classic/Adaptive Platform と内製 Vehicle OS：集約後のソフトウェア基盤。

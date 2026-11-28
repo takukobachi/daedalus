@@ -185,6 +185,7 @@ MCU・OS・ミドルウェアのような汎用部品は、最終的にどの車
 - [`../../software/embedded/autosar-vehicle-software.md`](../../software/embedded/autosar-vehicle-software.md) — FFI・E2E 保護・ASIL 対応 BSW のソフトウェア側の実装。
 - [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) — 時間分割・WCET・デッドラインなど、タイミング保護の基礎。
 - [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — FIT・PMHF・冗長系・共通原因故障の確率論的基礎。
+- [`chassis-control-x-by-wire.md`](chassis-control-x-by-wire.md) — fail-operational 冗長と ASIL 分解の実例：ステア・バイ・ワイヤとブレーキ・バイ・ワイヤ。
 
 ## 参考文献 (References)
 
