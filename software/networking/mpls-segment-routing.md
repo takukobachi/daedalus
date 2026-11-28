@@ -20,7 +20,7 @@ SR はこの価値を保ったまま、経路の状態を置く場所を変え�
 1. **MPLS の当初の動機だった表引きの高速化は、すでに意味を失っている。** Cisco のタグスイッチング (tag switching、RFC 2105、1997 年) や Ipsilon の IP スイッチングは、ATM スイッチの高速な交換機能に IP を載せることを狙っていた。RFC 3031 自身もネットワーク層ヘッダを回線速度で解析できない装置でも転送できることを利点に挙げている。現在のルータは IP の最長一致を ASIC で回線速度で処理するため、この利点は残っていない。残ったのは、転送の判断を入口で一度だけ行い、その結果をラベルとして運ぶという構造の利点である。
 2. **ラベルは「入口で決めた転送の等価クラス (FEC) を運ぶ番号」であり、その意味は隣接するルータ間でしか通用しない。** ラベルは 20 ビットで、各ルータが自分で割り当てて隣接ルータに配る。中継ルータはラベルを付け替える (swap) だけで、IP ヘッダを見ない。このため、基幹網の中継ルータ (P ルータ) はインターネットの全経路を持つ必要がなくなる (BGP フリーコア)。顧客ごとの経路は縁のルータ (PE) だけが持つ。
 3. **LDP は IGP の最短経路にラベルを付けるだけで、経路を選ぶ力を持たない。経路を選ぶには RSVP-TE が必要で、その代償は状態の量だった。** RSVP-TE は帯域や制約付きの経路 (CSPF で計算) を経路上の全ルータに予約させるため、N 台の PE をフルメッシュでつなぐと N(N−1) 本の LSP の状態が途中のルータに積み上がり、定期的な更新 (soft state) が必要になる (RFC 5439)。
-4. **50 ms という迂回の目標は、MPLS ではなく SONET/SDH の保護切替から引き継いだ数字である。** SDH のリング保護では、故障検出後 50 ms 以内の切替完了が目標とされた (ITU-T G.841。原文は未確認で、計測器ベンダーの解説と学会論文で確認)。RFC 4090 自身は「数十ミリ秒」とだけ書いている。速さの源は迂回路を事前に計算して設定しておき、故障時に経路計算もシグナリングもしないことにある。
+4. **50 ms という迂回の目標は、MPLS ではなく SONET/SDH の保護切替から引き継いだ数字である。** SDH のリング保護では、切替の判断から完了までを 50 ms 未満にすることが求められた (ITU-T G.841 第 7.2.2 節。余剰トラフィックがなく、ファイバ長 1,200 km 未満のリングで、1 区間の故障という条件が付く)。RFC 4090 自身は「数十ミリ秒」とだけ書いている。速さの源は迂回路を事前に計算して設定しておき、故障時に経路計算もシグナリングもしないことにある。
 5. **LFA と rLFA は追加の状態なしに迂回できるが、守れないトポロジがある。TI-LFA は SR を使って、このようなトポロジでも迂回できるようにした。** LFA (RFC 5286) はループしない隣接ルータがあれば使えるが、リング状の網などでは候補がない (RFC 6571)。TI-LFA (RFC 9855、2025 年 10 月) は、迂回後に IGP が収束したときの経路 (post-convergence path) をセグメント列として事前に設定し、リンクステート IGP を使う 2 重連結の網なら、直接つながるリンク・ノード・SRLG の単一故障を必ず守れる。
 6. **BGP/MPLS L3VPN の分離は暗号ではなく設定で保たれている。** 顧客ごとの経路表 (VRF) を分け、Route Distinguisher (RD) で重複アドレスを区別し、Route Target (RT) でどの VRF がどの経路を取り込むかを決める (RFC 4364)。RT の設定を一つ誤れば、別の顧客の経路が取り込まれて網が混ざる。RFC 4381 は、この方式は ATM やフレームリレーと同等の分離を提供できるが、暗号化・完全性・認証は提供しないと明記している。
 7. **SR は経路の状態を途中のルータからパケットへ移した。** SR-MPLS (RFC 8660) ではセグメントをラベルとして積み、ノード SID は IGP が配る全網共通の番号 (SRGB の中の index) として扱う。途中のルータは LDP のセッションも RSVP-TE の LSP 状態も持たない。経路の指定は入口の SR ポリシー (RFC 9256) に集約され、複雑な経路計算は PCE (RFC 5440・8664) に任せられる。
@@ -99,7 +99,7 @@ SRv6 に対応しないルータも、DA (宛先アドレス) を普通の IPv6 
 
 ### 3. 高速迂回 (Fast Reroute)
 
-- **50 ms の由来**: 電話網の伝送路は SONET/SDH の保護切替 (APS) で守られ、SDH リングでは故障検出後 50 ms 以内に切替を完了することが目標とされた (ITU-T G.841。条件として、余剰トラフィックがなく、1,200 km 未満のリングであることが付く)。IP/MPLS が電話の伝送路を置き換えるとき、この数字が比較の基準になった。RFC 4090 と IP FRR の枠組み (RFC 5714) は「数十ミリ秒」と書くだけで、50 ms を規定していない。
+- **50 ms の由来**: 電話網の伝送路は SONET/SDH の保護切替 (APS) で守られ、SDH リングでは切替の判断から 50 ms 未満で切替を完了することが求められた (ITU-T G.841 第 7.2.2 節。条件として、余剰トラフィックがなく、1,200 km 未満のリングで、1 区間の故障であることが付く。切替完了時間の定義 (第 3.77 節) は判断の時点から数えるため、故障の検出時間は含まない)。IP/MPLS が電話の伝送路を置き換えるとき、この数字が比較の基準になった。RFC 4090 と IP FRR の枠組み (RFC 5714) は「数十ミリ秒」と書くだけで、50 ms を規定していない。
 - **速さの内訳**: 故障の影響時間は検出・局所的な反応・他のルータへの通知・再計算・ハードウェアの表への書き込みの和である (RFC 5714)。FRR は後ろの 3 つを故障の後から外し、検出 (光の信号断や BFD で数十ミリ秒以下) と局所的な切替だけにする。その後で IGP がゆっくり収束し、迂回路から本来の新しい経路へ移る。
 - **RSVP-TE FRR (RFC 4090)**: 方式には、局所修復点 (PLR) が保護する LSP ごとに迂回 LSP を作る one-to-one (detour) と、1 本の迂回トンネルに多数の LSP をラベルの重ね付けで載せる facility backup (bypass) がある。迂回路は合流点 (MP) で本来の LSP に戻る。実運用では状態の少ない facility backup が多く使われる。
 - **LFA (RFC 5286)・rLFA (RFC 7490)**: LFA は「その隣接ルータへ送っても、自分へ戻ってこない」という不等式を満たす隣接ルータを事前に選んでおく。追加の状態もシグナリングも不要だが、守れる範囲はトポロジで決まり、リングでは 1 つも見つからないことがある (RFC 6571)。rLFA は数ホップ先の PQ ノードまでトンネルで運ぶことで範囲を広げるが、そのノードへの追加の LDP セッション (targeted LDP) が必要になる。
@@ -203,9 +203,10 @@ SRv6 に対応しないルータも、DA (宛先アドレス) を普通の IPv6 
 - [ソフトバンク: モバイルIPネットワークにおいて「SRv6（セグメントルーティングIPv6）」の運用を開始 (2019-04-24)](https://www.softbank.jp/corp/news/press/sbkk/2019/20190424_03) — Accessed: 2026-10-26
 - [ソフトバンク: SRv6の全国展開完了と新機能「SRv6 Flex-Algo」によるネットワークスライシングの商用ネットワークへの導入開始について (2022-04-26)](https://www.softbank.jp/corp/news/press/sbkk/2022/20220426_01) — Accessed: 2026-10-26
 - [Voyer, D. (Bell Canada). Bell SRv6 uSID Deployment, MPLS World Congress 2022](https://www.segment-routing.net/conferences/MPLS-WC-2022-Daniel-Voyer/) — Accessed: 2026-10-26。事業者による講演資料 (掲載サイトはベンダー運営)。
+- [ITU-T Recommendation G.841 (10/98). Types and characteristics of SDH network protection architectures](https://www.itu.int/rec/T-REC-G.841-199810-I/en) — Accessed: 2026-11-28。第 7.2.2 節 (MS 共有保護リングの切替時間 50 ms 未満とその条件) と第 3.77 節 (切替完了時間の定義)。SNC 保護とトレイル保護の節は「50 ms が目標として提案されている」とだけ書く。
 
 **二次資料 (Secondary)**
 
 - [Cisco: Cisco marks world's first with the deployment of SRv6 Flex-Algo on SoftBank's 5G commercial network (2022-04-27)](https://news-blogs.cisco.com/apjc/2022/04/27/cisco-marks-worlds-first1-with-the-deployment-of-srv6-flex-algo-on-softbanks-5g-commercial-network/) — Accessed: 2026-10-26。ベンダーの発表であり、ソフトバンクの発表の傍証としてのみ使用。
 - Donnet, B., Luckie, M., Mérindol, P., & Pansiot, J.-J. (2012). Revealing MPLS Tunnels Obscured from Traceroute. *ACM SIGCOMM Computer Communication Review*, 42(2), 87–93. — 測定経路の少なくとも 30% が MPLS トンネルを通過。
-- [Anritsu: APS (Automatic Protection Switching) Application Note](https://dl.cdn-anritsu.com/en-us/test-measurement/files/Application-Notes/Application-Note/APS-Application%20Note_EF2100.pdf) — Accessed: 2026-10-26。ITU-T G.783/G.841 の 50 ms 切替要件の解説。G.841 の原文は本稿執筆時に参照できなかった。
+- [Anritsu: APS (Automatic Protection Switching) Application Note](https://dl.cdn-anritsu.com/en-us/test-measurement/files/Application-Notes/Application-Note/APS-Application%20Note_EF2100.pdf) — Accessed: 2026-10-26。ITU-T G.783/G.841 の 50 ms 切替要件の解説。

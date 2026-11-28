@@ -154,7 +154,7 @@ sequenceDiagram
 | オーバーレイ | `SYSTEM_ALERT_WINDOW` + `TYPE_SYSTEM_ALERT` 等(Ⅰ巻 6.6.1) | `TYPE_APPLICATION_OVERLAY` に一本化(8.0〜)、untrusted touch 遮断(12〜)、`HIDE_OVERLAY_WINDOWS`(12〜) | オーバーレイ攻撃の継続的な封じ込め |
 
 - **変わっていないもの**: アプリ ↔ WMS の `IWindowSession`(同期中心)/`IWindow`(oneway)の非対称契約、型の三区分と番号帯、`WindowState` = 1 つの `IWindow`、窓をトークンに束ねる認可モデル、「WMS は画素を描かない」原則。書籍が描いた ViewRootImpl から見た WMS の役割は、ほぼそのまま現在も有効である。
-- **不確かな点**: Shell Transitions は Android 13 で導入されたが、旧 `AppTransition` 経路を置き換えて既定化された正確な版と、デバイス側のフラグの扱いは一次資料で確定できなかった。`WindowSurfaceController` の撤去時期も、2025-11 のスナップショットで不在を確認したのみで、どのリリースから不在かは未確認である。デスクトップウィンドウイングの提供範囲(機種・フォームファクタ)は OEM とリリースごとに変動しており、2026-09-27 時点の状況として読むべきである。
+- **不確かな点**: Shell Transitions は Android 13 で導入され、Android 14 で既定になった。`Transitions.java` の `ENABLE_SHELL_TRANSITIONS` は `persist.wm.debug.shell_transit` の既定値を読み、android-13.0.0_r1 と r84 では `false`、android-14.0.0_r1 では `true` である。ただし system_server 側がこのプロパティをどう読むかは別に確かめていない。`WindowSurfaceController.java` は android-15.0.0_r5 (2024-11) まであり、android-15.0.0_r6 (AP4A、Android 15 QPR1、2024-12) 以降のタグにはない。削除したコミットそのものは特定できていない。デスクトップウィンドウイングの提供範囲(機種・フォームファクタ)は OEM とリリースごとに変動しており、2026-09-27 時点の状況として読むべきである。
 
 ## セキュリティ考察 (Security Considerations)
 
@@ -201,6 +201,7 @@ sequenceDiagram
 **査読論文 (Peer-reviewed)**
 
 - Fratantonio, Y., Qian, C., Chung, S. P., & Lee, W. (2017). Cloak and Dagger: From Two Permissions to Complete Control of the UI Feedback Loop. *2017 IEEE Symposium on Security and Privacy (SP)*, 1041–1057. DOI: 10.1109/SP.2017.39
+- AOSP `frameworks/base` — `libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java`（[android-13.0.0_r1](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-13.0.0_r1/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java)・[android-14.0.0_r1](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-14.0.0_r1/libs/WindowManager/Shell/src/com/android/wm/shell/transition/Transitions.java)）と `services/core/java/com/android/server/wm/WindowSurfaceController.java` のタグ間の有無（android-15.0.0_r5 にあり r6 にない）。— Accessed: 2026-11-28。ビルド番号とタグの対応は [source.android.com のビルド番号一覧](https://source.android.com/docs/setup/reference/build-numbers)。
 
 **二次資料 (Secondary)**
 

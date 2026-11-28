@@ -4,7 +4,7 @@
 
 **Dragon** は、SpaceX が NASA の商業輸送プログラムのもとで開発した宇宙船である。貨物型 (Dragon 1, 2010–2020) は民間機として初めて軌道からの回収に成功し、**Crew Dragon (Dragon 2)** は 2020年5月の Demo-2 で**民間開発機として史上初の有人軌道飛行**を達成、以後 ISS への定期有人輸送を担っている[^nasa-ccp]。
 
-> **運用状況 (as of 2026-10)**: 2026年10月1日に Crew-13 が打ち上げられ（Crew Dragon の21回目の有人軌道飛行、ドッキングまで約7時間55分）、Crew-12 は10月7日以降の離脱・翌日の着水が予定されている[^crew13][^crew12]。2026年1月には Crew-11 が ISS 初の医療上の理由による早期帰還を行った[^crew11]。貨物型では CRS-34（2026年5〜6月）で同一カプセルの6回目の飛行という記録を作った[^crs34]。NASA は2026年9月に Crew-15〜17 を追加発注し（$946M、契約総額 $5.92B、運用は2030年まで）[^crew17]、一方で SpaceX は ISS 退役後の2030年以降に Crew Dragon / Falcon 9 の有人運用を終える方針を NASA 等に伝えたと報じられている（二次報道、未確認）[^dragon-2030]。
+> **運用状況 (as of 2026-10)**: 2026年10月1日に Crew-13 が打ち上げられ（Crew Dragon の21回目の有人軌道飛行、ドッキングまで約7時間55分）、Crew-12 は10月7日以降の離脱・翌日の着水が予定されている[^crew13][^crew12]。2026年1月には Crew-11 が ISS 初の医療上の理由による早期帰還を行った[^crew11]。貨物型では CRS-34（2026年5〜6月）で同一カプセルの6回目の飛行という記録を作った[^crs34]。NASA は2026年9月に Crew-15〜17 を追加発注し（$946M、契約総額 $5.92B、運用は2030年まで）[^crew17]、一方で SpaceX は ISS 退役後の2030年以降に Crew Dragon / Falcon 9 の有人運用を終える方針と報じられている（Ars Technica の2026年9月の報道を引く二次報道）[^dragon-2030]。NASA の Isaacman 長官は2026年9月28日の記者会見で、SpaceX が Falcon や Dragon のような古い機体を退役させる意向は秘密ではないと述べたが、時期は示さなかった。SpaceX も終了の時期を公表しておらず、具体的な年は2026-11-28時点で確認できない[^isaacman-sunset]。
 
 ロケット（Falcon 9 / Starship）が「質量を軌道に運ぶ機械」だとすれば、宇宙船は「**人間を生かして往復させる機械**」であり、要求の質が変わる。具体的には、生命維持 (ECLSS)、全飛行域での脱出 (abort)、確実な帰還（熱防護・パラシュート）、そして有人認定 (human-rating) という検証の重さである。本ドキュメントは、Dragon 2 のハードウェアを **SuperDraco による pusher 型アボート**、**自律ドッキング**、**パラシュート系**、**タッチスクリーン化されたコックピット**の設計判断を軸に分析し、2019年の地上爆発事故（SuperDraco 系の逆流着火）から有人機の故障解析を学ぶ。分析深度は Level 3。
 
@@ -136,7 +136,9 @@ Dragon 2 は「ロケットの上に載る貨物」ではなく、**それ自体
 
 [^crew17]: [The Register (2026-09-21). NASA gives SpaceX a billion reasons to keep flying Crew Dragon](https://www.theregister.com/offbeat/2026/09/21/nasa-gives-spacex-a-billion-reasons-to-keep-flying-crew-dragon/5297705) — NASA の発表に基づく Crew-15/16/17 追加（$946M、CCtCap 総額 $5.92B、2027〜2028年に準備、2030年まで）。Accessed: 2026-10-04.
 
-[^dragon-2030]: [Digital Today (2026-09-30). SpaceX moves to withdraw Dragon/Falcon 9 crewed missions after 2030](https://www.digitaltoday.co.kr/en/view/108922/spacex-moves-to-withdraw-dragon-falcon-9-crewed-missions-after-2030-widening-nasa-low-earth-orbit-gap) — Ars Technica（2026-09-29）の報道を引く二次報道。原典は未確認のため、確定情報ではなく報道として扱う。Accessed: 2026-10-04.
+[^dragon-2030]: [Digital Today (2026-09-30). SpaceX moves to withdraw Dragon/Falcon 9 crewed missions after 2030](https://www.digitaltoday.co.kr/en/view/108922/spacex-moves-to-withdraw-dragon-falcon-9-crewed-missions-after-2030-widening-nasa-low-earth-orbit-gap) — Ars Technica の報道を引く二次報道。本記事は Ars の記事を「9月29日」としているが、該当しそうな Ars の記事は2026年9月中旬のもので、日付が合わない。Ars の原典はアクセスできず読めていないため、確定情報ではなく報道として扱う。Accessed: 2026-10-04（2026-11-28 再確認）.
+
+[^isaacman-sunset]: [CNN (Wattles, J.) via KEYT (2026-09-28). NASA and Boeing Starliner news conference](https://keyt.com/?p=1480486) — Isaacman 長官の「I do not think it's a secret that SpaceX intends to sunset older platforms like Falcon and Dragon」。終了の時期には触れていない。Accessed: 2026-11-28.
 
 [^superdraco]: [SpaceX — Dragon（公式車両ページ）](https://www.spacex.com/vehicles/dragon/) — SuperDraco ×8（約 71 kN/基）、Draco ×16、pusher 型アボート、DMLS 積層造形燃焼室。Accessed: 2026-07-26.
 

@@ -97,7 +97,7 @@ flowchart LR
 | CPO (Broadcom 第 3 世代) 800G | 約 3.5 W | 約 4.4 | 報道[^nextplatform] |
 
 - **読み方**: 二つのベンダ (NVIDIA と、Broadcom の比較を報じた Next Platform) が、プラガブルを約 20 pJ/bit、CPO を 4〜7 pJ/bit と、同じ桁の値を示している。ただしどちらも CPO を売る側の数字であり、測定条件 (温度、リンク長、FEC の有無) は揃っていない。独立した測定は見つからなかった。
-- **規模の算術**: 102.4 Tb/s のスイッチ 1 台の光を 20 pJ/bit で動かすと、102.4×10¹² × 20×10⁻¹² ≈ 2 kW になる。5 pJ/bit なら約 0.5 kW である。ASIC そのものに匹敵する電力が光に使われており、数万ポートのクラスタではこの差がラックの給電・冷却の設計 ([`../../engineering/datacenters/datacenter-power.md`](../../engineering/datacenters/datacenter-power.md)) に直接響く。NVIDIA は NVL72 のラック内を光にすると、トランシーバとリタイマだけで約 20 kW 要ったと説明したと報じられている (二次報道のみで、一次資料は未確認)[^semianalysis]。
+- **規模の算術**: 102.4 Tb/s のスイッチ 1 台の光を 20 pJ/bit で動かすと、102.4×10¹² × 20×10⁻¹² ≈ 2 kW になる。5 pJ/bit なら約 0.5 kW である。ASIC そのものに匹敵する電力が光に使われており、数万ポートのクラスタではこの差がラックの給電・冷却の設計 ([`../../engineering/datacenters/datacenter-power.md`](../../engineering/datacenters/datacenter-power.md)) に直接響く。NVIDIA の Jensen Huang は GTC 2024 の基調講演 (2024-03-18) で、NVL72 のラック内を光にしていればトランシーバとリタイマだけで約 20 kW を使い、銅の NVLink にしたことでその 20 kW を計算に回せたと述べた。この発言は講演の文字起こしと当日の報道で確かめた。NVIDIA の文書やブログには同じ記述が見当たらず、一次資料は講演の映像だけである (2026-11-28 時点)[^gtc2024-copper][^semianalysis]。
 - **理論の下限**: Miller は、光リンクのエネルギーは受信側の容量を充電する電気のエネルギーで下限が決まり、光電変換部品を小さく集積すれば fJ/bit 級まで下げられると論じた[^miller]。現在の pJ/bit 級との差の多くは、電気の配線と DSP にある。
 
 ### 5. LPO と CPO: 何を省き、何を払うか
@@ -233,5 +233,7 @@ flowchart LR
 [^nextplatform]: The Next Platform. [The Third Time Will Be The Charm For Broadcom Switch Co-Packaged Optics (2025-10-17)](https://www.nextplatform.com/2025/10/17/the-third-time-will-be-the-charm-for-broadcom-switch-co-packaged-optics/) — Accessed: 2026-10-24。Broadcom 3 世代の 800G あたり電力 (約 6.4 / 5.5 / 約 3.5 W)、プラガブル 16〜18 W、Meta の比較 (CPO は再生型より 65%、LPO より 35% 低い)、交換単位の変遷、信頼性比較の条件の違い。
 
 [^trendforce]: TrendForce. [Press Center (2026-07-27)](https://www.trendforce.com/presscenter/news/20260727-13151.html) — Accessed: 2026-10-24。Spectrum-X の CPO スイッチの一部顧客への出荷開始と供給制約。
+
+[^gtc2024-copper]: [TWiT News 401 transcript — NVIDIA GTC 2024 Keynote](https://twit.tv/posts/transcripts/twit-news-401-transcript) — Accessed: 2026-11-28。基調講演 (2024-03-18) の機械的な文字起こしで、「transceivers and retimers alone would have cost 20,000 watts」の発言 (約 51 分 59 秒)。同じ発言は当日の報道 [ServeTheHome — This is the NVIDIA DGX GB200 NVL72](https://www.servethehome.com/this-is-the-nvidia-dgx-gb200-nvl72/) (Accessed: 2026-11-28) も伝えている。
 
 [^semianalysis]: SemiAnalysis. [Nvidia's Optical Boogeyman – NVL72, Infiniband Scale Out](https://newsletter.semianalysis.com/p/nvidias-optical-boogeyman-nvl72-infiniband) — Accessed: 2026-10-24。GTC 2024 の基調講演での「光なら約 20 kW」という発言の引用 (二次報道)。
