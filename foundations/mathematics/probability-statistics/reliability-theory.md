@@ -93,6 +93,7 @@ MTBF: 平均故障間隔,  MTTR: 平均修復時間
 | [`software/observability/observability-performance-engineering.md`](../../../software/observability/observability-performance-engineering.md) | 可用性・ナインズ・エラーバジェットの算術 (§3)、MTTR 短縮としての可観測性 |
 | [`hardware/semiconductor-manufacturing/semiconductor-fabrication.md`](../../../hardware/semiconductor-manufacturing/semiconductor-fabrication.md) | バーンイン・加速試験・JEDEC 信頼性認定 (§4)、初期故障と製造欠陥の関係 (§1) |
 | [`engineering/aerospace/avionics-gnc.md`](../../../engineering/aerospace/avionics-gnc.md) | 多重冗長と多様性設計 (§2)、k-out-of-n 投票系 |
+| [`engineering/railway/railway-signaling-control.md`](../../../engineering/railway/railway-signaling-control.md) | 故障時に安全側へ倒れる設計と、不一致なら止める多重系 |
 | [`engineering/energy/plant-control-scada-security.md`](../../../engineering/energy/plant-control-scada-security.md) | 安全計装系の PFD(作動失敗確率)と定期試験間隔の設計 (§1, §3) |
 
 ## 参考文献 (References)

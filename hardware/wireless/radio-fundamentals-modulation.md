@@ -126,6 +126,7 @@ C = B log₂(1+SNR) の含意は三つ。(1) SNR は log でしか容量に寄�
 - [`../signal-integrity/serdes-link-architecture.md`](../signal-integrity/serdes-link-architecture.md) / [`../signal-integrity/signal-integrity-engineering.md`](../signal-integrity/signal-integrity-engineering.md) — 有線側の同型問題（ISI・等化・FEC・BER）。
 - [`../../foundations/physics/electromagnetism/maxwell-equations-em-waves.md`](../../foundations/physics/electromagnetism/maxwell-equations-em-waves.md) — 電波・アンテナの物理的基礎。
 - [`../timekeeping/clocks-time-synchronization.md`](../timekeeping/clocks-time-synchronization.md) — PLL・発振器・GNSS 時刻。位相雑音は EVM の床。
+- [`../mixed-signal/adc-dac-converters.md`](../mixed-signal/adc-dac-converters.md) — 受信チェーンの終端にある ADC。分解能・速度・電力の交換と、標本化クロックのジッタの壁。
 - [`../../engineering/aerospace/avionics-gnc.md`](../../engineering/aerospace/avionics-gnc.md) — GNSS を使う側（航法とセンサ融合）。
 - [`../../software/networking/tcp-transport-congestion.md`](../../software/networking/tcp-transport-congestion.md) — 無線区間のロスを輻輳と誤解するトランスポート層の問題。PHY の確率的誤りが上位層設計に波及する接点。
 

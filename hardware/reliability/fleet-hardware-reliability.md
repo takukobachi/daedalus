@@ -261,6 +261,7 @@ stateDiagram-v2
 
 - [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — FIT・MTBF・バスタブ曲線・直列系の算術
 - [`../cpu/dram-memory-controllers.md`](../cpu/dram-memory-controllers.md) — DRAM の ECC・Rowhammer・EDAC
+- [`ras-machine-check.md`](ras-machine-check.md) — 誤りを検出できた場合の処理経路 (MCA、APEI、ポイズン、memory_failure)
 - [`../accelerators/gpu-simt-architecture.md`](../accelerators/gpu-simt-architecture.md) — GPU と HBM の構造
 - [`../accelerators/interconnects-scaleout-training.md`](../accelerators/interconnects-scaleout-training.md) — 学習クラスタのストラグラーと故障
 - [`../../software/ai/ml-training-systems.md`](../../software/ai/ml-training-systems.md) — チェックポイントと goodput

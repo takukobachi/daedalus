@@ -104,7 +104,7 @@
   IPTV・市場データ・無線 LAN (RFC 9119)、mDNS/DNS-SD (probe・既知応答の抑制・`.local` の衝突)、
   SSDP・LLMNR・NBT-NS、Discovery Proxy と SRP (Thread・Matter)、名前解決の毒入れ・SSDP の反射・
   CallStranger
-- `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致とRIB/FIB、経路表の規模と 512k day、
+- `ip-routing-bgp.md` — IP ルーティングと BGP：最長一致と RIB/FIB、経路表の規模と 512k day、
   IGP (OSPF のエリアと LSA、IS-IS のレベル、SPF の遅延制御) vs EGP (パスベクトル)、BGP の
   決定プロセスの全段と MED・ルートリフレクタの振動、コミュニティ、Graceful Restart/LLGR、
   Route Flap Damping、Gao–Rexford 安定条件、相互接続の経済 (トランジット・ピアリング・IXP

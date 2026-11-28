@@ -187,6 +187,7 @@ TEE が「実行時の隔離」なら、Secure/Measured Boot は「**起動時�
 
 - **電力・電磁波解析 (power / EM analysis)**: CMOS 回路の消費電力とビットの遷移は相関し、**鍵に依存して電力波形が変わる**。単純電力解析 (SPA) は単一波形から演算列を読み、差分電力解析 (DPA, Kocher et al. 1999) は多数波形の統計から鍵ビットを分離する。電磁波はこれを非接触で行う変種である。
 - **フォールト注入 (fault injection)**: 動作条件を意図的に逸脱させ計算を誤らせ、その誤りから秘密を漏らす（例: 署名の一時故障から鍵を復元する DFA）。手段は**電圧グリッチ・クロックグリッチ**（電源やクロックを一瞬乱す）、**レーザ注入**（特定トランジスタを光で反転）など。
+- **ソフトウェアからのフォールト注入**: 電圧やクロックをソフトウェアで変えられる場合は、物理的な接触なしで同じ効果が得られる。Plundervolt (Murdock et al. 2020) では、特権を持つソフトウェアが x86 の非公開の電圧制御 MSR (0x150) で CPU の電圧を下げ、SGX エンクレーブ内の乗算や AES-NI の結果に誤りを起こし、その誤りからエンクレーブ内の鍵を復元した。SGX は OS を信頼しない前提で作られているため、OS の権限で電圧を操作できること自体が脅威モデルの穴だった。Intel はマイクロコードと BIOS の更新でこの電圧制御インタフェースを無効にし、リモート認証 (remote attestation) でも無効になっていることを確かめるようにした (CVE-2019-11157)。
 - **対策**: 電圧/クロック/光/温度の**センサ**による異常検知、計算の**冗長化 (redundancy)** と照合（二重実行・チェックサム）、秘密依存の分岐・アクセスを排した**定数時間 (constant-time)** 実装、電力相関を乱す**マスキング (masking)**（秘密を乱数で分割して処理）。いずれも面積・電力・性能のコストを払って耐性を買う。
 
 ## セキュリティ考察 (Security Considerations)
@@ -240,6 +241,8 @@ TEE が「実行時の隔離」なら、Secure/Measured Boot は「**起動時�
 - `../hw-sw-interface/boot-initialization.md` — 信頼の連鎖・Secure/Measured Boot・TPM の起動時の詳細。
 - `../../software/ios/security-architecture.md` — Apple Secure Enclave のプラットフォーム統合。
 - `../../software/android/security-model.md` — TrustZone/TEE を用いた Android の鍵保護と検証ブート。
+- `../peripherals/nfc-contactless-payments.md` — スマートフォン決済の鍵を置くセキュアエレメントと、EMV に対するリレー攻撃。
+- `../hw-sw-interface/clock-power-reset.md` — DVFS の電圧・クロック制御。Plundervolt・CLKSCREW 系のフォールト注入の攻撃面。
 
 ## 参考文献 (References)
 
@@ -251,6 +254,7 @@ TEE が「実行時の隔離」なら、Secure/Measured Boot は「**起動時�
 - Yarom, Y., & Falkner, K. (2014). FLUSH+RELOAD: A High Resolution, Low Noise, L3 Cache Side-Channel Attack. *23rd USENIX Security Symposium*, 719–732. — Flush+Reload の定式化。
 - Costan, V., & Devadas, S. (2016). *Intel SGX Explained*. IACR Cryptology ePrint Archive, Report 2016/086. — [ia.cr/2016/086](https://eprint.iacr.org/2016/086) — Accessed: 2026-07-04。SGX の enclave/TCB/認証の包括的解説。
 - Kocher, P., Jaffe, J., & Jun, B. (1999). Differential Power Analysis. *CRYPTO '99, LNCS 1666*, 388–397. — DPA の原典（電力サイドチャネル）。
+- Murdock, K., Oswald, D., Garcia, F. D., Van Bulck, J., Gruss, D., & Piessens, F. (2020). Plundervolt: Software-based Fault Injection Attacks against Intel SGX. *Proc. IEEE Symposium on Security and Privacy 2020*, 1466–1482. DOI: 10.1109/SP40000.2020.00057 — ソフトウェアによる電圧操作でのフォールト注入。
 - Trusted Computing Group. *TPM 2.0 Library Specification*. — [trustedcomputinggroup.org/resource/tpm-library-specification](https://trustedcomputinggroup.org/resource/tpm-library-specification/) — Accessed: 2026-07-04。PCR・extend・認証・封印の規範。
 
 **二次資料 (Secondary)**
