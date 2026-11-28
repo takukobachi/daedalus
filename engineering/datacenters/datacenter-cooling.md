@@ -8,7 +8,7 @@
 
 ## 方法論 (Methodology)
 
-- 冷却を**直列の熱抵抗の連鎖**（接合部→パッケージ→冷媒→室内/水→外気）として扱い、各区間で「温度差を何 K 使うか」の予算配分として設計判断を読む。熱力学の詳細な導出には立ち入らず、移動の三形態（伝導・対流・（相変化））の工学的帰結に絞る。熱力学の法則・冷凍サイクルの COP・伝熱の三形態の導出は [`laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) に委ねる。
+- 冷却を**直列の熱抵抗の連鎖**（接合部→パッケージ→冷媒→室内/水→外気）として扱い、各区間で「温度差を何 K 使うか」の予算配分として設計判断を読む。熱力学の詳細な導出には立ち入らず、移動の三形態（伝導・対流・（相変化））の工学的帰結に絞る。熱力学の法則・冷凍サイクルの COP・伝熱の三形態の導出は [`laws-entropy-heat-engines.md`](../../foundations/physics/thermodynamics-statistical/laws-entropy-heat-engines.md) に委ねる。配管やダクトの流れの層流・乱流と圧力損失は [`incompressible-flow-boundary-layers.md`](../../foundations/physics/fluid-dynamics/incompressible-flow-boundary-layers.md) §2, §4 に委ねる。
 - 空冷→液冷の移行を「善悪」ではなく**体積流量と熱容量の算術**（空気と水の物性差）として説明する。
 - 効率指標 (PUE への寄与・WUE) は [`datacenter-fundamentals.md`](datacenter-fundamentals.md) の会計を引き継ぎ（定義は The Green Grid が 2007 年に提唱し、ISO/IEC 30134-2 (PUE)・30134-9 (WUE) として国際標準化されたもの[^pue-iso][^wue]）、方式間の比較を「電気・水・資本の三通貨」で行う。
 - 密度・方式の採用状況（2026-10 時点）は、ベンダ要件（GPU 製品の液冷必須化）と業界の実装進度を区別して記す。

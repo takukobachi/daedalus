@@ -126,7 +126,7 @@ flowchart TB
 
 ### 3. 熱雑音とジッタによる下限
 
-**熱雑音 (kT/C)。** スイッチと容量で標本化すると、スイッチの抵抗が出す熱雑音が容量に帯域制限されて、抵抗値によらず電圧 √(kT/C) の雑音が残る[^murmann-sc]。T = 300 K、C = 1 pF では約 64 µV rms である (本稿の試算)。これは 1 V フルスケールの 12 bit ADC の量子化雑音 (LSB/√12 ≈ 70 µV) とほぼ同じ大きさになる。1 bit 増やして雑音を半分にするには C を 4 倍にし、同じ速度で充電するには電流 (≈ 電力) も 4 倍にする。Murmann はこの関係を P/f_s ∝ kT × SNR とまとめ、1997〜2021 年のデータで「SNDR 約 50 dB 以上は 6 dB あたりエネルギー 4 倍 (noise limited)、それ以下は 2 倍 (technology limited)」という二つの傾きを示した[^murmann-sc]。
+**熱雑音 (kT/C)。** スイッチと容量で標本化すると、スイッチの抵抗が出す熱雑音が容量に帯域制限されて、抵抗値によらず電圧 √(kT/C) の雑音が残る[^murmann-sc]。T = 300 K、C = 1 pF では約 64 µV rms である (本稿の試算)。抵抗値によらずこの値になる理由は等分配則から導ける ([`statistical-mechanics-thermal-noise.md`](../../foundations/physics/thermodynamics-statistical/statistical-mechanics-thermal-noise.md) §3)。これは 1 V フルスケールの 12 bit ADC の量子化雑音 (LSB/√12 ≈ 70 µV) とほぼ同じ大きさになる。1 bit 増やして雑音を半分にするには C を 4 倍にし、同じ速度で充電するには電流 (≈ 電力) も 4 倍にする。Murmann はこの関係を P/f_s ∝ kT × SNR とまとめ、1997〜2021 年のデータで「SNDR 約 50 dB 以上は 6 dB あたりエネルギー 4 倍 (noise limited)、それ以下は 2 倍 (technology limited)」という二つの傾きを示した[^murmann-sc]。
 
 実用上の下限は P/f_s = 8kT·SNR (レールツーレールの B 級回路に相当、Vittoz 1990 による) とされる[^murmann-sc]。これを Schreier の性能指数に換算すると約 192 dB になる (本稿の試算: FOM_S = 10 log₁₀(1/16kT)、T = 300 K)。低速域の FOM_S は年約 1 dB (3 年で 2 倍) の割合で改善してきた[^murmann-sc]。
 

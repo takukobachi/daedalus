@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-データセンターの給電とは、**系統の数万ボルト交流を、プロセッサの 1 V 直流まで、無停止で・冗長に・効率よく変換し続ける**チェーンの設計である。[`../energy/`](../energy/) が扱った系統側（発電・送配電・市場）と、[`../../hardware/hw-sw-interface/clock-power-reset.md`](../../hardware/hw-sw-interface/clock-power-reset.md) が扱ったチップ側（オンボードの電源レール・POR）の間を埋める層であり、変換の各段（変電、無停電電源 (UPS)、配電 (PDU)、ラック内変換）のそれぞれに、効率（損失）・冗長性・保守性のトレードオフが埋め込まれている。
+データセンターの給電とは、**系統の数万ボルト交流を、プロセッサの 1 V 直流まで、無停止で・冗長に・効率よく変換し続ける**チェーンの設計である。[`../energy/`](../energy/) が扱った系統側（発電・送配電・市場）と、[`../../hardware/hw-sw-interface/clock-power-reset.md`](../../hardware/hw-sw-interface/clock-power-reset.md) が扱ったチップ側（オンボードの電源レール・POR）の間を埋める層であり、変換の各段（変電、無停電電源 (UPS)、配電 (PDU)、ラック内変換）のそれぞれに、効率（損失）・冗長性・保守性のトレードオフが埋め込まれている。チェーンの末端でプロセッサが使う電力は、計算に要るエネルギーの物理的な下限 (ランダウアー限界) より何桁も大きい。その桁差は [`statistical-mechanics-thermal-noise.md`](../../foundations/physics/thermodynamics-statistical/statistical-mechanics-thermal-noise.md) §5 で扱う。
 
 AI クラスタはこの層に二重の圧力をかけた: **密度**（1 ラック 100 kW 超は従来の配電の一桁上、[`datacenter-fundamentals.md`](datacenter-fundamentals.md) 参照）と、**変動**（数万 GPU が同期して動く学習ジョブは、MW 級の負荷ステップを系統に見せる）である。本ドキュメントは変換チェーンを上流から下流へ辿り、冗長トポロジ、ラック給電の 48 V 化、電力のオーバーサブスクリプション、そして系統との新しい関係までを扱う。時事性の高い数値は 2026-10 時点と明記する。分析深度は Level 3。
 
