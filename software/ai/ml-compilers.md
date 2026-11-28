@@ -11,12 +11,12 @@
 - **原論文と公式ドキュメントへの還元**: 各システムは原論文（PyTorch 2 / TorchInductor[^pt2]、Triton[^triton]、TVM[^tvm]、Ansor[^ansor]、Halide[^halide]、MLIR[^mlir]、JAX[^jax]、TASO[^taso]）と、OpenXLA・PyTorch・JAX の公式ドキュメントに基づいて機構を再構成する。性能数値は原論文の自己報告であり、ハードウェア・モデル集合・比較対象の版が論文ごとに異なることを明記する。
 - **段階による分解**: フレームワーク単位ではなく「捕捉 → グラフ最適化 → カーネル生成 → 実行」という変換段ごとに設計選択を比較する。同じ段で各システムが何を選んだかを並べると、設計空間の軸（静的か動的か、手書きか探索か、汎用 IR か専用 IR か）が見える。
 - **ハードウェアとの結合**: 性能の上限は [`gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md)（SM・共有メモリ・Tensor Core・roofline）と [`tpu-systolic-arrays.md`](../../hardware/accelerators/tpu-systolic-arrays.md)（シストリックアレイと「コンパイラという前提」）を基準系とする。roofline の原典は Williams et al. (2009)[^roofline]。
-- **時点依存の情報**: PyTorch・Triton・OpenXLA は四半期単位で変わる。版と既定値は 2026-10 時点の公式ドキュメントで確認し（Accessed: 2026-10-04）、本文では「2026-10 時点」と明示する。機構（ガード、融合、タイリング）の説明は版に依存しない構造的知見を優先する。
+- **時点依存の情報**: PyTorch・Triton・OpenXLA は四半期単位で変わる。版と既定値は公式ドキュメントで確認し（初版 2026-10-04、§7 の表の版番号・既定値・互換性保証は 2026-11-28 に再確認）、本文では時点を明示する。機構（ガード、融合、タイリング）の説明は版に依存しない構造的知見を優先する。
 
 ## 発見事項 (Findings)
 
 1. **最難関はコード生成ではなくグラフ捕捉である。** ML コンパイラの歴史は「Python のモデルからどうやってグラフを取り出すか」の試行錯誤の歴史だった。TensorFlow 1.x の静的グラフは使いにくく、TorchScript（`torch.jit.trace` / `script`）は Python の部分集合しか扱えず、利用者にコード書き換えを強いた。PyTorch 2 の TorchDynamo は、CPython のフレーム評価 API (PEP 523) にフックし、**バイトコード実行の直前に**テンソル演算列を FX グラフとして抽出する[^pt2]。扱えない Python 構文に出会うと、その箇所でグラフを切り（グラフブレーク (graph break)）、そこは通常の Python 実行に戻す。この「部分的に捕捉し、残りは逃がす」設計が、既存コードを書き換えずにコンパイラを適用する道を開いた。原論文は、TorchInductor が NVIDIA A100 上の 180 超の実モデルで eager 実行に対し推論 2.27 倍・学習 1.41 倍（幾何平均）の高速化を得たと報告している（2024 年の自己報告、比較対象は当時の版）[^pt2]。
-2. **捕捉したグラフは投機であり、ガードがその保険である。** Dynamo はグラフとともに「入力テンソルの形状・dtype・デバイス、参照したグローバル変数の値」などの前提条件をガードとして記録し、次回呼び出し時にガードが成立すればキャッシュ済みのコンパイル結果を再利用し、失敗すれば再コンパイルする[^pt2][^pt-dynamic]。これは JIT の投機的最適化と deoptimization の構図そのものであり、ガードが頻繁に外れると**再コンパイルの嵐**が起きる。PyTorch は関数ごとの再コンパイル回数に上限（2026-10 時点の既定値は `torch._dynamo.config.recompile_limit = 8`）を設け、上限を超えた関数はコンパイルを諦めて以後 eager 実行に落とす[^pt-recompile][^dynamo-config]。
+2. **捕捉したグラフは投機であり、ガードがその保険である。** Dynamo はグラフとともに「入力テンソルの形状・dtype・デバイス、参照したグローバル変数の値」などの前提条件をガードとして記録し、次回呼び出し時にガードが成立すればキャッシュ済みのコンパイル結果を再利用し、失敗すれば再コンパイルする[^pt2][^pt-dynamic]。これは JIT の投機的最適化と deoptimization の構図そのものであり、ガードが頻繁に外れると**再コンパイルの嵐**が起きる。PyTorch は関数ごとの再コンパイル回数に上限（2026-11 時点の既定値は `torch._dynamo.config.recompile_limit = 8`）を設け、上限を超えた関数はコンパイルを諦めて以後 eager 実行に落とす[^pt-recompile][^dynamo-config]。
 3. **融合の本質は「中間テンソルを HBM に書かない」ことである。** 要素ごと演算 (element-wise) や縮約 (reduction) の連鎖を 1 カーネルにまとめると、中間結果はレジスタや共有メモリに留まり、HBM の往復が消える。帯域律速の領域では、これがほぼそのまま速度向上になる。XLA の融合[^xla]、TorchInductor のループレベル融合[^pt2]は、いずれもこの原理の自動化である。一方で GEMM と attention のような演算強度の高いカーネルは、2026-10 時点でもベンダーライブラリ（cuBLAS/CUTLASS）や専用実装（FlashAttention）に委ねる構成が主流で、コンパイラは「その周囲を融合する」役に回ることが多い。
 4. **Triton は「スレッド」ではなく「ブロック」を書かせることで、生産性と性能の交点を動かした。** CUDA はスレッド単位の SIMT プログラムを書かせ、共有メモリの管理・メモリ合体 (coalescing)・Tensor Core への割り付けを人に任せる。Triton はプログラムの単位を**タイル（ブロック）**にし、ブロック内のスレッド割り付け・共有メモリ配置・ベクトル化をコンパイラに任せる[^triton]。この抽象化の水準が、TorchInductor が GPU 向けに Triton カーネルを生成するという構成を可能にした[^pt2]。人手で書く CUDA と自動生成の間に「中間の書き手」を置いたことが Triton の功績である。
 5. **アルゴリズムとスケジュールの分離 (Halide) が、自動チューニングの探索空間を定義した。** Halide は「何を計算するか（アルゴリズム）」と「どの順序・どの粒度・どこに置いて計算するか（スケジュール）」を別々に記述させた[^halide]。分離されたスケジュールは**探索可能な空間**になる。TVM はこの思想をテンソル演算に持ち込み[^tvm]、AutoTVM は人手のテンプレートの中を学習済みコストモデルで探索し[^autotvm]、Ansor はテンプレートそのものを自動生成して探索空間を広げ、当時の最先端に対し Intel CPU・ARM CPU・NVIDIA GPU で最大 3.8 倍・2.6 倍・1.7 倍の改善を報告した（「最大」値であり平均ではない）[^ansor]。手書きカーネルとの差を「探索」で埋めるという方向は、Triton の autotune（ブロックサイズ等の候補を実測で選ぶ）にも小規模な形で受け継がれている。
@@ -147,7 +147,7 @@ flowchart TD
 
 - 各方言は「ある抽象化水準で守るべき不変条件」を表す。`linalg` の段階ではタイリングや融合が演算の意味に基づいて安全に行え、`memref` の段階ではバッファの割り付けと再利用が、`gpu` の段階ではスレッド階層への写像が扱える。
 - 段階的な下降の利点は、**最適化をそれに最適な抽象化水準で行える**ことである。融合はテンソル水準で、ベクトル化はベクトル水準で、レジスタ割り付けは LLVM で行う。単一 IR のコンパイラでは、高水準の情報が下降の途中で失われ、後段で復元できない。
-- 2026-10 時点で、StableHLO は OpenXLA プロジェクトの交換形式として、5 年間の後方互換性と 2 年間の前方互換性（新機能を使わない場合）を保証している[^stablehlo][^stablehlo-compat]。これにより、フレームワークが出力したモデルを後から別のコンパイラで処理する、という分業が可能になった。
+- 2026-11 時点で、StableHLO は OpenXLA プロジェクトの交換形式として、5 年間の後方互換性と 2 年間の前方互換性（新機能を使わない場合）を保証している[^stablehlo][^stablehlo-compat]。これにより、フレームワークが出力したモデルを後から別のコンパイラで処理する、という分業が可能になった。
 
 ### 6. コンパイル時間と実行時性能、動的形状
 
@@ -166,12 +166,12 @@ flowchart TD
 - **境界つき動的形状**: 最大値の上限だけを静的に与え、実際の長さは実行時に渡す。メモリ計画は上限で行える。
 - **CUDA Graphs との緊張**: [`ml-inference-systems.md`](ml-inference-systems.md) の CUDA Graphs は起動列を固定形状で録画する。そのため推論ランタイムは、バッチサイズのバケットごとに CUDA Graph を録画する方式を採ることが多い。
 
-### 7. 2026-10 時点の実装状況
+### 7. 2026-11 時点の実装状況
 
-| 項目 | 2026-10 時点の状態 | 出典 |
+| 項目 | 2026-11 時点の状態 | 出典 |
 |---|---|---|
-| PyTorch 最新安定版 | 2.14.1（2026-09-30 リリース） | [^pt-release] |
-| Triton 最新版 | 3.8.0（2026-08-28 リリース） | [^triton-release] |
+| PyTorch 最新安定版 | 2.15.0（2026-10-28 リリース） | [^pt-release] |
+| Triton 最新版 | 3.9.0（2026-10-27 リリース） | [^triton-release] |
 | Dynamo の再コンパイル上限 | `recompile_limit = 8`（旧名 `cache_size_limit` は別名として残存）、`automatic_dynamic_shapes` は既定で有効 | [^dynamo-config] |
 | StableHLO の互換性保証 | 後方 5 年・前方 2 年 | [^stablehlo-compat] |
 | TorchInductor の出力 | GPU は Triton、CPU は C++/OpenMP | [^pt2] |
@@ -237,7 +237,7 @@ flowchart TD
 
 [^stablehlo]: [StableHLO (OpenXLA)](https://openxla.org/stablehlo) — Accessed: 2026-10-04
 
-[^stablehlo-compat]: [StableHLO Compatibility (OpenXLA)](https://openxla.org/stablehlo/compatibility) — Accessed: 2026-10-04
+[^stablehlo-compat]: [StableHLO Compatibility (OpenXLA)](https://openxla.org/stablehlo/compatibility) — Accessed: 2026-11-28
 
 [^pt-dynamic]: [Dynamic Shapes — PyTorch documentation](https://docs.pytorch.org/docs/main/user_guide/torch_compiler/torch.compiler_dynamic_shapes.html) — Accessed: 2026-10-04
 
@@ -245,11 +245,11 @@ flowchart TD
 
 [^pt-graphbreak]: [Working with Graph Breaks — PyTorch documentation](https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.graph_breaks_index.html) — Accessed: 2026-10-04
 
-[^dynamo-config]: PyTorch source, `torch/_dynamo/config.py`（`recompile_limit`、`automatic_dynamic_shapes` の定義）— [GitHub](https://github.com/pytorch/pytorch/blob/main/torch/_dynamo/config.py). Accessed: 2026-10-04
+[^dynamo-config]: PyTorch source, `torch/_dynamo/config.py`（`recompile_limit`、`automatic_dynamic_shapes` の定義）— [GitHub](https://github.com/pytorch/pytorch/blob/main/torch/_dynamo/config.py). Accessed: 2026-11-28
 
-[^pt-release]: [PyTorch Releases (GitHub)](https://github.com/pytorch/pytorch/releases) — Accessed: 2026-10-04
+[^pt-release]: [PyTorch Releases (GitHub)](https://github.com/pytorch/pytorch/releases) — Accessed: 2026-11-28
 
-[^triton-release]: [Triton Releases (GitHub)](https://github.com/triton-lang/triton/releases) / [triton (PyPI)](https://pypi.org/project/triton/) — Accessed: 2026-10-04
+[^triton-release]: [Triton Releases (GitHub)](https://github.com/triton-lang/triton/releases) / [triton (PyPI)](https://pypi.org/project/triton/) — Accessed: 2026-11-28
 
 [^jax-jit]: [Just-in-time compilation — JAX documentation](https://docs.jax.dev/en/latest/jit-compilation.html) — Accessed: 2026-10-04
 

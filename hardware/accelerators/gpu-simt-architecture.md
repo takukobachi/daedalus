@@ -159,9 +159,11 @@ flowchart LR
 | レジスタ | コンパイラ | 256KB/SM 級, ~1サイクル | スレッド私有 |
 | 共有メモリ / L1 | ソフトウェア / HW | ~100-228KB/SM 級, 数十サイクル | ブロック内共有, 32バンク |
 | L2 | ハードウェア | 数十 MB 級, ~百サイクル級 | 全 SM 共有 |
-| HBM (デバイスメモリ) | — | 数十〜数百 GB (2026-10 時点の製品で 192〜432 GB), 数百サイクル, 数〜20 TB/s 級 | 帯域重視 DRAM |
+| HBM (デバイスメモリ) | — | 数十〜数百 GB (2026-11 時点の主力製品で 192〜432 GB), 数百サイクル, 数〜20 TB/s 級 | 帯域重視 DRAM |
 
 （容量・レイテンシは世代・実装依存の桁感。帯域はベンダ公称値ベース。）
+
+2026-11 時点では、HBM4 を載せた世代の出荷が始まっている。NVIDIA は 2026-11-17 の決算発表で Vera Rubin NVL72 の出荷開始を公表した。Rubin GPU の HBM4 は 288 GB のまま、出荷仕様の帯域は事前公表の 22 TB/s から 19.2 TB/s に下方修正されたと報じられている（NVIDIA は理由を説明していない）。AMD も 2026-11-03 の決算発表で、MI450 シリーズの投入と、最初の Helios ラックで顧客のワークロードが動いていることを示した。製品ごとの容量・帯域は [`hbm-ai-memory.md`](hbm-ai-memory.md) にまとめている。
 
 - **コアレッシング (coalescing)**: メモリシステムはワープ単位でアクセスを見て、32スレッドのアドレスが連続・整列していれば少数の広いトランザクション（32B/64B/128B セグメント）に併合する。ストライドアクセスや散乱アクセスはトランザクション数が膨らみ、実効帯域が数分の一〜数十分の一に落ちる。CPU の「キャッシュラインをまたぐな」に相当する第一級の最適化対象であり、AoS→SoA 変換が有効なのも同じ理屈である。
 - **バンクコンフリクト (bank conflict)**: 共有メモリは32バンクに分かれ、ワープ内のアクセスが別バンクに散れば1サイクルで並列処理される。同一バンクの別アドレスに複数スレッドが当たるとアクセスが直列化する。タイル配列に+1パディングを入れる古典的技法はこの回避策である。
@@ -255,6 +257,10 @@ GPU は「多数のテナントで共有される高価な資源」になった�
 - Hennessy, J. L., & Patterson, D. A. (2019). *Computer Architecture: A Quantitative Approach* (6th ed.). Morgan Kaufmann. — Ch. 4 (Data-Level Parallelism in Vector, SIMD, and GPU Architectures)。
 
 **二次資料 (Secondary)**
+
+- NVIDIA (2026-11-17). *NVIDIA Announces Financial Results for Third Quarter Fiscal 2027*. — [investor.nvidia.com](https://investor.nvidia.com/news/press-release-details/2026/NVIDIA-Announces-Financial-Results-for-Third-Quarter-Fiscal-2027/default.aspx) — Accessed: 2026-11-28。「Vera Rubin NVL72 … has shipped」（当事者発表）。
+- Smith, R. (2026-10-31). *NVIDIA Updates Rubin GPU Specs as First Production Hardware Arrives*. ServeTheHome. — [servethehome.com](https://www.servethehome.com/?p=106378) — Accessed: 2026-11-28。HBM4 288 GB は据え置き、帯域 22 → 19.2 TB/s（ピン速度 約 10.75 → 9.375 Gb/s）。NVIDIA の地域別製品ページでも 22 TB/s と 19.2 TB/s の表記が混在する。
+- AMD (2026-11-03). *AMD Reports Third Quarter 2026 Financial Results*（Form 8-K）. — [last10k.com による SEC 提出書類の転載](https://last10k.com/sec-filings/amd/0000002488-26-000188.htm) — Accessed: 2026-11-28。MI450 シリーズの投入、Helios ラックで顧客ワークロードが稼働（当事者発表）。
 
 - NVIDIA. *NVIDIA H100 Tensor Core GPU Architecture Whitepaper*. — [resources.nvidia.com](https://resources.nvidia.com/en-us-tensor-core) — Accessed: 2026-07-04。SM 構成・Tensor コア・NVLink・CC モードのベンダ公称値（一次だがマーケティング文書でもある点に留意）。
 - JEDEC. *High Bandwidth Memory DRAM (HBM3) Standard* (JESD238) の概要解説各種 — HBM の積層・インターポーザ構成の背景。規格本文は JEDEC 配布。 — [jedec.org](https://www.jedec.org/) — Accessed: 2026-07-04。

@@ -2,7 +2,7 @@
 
 ## 概要 (Overview)
 
-[`adas-sensing-perception.md`](adas-sensing-perception.md) は、センサの物理と知覚によって車両周辺の世界モデルを作るところまでを扱った。本ドキュメントはその下流を扱う。世界モデルから他者の将来を**予測 (prediction)** し、自車の軌道を**計画 (planning)** し、アクチュエータを**制御 (control)** する自動運転スタックの構造、それを実時間で動かす**計算基盤 (SoC)**、そして「十分に安全だ」と主張するための**安全規格・検証手法**である。最後に、2026 年 10 月時点の展開状況を、実証された事実と各社の主張に分けて整理する。
+[`adas-sensing-perception.md`](adas-sensing-perception.md) は、センサの物理と知覚によって車両周辺の世界モデルを作るところまでを扱った。本ドキュメントはその下流を扱う。世界モデルから他者の将来を**予測 (prediction)** し、自車の軌道を**計画 (planning)** し、アクチュエータを**制御 (control)** する自動運転スタックの構造、それを実時間で動かす**計算基盤 (SoC)**、そして「十分に安全だ」と主張するための**安全規格・検証手法**である。最後に、2026 年 11 月時点の展開状況を、実証された事実と各社の主張に分けて整理する。
 
 扱う論点は次の5つである。
 
@@ -19,7 +19,7 @@
 - **責任の所在を軸にレベルを読む。** J3016 のレベルを「機能の高さ」ではなく、「DDT とそのフォールバックを誰が担うか」という役割分担の定義として扱う。L2 と L3 の境界は、技術の差というより法的・安全上の責任の移転点である。
 - **スタックは「インターフェースの明示性」で比較する。** モジュール型と end-to-end 型の差を、中間表現（物体リスト・予測軌道）が人間に読めるか、各モジュールを独立に検証できるか、誤差がどこで累積するかという観点で比べる。
 - **計算性能は公称値と実効値を分ける。** TOPS（毎秒兆回演算）は精度（INT8/FP4）・疎性 (sparsity) の前提で数倍変わる。AGENTS.md の Source Hierarchy に従い、ベンダーの数値は「公称 (vendor spec)」と明記し、異なる前提の数字を直接比べない。GPU アーキテクチャの一般論は [`../../hardware/accelerators/gpu-simt-architecture.md`](../../hardware/accelerators/gpu-simt-architecture.md) に委ねる。
-- **展開状況は「実証」と「主張」を分ける。** 運転者なしの有償運行、規制当局への報告、査読付き研究で裏づけられた事実を「実証 (demonstrated)」とし、経営者の発言や計画を「主張・目標 (claimed / target)」とする。時点依存の事実には「2026 年 10 月時点」と明記する。
+- **展開状況は「実証」と「主張」を分ける。** 運転者なしの有償運行、規制当局への報告、査読付き研究で裏づけられた事実を「実証 (demonstrated)」とし、経営者の発言や計画を「主張・目標 (claimed / target)」とする。時点依存の事実には「2026 年 11 月時点」のように時点を明記する。
 
 ## 発見事項 (Findings)
 
@@ -29,7 +29,7 @@
 4. **計算基盤の「TOPS 競争」は精度の前提を揃えないと比較できない。** NVIDIA DRIVE Thor の「1000 INT8 TOPS 超 / 2000 FP4 TFLOPS」と、Mobileye EyeQ6 High の「34 DL TOPS (INT8)」は、設計思想（汎用 GPU と専用アクセラレータ）も電力も異なる。テスラ HW4 は公式 TOPS を公表していない。
 5. **安全規格は「故障」「性能限界」「全体の論証」の3層で補い合う。** ISO 26262 は E/E の故障、ISO 21448 (SOTIF) は故障なしでの仕様不足・性能限界、UL 4600 は運転者なしシステムの安全性を主張するセーフティケース全体を扱う。どれも単独では自動運転の安全を保証しない。
 6. **走行距離だけで安全を実証するのは統計的に非現実的である。** 人間の死亡事故率と同等であることを 95% の信頼度で示すだけでも数億マイル、20% 優れることを示すには数十億マイル規模の無事故走行が必要になる[^kalra]。シナリオベース試験とシミュレーションが不可欠な理由がここにある。
-7. **2026 年 10 月時点で、運転者なしの大規模商用運行を査読付き安全データとともに実証しているのは Waymo が最も先行している。** Baidu Apollo Go も中国で大規模な運転者なし運行を行う。テスラは監視付き FSD の普及規模で突出するが、運転者なしの安全性を示す独立データはまだ限定的である。詳細は「展開状況」節で述べる。
+7. **2026 年 11 月時点で、運転者なしの大規模商用運行を査読付き安全データとともに実証しているのは Waymo が最も先行している。** Baidu Apollo Go も中国で大規模な運転者なし運行を行う。テスラは監視付き FSD の普及規模で突出するが、運転者なしの安全性を示す独立データはまだ限定的である。詳細は「展開状況」節で述べる。
 
 ## アーキテクチャ (Architecture)
 
@@ -85,7 +85,7 @@ flowchart LR
 - **ChauffeurNet**（Waymo, 2018）[^chauffeurnet]: 知覚済みの BEV 表現から模倣学習で軌道を出す。模倣データにない危険状況を合成して摂動を加え、模倣学習の「分布シフト」問題に対処した。
 - **UniAD**（CVPR 2023 最優秀論文）[^uniad]: 追跡・地図・動き予測・占有予測・計画の各モジュールを Transformer のクエリで接続し、**計画を最終目的として全体を共同学習する**「planning-oriented」設計である。中間出力を保持するため、モジュール型の解釈性と end-to-end の最適性を両立しようとする。後続の VAD[^vad] はシーンをベクトル表現にして計算を軽くした。
 - **EMMA**（Waymo, 2024）[^emma]: マルチモーダル大規模言語モデル (Gemini) を基盤に、カメラ画像から軌道・物体・道路グラフをテキストトークンとして生成する研究である。Waymo は研究成果として公表しており、運行中の Waymo Driver そのものとは区別して扱うべきである。
-- **テスラ FSD v12 以降**: テスラは FSD v12 のリリースノートで「市街地走行スタックを、数百万の動画クリップで学習した単一の end-to-end ニューラルネットワークに置き換え、30 万行超の明示的な C++ コードを置き換えた」と説明した（v12.3, 2024 年 3 月）[^tesla-fsd-v12]。その後 v13（2024 年 11 月）、v14（2025 年 10 月）と更新されている[^tesla-fsd-versions]。ネットワーク構造の詳細は非公開であり、「完全に単一のネットワークか」「規則ベースの安全層が残るか」は外部から検証できない。**ベンダーの説明**として扱う。
+- **テスラ FSD v12 以降**: テスラは FSD v12 のリリースノートで「市街地走行スタックを、数百万の動画クリップで学習した単一の end-to-end ニューラルネットワークに置き換え、30 万行超の明示的な C++ コードを置き換えた」と説明した（v12.3, 2024 年 3 月）[^tesla-fsd-v12]。その後 v13（2024 年 11 月）、v14（2025 年 10 月）と更新され、2026 年 11 月時点で北米の HW4 車向けは v14.3 系である。2026 年 11 月下旬には、一部の HW4 車に v15 の配信が始まったとトラッカーが報告している[^tesla-fsd-versions]。ネットワーク構造の詳細は非公開であり、「完全に単一のネットワークか」「規則ベースの安全層が残るか」は外部から検証できない。**ベンダーの説明**として扱う。
 
 ```mermaid
 flowchart LR
@@ -149,13 +149,13 @@ RSS は「計画層が出した軌道がこの制約を破るなら上書きす�
 | NVIDIA DRIVE AGX Thor | 1000 INT8 TOPS 超（2000 FP4 TFLOPS） | — | Blackwell 世代、ADAS とコックピットの統合、ASIL D 対応を謳う | Transformer・生成 AI 推論を意識した FP4 |
 | Mobileye EyeQ6 High | 34 DL TOPS (INT8) | 7 nm | SuperVision 級の監視付きハンズオフ、2024 年末量産計画 | EyeQ5 の 2 個分相当と説明 |
 | Mobileye EyeQ6 Lite | 5 DL TOPS (INT8) | 7 nm | 量産 L1/L2 の前方カメラ | 2023 年量産 |
-| Mobileye EyeQ Ultra | 176 TOPS | 5 nm | 運転者なし（L4）向け単一チップ | 2025 年量産の**計画**として発表 |
-| Qualcomm Snapdragon Ride (Flex / Elite) | 公式 TOPS 未確認 | — | ADAS とコックピットの統合 SoC | 本稿では数値を記載しない |
+| Mobileye EyeQ Ultra | 176 TOPS | 5 nm | 運転者なし（L4）向け単一チップ | 2025 年量産の**計画**として発表。2026 年 11 月時点で量産開始の発表は確認できない（2026 年第3四半期の決算資料にも記載なし）[^mobileye-q3-2026] |
+| Qualcomm Snapdragon Ride (Flex / Elite) | 公式 TOPS は非公表（前世代比の相対値のみ） | — | ADAS とコックピットの統合 SoC | Ride Elite の製品概要は NPU 性能を「前世代比 12 倍」など相対値でのみ示し、「社内の予備試験に基づく目標値」と注記する[^qualcomm-elite]。本稿では絶対値を記載しない |
 | Tesla FSD コンピュータ (HW3) | NPU 2 基で 1 チップ約 72 TOPS、2 チップ冗長構成 | Samsung 14 nm | 2019 年量産 | IEEE Micro 論文あり |
 | Tesla HW4 (AI4) | 公式 TOPS 非公表 | Samsung 7 nm（報道） | 2023 年 1 月以降の新車 | 「HW3 の 3〜8 倍」は経営者発言 |
-| Tesla AI5 | 「HW4 の 10 倍」（経営者発言） | Samsung・TSMC で 2027 年量産予定（発言） | 当初 2026 年 1 月予定から延期 | 2026 年 4 月、まず Optimus とデータセンター向けとの発言 |
+| Tesla AI5 | 「HW4 の 10 倍」（経営者発言） | Samsung・TSMC で 2027 年量産予定（発言） | 当初 2026 年 1 月予定から延期 | 2026 年 4 月、まず Optimus とデータセンター向けとの発言。2026 年 10 月の決算説明会では、Samsung のテキサス工場で試作を始めたこと、Optimus への搭載は 2027 年 4 月ごろの見込みであることが語られた（報道）[^tesla-q3-2026] |
 
-出典: NVIDIA[^nvidia-drive]、Mobileye[^mobileye-eyeq][^mobileye-ces2022]、テスラ HW3[^talpes][^bannon-hotchips]、AI5[^ai5]。HW4 のプロセスと「HW3 の 3〜8 倍」、HW3 の 1 チップ約 72 TOPS は一次資料で再確認できておらず、報道・発言ベースの値として扱う。
+出典: NVIDIA[^nvidia-drive]、Mobileye[^mobileye-eyeq][^mobileye-ces2022]、Qualcomm[^qualcomm-elite]、テスラ HW3[^talpes][^bannon-hotchips]、AI5[^ai5][^tesla-q3-2026]。HW4 のプロセスと「HW3 の 3〜8 倍」、HW3 の 1 チップ約 72 TOPS は一次資料で再確認できておらず、報道・発言ベースの値として扱う。
 
 比較上の注意は3点ある。
 
@@ -187,7 +187,7 @@ flowchart TB
 - **ISO 21448:2022 (SOTIF)**: 故障がなくても起こる危険、つまり**意図した機能の不足**（センサの性能限界、想定外のシーン、予見可能な誤使用）を扱う[^sotif]。シナリオを「既知・安全」「既知・危険」「未知・危険」「未知・安全」の4象限に分け、既知の危険シナリオを設計で減らし、**未知の危険シナリオを探索で既知化して減らす**のが活動の中心である。学習モデルの知覚・計画はこの枠組みで扱われる。
 - **ISO/SAE 21434**: 攻撃による危険。詳細は [`cybersecurity-iso21434.md`](cybersecurity-iso21434.md)。
 - **UL 4600**（2023 年第3版）: 運転者なし自律製品の安全性評価規格である[^ul4600]。手法を規定する代わりに、「なぜ十分に安全か」を主張・論拠・証拠の構造（**セーフティケース**）で示すことを要求し、その網羅性を確認するチェックリスト（知覚の限界、機械学習、運用・保守、フィールドでの監視とフィードバックなど）を与える。ISO 26262 や SOTIF の成果物はセーフティケースの証拠として組み込まれる。
-- **ISO/TS 5083**: 自動運転システムの安全（設計・検証・妥当性確認）を扱う ISO の技術仕様であり、ISO 26262・SOTIF を自動運転向けに束ねる位置づけにある[^iso5083]。
+- **ISO/TS 5083:2025**: 自動運転システムの安全（設計・検証・妥当性確認）を扱う ISO の技術仕様（2025 年 4 月発行の第1版、ISO/TC 22/SC 32）であり、ISO 26262・SOTIF を自動運転向けに束ねる位置づけにある[^iso5083]。
 
 ### 5. UNECE R157 ALKS と Mercedes DRIVE PILOT
 
@@ -195,7 +195,7 @@ flowchart TB
 
 Mercedes-Benz の **DRIVE PILOT** は、R157 に基づく型式認可を取得した最初期の量産 L3 システムであり、ドイツでは 2021 年後半から S クラスで提供された。カリフォルニア州 DMV は 2023 年 6 月 8 日、DRIVE PILOT を一般向けに販売可能な L3 システムとして承認した。条件は指定された高速道路・日中・**40 mph 以下**で、市街地・工事区間・大雨や霧では作動せず、運転者は介入要求に備えて運転席にいる必要がある[^ca-dmv-mb]。ODD 内ではメーカーが運転の責任を負う点が L2 との本質的な違いである。
 
-2026 年の DRIVE PILOT の提供状況（継続・改訂・終了）については、一次資料で確認できなかったため本稿では断定しない。L3 は認可を得ても、ODD の狭さと責任負担に対して顧客価値が小さい（渋滞時のみ・低速のみ）という事業上の難しさを抱えており、各社が L3 よりも「監視付きハンズオフ L2」と「運転者なし L4」に二極化する傾向がある。
+2026 年 1 月に発表された S クラスの改良型には DRIVE PILOT が設定されないと報じられている。electrive は Handelsblatt の報道として、改良型の S クラスと EQS で提供しないと伝えた[^electrive-mb]。WardsAuto によれば、Mercedes-Benz の広報担当者は米国の規制環境と顧客にとっての価値を見直した結果だと説明した。改良型 S クラスには L2++ の MB.DRIVE ASSIST PRO を載せ、L3 は最大 130 km/h 程度の高速域を狙う次の世代で改めて目指すという[^wards-mb]。提供終了を明示する Mercedes-Benz の公式発表は確認できていない。既販車の DRIVE PILOT（ドイツの 95 km/h 版を含む）が今後も使えるかも確認できていない。L3 は認可を得ても、ODD の狭さと責任負担に対して顧客価値が小さい（渋滞時のみ・低速のみ）という事業上の難しさを抱えており、各社が L3 よりも「監視付きハンズオフ L2」と「運転者なし L4」に二極化する傾向がある。
 
 ### 6. 検証と妥当性確認
 
@@ -226,37 +226,37 @@ Mercedes-Benz の **DRIVE PILOT** は、R157 に基づく型式認可を取得�
 |---|---|---|
 | Kusano et al. (2024), *Traffic Injury Prevention*[^kusano-7m] | 710 万マイル | 負傷を伴う事故率 約 80% 低、警察報告事故率 約 55% 低 |
 | Kusano et al. (2025), *Traffic Injury Prevention*[^kusano-57m] | 5670 万マイル（2025 年 1 月まで） | 車両同士の交差点事故で負傷を伴うもの 96% 低（95% CI 87–99%）、エアバッグ展開 91% 低（CI 76–98%）。11 の事故類型のいずれでも統計的に有意な悪化なし |
-| Di Lillo et al.（Swiss Re との共同、プレプリント）[^swissre] | 2530 万マイル | 対人賠償請求 92% 減・対物賠償請求 88% 減（最新 ADAS 装備車との比較では 90%・86% 減） |
+| Di Lillo et al.（Swiss Re との共同、Waymo 技術報告）[^swissre] | 2530 万マイル | 対人賠償請求 92% 減・対物賠償請求 88% 減（最新 ADAS 装備車との比較では 90%・86% 減） |
 | Scanlon et al. (2021), *Accident Analysis & Prevention*[^scanlon] | 再構成シミュレーション | ODD 内の過去の死亡事故を再構成し、Waymo Driver の挙動を評価 |
 
 Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only マイルについて、重傷以上の事故 95% 減、エアバッグ展開事故 82% 減、負傷を伴う事故 82% 減と公表している[^waymo-safety-hub]。
 
 これらの研究の解釈には注意が要る。
 
-- **著者は Waymo の社員**である。査読を経ているが、第三者による独立した再現ではない。Swiss Re 研究は保険会社との共同で、保険請求という外部データを使う点で独立性が一段高いが、本稿執筆時点で査読誌の掲載を確認できていない。
+- **著者は Waymo の社員**である。査読を経ているが、第三者による独立した再現ではない。Swiss Re 研究は保険会社との共同で、保険請求という外部データを使う点で独立性が一段高いが、2026 年 11 月時点でも査読誌への掲載は確認できない。2025 年 8 月の Waymo の後続論文もこの研究を Waymo LLC の技術報告として引用している[^waymo-2025-arxiv]。
 - **ベンチマークの構築が結果を左右する。** 人間の事故は過少報告されるため、Waymo は報告漏れを補正したベンチマークを使う。補正方法・地域や道路種別の対応づけの妥当性が論点になる。
 - **ODD が限定されている。** 結果は Waymo が運行する都市・道路・条件での比較であり、全道路・全天候での安全性を意味しない。
-- それでも、運転者なし運行の安全性を、規制当局の事故報告（NHTSA SGO）と整合する形で、信頼区間つきで査読誌に公表している事業者は 2026 年 10 月時点で限られる。テスラは独自の「Vehicle Safety Report」で自社システム使用時の事故間隔を公表しているが[^tesla-vsr]、道路種別や車齢などの交絡を補正した比較ではなく、査読も経ていない。
+- それでも、運転者なし運行の安全性を、規制当局の事故報告（NHTSA SGO）と整合する形で、信頼区間つきで査読誌に公表している事業者は 2026 年 11 月時点で限られる。テスラは独自の「Vehicle Safety Report」で自社システム使用時の事故間隔を公表しているが[^tesla-vsr]、道路種別や車齢などの交絡を補正した比較ではなく、査読も経ていない。
 
-## 展開状況 (Deployment Status, 2026 年 10 月時点)
+## 展開状況 (Deployment Status, 2026 年 11 月時点)
 
-2026 年 10 月 4 日時点の状況を、運転者なし運行・規制当局への報告などで裏づけられた**実証 (demonstrated)** と、計画・発言である**主張 (claimed / target)** に分けて整理する。この分野は月単位で変わるため、数値は出典の日付とともに読む必要がある。
+2026 年 11 月 28 日時点の状況を、運転者なし運行・規制当局への報告などで裏づけられた**実証 (demonstrated)** と、計画・発言である**主張 (claimed / target)** に分けて整理する。この分野は月単位で変わるため、数値は出典の日付とともに読む必要がある。
 
-| 事業者 | 実証（2026 年 10 月時点） | 主張・計画 |
+| 事業者 | 実証（2026 年 11 月時点） | 主張・計画 |
 |---|---|---|
-| **Waymo** | 米国で運転者なしの有償ロボタクシーを運行。2026 年 9 月の報道では 15 市場（フェニックス、SF ベイエリア、LA、オースティン、ダラス、ヒューストン、デンバー、マイアミ、ナッシュビル、サンディエゴ、タンパ、ラスベガス〔ウェイトリスト〕、サンアントニオ〔一時停止〕など）[^tc-waymo-lv]。週約 50 万件の有償乗車・約 4000 台（報道）[^tc-waymo-fleet]。累計 2.7 億 rider-only マイル超（公式）[^waymo-safety-hub]。第6世代（Zeekr ベースの Ojai）を SF・LA・フェニックスで一般提供[^tc-waymo-ojai]。ロンドンで 2026 年 4 月から試験走行[^tc-waymo-london] | ロンドンでの 2026 年中の商用開始（英政府の制度整備待ち）[^tc-waymo-london]などの海外展開 |
-| **Baidu Apollo Go** | 中国の武漢・北京・深圳・重慶などで運転者なし運行。2026 年 4 月時点で累計乗車 2200 万件超、2026 年第1四半期 320 万件、週ピーク 35 万件超（公式 IR）[^baidu-q1]。2026 年 8 月時点で 28 都市、運転者なし走行 2.4 億 km 超[^baidu-q2] | ロンドン（Lyft と試験開始、一般乗車は 2027 年目標）[^tc-baidu-london]などの海外展開 |
-| **Tesla** | 2025 年 6 月 22 日にオースティンで、助手席に安全監視員を乗せたロボタクシーを開始[^tc-tesla-austin]。2026 年 1 月、オースティンで車内に人がいない有償乗車を少数台から開始（随伴車ありと報道）[^tc-tesla-unsupervised]。NHTSA SGO にロボタクシーの事故 17 件を報告（うち遠隔操作者が関与した 2 件）[^tc-tesla-crashes]。2026 年 9 月 4 日、ハンドル・ペダルのない Cybercab の初期量産車をオースティンの公道に投入し、NHTSA が FMVSS 適合の監査 (AQ26002) を開始[^tc-cybercab]。監視付き FSD (Supervised) は量産車に広く普及 | 運転者なし運行の多都市展開、Cybercab の量産、AI4 で「人間よりはるかに安全」との経営者発言[^ai5] |
-| **Zoox** (Amazon) | 専用車両（ハンドルなし）でラスベガスの一般向け乗車を 2025 年 9 月に無料で開始し、2026 年 8 月から有償化。NHTSA が最大 2500 台・2 年間の FMVSS 一時免除を付与[^tc-zoox] | SF・オースティン・マイアミへの展開 |
-| **WeRide** | アブダビで Uber と運転者なし運行（2025 年 11 月〜）[^tc-weride] | 中東・欧州への拡大 |
+| **Waymo** | 米国で運転者なしの有償ロボタクシーを運行。2026 年 9 月の報道では 15 市場（フェニックス、SF ベイエリア、LA、オースティン、ダラス、ヒューストン、デンバー、マイアミ、ナッシュビル、サンディエゴ、タンパ、ラスベガス、サンアントニオなど）[^tc-waymo-lv]。サンアントニオ・サンディエゴ・タンパは 2026 年 10 月 14 日に誰でも乗車できるようになった（公式）[^waymo-sat-sd-tpa]。ラスベガスは利用者を段階的に追加中。週 50 万件超の有償乗車（2026 年 11 月の報道での同社説明）[^trr-waymo-freeway]、約 4000 台（2026 年 9 月の報道）[^tc-waymo-fleet]。累計 2.7 億 rider-only マイル超（公式、2026 年 6 月までのデータ）[^waymo-safety-hub]。第6世代（Zeekr ベースの Ojai）を SF・LA・フェニックスで一般提供[^tc-waymo-ojai]。ロンドンで 2026 年 4 月から試験走行[^tc-waymo-london] | ロンドンでの商用開始（英国の APS 許可制度による認可待ち。2026 年 9 月時点で、ロンドンで許可手続きの第1段階を終えた事業者はない）[^tc-waymo-london][^tnw-london]、マドリードで 2027 年に最初の乗客を乗せる計画（2026 年 10 月発表）[^waymo-madrid]などの海外展開 |
+| **Baidu Apollo Go** | 中国の武漢・北京・深圳・重慶などで運転者なし運行。2026 年 4 月時点で累計乗車 2200 万件超、2026 年第1四半期 320 万件、週ピーク 35 万件超（公式 IR）[^baidu-q1]。2026 年 8 月時点で 28 都市、自動運転走行 3.5 億 km 超（うち完全な運転者なし 2.4 億 km 超）[^baidu-q2]。2026 年 10 月時点で 30 都市、第3四半期の自動運転走行は約 3400 万 km、10 月 31 日時点の累計は 3.9 億 km 超（公式 IR。第2・第3四半期の発表に乗車件数の記載はない）[^baidu-q3]。ドバイでは運転者なし車両を約 2 倍に増やした[^baidu-q3] | ロンドン（Uber・Lyft と公道試験を継続、Lyft との一般乗車は 2027 年目標）[^tc-baidu-london][^baidu-q3]などの海外展開 |
+| **Tesla** | 2025 年 6 月 22 日にオースティンで、助手席に安全監視員を乗せたロボタクシーを開始[^tc-tesla-austin]。2026 年 1 月、オースティンで車内に人がいない有償乗車を少数台から開始（随伴車ありと報道）[^tc-tesla-unsupervised]。NHTSA SGO にロボタクシーの事故 17 件を報告（うち遠隔操作者が関与した 2 件、2026 年 5 月の報道）[^tc-tesla-crashes]。2026 年 9 月 3 日にオースティンで、ハンドル・ペダルのない Cybercab での乗車を開始し、NHTSA が FMVSS 適合の監査 (AQ26002) を開始した[^tesla-q3-update][^tc-cybercab]。第3四半期末の運転者なし運行の累計は約 200 万マイル（前四半期比 8 倍、公式）[^tesla-q3-update]。テキサス州 DMV が運転者なし運行を認めた車両は Model Y 362 台・Cybercab 449 台（報道）[^cnbc-tesla-q3]。監視付き FSD (Supervised) は量産車に広く普及し、有効な契約は 174 万件（公式）[^tesla-q3-update] | 運転者なし運行の多都市展開（決算資料が名指しするのはオースティンのみで、6 都市圏で運行中との報道は二次情報）[^tesla-q3-2026]、2026 年末までの Cybercab の顧客向け販売、AI4 で「人間よりはるかに安全」との経営者発言[^ai5] |
+| **Zoox** (Amazon) | 専用車両（ハンドルなし）でラスベガスの一般向け乗車を 2025 年 9 月に無料で開始し、2026 年 8 月から有償化。NHTSA が最大 2500 台・2 年間の FMVSS 一時免除を付与[^tc-zoox]。2026 年 11 月 16 日、ラスベガスで Uber のアプリから配車できるようになった（初の他社プラットフォーム）[^uber-zoox] | SF・オースティン・マイアミへの展開、LA で 2026 年末までに自社運行を始め、2027 年に Uber でも提供[^uber-zoox] |
+| **WeRide** | アブダビで Uber と運転者なし運行（2025 年 11 月〜）[^tc-weride]。2026 年 10 月末時点で L4 車両は世界で約 4100 台、うちロボタクシー 2300 台超、中東で約 600 台（公式 IR）[^weride-q3] | アブダビとドバイの中心市街地を年内に全面カバー、中東・欧州への拡大[^weride-q3] |
 | **Mobileye** | VW ID. Buzz AD を MOIA・Uber と LA で安全運転者付き試験（約 10 台、2026 年 4 月〜）[^tc-mobileye-la] | 2026 年末に Uber で商用開始、2027 年に運転者なし化、自社ロボタクシー事業（2027 年〜） |
 | **Cruise** (GM) | 2023 年 10 月の歩行者事故の後、カリフォルニア州 DMV が 2023 年 10 月 24 日に運転者なし運行の許可を即時停止（安全情報の不実表示を含む4つの違反を理由とする）[^ca-dmv-cruise]。その後 GM はロボタクシー事業から撤退 | — （事業終了） |
 
 読み取れることは次のとおりである。
 
-- **運転者なし運行の規模**: Waymo と Apollo Go はともに週数十万件規模の運転者なし有償乗車を実証している。テスラの運転者なし運行は 2026 年 1 月に始まったばかりで、車両数・走行距離の公式な開示は限定的である。
+- **運転者なし運行の規模**: Waymo と Apollo Go はともに週数十万件規模の運転者なし有償乗車を実証している（Apollo Go の乗車件数は 2026 年第1四半期以降公表されていない）。テスラは運転者なし運行の累計約 200 万マイルを公表したが、Waymo の 2.7 億マイルとは 2 桁の差があり、走行距離あたりの事故率を比べられる開示はない。
 - **安全データの質**: Waymo は査読付き研究と信頼区間を公表しており、独立データとの整合も確認できる。Apollo Go は乗車件数・走行距離を IR で公表するが、事故率の査読付き比較は確認できなかった。テスラは NHTSA SGO の事故報告で外部から件数が見えるようになったが、走行距離あたりの比較を可能にする開示は乏しい。
-- **規制の関与**: Waymo の高速道路運行は 2026 年 5 月に工事区間への進入事例を受けて一時停止し、約 4000 台の自主リコールを経て 7 月から再開した[^tc-waymo-freeway]。テスラ FSD には視界不良（EA26002）と交通違反（PE25012）の2つの調査が継続している[^tc-fsd-probes]。規模を拡大した事業者ほど、規制当局による継続的な監視の対象になっている。
+- **規制の関与**: Waymo の高速道路運行は 2026 年 5 月に工事区間への進入事例を受けて一時停止し、約 4000 台の自主リコールを経て 7 月から再開した[^tc-waymo-freeway]。しかしその後、US-101 の工事規制区間に 3 台が進入し、I-280 でも 1 台が交通規制中のカリフォルニア州ハイウェイパトロールの脇を通り抜けようとした。これを受けてカリフォルニア州 DMV は 2026 年 11 月 11 日、「公共の安全への差し迫った危険」として州内の高速道路での運転者なし運行と試験を禁じた。Waymo は他の市場でも高速道路運行を自主的に止め、一般道の運行は続けている（報道。DMV のニュースリリースは 2026-11-28 時点で未掲載）[^trr-waymo-freeway][^sfstd-waymo-freeway]。テスラ FSD には視界不良（EA26002）と交通違反（PE25012）の2つの調査が継続している[^tc-fsd-probes]。規模を拡大した事業者ほど、規制当局による継続的な監視の対象になっている。
 - **カリフォルニア州 DMV とテスラ**: 行政法判事は 2025 年 12 月に Autopilot/FSD の宣伝を欺瞞的と判断した。DMV は 30 日間の免許停止を執行せず是正期間を与え、テスラは 2026 年 1 月に米国・カナダで Autopilot 自体を廃止したが、テスラは判断の取り消しを求めて提訴している[^tc-tesla-dmv]。L2 の機能名称と運転者の過信の問題は、技術ではなく表示規制の問題としても扱われている。
 
 ## セキュリティ考察 (Security Considerations)
@@ -273,7 +273,7 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 - スタックはモジュール型から end-to-end 型へ移行しつつあるが、UniAD のように中間出力を保つ設計や、RSS のような形式的安全層で学習モデルを囲む設計が並存している。学習が性能を押し上げる一方で、検証と説明の責任が分解可能な構造を要求している。
 - 計算基盤の TOPS は精度・疎性の前提で数倍変わる公称値であり、実効性能と冗長性（フェイルオペレーショナル）の方が設計上は重要である。
 - 安全は単一の規格では保証できない。ISO 26262（故障）、ISO 21448（性能限界）、ISO/SAE 21434（攻撃）を UL 4600 のセーフティケースで束ね、シナリオベース試験・シミュレーション・フィールド監視で証拠を積み上げる。走行距離だけでの実証は統計的に非現実的である。
-- 2026 年 10 月時点の実証の水準は、Waymo（運転者なし有償運行と査読付き安全研究）と Baidu Apollo Go（中国での大規模運転者なし運行）が先行し、テスラは監視付き運転支援の規模で突出しつつ運転者なし運行は初期段階にある。各社の計画・発言と実証済みの運行を区別して評価する必要がある。
+- 2026 年 11 月時点の実証の水準は、Waymo（運転者なし有償運行と査読付き安全研究）と Baidu Apollo Go（中国での大規模運転者なし運行）が先行し、テスラは監視付き運転支援の規模で突出しつつ運転者なし運行は初期段階にある。各社の計画・発言と実証済みの運行を区別して評価する必要がある。
 
 ### 次の接続先 (Related Topics)
 
@@ -297,7 +297,7 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 
 [^ul4600]: UL 4600, *Standard for Evaluation of Autonomous Products*, Edition 3 (2023-03-17, ANSI 承認). — [UL Standards](https://www.shopulstandards.com/ProductDetail.aspx?productId=UL4600) — Accessed: 2026-10-04。
 
-[^iso5083]: ISO/TS 5083, *Road vehicles — Safety for automated driving systems — Design, verification and validation*. — 規格番号と表題による参照（本稿執筆時は ISO サイトにアクセスできず、発行年は未確認）。
+[^iso5083]: ISO/TS 5083:2025, *Road vehicles — Safety for automated driving systems — Design, verification and validation*. Edition 1 (2025-04). — [ISO](https://www.iso.org/standard/81920.html) — Accessed: 2026-11-28（ISO サイトは自動取得を拒否したため、発行年・版・委員会は [ANSI Webstore](https://webstore.ansi.org/standards/iso/isots50832025) と [Standards Australia Store](https://store.standards.org.au/product/iso-ts-5083-2025) の書誌情報で照合）。
 
 [^ieee2846]: IEEE Std 2846-2022 (2022-04-22), *IEEE Standard for Assumptions in Safety-Related Models for Automated Driving Systems*. — [IEEE SA](https://standards.ieee.org/ieee/2846/10831/) — Accessed: 2026-10-04。
 
@@ -306,6 +306,10 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 [^r157-amend]: UNECE. [Press release on the ALKS amendment (130 km/h, lane change)](https://unece.org/media/transport/Vehicle-Regulations/press/368227) — Accessed: 2026-10-04（本稿執筆時はアクセス制限で本文を再取得できず）。
 
 [^ca-dmv-mb]: California DMV (2023-06-08). [California DMV Approves Mercedes-Benz Automated Driving System for Certain Highways and Conditions](https://www.dmv.ca.gov/portal/news-and-media/california-dmv-approves-mercedes-benz-automated-driving-system-for-certain-highways-and-conditions/) — Accessed: 2026-10-04。
+
+[^electrive-mb]: [Mercedes pauses Level 3 driving assistance for now](https://www.electrive.com/2026/01/12/mercedes-pauses-level-3-driving-assistance-for-now/) — electrive (2026-01-12) — Accessed: 2026-11-28。Handelsblatt の報道として、改良型 S クラスと EQS で DRIVE PILOT を提供しないと伝える。**報道**。
+
+[^wards-mb]: Kable, G. [Mercedes-Benz shifts autonomous driving tech in 2026 S-Class](https://www.wardsauto.com/news/mercedes-benz-shifts-autonomous-driving-tech-in-2026-s-class/811431/) — WardsAuto (2026-02-11) — Accessed: 2026-11-28。広報担当 Tobias Mueller の「The technical foundation has been laid for the next step」、MB.DRIVE ASSIST PRO への切り替え。**報道（広報コメントを含む）**。
 
 [^ca-dmv-cruise]: California DMV (2023-10-24). [DMV Statement on Cruise LLC Suspension](https://www.dmv.ca.gov/portal/news-and-media/dmv-statement-on-cruise-llc-suspension/) — Accessed: 2026-10-04。
 
@@ -329,6 +333,12 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 
 [^mobileye-ces2022]: [Mobileye CES 2022 tech news](https://www.mobileye.com/news/mobileye-ces-2022-tech-news/) — Mobileye (2022-01-04) — Accessed: 2026-10-04。EyeQ Ultra 176 TOPS・5 nm・2025 年量産計画、EyeQ6 の量産時期。**ベンダー計画値**。
 
+[^qualcomm-elite]: [Snapdragon Cockpit Elite / Snapdragon Ride Elite Product Brief](https://www.qualcomm.com/content/dam/qcomm-martech/dm-assets/documents/Snapdragon-Cockpit-Elite-Snapdragon-Ride-Elite-Product-Brief.pdf) — Qualcomm — Accessed: 2026-11-28。NPU は「12x performance boost over previous cockpit platforms」、注記「All performance targets are compared to previous generation, based on preliminary internal testing」。[CES 2026 の発表](https://www.qualcomm.com/news/releases/2026/01/qualcomm-drives-the-future-of-mobility-with-strong-snapdragon-di)にも TOPS の記載はない。**ベンダー目標値**。
+
+[^mobileye-q3-2026]: Mobileye Global Inc. (2026-10-29). [Third Quarter 2026 Results (Form 8-K, Exhibit 99.1)](https://www.sec.gov/Archives/edgar/data/0001910139/000110465926119830/tm2628197d1_ex99-1.htm) — Accessed: 2026-11-28。「SuperVision deliveries exceeded our expectations」、2026 年 1〜9 月の EyeQ 出荷量が前年比 11% 増。個別チップ名（EyeQ Ultra を含む）には触れない。**当事者発表**。
+
+[^tesla-q3-2026]: [Tesla Q3 2026 Earnings Call Recap: Everything You Need to Know](https://www.notateslaapp.com/news/4867/tesla-q3-2026-earnings-call-recap-everything-you-need-to-know) — Not a Tesla App (2026-10-22) — Accessed: 2026-11-28。AI5 が前月に Samsung のテキサス工場で試作に入ったこと、Optimus への搭載見込み（2027 年 4 月ごろ）。テスラの決算資料本体は未確認。**報道（経営者発言）**。
+
 [^tesla-fsd-v12]: Tesla. FSD (Supervised) v12.3 release notes (software 2023.44.30.25, 2024-03). — [Not a Tesla App による転載](https://www.notateslaapp.com/software-updates/version/2023.44.30.25/release-notes) — Accessed: 2026-10-04。**ベンダーの説明**。
 
 [^tesla-vsr]: [Tesla Vehicle Safety Report](https://www.tesla.com/VehicleSafetyReport) — Tesla — Accessed: 2026-10-04（本稿執筆時はアクセス制限で本文を再取得できず）。**当事者発表**。
@@ -345,9 +355,11 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 
 [^scanlon]: Scanlon, J. M., Kusano, K. D., Daniel, T., Alderson, C., Ogle, A. & Victor, T. (2021). Waymo simulated driving behavior in reconstructed fatal crashes within an autonomous vehicle operating domain. *Accident Analysis & Prevention*, 163, 106454. DOI: 10.1016/j.aap.2021.106454
 
-[^swissre]: [New Swiss Re study: Waymo is making roads safer](https://waymo.com/blog/2024/12/new-swiss-re-study-waymo) — Waymo (2024-12-19) — Accessed: 2026-10-04。Di Lillo et al. のプレプリント（査読誌掲載は未確認）。**当事者発表**。
+[^swissre]: [New Swiss Re study: Waymo is making roads safer](https://waymo.com/blog/2024/12/new-swiss-re-study-waymo) — Waymo (2024-12-19) — Accessed: 2026-11-28。Di Lillo et al. の技術報告。ブログは「科学誌に投稿済み」と述べるが、2026-11-28 時点で掲載誌・DOI は確認できない。**当事者発表**。
 
-[^waymo-safety-hub]: [Waymo Safety Impact](https://waymo.com/safety/impact/) — Waymo — Accessed: 2026-10-04。2026 年 6 月までの 2 億 7130 万 rider-only マイル。**当事者発表**。
+[^waymo-2025-arxiv]: Scanlon, J. M., McMurry, T. L., Chen, Y.-H., Kusano, K. D. & Victor, T. (2025). From Stoplights to On-Ramps: A Comprehensive Set of Crash Rate Benchmarks for Freeway and Surface Street ADS Evaluation. arXiv:2508.19425 — 参考文献で Di Lillo et al. (2025) を「Mountain View (CA): Waymo LLC」の報告として引用。
+
+[^waymo-safety-hub]: [Waymo Safety Impact](https://waymo.com/safety/impact/) — Waymo — Accessed: 2026-11-28。2026 年 6 月までの 2 億 7130 万 rider-only マイル。**当事者発表**。
 
 [^baidu-q1]: Baidu, Inc. (2026-05-18). [Baidu Announces First Quarter 2026 Results](https://www.prnewswire.com/news-releases/baidu-announces-first-quarter-2026-results-302774476.html) — Accessed: 2026-10-04。
 
@@ -355,9 +367,21 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 
 **二次資料 (Secondary — 専門報道)**
 
-[^tesla-fsd-versions]: [Tesla FSD release history](https://www.notateslaapp.com/fsd-beta/) — Not a Tesla App — Accessed: 2026-10-04。v13.2（2024-11-30）、v14.1（2025-10-07）。
+[^tesla-fsd-versions]: [Tesla FSD release history](https://www.notateslaapp.com/fsd-beta/) — Not a Tesla App — Accessed: 2026-11-28。v13.2（2024-11-30）、v14.1（2025-10-07）、北米の v14.3.13（ビルド 2026.38.5.10、2026-10-20）、FSD 15（ビルド 2026.38.6.11、2026-11-21、AI4 の Model Y の一部から配信）。v14.3.13 の広範な配信は [Tesla Oracle (2026-11-18)](https://www.teslaoracle.com/2026/11/18/tesla-update-2026-44-1-goes-wide-release-with-fsd-v14-3-lite-hw3-fsd-v14-3-13-hw4-and-charger-network-view-release-notes/) とも照合。v15 の顧客配信は単一のトラッカーの報告で、テスラの公式発表は確認できていない。**報道・トラッカー**。
 
 [^ai5]: [Musk says Tesla's AI5 chip is done, not coming to vehicles first](https://www.notateslaapp.com/news/3974/musk-says-teslas-ai5-chip-is-done-not-coming-to-vehicles-first) — Not a Tesla App (2026-04-15) — Accessed: 2026-10-04。AI5 はまず Optimus とデータセンター向け、車両は 2027 年以降。**経営者発言**。
+
+[^waymo-sat-sd-tpa]: [Waymo is now open to everyone in San Antonio, San Diego, and Tampa](https://waymo.com/blog/shorts/sat-sd-tpa/) — Waymo (2026-10-14) — Accessed: 2026-11-28。サンアントニオは空港を含む。**当事者発表**。
+
+[^waymo-madrid]: [Waymo in the Madrid region](https://waymo.com/blog/2026/10/waymo-in-madrid-region/) — Waymo (2026-10-20) — Accessed: 2026-11-28。2027 年に最初の乗客。**当事者計画**。
+
+[^tnw-london]: [London's robotaxi permits sit unused](https://thenextweb.com/news/london-robotaxi-phv-route-aps-permit-unused) — The Next Web (2026-09-04) — Accessed: 2026-11-28。APS 許可制度は 2026-05-15 に施行されたが、ロンドンで第1段階を終えた事業者はまだない。**報道**。
+
+[^trr-waymo-freeway]: [California DMV bars Waymo AVs from operating on the state's freeways](https://www.therobotreport.com/california-dmv-bars-waymo-avs-from-operating-on-the-states-freeways/) — The Robot Report (2026-11-17) — Accessed: 2026-11-28。2026-11-11 付の命令、「imminent hazard to public safety」、週 50 万件超の一般道の乗車。**報道**。
+
+[^sfstd-waymo-freeway]: [California DMV bans Waymo from freeways](https://sfstandard.com/2026/11/17/california-dmv-bans-waymo-from-freeways/) — The San Francisco Standard (2026-11-17) — Accessed: 2026-11-28。**報道**。
+
+[^baidu-q3]: Baidu, Inc. (2026-11-16). Baidu Announces Third Quarter 2026 Results. — [Finviz による PR Newswire 配信の転載](https://finviz.com/news/422901/baidu-announces-third-quarter-2026-results) — Accessed: 2026-11-28。30 都市、第3四半期約 3400 万 km、累計 3.9 億 km 超、ドバイの車両約 2 倍、ロンドンで Uber・Lyft と試験。
 
 [^tc-waymo-lv]: [Waymo opens robotaxi service in Las Vegas](https://techcrunch.com/2026/09/14/waymo-opens-robotaxi-service-in-las-vegas/) — TechCrunch (2026-09-14) — Accessed: 2026-10-04。
 
@@ -383,10 +407,18 @@ Waymo の安全ハブは 2026 年 6 月までの累計 2 億 7130 万 rider-only
 
 [^tc-tesla-dmv]: [Tesla's battle with the California Department of Motor Vehicles isn't over after all](https://techcrunch.com/2026/02/23/teslas-battle-with-the-california-department-of-motor-vehicles-isnt-over-after-all/) — TechCrunch (2026-02-23) — Accessed: 2026-10-04。
 
+[^tesla-q3-update]: Tesla, Inc. (2026-10-21). [Q3 2026 Update (Form 8-K, Exhibit 99.1)](https://www.sec.gov/Archives/edgar/data/0001318605/000162828026066738/exhibit9914.htm) — Accessed: 2026-11-28。「We started providing Robotaxi rides using Cybercabs on September 3 in Austin」、運転者なしの累計約 200 万マイル、FSD 契約 174 万件。**当事者発表**。
+
+[^cnbc-tesla-q3]: [Tesla Q3 2026 earnings report](https://www.cnbc.com/2026/10/21/tesla-tsla-q3-2026-earnings-report.html) — CNBC (2026-10-21) — Accessed: 2026-11-28。テキサス州 DMV の認可台数（Cybercab 449 台・Model Y 362 台）。**報道**。
+
+[^uber-zoox]: Uber Technologies (2026-11-16). [Zoox Is Now Available on Uber in Las Vegas](https://investor.uber.com/news-events/news/press-release-details/2026/Zoox-Is-Now-Available-on-Uber-in-Las-Vegas/default.aspx) — Accessed: 2026-11-28。LA の時期は同じ発表内で「年末までに自社運行開始」と「2027 年に Uber で提供」が併記されている。**当事者発表**。
+
+[^weride-q3]: WeRide (2026-11-20). [Third Quarter 2026 Results](https://ir.weride.ai/news-releases/news-release-details/overseas-revenue-1715-yoy-contributing-nearly-half-total-revenue) — Accessed: 2026-11-28。**当事者発表**。
+
 [^tc-zoox]: [Zoox to start charging for robotaxi rides in Las Vegas](https://techcrunch.com/2026/08/05/zoox-to-start-charging-for-robotaxi-rides-in-las-vegas/) — TechCrunch (2026-08-05) — Accessed: 2026-10-04。
 
 [^tc-weride]: [Uber and WeRide's robotaxi service in Abu Dhabi is officially driverless](https://techcrunch.com/2025/11/25/uber-and-werides-robotaxi-service-in-abu-dhabi-is-officially-driverless/) — TechCrunch (2025-11-25) — Accessed: 2026-10-04。
 
 [^tc-mobileye-la]: [Volkswagen begins testing its self-driving microbuses in Los Angeles ahead of launch with Uber](https://techcrunch.com/2026/04/08/volkswagen-moia-uber-los-angeles-testing-self-driving-microbuses-id-buzz/) — TechCrunch (2026-04-08) — Accessed: 2026-10-04。
 
-**注**: SoC の性能値、各社の運行規模・計画はベンダー公称値または報道であり、独立した監査値ではない。展開状況は 2026-10-04 時点の情報で、変化が速い。ISO・SAE・UL 規格本文は有償のため、本稿の記述は公開概要と査読文献に基づく。
+**注**: SoC の性能値、各社の運行規模・計画はベンダー公称値または報道であり、独立した監査値ではない。展開状況は 2026-11-28 時点の情報で、変化が速い。ISO・SAE・UL 規格本文は有償のため、本稿の記述は公開概要と査読文献に基づく。
