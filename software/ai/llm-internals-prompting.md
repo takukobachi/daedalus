@@ -117,7 +117,7 @@ flowchart LR
 
 - **事前学習**は「続きを当てる」だけの目的関数（次トークンのクロスエントロピー最小化。これが訓練データの最短圧縮と同値であることは [`../../foundations/information-theory/entropy-source-coding.md`](../../foundations/information-theory/entropy-source-coding.md) §5）から、文法・事実・推論パターン・コーディング規約までを圧縮的に獲得する（性能は計算量・データ量・パラメータ数のべき則に従う; 導出と含意は [`../../foundations/machine-learning/scaling-laws.md`](../../foundations/machine-learning/scaling-laws.md)）。この段階のモデル (base model) は指示に従わない。質問には質問の続きらしいテキストを返す。
 - **SFT (Supervised Fine-Tuning)** は望ましい応答例で微調整し、「ユーザの発話に応答するアシスタント」という**形式**を植え付ける。
-- **RLHF (Reinforcement Learning from Human Feedback; Ouyang et al., 2022)** は人間の選好比較から報酬モデルを作り、応答をそれに向けて最適化する。指示追従・丁寧さ・拒否挙動はここで整形されるが、同時に「評価者に好まれる」方向の副作用（根拠より同意を優先する追従性 (Sharma et al., 2023)、過剰な自信の演出）も入り込む。
+- **RLHF (Reinforcement Learning from Human Feedback; Ouyang et al., 2022)** は人間の選好比較から報酬モデルを作り、応答をそれに向けて最適化する。指示追従・丁寧さ・拒否挙動はここで整形されるが、同時に「評価者に好まれる」方向の副作用（根拠より同意を優先する追従性 (Sharma et al., 2023)、過剰な自信の演出）も入り込む。報酬モデル、KL 正則化、DPO の導出は [`reinforcement-learning-policy-gradient.md`](../../foundations/machine-learning/reinforcement-learning-policy-gradient.md) で扱う。
 
 実務への帰結は次のとおりである。
 

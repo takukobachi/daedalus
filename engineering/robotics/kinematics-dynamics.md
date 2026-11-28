@@ -128,7 +128,7 @@ F_ext:  外力（接触力）
 | `Ṁ − 2C` の歪対称性 | エネルギー保存の現れ | **受動性 (passivity)** に基づく制御の安定性証明 |
 | パラメータ線形性 | 動力学は物理パラメータに線形 | 最小二乗によるパラメータ同定 (identification) |
 
-- **ラグランジュ法**: エネルギー（`L = T − V`）から系統的に導出。構造の理解・少自由度の手計算向き。オイラー・ラグランジュ方程式は [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) の2階 ODE の連立系である。
+- **ラグランジュ法**: エネルギー（`L = T − V`）から系統的に導出。構造の理解・少自由度の手計算向き。オイラー・ラグランジュ方程式は [`../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md`](../../foundations/mathematics/calculus-analysis/ordinary-differential-equations.md) の2階 ODE の連立系である。 一般化座標と拘束からマニピュレータ方程式の構造的性質までの導出は [`lagrangian-multibody-dynamics.md`](../../foundations/physics/classical-mechanics/lagrangian-multibody-dynamics.md) にある。
 - **ニュートン・オイラー法（再帰形）**: 速度・加速度をベースから手先へ順伝播し、力・トルクを手先からベースへ逆伝播する2パスで逆動力学（`q, q̇, q̈ → τ`）を **O(n)** で解く[^luh-walker-paul]。順動力学（`τ → q̈`）は Featherstone の articulated-body algorithm が同じく O(n) を達成する[^featherstone]。
 - **反射慣性との接続**: [`robotics-fundamentals.md`](robotics-fundamentals.md) で見た `N²·J_m` は、この `M(q)` の対角項にモーター慣性が加算される形で現れる。高減速比機では `N²·J_m` がリンク由来の項を支配するため「各関節が独立した線形系」に近づき、単軸 PID で制御できてしまう。逆に QDD 機ではリンク間の連成が支配的になり、モデルベース制御が必要になる。この分岐が [`control-systems.md`](control-systems.md) の主題である。
 

@@ -12,7 +12,7 @@ AI アクセラレータの性能表は演算性能 (FLOP/s) を先頭に掲げ�
 
 - 需要側は第一原理の算術で示す。decode のトークン速度上限、KV cache 容量、attention の演算強度を、公開されたモデル構成（Llama 3 の層数・ヘッド数[^llama3]）と公称帯域から概算する。式の導出元は [`../../foundations/machine-learning/transformer-architecture.md`](../../foundations/machine-learning/transformer-architecture.md) §7 である。
 - 世代ごとの数値は「JEDEC 規格値」と「ベンダ発表の製品値」を分けて表に置く。HBM3E 以降はベンダが規格上限を超えるピン速度を出荷しており、両者の混同が誤った比較の主因になるためである。
-- 製品の容量・帯域はすべて「2026-10 時点のベンダ公称値」と明記する。同じベンダの資料間で数値が食い違う場合（Rubin、MI455X）は範囲で示す。
+- 製品の容量・帯域はすべて「2026-10 時点のベンダ公称値」と明記する。同じベンダの資料間で数値が食い違う場合（MI455X）は範囲で示す。Rubin は量産品の出荷時に帯域の仕様が改められたので、出荷仕様を示し、事前公表値を併記する。
 - 市場シェア・供給・価格は時事性が高いため、調査会社と各社発表を日付つきで引き、2 社以上の報道で裏づけを取る。単一ソースにとどまる数値は本文で使わない。
 - エネルギー (pJ/bit) は査読論文の内訳（O'Connor et al., MICRO 2017[^fgdram]）を軸にする。ベンダの「前世代比 X% 改善」は相対値として扱い、絶対値の根拠にはしない。
 
@@ -174,7 +174,7 @@ flowchart TD
 
 | 方式 | 代表例 (ベンダ公称) | 強み | 弱み | 主な使いどころ |
 |---|---|---|---|---|
-| HBM4 | Rubin: 288 GB・19.2〜22 TB/s | 帯域・帯域あたり電力 | 単価・供給・2.5D 必須 | 学習と decode |
+| HBM4 | Rubin: 288 GB・19.2 TB/s (出荷仕様) | 帯域・帯域あたり電力 | 単価・供給・2.5D 必須 | 学習と decode |
 | GDDR7 | JESD239 でデバイスあたり最大 192 GB/s[^gddr7]、Rubin CPX: 128 GB[^cpx] | 安価・標準基板実装 | 容量と帯域が中程度 | 長文脈 prefill、推論専用カード |
 | LPDDR5X (SOCAMM) | Vera CPU: 最大 1.5 TB・1.2 TB/s[^vera] | 大容量・低電力・保守交換可 | 帯域が HBM の 1/10 以下 | CPU 側の容量層、KV 退避 |
 | オンチップ SRAM | Cerebras WSE-3: 44 GB・21 PB/s[^cerebras]、Groq 3 LP30: 約 500 MB・150 TB/s[^groq3] | 桁違いの帯域・低遅延 | 容量が極小、多数チップに分割が必要 | 低遅延 decode |
@@ -192,12 +192,12 @@ flowchart TD
 |---|---|---|---|---|
 | NVIDIA B200 (Blackwell) | HBM3E | 192 GB（HGX B200 は 8 基で 1.4 TB 表記） | 8 TB/s | [^bw-ultra][^hgx] |
 | NVIDIA B300 (Blackwell Ultra) | HBM3E 12-high | 288 GB | 8 TB/s | 16 × 512 bit = 8,192 bit。スタック数は同一資料内で 8 と 12 の記述が混在[^bw-ultra] |
-| NVIDIA Rubin | HBM4 | 288 GB | 19.2〜22 TB/s | NVL72 仕様表は 19.2 TB/s、技術ブログと HGX 表は 22 TB/s[^rubin-blog][^nvl72][^hgx] |
+| NVIDIA Rubin | HBM4 | 288 GB | 19.2 TB/s (出荷仕様) | 事前公表の 22 TB/s から 2026-10 に引き下げられたと報じられた[^sth-rubin]。NVL72 仕様表は 19.2 TB/s、技術ブログと HGX 表は 22 TB/s のまま[^rubin-blog][^nvl72][^hgx] |
 | AMD MI355X | HBM3E | 288 GB | 8 TB/s | [^mi355x] |
 | AMD MI455X | HBM4（36 GB × 12 スタック） | 432 GB | 19.6〜23.3 TB/s | Helios 資料は 19.6、製品ページと datasheet は 23.3[^mi455x] |
 | Google TPU7x (Ironwood) | HBM | 192 GiB | 7.38 TB/s | BF16 2,307 TFLOP/s、FP8 4,614 TFLOP/s[^ironwood] |
 
-- 帯域はおおむね「スタック数 × スタック帯域」で決まる。Rubin の 288 GB を 12-high 36 GB スタックで構成すると 8 スタックになり、22 TB/s を 8 スタックで割るとスタックあたり約 2.75 TB/s、ピン速度に直すと約 10.7 Gb/s になり、JEDEC 規格（8 Gb/s）を超えるベンダ品（§3）を前提にした値と分かる。19.2 TB/s との差は、採用ビンや動作条件の違いによるとみられる（NVIDIA は差の理由を説明していない）。
+- 帯域はおおむね「スタック数 × スタック帯域」で決まる。Rubin の 288 GB を 12-high 36 GB スタックで構成すると 8 スタックになり、22 TB/s を 8 スタックで割るとスタックあたり約 2.75 TB/s、ピン速度に直すと約 10.7 Gb/s になり、JEDEC 規格（8 Gb/s）を超えるベンダ品（§3）を前提にした値と分かる。出荷仕様の 19.2 TB/s はスタックあたり 2.4 TB/s、ピン速度約 9.375 Gb/s に当たる (本稿の試算)。ServeTheHome は、最初の量産品が届いた 2026-10 に NVIDIA が帯域を 22 TB/s から 19.2 TB/s に引き下げたと報じた[^sth-rubin]。NVIDIA は引き下げの理由を説明していない。
 - 2026-10 時点の製品は「同じ帯域で容量を増やす世代 (B300)」と「帯域を 2〜3 倍にする世代 (Rubin, MI455X)」が交互に現れている。前者は KV 容量を、後者は decode 速度を改善する。
 
 ### 11. 信頼性
@@ -279,6 +279,8 @@ flowchart TD
 [^hgx]: [NVIDIA. HGX Platform](https://www.nvidia.com/en-us/data-center/hgx/) — Accessed: 2026-10-12. HGX B200 1.4 TB、HGX B300 2.1 TB、Rubin GPU 288 GB HBM4・22 TB/s（ベンダ公称）。
 
 [^rubin-blog]: [NVIDIA Technical Blog (2026-07-21). Inside NVIDIA Rubin GPU Architecture: Powering the Era of Agentic AI](https://developer.nvidia.com/blog/inside-nvidia-rubin-gpu-architecture-powering-the-era-of-agentic-ai/) — Accessed: 2026-10-12. 288 GB HBM4（12-high）、最大 22 TB/s、Blackwell 比 2.8 倍（ベンダ公称）。
+
+[^sth-rubin]: [Smith, R. (2026-10-31). NVIDIA Updates Rubin GPU Specs as First Production Hardware Arrives. ServeTheHome](https://www.servethehome.com/?p=106378) — Accessed: 2026-11-28. HBM4 288 GB は据え置き、帯域 22 → 19.2 TB/s（ピン速度 約 10.75 → 9.375 Gb/s）。NVIDIA の地域別製品ページでも 22 TB/s と 19.2 TB/s の表記が混在する（報道）。
 
 [^nvl72]: [NVIDIA. Vera Rubin NVL72](https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/) — Accessed: 2026-10-12. GPU あたり 288 GB HBM4・19.2 TB/s、ラックで HBM4 20.7 TB・1,400 TB/s、LPDDR5X 最大 54 TB（ベンダ公称）。
 
