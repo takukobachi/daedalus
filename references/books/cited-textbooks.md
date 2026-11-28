@@ -140,6 +140,19 @@ Sze, S. M., & Ng, K. K. (2007). *Physics of Semiconductor Devices* (3rd ed.). Wi
 | [`quantum-solid-state/tunneling-nonvolatile-memory.md`](../../foundations/physics/quantum-solid-state/tunneling-nonvolatile-memory.md) | トンネリングと不揮発メモリのデバイス |
 | [`quantum-solid-state/optoelectronics.md`](../../foundations/physics/quantum-solid-state/optoelectronics.md) | フォトダイオード、LED、レーザー |
 | [`electromagnetism/charge-field-potential.md`](../../foundations/physics/electromagnetism/charge-field-potential.md) | 誘電率と絶縁膜の物性値 |
+| [`thermodynamics-statistical/statistical-mechanics-thermal-noise.md`](../../foundations/physics/thermodynamics-statistical/statistical-mechanics-thermal-noise.md) | 半導体のキャリア統計 (Ch. 1)。熱電圧とサブスレッショルド傾斜 |
+
+### Goldstein, Poole & Safko『Classical Mechanics』
+
+Goldstein, H., Poole, C., & Safko, J. (2002). *Classical Mechanics* (3rd ed.). Addison-Wesley.
+
+古典力学シリーズの理論側の標準教科書である。
+
+| 文書 | 用途 |
+|---|---|
+| [`classical-mechanics/newton-laws-oscillations.md`](../../foundations/physics/classical-mechanics/newton-laws-oscillations.md) | 剛体力学・振動論の理論的裏付け |
+| [`classical-mechanics/lagrangian-multibody-dynamics.md`](../../foundations/physics/classical-mechanics/lagrangian-multibody-dynamics.md) | 拘束と一般化座標 (Ch. 1)、ハミルトンの原理とオイラー=ラグランジュ方程式・保存則 (Ch. 2) |
+| [`classical-mechanics/central-force-kepler-orbits.md`](../../foundations/physics/classical-mechanics/central-force-kepler-orbits.md) | 中心力問題、換算質量、ケプラー問題、ベルトランの定理 (Ch. 3) |
 
 ### Purcell & Morin『Electricity and Magnetism』
 
