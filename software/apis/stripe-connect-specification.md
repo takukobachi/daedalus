@@ -27,7 +27,7 @@ flowchart LR
 
 本ドキュメントは、Connect のアカウントモデル、決済タイプ (charge types)、資金フロー、オンボーディング、Webhook、料金体系を、Stripe 公式ドキュメントを一次資料として再構成する。2025 年から 2026 年にかけて Connect のアカウントモデルは大きく変わった。従来の **Standard / Express / Custom の「アカウントタイプ」はレガシー扱い**となり、**コントローラープロパティ (controller properties)** と **Accounts v2 API の構成 (configurations)** が現行の設計手段になっている。本書ではこの「現行」と「レガシー」を明示的に区別する。
 
-関連文書として、Standard アカウントの OAuth 連携や API 認可の一般論は [`authentication-tokens-specification.md`](authentication-tokens-specification.md)、Webhook 受信に必要な TLS の性質は [`../networking/tls-internals.md`](../networking/tls-internals.md)、埋め込みコンポーネントが前提とする CSP・オリジン分離は [`../browsers/web-security-model.md`](../browsers/web-security-model.md) を参照。
+関連文書として、Standard アカウントの OAuth 連携や API 認可の一般論は [`authentication-tokens-specification.md`](authentication-tokens-specification.md)、Webhook 受信に必要な TLS の性質は [`../networking/tls-internals.md`](../networking/tls-internals.md)、埋め込みコンポーネントが前提とする CSP・オリジン分離は [`../browsers/web-security-model.md`](../browsers/web-security-model.md) を参照。Connect が抽象化しているカードネットワークの下部構造（承認・清算・精算、3-D セキュア、チャージバック）は [`card-payment-networks.md`](card-payment-networks.md) を参照。
 
 ---
 

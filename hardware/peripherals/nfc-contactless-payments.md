@@ -238,6 +238,7 @@ NFC は、外から届く電波のデータを端末が解釈する入口でも�
 - `../security/side-channels-tee-secure-boot.md` — Secure Enclave と TEE。
 - `../../software/android/security-model.md` — Android の KeyMint と StrongBox。
 - `../../software/apis/webauthn-passkeys-specification.md` — NFC で使うセキュリティキー (CTAP)。
+- `../../software/apis/card-payment-networks.md` — 端末の先にあるカードネットワーク（ARQC の検証、承認・清算・精算、トークン、チャージバック）。
 - `../../software/security/applied-cryptography.md` — MAC、鍵の派生、独自暗号の危険。
 - `../../foundations/physics/electromagnetism/induction-inductance.md` — 相互インダクタンスと誘導結合。
 - `../../foundations/physics/electromagnetism/current-magnetostatics.md` — ループ電流の作る磁界。
