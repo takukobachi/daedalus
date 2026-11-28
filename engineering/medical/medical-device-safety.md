@@ -266,6 +266,7 @@ PCCP と IDATEN は承認を「完成品の一時点の状態」から「変更�
 - [`../../software/embedded/rtos-architectures.md`](../../software/embedded/rtos-architectures.md)：医療機器の組込みソフトウェアの実行基盤と、認証済み構成の凍結と更新の衝突。
 - [`../../software/formal-methods/formal-verification-landscape.md`](../../software/formal-methods/formal-verification-landscape.md)：Therac-25 型の競合状態を設計段階で検出する手法。
 - [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md)：故障率と冗長の確率論。ソフトウェアに確率を割り当てる難しさの背景。
+- [`../railway/railway-signaling-control.md`](../railway/railway-signaling-control.md)：故障したら止まれば安全という安全側を持つ系の設計。Therac-20 のハードウェア保護回路と同じく、ソフトウェアから独立した防護で安全を守る。
 
 ## 参考文献 (References)
 

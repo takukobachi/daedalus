@@ -246,6 +246,7 @@ x86 はベクタ番号で IDT の256エントリを引く (0–31 が CPU 予約
 - [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md) — 精密例外を支える ROB とインオーダ・リタイア。
 - [`../../software/embedded/realtime-fundamentals.md`](../../software/embedded/realtime-fundamentals.md) — 割り込みレイテンシを含む最悪応答時間の解析。
 - [`../../software/virtualization/hardware-virtualization-containers.md`](../../software/virtualization/hardware-virtualization-containers.md) — VM exit として現れる「もう一段外側」への制御移行。
+- [`../reliability/ras-machine-check.md`](../reliability/ras-machine-check.md) — マシンチェック例外や Arm の SDEI で届く誤りの通知を、ファームウェアと OS がどう分担して処理するか。
 
 ## 参考文献 (References)
 

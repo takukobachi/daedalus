@@ -197,6 +197,8 @@ update (GPS 等の観測が届いたとき):
 - [`../automotive/functional-safety-iso26262.md`](../automotive/functional-safety-iso26262.md) — 同じ思想の車載版。ASIL 分解の独立性 ↔ 非相似冗長、ロックステップコア ↔ COM/MON ペア。
 - [`../automotive/automotive-ethernet-tsn.md`](../automotive/automotive-ethernet-tsn.md) — AFDX/TTEthernet の思想の車載標準化 (TSN)。
 - [`../automotive/in-vehicle-networks.md`](../automotive/in-vehicle-networks.md) — バスの決定性設計の系譜比較 (CAN ↔ 1553)。
+- [`uav-multirotor-systems.md`](uav-multirotor-systems.md) — 同じ航法・制御を小型機で実装した例。PX4/ArduPilot の EKF、GNSS への依存、フェイルセーフ。
+- [`../railway/railway-signaling-control.md`](../railway/railway-signaling-control.md) — 止まれば安全という「安全側」が物理的に存在する系。飛行中に安全側がない航空機の fail-operational 設計との対比。
 
 ## 参考文献 (References)
 

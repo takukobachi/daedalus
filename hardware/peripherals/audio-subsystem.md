@@ -148,6 +148,7 @@ SD    ─[MSB]..[LSB]─[MSB]..[LSB]─  シリアルデータ (LRCLKエッジ�
 - `bluetooth-pairing-protocol.md` — この経路が無線化されたとき（A2DP/LE Audio）に何が変わるか。
 - `../hw-sw-interface/mmio-dma-interrupts.md` — DMA リング・割り込み合体の一般論。
 - `../hw-sw-interface/clock-power-reset.md` — クロック生成 (PLL) と分配の基礎。
+- `../mixed-signal/adc-dac-converters.md` — ΔΣ 変換器の雑音整形と、クロックジッタが SNR に与える上限を変換器の側から扱う。
 - `../../software/android/graphics-pipeline.md` — 同じ「締切付きストリーム」問題の映像版（vsync とバッファリング）。
 
 ## 参考文献 (References)

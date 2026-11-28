@@ -268,6 +268,7 @@ IEC 62278・62279・62425 は、鉄道の通信・信号・処理系について
 - [`../../software/formal-methods/formal-verification-landscape.md`](../../software/formal-methods/formal-verification-landscape.md) — B メソッドとモデル検査。連動論理の検証。
 - [`../../hardware/wireless/radio-fundamentals-modulation.md`](../../hardware/wireless/radio-fundamentals-modulation.md) — 変調・伝搬・妨害耐性。ATACS・GSM-R・FRMCS の物理層。
 - [`../../foundations/mathematics/probability-statistics/reliability-theory.md`](../../foundations/mathematics/probability-statistics/reliability-theory.md) — 冗長系の信頼度と共通原因故障。2oo2/2oo3 の確率的基礎。
+- [`../medical/medical-device-safety.md`](../medical/medical-device-safety.md) — 同じく「故障を前提に危害を防ぐ」系。規制当局の審査とリスクマネジメントの記録で安全を示す点が異なる。
 
 ## 参考文献 (References)
 

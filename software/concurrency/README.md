@@ -15,5 +15,7 @@
 
 - 非同期ランタイムの実装は [`../compilers-runtimes/async-executors-asyncio-tokio.md`](../compilers-runtimes/async-executors-asyncio-tokio.md)
   で扱い済み（event loop, work-stealing）。残る候補は以下
-- 構造化並行性 (structured concurrency) とキャンセル伝播
+- 構造化並行性 (structured concurrency) とキャンセル伝播 — asyncio TaskGroup・Tokio JoinSet と
+  キャンセルの基本は同文書 §4 で扱い済み。残るのは言語横断の比較 (Kotlin coroutines、
+  Swift の TaskGroup、Java の StructuredTaskScope) と、キャンセルを安全に伝える設計論
 - アクターモデル (actor model) とメッセージパッシング

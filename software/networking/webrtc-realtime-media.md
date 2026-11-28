@@ -223,6 +223,17 @@ WebRTC は、遅れたデータは役に立たないという前提から伝送�
 
 残る弱点は 3 つの境界にある。1 つ目は網との境界で、遅延型の制御は損失型の TCP と深いバッファを共有すると負け、その解決は AQM と L4S に委ねられている。2 つ目は信頼の境界で、DTLS の指紋は信号サーバを信頼しなければ意味を持たず、TURN は中継先を制限しなければ利用者を内部網に到達させる。3 つ目は標準化の境界で、MoQ・WebTransport・WHEP は 2026-10 時点で RFC になっておらず、配信と対話の中間を QUIC の上で担う設計はまだ固まっていない。導入する側は TURN の配置と中継先の制限、SFU の構成と鍵の扱い、網側のキュー管理を、メディアの品質と同じ重さで設計する必要がある。
 
+### 次の接続先 (Related Topics)
+
+- [`tcp-transport-congestion.md`](tcp-transport-congestion.md) — 損失を合図に下げる TCP の輻輳制御。遅延で下げる WebRTC の制御が同じボトルネックで TCP に帯域を譲ってしまう理由。
+- [`qos-traffic-management.md`](qos-traffic-management.md) — AQM と L4S、DSCP によるマーキング。遅延型の制御が深いバッファと共存するための網の側の手段。
+- [`http-quic-evolution.md`](http-quic-evolution.md) — WebTransport と MoQ が載る QUIC と HTTP/3。
+- [`tls-internals.md`](tls-internals.md) — DTLS-SRTP の鍵交換に使う DTLS の元になった、TLS のハンドシェイクと鍵導出。
+- [`ip-addressing-icmp-dhcp-nat.md`](ip-addressing-icmp-dhcp-nat.md) — ICE・STUN・TURN が越えようとする NAT の振る舞い。
+- [`vpn-tunneling.md`](vpn-tunneling.md) — 同じ NAT 越えと中継の問題を、VPN の側から扱う。
+- [`../compression/media-codecs.md`](../compression/media-codecs.md) — サイマルキャストと SVC の前提にある映像符号化。
+- [`../browsers/web-security-model.md`](../browsers/web-security-model.md) — カメラ・マイクの権限とオリジンのモデル。
+
 ## 参考文献 (References)
 
 ### 標準 (Standards)

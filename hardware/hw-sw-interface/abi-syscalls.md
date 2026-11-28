@@ -164,6 +164,7 @@ Linux カーネルは「ユーザ空間を壊さない」("We don't cause regres
 - [`mmio-dma-interrupts.md`](mmio-dma-interrupts.md) — もう一つの境界（CPU とデバイス）との対比。
 - [`../../software/compilers-runtimes/linkers-loaders-elf.md`](../../software/compilers-runtimes/linkers-loaders-elf.md) — ELF・再配置・動的リンクという ABI の実行ファイル形式層。
 - [`../../software/operating-systems/process-thread-scheduling.md`](../../software/operating-systems/process-thread-scheduling.md) — syscall の受け手であるカーネル側のプロセス管理。
+- [`../../software/operating-systems/syscall-kernel-boundary.md`](../../software/operating-systems/syscall-kernel-boundary.md) — 本書の続き。命令がカーネルに着いてから戻るまでの処理 (エントリ、引数の検査、seccomp、io_uring) と、Spectre 対策との綱引き。
 
 ## 参考文献 (References)
 
