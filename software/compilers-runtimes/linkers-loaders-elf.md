@@ -198,6 +198,7 @@
 - `../../hardware/cpu/virtual-memory-mmu.md` — mmap・デマンドページング・CoW。共有ライブラリ `.text` の物理1部共有と `.bss` の零ページ割り当ての基礎。
 - `../ios/platform-architecture.md` — dyld 共有キャッシュと chained fixups。動的リンクを「事前計算して固定する」対極の解。
 - `../android/art-runtime-internals.md` — ClassLoader 階層と linker namespaces。「どのシンボルが誰に見えるか」を名前空間で強制する応用。
+- `debug-info-stack-unwinding.md` — `strip` 後も残る `.eh_frame` と `PT_GNU_EH_FRAME`、分離したデバッグ情報を build ID で引くシンボリケーション。
 
 ## 参考文献 (References)
 

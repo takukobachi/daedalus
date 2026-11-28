@@ -299,6 +299,7 @@ static int pmc_reprogram_counter(struct kvm_pmc *pmc, u32 type, u64 config,
 ### 次の接続先 (Related Topics)
 
 - [`../../software/observability/observability-performance-engineering.md`](../../software/observability/observability-performance-engineering.md) — PMU の上に立つ可観測性の全体像 (単価階層・火焔グラフ・continuous profiling)。
+- [`../../software/compilers-runtimes/debug-info-stack-unwinding.md`](../../software/compilers-runtimes/debug-info-stack-unwinding.md) — サンプルにコールスタックを付けるアンワインド (フレームポインタ・DWARF・ORC・SFrame・LBR) の比較。
 - [`pipeline-superscalar-ooo.md`](pipeline-superscalar-ooo.md) — トップダウンが数える発行スロットとスキッドを生むアウトオブオーダ実行。
 - [`branch-prediction-speculation.md`](branch-prediction-speculation.md) — Bad Speculation の中身、LBR の予測当否フラグ、PMU を使う投機実行攻撃。
 - [`cache-coherence.md`](cache-coherence.md)・[`numa-multi-socket.md`](numa-multi-socket.md) — `perf c2c`・uncore PMU で観測する共有とリモートアクセス。

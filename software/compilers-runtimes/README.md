@@ -32,6 +32,13 @@ AOT コンパイラ本体 (IR 上の中盤最適化と、機械語を作るバ�
   失敗モード、PLT/GOT と遅延束縛、シンボル介入と LD_PRELOAD、ld.so の
   ブートストラップ、IFUNC と xz 事件、ASLR/PIE/RELRO、LTO とリンカの進化
   (BFD ld → gold → lld → mold)、dyld / Android linker / PE との対比
+- `debug-info-stack-unwinding.md` — デバッグ情報とスタックアンワインド: PC とレジスタから
+  ソースの文脈と呼び出し元を復元する副読本。DWARF (DIE・行番号表・ロケーションリスト・
+  split DWARF・圧縮)、CFI (`.eh_frame` の CIE/FDE と CFA 規則)、フレームポインタ /
+  CFI / ORC / SFrame の比較と 2023〜2024 年のディストリビューションでのフレームポインタ
+  復活、Itanium ABI の二段階アンワインドと LSDA、build ID・debuginfod・PDB・dSYM による
+  シンボリケーション、perf・eBPF プロファイラ・Crashpad、CHOP と SEH 上書き・
+  CET シャドウスタック
 - `managed-runtimes-gc-jit.md` — マネージドランタイム：階層型 JIT (インタプリタ →
   最適化コンパイラ)、hidden class とインラインキャッシュ、投機と deoptimization、
   GC (世代仮説・並行化・バリア)、参照カウントとの対比、JIT/GC のセキュリティ
@@ -60,9 +67,3 @@ AOT コンパイラ本体 (IR 上の中盤最適化と、機械語を作るバ�
   依存解決の NP 完全性と MVS / Cargo / npm / pip の回避策、lockfile、
   非決定性の原因と SOURCE_DATE_EPOCH、Debian・Arch・NixOS の現状 (2026-10)、
   Nix/Guix、SLSA の来歴の裏付け・DDC・xz が示した宣言の境界
-
-## 今後のテーマ候補
-
-- デバッグ情報とアンワインド (debug info & unwinding) — DWARF、
-  スタックアンワインド (CFI)、シンボリケーション。プロファイラ・例外処理・
-  クラッシュレポートの共通基盤
